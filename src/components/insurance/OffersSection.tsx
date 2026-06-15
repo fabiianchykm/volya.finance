@@ -12,6 +12,7 @@ import { PERIODS } from "@/lib/constants";
 
 interface OffersSectionProps {
   offers: InsuranceOffer[];
+  loading?: boolean;
   vehicle: VehicleData;
   periodId: number;
   onPeriodChange: (id: number) => void;
@@ -23,6 +24,7 @@ type SortKey = "price_asc" | "price_desc" | "options";
 
 export function OffersSection({
   offers,
+  loading = false,
   vehicle,
   periodId,
   onPeriodChange,
@@ -96,42 +98,64 @@ export function OffersSection({
           </div>
         </div>
 
-        <div className="mb-5 flex items-center justify-end gap-2">
-          <span className="text-xs font-medium text-zinc-500">Сортувати:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortKey)}
-            className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-300 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-colors cursor-pointer"
-          >
-            <option value="price_asc">Дешевше</option>
-            <option value="price_desc">Дорожче</option>
-            <option value="options">Кількість опцій</option>
-          </select>
-        </div>
+        {!loading && offers.length > 0 && (
+          <div className="mb-5 flex items-center justify-end gap-2">
+            <span className="text-xs font-medium text-zinc-500">Сортувати:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-300 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-colors cursor-pointer"
+            >
+              <option value="price_asc">Дешевше</option>
+              <option value="price_desc">Дорожче</option>
+              <option value="options">Кількість опцій</option>
+            </select>
+          </div>
+        )}
 
 
-        <div className="space-y-3">
-          {sorted.map((offer, i) => (
-            <OfferCard
-              key={offer.offerId}
-              offer={offer}
-              index={i}
-              selected={selectedOfferId === offer.offerId}
-              selectedDgoId={dgoMap[offer.offerId] ?? null}
-              selectedAutolawyerId={autolawyerMap[offer.offerId] ?? null}
-              onSelect={() => setSelectedOfferId(offer.offerId)}
-              onSelectDgo={(id) => setDgoMap((m) => ({ ...m, [offer.offerId]: id }))}
-              onSelectAutolawyer={(id) => setAutolawyerMap((m) => ({ ...m, [offer.offerId]: id }))}
-              onBuy={() =>
-                onSelectOffer(
-                  offer,
-                  dgoMap[offer.offerId] ?? null,
-                  autolawyerMap[offer.offerId] ?? null
-                )
-              }
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="space-y-3">
+            <p className="mb-4 flex items-center justify-center gap-2 text-sm text-zinc-500">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500" />
+              Шукаємо найкращі пропозиції від страховиків…
+            </p>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <OfferCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : offers.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
+            <p className="text-base font-semibold text-zinc-900">Пропозицій не знайдено</p>
+            <p className="mt-1 text-sm text-zinc-500">Спробуйте змінити параметри авто.</p>
+            <Button variant="secondary" size="md" onClick={onBack} className="mt-5">
+              Назад
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {sorted.map((offer, i) => (
+              <OfferCard
+                key={offer.offerId}
+                offer={offer}
+                index={i}
+                selected={selectedOfferId === offer.offerId}
+                selectedDgoId={dgoMap[offer.offerId] ?? null}
+                selectedAutolawyerId={autolawyerMap[offer.offerId] ?? null}
+                onSelect={() => setSelectedOfferId(offer.offerId)}
+                onSelectDgo={(id) => setDgoMap((m) => ({ ...m, [offer.offerId]: id }))}
+                onSelectAutolawyer={(id) => setAutolawyerMap((m) => ({ ...m, [offer.offerId]: id }))}
+                onBuy={() =>
+                  onSelectOffer(
+                    offer,
+                    dgoMap[offer.offerId] ?? null,
+                    autolawyerMap[offer.offerId] ?? null
+                  )
+                }
+              />
+            ))}
+          </div>
+        )}
 
         <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-center gap-6 text-center">
@@ -193,5 +217,27 @@ export function OffersSection({
       </div>{/* кінець flex row */}
       </div>
     </section>
+  );
+}
+
+// Placeholder card shown while offers are loading.
+function OfferCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-2xl bg-white border border-zinc-100 shadow-sm px-6 py-5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-zinc-100" />
+          <div className="space-y-2">
+            <div className="h-4 w-32 rounded bg-zinc-100" />
+            <div className="h-3 w-20 rounded bg-zinc-100" />
+          </div>
+        </div>
+        <div className="space-y-2 text-right">
+          <div className="ml-auto h-6 w-24 rounded bg-zinc-100" />
+          <div className="ml-auto h-3 w-16 rounded bg-zinc-100" />
+        </div>
+      </div>
+      <div className="mt-4 h-10 w-full rounded-xl bg-zinc-100" />
+    </div>
   );
 }

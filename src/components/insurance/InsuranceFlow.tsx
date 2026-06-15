@@ -17,6 +17,7 @@ interface FlowState {
   plate: string;
   vehicle: VehicleData | null;
   offers: InsuranceOffer[];
+  offersLoading: boolean;
   periodId: number;
 }
 
@@ -28,6 +29,7 @@ export function InsuranceFlow() {
     plate: "",
     vehicle: null,
     offers: [],
+    offersLoading: false,
     periodId: 12,
   });
 
@@ -86,26 +88,37 @@ export function InsuranceFlow() {
     }
   };
 
-  // Step 2: vehicle confirmed — validate, fetch offers, transition to offers screen
-  const handleVehicleConfirm = async (vehicle: VehicleData) => {
-    setLoading(true);
+  // Step 2: vehicle confirmed — validate synchronously, then transition to the
+  // offers screen immediately and load offers asynchronously in the background.
+  const handleVehicleConfirm = (vehicle: VehicleData) => {
+    // --- Validate vehicle data before sending ---
+    const missing: string[] = [];
+    if (!vehicle.autoCategory) missing.push("autoCategory");
+    if (!vehicle.year || vehicle.year < 1900 || vehicle.year > new Date().getFullYear() + 1) missing.push(`year=${vehicle.year}`);
+    if (!vehicle.cityId) missing.push("cityId (registrationPlaceId)");
+    if (vehicle.zone === undefined || vehicle.zone === null || vehicle.zone < 0) missing.push(`zone=${vehicle.zone}`);
+    if (!state.periodId) missing.push("periodId");
+
+    console.log("[offers] vehicle validation:", missing.length === 0 ? "OK" : "FAILED →", missing, { vehicle, periodId: state.periodId });
+
+    if (missing.length > 0) {
+      // Keep the modal open so the user can correct the data.
+      setError(`Відсутні обов'язкові поля: ${missing.join(", ")}`);
+      return;
+    }
+
+    // Transition to the offers screen right away — no blocking spinner in the modal.
     setError(null);
+    setShowVehicleModal(false);
+    setState((s) => ({ ...s, step: "offers", vehicle, offers: [], offersLoading: true }));
 
+    // Fetch offers without blocking the UI transition.
+    void fetchOffers(vehicle);
+  };
+
+  // Loads offers for a confirmed vehicle and updates state when they arrive.
+  const fetchOffers = async (vehicle: VehicleData) => {
     try {
-      // --- Validate vehicle data before sending ---
-      const missing: string[] = [];
-      if (!vehicle.autoCategory) missing.push("autoCategory");
-      if (!vehicle.year || vehicle.year < 1900 || vehicle.year > new Date().getFullYear() + 1) missing.push(`year=${vehicle.year}`);
-      if (!vehicle.cityId) missing.push("cityId (registrationPlaceId)");
-      if (vehicle.zone === undefined || vehicle.zone === null || vehicle.zone < 0) missing.push(`zone=${vehicle.zone}`);
-      if (!state.periodId) missing.push("periodId");
-
-      console.log("[offers] vehicle validation:", missing.length === 0 ? "OK" : "FAILED →", missing, { vehicle, periodId: state.periodId });
-
-      if (missing.length > 0) {
-        throw new Error(`Відсутні обов'язкові поля: ${missing.join(", ")}`);
-      }
-
       // --- Build params ---
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -156,14 +169,11 @@ export function InsuranceFlow() {
         throw new Error("Не знайдено пропозицій для вашого авто. Спробуйте змінити параметри.");
       }
 
-      // Success — close modal and show offers
-      setShowVehicleModal(false);
-      setState((s) => ({ ...s, step: "offers", vehicle, offers }));
+      setState((s) => ({ ...s, offers, offersLoading: false }));
     } catch (e) {
       console.error("[offers] error →", e);
       setError(e instanceof Error ? e.message : "Помилка");
-    } finally {
-      setLoading(false);
+      setState((s) => ({ ...s, offersLoading: false }));
     }
   };
 
@@ -191,6 +201,7 @@ export function InsuranceFlow() {
       <>
         <OffersSection
           offers={state.offers}
+          loading={state.offersLoading}
           vehicle={state.vehicle}
           periodId={state.periodId}
           onPeriodChange={(id) => setState((s) => ({ ...s, periodId: id }))}

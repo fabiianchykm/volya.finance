@@ -146,40 +146,46 @@ export function OfferCard({
     >
 
       {/* ── MOBILE layout (< lg) ── */}
-      <div className="flex items-center gap-3 p-4 lg:hidden">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5">
-          <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
-        </div>
+      <div className="p-4 lg:hidden">
+        {/* Ряд 1: лого + назва + ціна */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5">
+            <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-zinc-900 truncate leading-snug">
+          <p className="flex-1 min-w-0 text-sm font-semibold text-zinc-900 leading-snug">
             {cleanCompanyName}
           </p>
-          {hasOptions && (
-            <div className="mt-2">
-              {optionsBlock}
-            </div>
-          )}
-        </div>
 
-        <div className="shrink-0 flex flex-col items-end gap-2 pl-2">
           <span
-            className="text-base font-bold text-zinc-900 tabular-nums"
+            className="shrink-0 text-lg font-bold text-zinc-900 tabular-nums"
             style={{ fontFamily: 'var(--font-roboto)' }}
           >
             {formatPrice(totalPrice)}
           </span>
+        </div>
+
+        {/* Опції */}
+        {hasOptions && (
+          <div className="mt-3 border-t border-zinc-100 pt-3">
+            {optionsBlock}
+          </div>
+        )}
+
+        {/* Ряд 2: кнопка купити + детальніше */}
+        <div className="mt-4 flex items-center gap-3">
           <Button
             variant="primary"
-            size="sm"
+            size="md"
             onClick={() => { onSelect(); onBuy(); }}
+            className="flex-1"
           >
             Купити
           </Button>
           {hasOptions && (
             <button
               onClick={() => setExpanded(v => !v)}
-              className="flex items-center gap-0.5 text-xs text-zinc-400 hover:text-indigo-600 transition-colors"
+              className="flex shrink-0 items-center gap-0.5 px-2 text-xs text-zinc-400 hover:text-indigo-600 transition-colors"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               Детальніше

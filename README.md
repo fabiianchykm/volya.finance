@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# volya.finance
 
-## Getting Started
+Веб-застосунок для оформлення автоцивілки (ОСЦПВ) в Україні. Інтеграція з Ukasko REST API: пошук авто за номером → пропозиції страховиків → оформлення → OTP → оплата → поліс на email.
 
-First, run the development server:
+**Стек:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, NextAuth (Auth.js v5, Google), Framer Motion.
+
+## Локальний запуск
 
 ```bash
+npm install
+cp .env.example .env.local   # і заповнити значення (див. нижче)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Відкрити http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Змінні середовища
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Усі змінні описані в `.env.example`. Коротко:
 
-## Learn More
+| Змінна | Призначення |
+|---|---|
+| `UKASKO_EMAIL`, `UKASKO_PASSWORD` | Креди партнерського кабінету Ukasko |
+| `UKASKO_ENV` | `dev` — тестовий контур, інакше — прод |
+| `NEXT_PUBLIC_APP_URL` | Публічний URL застосунку (зашивається у білд) |
+| `AUTH_URL` | Базовий URL для NextAuth callback-ів |
+| `AUTH_SECRET` | Секрет NextAuth — `openssl rand -base64 32` |
+| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | Google OAuth client |
 
-To learn more about Next.js, take a look at the following resources:
+> `NEXT_PUBLIC_*` зашивається під час білду — після зміни потрібен **новий деплой**, не лише рестарт.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Деплой (Vercel)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Запушити репозиторій на GitHub.
+2. На [vercel.com](https://vercel.com) → **Add New Project** → імпорт репо (Next.js визначиться автоматично).
+3. **Settings → Environment Variables** — додати всі змінні з таблиці вище
+   (для бойового — `Production`, для тестового — `Preview`).
+4. Деплой. Push у `main` → production, push у гілку → preview.
 
-## Deploy on Vercel
+**Google OAuth** — у [Cloud Console](https://console.cloud.google.com/apis/credentials) додати для кожного домену:
+- Authorized JavaScript origins: `https://<домен>`
+- Authorized redirect URIs: `https://<домен>/api/auth/callback/google`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+HTTPS обов'язковий: без нього NextAuth у проді не видасть secure-cookie і Google-логін не запрацює (Vercel дає HTTPS автоматично).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Скрипти
+
+```bash
+npm run dev     # розробка
+npm run build   # продакшн-білд
+npm run start   # запуск білда
+npm run lint    # eslint
+```
