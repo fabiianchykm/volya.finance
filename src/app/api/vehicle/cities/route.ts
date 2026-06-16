@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
+import { guardRequest } from "@/lib/api-guard";
 
 // Кешуємо міста в пам'яті процесу — один раз за сесію сервера
 let citiesCache: Awaited<ReturnType<typeof ukaskoService.getCities>> | null = null;
 
 export async function GET(req: NextRequest) {
   try {
+    // Автокомпліт — викликається на кожне натискання, тож ліміт вищий.
+    const blocked = guardRequest(req, { name: "cities", limit: 60, windowMs: 10 * 60 * 1000 });
+    if (blocked) return blocked;
+
     const q = req.nextUrl.searchParams.get("q")?.toLowerCase().trim() ?? "";
     if (q.length < 2) return NextResponse.json({ success: true, data: [] });
 

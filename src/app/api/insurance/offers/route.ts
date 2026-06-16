@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
+import { guardRequest } from "@/lib/api-guard";
 import type { CalculatorParams } from "@/types/api";
 
 export async function GET(req: NextRequest) {
   try {
+    const blocked = guardRequest(req, { name: "offers", limit: 30, windowMs: 10 * 60 * 1000 });
+    if (blocked) return blocked;
+
     const { searchParams } = new URL(req.url);
 
     const params: CalculatorParams = {

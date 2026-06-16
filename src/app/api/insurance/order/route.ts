@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
+import { guardRequest } from "@/lib/api-guard";
 
 export async function POST(req: NextRequest) {
   try {
+    // Створення/заявлення поліса запускає SMS/email — обмежуємо жорсткіше.
+    const blocked = guardRequest(req, { name: "order", limit: 15, windowMs: 10 * 60 * 1000 });
+    if (blocked) return blocked;
+
     const body = await req.json();
     const { action, ...orderData } = body;
 

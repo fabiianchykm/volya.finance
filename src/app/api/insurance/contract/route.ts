@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
+import { assertSameOrigin } from "@/lib/api-guard";
 
 export async function POST(req: NextRequest) {
   try {
+    const originBlocked = assertSameOrigin(req);
+    if (originBlocked) return originBlocked;
+
     const { action, orderId, contractId } = await req.json();
 
     if (action === "confirm") {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
 import { rateLimit, maybeCleanup } from "@/lib/rate-limit";
+import { assertSameOrigin } from "@/lib/api-guard";
 
 // Ліміти підібрані під реальний UX: на оформлення поліса вистачає
 // кількох SMS і кількох спроб введення коду.
@@ -18,6 +19,9 @@ function getClientIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const originBlocked = assertSameOrigin(req);
+    if (originBlocked) return originBlocked;
+
     maybeCleanup();
 
     const { action, orderId, otp } = await req.json();

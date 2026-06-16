@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
+import { assertSameOrigin } from "@/lib/api-guard";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export async function POST(req: NextRequest) {
   try {
+    const originBlocked = assertSameOrigin(req);
+    if (originBlocked) return originBlocked;
+
     const { action, orderId } = await req.json();
 
     if (action === "invoice") {
