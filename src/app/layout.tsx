@@ -3,6 +3,7 @@ import { Inter, Roboto, Open_Sans } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { SITE_URL } from "@/lib/seo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,15 +31,25 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  // metadataBase робить og:image/canonical абсолютними (інакше Next попереджає й посилання ламаються).
+  metadataBase: new URL(SITE_URL),
   title: "volya.finance — Страхування авто онлайн",
   description:
     "Оформіть ОСЦПВ (автоцивілку) онлайн за 3 хвилини. Порівняйте ціни від 18+ страхових компаній. Офіційні поліси МТСБУ.",
-  keywords: ["ОСЦПВ", "автоцивілка", "страхування авто", "онлайн страхування", "поліс"],
+  keywords: ["ОСЦПВ", "автоцивілка", "страхування авто", "онлайн страхування", "поліс", "КАСКО", "Зелена карта"],
+  alternates: { canonical: "/" },
   openGraph: {
     title: "volya.finance — Страхування авто онлайн",
     description: "Оформіть ОСЦПВ онлайн за 3 хвилини. Найкращі ціни від 18+ страховиків.",
     type: "website",
     locale: "uk_UA",
+    url: SITE_URL,
+    siteName: "volya.finance",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "volya.finance — Страхування авто онлайн",
+    description: "Оформіть ОСЦПВ онлайн за 3 хвилини. Найкращі ціни від 18+ страховиків.",
   },
 };
 

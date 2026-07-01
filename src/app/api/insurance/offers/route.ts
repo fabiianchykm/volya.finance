@@ -28,16 +28,18 @@ export async function GET(req: NextRequest) {
       "car[birthdayAt]": searchParams.get("carBirthdayAt") ?? "01.01.1990",
     };
 
-    console.log("[offers/route] params →", JSON.stringify(params));
-
     const data = await ukaskoService.getOffers(params);
-    console.log("[offers/route] response → status=%s count=%s errorInfo=%s",
-      data.status, data.count, JSON.stringify(data.errorInfo).slice(0, 200));
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[offers/route] error →", message);
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    const raw = error instanceof Error ? error.message : "Unknown error";
+    console.error("[offers/route] error →", raw);
+    // 502/503/504 від Ukasko/Cloudflare — тимчасове перевантаження. Віддаємо
+    // зрозуміле повідомлення замість сирого HTML/JSON помилки.
+    const transient = /\b50[234]\b|gateway time-?out|timeout/i.test(raw);
+    const message = transient
+      ? "Сервіс страхових тимчасово перевантажений. Спробуйте ще раз за хвилину."
+      : "Не вдалося завантажити пропозиції. Спробуйте ще раз.";
+    return NextResponse.json({ success: false, error: message }, { status: transient ? 503 : 500 });
   }
 }

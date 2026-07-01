@@ -1,22 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Gift, Users, ChevronRight, Pencil, Home } from "lucide-react";
+import { Gift, ChevronRight, Pencil, Home } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { Button } from "@/components/ui/Button";
+import { PRIVILEGES } from "@/lib/constants";
 import type { InsuranceOffer } from "@/types/api";
-import type { VehicleData } from "@/types/insurance";
-import { formatPrice } from "@/lib/utils";
-import { PERIODS } from "@/lib/constants";
+import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
 
 interface OffersSectionProps {
   offers: InsuranceOffer[];
   loading?: boolean;
   vehicle: VehicleData;
-  periodId: number;
-  onPeriodChange: (id: number) => void;
+  buyer: BuyerData;
   onBack: () => void;
+  onEdit: () => void;
+  onEditBuyer: () => void;
   onSelectOffer: (offer: InsuranceOffer, dgoId: string | null, autolawyerId: string | null) => void;
 }
 
@@ -26,11 +25,15 @@ export function OffersSection({
   offers,
   loading = false,
   vehicle,
-  periodId,
-  onPeriodChange,
+  buyer,
   onBack,
+  onEdit,
+  onEditBuyer,
   onSelectOffer,
 }: OffersSectionProps) {
+  // Чи заповнив користувач дані страхувальника (відрізняються від дефолтних)?
+  const buyerSet = buyer.privilegeId !== DEFAULT_BUYER.privilegeId || buyer.birthDate !== DEFAULT_BUYER.birthDate;
+  const privilegeLabel = PRIVILEGES.find((p) => p.id === buyer.privilegeId)?.label ?? "Без пільг";
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
@@ -44,8 +47,6 @@ export function OffersSection({
              ((a.listDgo?.length ?? 0) + (a.listAutolawyer?.length ?? 0));
     return 0;
   });
-
-  const activePeriods = [1, 3, 6, 12] as const;
 
   return (
     <section className="min-h-screen pt-20 pb-8">
@@ -69,7 +70,8 @@ export function OffersSection({
             {vehicle.year && `, ${vehicle.year}`}
             {vehicle.cityName && `, ${vehicle.cityName.replace(/,?\s*Україна$/i, '')}`}
             <button
-              onClick={onBack}
+              onClick={onEdit}
+              aria-label="Змінити дані авто"
               className="text-zinc-300 hover:text-indigo-500 transition-colors"
             >
               <Pencil className="h-4 w-4" />
@@ -77,8 +79,13 @@ export function OffersSection({
           </p>
         </div>
 
-        {/* Банер індивідуальної пропозиції */}
-        <div className="mb-5 relative overflow-hidden rounded-2xl px-6 py-5 cursor-pointer group"
+        {/* Банер даних страхувальника (впливають на ціну) */}
+        <div
+          onClick={onEditBuyer}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onEditBuyer(); }}
+          className="mb-5 relative overflow-hidden rounded-2xl px-6 py-5 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
           style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)' }}
         >
           {/* Glow ефект */}
@@ -86,14 +93,25 @@ export function OffersSection({
           <div className="absolute -bottom-6 -left-4 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
 
           <div className="relative flex items-center justify-between gap-4">
-            <div>
-              <p className="text-white font-bold text-base mb-0.5">Знайдіть найвигіднішу пропозицію</p>
-              <p className="text-indigo-200 text-sm leading-snug">
-                Заповніть форму та миттєво отримайте знижку.
-              </p>
-            </div>
+            {buyerSet ? (
+              <div>
+                <p className="text-white font-bold text-base mb-0.5">Дані страхувальника</p>
+                <p className="text-indigo-100 text-sm leading-snug">
+                  {privilegeLabel} · нар. {buyer.birthDate}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-white font-bold text-base mb-0.5">Знайдіть найвигіднішу пропозицію</p>
+                <p className="text-indigo-200 text-sm leading-snug">
+                  Вкажіть пільгу й дату народження — ціна може зменшитись.
+                </p>
+              </div>
+            )}
             <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 group-hover:bg-white/30 transition-colors">
-              <ChevronRight className="h-5 w-5 text-white" />
+              {buyerSet
+                ? <Pencil className="h-4 w-4 text-white" />
+                : <ChevronRight className="h-5 w-5 text-white" />}
             </div>
           </div>
         </div>
@@ -193,10 +211,10 @@ export function OffersSection({
             {/* Кроки */}
             <div className="p-5 flex flex-col gap-4">
               {[
-                { icon: Users, text: "Запроси друга за своїм посиланням" },
-                { icon: Gift, text: "Друг оформлює поліс на Volya" },
-                { icon: Gift, text: "Ти отримуєш бонус на рахунок" },
-              ].map(({ icon: Icon, text }, i) => (
+                { text: "Запроси друга за своїм посиланням" },
+                { text: "Друг оформлює поліс на Volya" },
+                { text: "Ти отримуєш бонус на рахунок" },
+              ].map(({ text }, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold">
                     {i + 1}

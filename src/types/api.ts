@@ -130,7 +130,7 @@ export interface InsuranceOffer {
   company: InsuranceCompany;
   programmName: string;
   allowed_documents: Record<string, unknown>;
-  listAutolawyer: AutolawyerOffer[];
+  listAutolawyer: AutolawyerOffer[] | null;
   earnings: number;
   earningsParent: number | null;
   hasCompanyBranch: boolean;

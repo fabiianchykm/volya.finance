@@ -16,6 +16,34 @@ const AUTH_URL = isDev
   ? "https://devconnect.ukasko.ua/api"
   : "https://connect.ukasko.ua/api";
 
+// Помилка HTTP зі збереженим статусом — щоб логіка вище могла відрізнити
+// протухлий токен (401) від інших збоїв і перевипустити його.
+class HttpError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
+// 502/503/504 від Ukasko/Cloudflare — зазвичай тимчасові (origin перевантажений
+// або довго рахує). Кілька повторів зі зростаючою паузою помітно підвищують
+// успішність важких запитів (калькулятор, пошук авто). ВИКОРИСТОВУВАТИ ЛИШЕ для
+// ідемпотентних GET — мутуючі (draft/declare/confirm) ретраїти не можна (дублі).
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 700): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      const transient = e instanceof HttpError && (e.status === 502 || e.status === 503 || e.status === 504);
+      if (!transient || i === attempts - 1) throw e;
+      await new Promise((r) => setTimeout(r, baseDelayMs * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
 // ─── POST helper (manually follows redirects so POST is never converted to GET) ───
 
 async function postForm(
@@ -50,7 +78,7 @@ async function postForm(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(`[POST ${target}] ${res.status}: ${text.slice(0, 400)}`);
+      throw new HttpError(res.status, `[POST ${target}] ${res.status}: ${text.slice(0, 400)}`);
     }
 
     return res.json();
@@ -89,7 +117,7 @@ async function postJson(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(`[POST ${target}] ${res.status}: ${text.slice(0, 400)}`);
+      throw new HttpError(res.status, `[POST ${target}] ${res.status}: ${text.slice(0, 400)}`);
     }
 
     return res.json();
@@ -114,7 +142,7 @@ async function getJson(url: string, token: string): Promise<unknown> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`[GET ${url}] ${res.status}: ${text.slice(0, 400)}`);
+    throw new HttpError(res.status, `[GET ${url}] ${res.status}: ${text.slice(0, 400)}`);
   }
 
   return res.json();
@@ -154,8 +182,25 @@ export class UkaskoService {
     this.token = null;
   }
 
-  async getCarByPlate(plate: string): Promise<CarInfo> {
+  /**
+   * Виконує авторизований запит. Якщо токен протух (401), перевипускає його
+   * і повторює запит один раз. Інакше кешований токен жив би до рестарту процесу.
+   */
+  private async withAuth<T>(fn: (token: string) => Promise<T>): Promise<T> {
     const token = await this.getToken();
+    try {
+      return await fn(token);
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
+        this.invalidateToken();
+        const fresh = await this.authenticate();
+        return await fn(fresh);
+      }
+      throw e;
+    }
+  }
+
+  async getCarByPlate(plate: string): Promise<CarInfo> {
     const cyrillicToLatin: Record<string, string> = {
       'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H', 'І': 'I',
       'К': 'K', 'М': 'M', 'О': 'O', 'Р': 'P', 'Т': 'T', 'Х': 'X'
@@ -166,11 +211,11 @@ export class UkaskoService {
       .split("")
       .map(char => cyrillicToLatin[char] || char)
       .join("");
-    const data = await getJson(
+    const data = await withRetry(() => this.withAuth((token) => getJson(
       `${BASE_URL}/directories/car/${encodeURIComponent(normalized)}`,
       token
-    ) as { data: CarInfo[] | CarInfo };
-    
+    ))) as { data: CarInfo[] | CarInfo };
+
     const carData = Array.isArray(data.data) ? data.data[0] : data.data;
     if (!carData) {
       throw new Error(`Авто з номером ${normalized} не знайдено`);
@@ -191,18 +236,18 @@ export class UkaskoService {
       throw new Error(`[GET cities] ${res.status}: ${text.slice(0, 200)}`);
     }
     const raw = await res.json() as Record<string, unknown>;
-    console.log("[ukasko] getCities count:", Array.isArray(raw.data) ? (raw.data as unknown[]).length : "not array");
     return Array.isArray(raw.data) ? raw.data as City[] : [];
   }
 
   async getOffers(params: CalculatorParams): Promise<OffersResponse> {
-    const token = await this.getToken();
     // Don't encode keys — PHP APIs expect literal car[year]=... not car%5Byear%5D=...
     const qs = Object.entries(params)
       .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
       .join("&");
-    const raw = await getJson(`${BASE_URL}/insurance/calculator/osago?${qs}`, token) as Record<string, unknown>;
-    console.log("[ukasko] getOffers raw keys:", Object.keys(raw), "data type:", Array.isArray(raw.data) ? "array" : typeof raw.data);
+    // Калькулятор важкий — Ukasko інколи віддає 504. Ретраїмо тимчасові 5xx.
+    const raw = await withRetry(() =>
+      this.withAuth((token) => getJson(`${BASE_URL}/insurance/calculator/osago?${qs}`, token))
+    ) as Record<string, unknown>;
 
     // Ukasko wraps responses in { data: ... } consistently (same as getCarByPlate, getCities).
     // Detect: if raw.data is a non-array object → wrapped; if raw.data is an array → direct OffersResponse.
@@ -214,29 +259,23 @@ export class UkaskoService {
   }
 
   async createDraft(orderData: Record<string, unknown>): Promise<{ id: string; status: string }> {
-    const token = await this.getToken();
-    const data = await postJson(
+    const data = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/order/osago`,
       { ...orderData, statusId: 1 },
       token
-    ) as { data: [{ id: string; status: string }] };
+    )) as { data: [{ id: string; status: string }] };
     return data.data[0];
   }
 
   async declarePolicy(
     orderData: Record<string, unknown>
   ): Promise<{ id: string; status: string; mtsbuLink?: string }> {
-    const token = await this.getToken();
     const payload = { ...orderData, statusId: 2 } as Record<string, unknown>;
-    console.log("[ukasko] declarePolicy orderId:", payload.orderId);
-    console.log("[ukasko] declarePolicy startDate:", payload.startDate, "→", new Date((payload.startDate as number) * 1000).toISOString());
-    console.log("[ukasko] declarePolicy finishAt:", payload.finishAt, "→", new Date((payload.finishAt as number) * 1000).toISOString());
-    const raw = await postJson(
+    const raw = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/order/osago`,
       payload,
       token
-    ) as Record<string, unknown>;
-    console.log("[ukasko] declarePolicy raw response:", JSON.stringify(raw).slice(0, 500));
+    )) as Record<string, unknown>;
 
     // Якщо API повернув помилку валідації всередині status:"success"
     const msg = raw.message as string | undefined;
@@ -260,24 +299,20 @@ export class UkaskoService {
   }
 
   async sendOtp(orderId: string, type: 1 | 2 = 1): Promise<void> {
-    const token = await this.getToken();
-    await postForm(`${AUTH_URL}/orders/send-otp/${orderId}`, { type: String(type) }, token);
+    await this.withAuth((token) => postForm(`${AUTH_URL}/orders/send-otp/${orderId}`, { type: String(type) }, token));
   }
 
   async checkOtp(orderId: string, otp: string): Promise<boolean> {
-    const token = await this.getToken();
-    const data = await postForm(
+    const data = await this.withAuth((token) => postForm(
       `${AUTH_URL}/orders/check-otp/${orderId}`,
       { otp },
       token
-    ) as Record<string, unknown>;
-    console.log("[ukasko] checkOtp response:", JSON.stringify(data));
+    )) as Record<string, unknown>;
     const d = data.data as string | undefined;
     return d === "OK";
   }
 
   async getInvoice(orderId: string, resultUrl: string) {
-    const token = await this.getToken();
     const attempts = [
       { method: "GET" as const, url: `${AUTH_URL}/orders/${orderId}/get-invoice?result_url=${encodeURIComponent(resultUrl)}` },
       { method: "GET" as const, url: `${BASE_URL}/orders/${orderId}/get-invoice?result_url=${encodeURIComponent(resultUrl)}` },
@@ -285,29 +320,29 @@ export class UkaskoService {
       { method: "POST" as const, url: `${BASE_URL}/orders/${orderId}/get-invoice` },
     ];
 
-    for (const { method, url } of attempts) {
-      try {
-        const raw = method === "GET"
-          ? await getJson(url, token) as Record<string, unknown>
-          : await postForm(url, { result_url: resultUrl }, token) as Record<string, unknown>;
+    return this.withAuth(async (token) => {
+      for (const { method, url } of attempts) {
+        try {
+          const raw = method === "GET"
+            ? await getJson(url, token) as Record<string, unknown>
+            : await postForm(url, { result_url: resultUrl }, token) as Record<string, unknown>;
 
-        const d = (raw.data ?? raw) as Record<string, unknown>;
-        console.log(`[ukasko] getInvoice [${method} ${url.includes("/test") ? "BASE" : "AUTH"}]:`, Object.keys(d).join(", "));
-
-        if (d.invoiceLink) {
-          console.log("[ukasko] getInvoice ✓ invoiceLink found!");
-          return d as unknown as { invoiceLink: string; qrCode: string };
+          const d = (raw.data ?? raw) as Record<string, unknown>;
+          if (d.invoiceLink) {
+            return d as unknown as { invoiceLink: string; qrCode: string };
+          }
+        } catch (e) {
+          // Протухлий токен пробрасуємо нагору — withAuth перевипустить і повторить.
+          if (e instanceof HttpError && e.status === 401) throw e;
+          // Інші збої цієї спроби — пробуємо наступний ендпоінт.
         }
-      } catch (e) {
-        console.log(`[ukasko] getInvoice [${method}] error:`, e instanceof Error ? e.message.slice(0, 100) : e);
       }
-    }
-    throw new Error("Не вдалось отримати посилання на оплату. Зверніться до підтримки.");
+      throw new Error("Не вдалось отримати посилання на оплату. Зверніться до підтримки.");
+    });
   }
 
   async getOrderInfo(orderId: string) {
-    const token = await this.getToken();
-    const raw = await getJson(`${AUTH_URL}/orders/${orderId}/get-invoice`, token) as Record<string, unknown>;
+    const raw = await this.withAuth((token) => getJson(`${AUTH_URL}/orders/${orderId}/get-invoice`, token)) as Record<string, unknown>;
     const d = (raw.data ?? raw) as Record<string, unknown>;
     return {
       mtsbuLink: d.mtsbuLink as string | null ?? d.mtsbuCodeLink as string | null ?? null,
@@ -315,31 +350,28 @@ export class UkaskoService {
   }
 
   async checkInvoice(orderId: string) {
-    const token = await this.getToken();
-    const data = await getJson(
+    const data = await this.withAuth((token) => getJson(
       `${AUTH_URL}/payments/${orderId}/check-invoice`,
       token
-    ) as { data: { status_id: number; payed_at: string | null } };
+    )) as { data: { status_id: number; payed_at: string | null } };
     return data.data;
   }
 
   async confirmPolicy(orderId: string) {
-    const token = await this.getToken();
-    const data = await postJson(
+    const data = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/contract/confirm`,
       { orderId },
       token
-    ) as { data: [{ contractId: string; status: string }] };
+    )) as { data: [{ contractId: string; status: string }] };
     return data.data[0];
   }
 
   async downloadContract(contractId: string) {
-    const token = await this.getToken();
-    const data = await postForm(
+    const data = await this.withAuth((token) => postForm(
       `${BASE_URL}/insurance/contract/take`,
       { contractId, orderType: "1" },
       token
-    ) as { data: { mtsbuLink: string; contract: string } };
+    )) as { data: { mtsbuLink: string; contract: string } };
     return data.data;
   }
 }

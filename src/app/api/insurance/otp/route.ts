@@ -5,8 +5,13 @@ import { assertSameOrigin } from "@/lib/api-guard";
 
 // Ліміти підібрані під реальний UX: на оформлення поліса вистачає
 // кількох SMS і кількох спроб введення коду.
-const SEND_LIMIT = 3;          // не більше 3 SMS
+const SEND_LIMIT = 3;          // не більше 3 SMS з одного IP
 const SEND_WINDOW_MS = 10 * 60 * 1000;   // за 10 хвилин
+
+// Ліміт на саме замовлення, незалежно від IP — щоб ротація IP не дозволяла
+// бомбити SMS на один телефон. Трохи вищий за per-IP (легітимні повтори/мережа).
+const SEND_ORDER_LIMIT = 5;
+const SEND_ORDER_WINDOW_MS = 30 * 60 * 1000;
 
 const CHECK_LIMIT = 5;         // не більше 5 спроб коду
 const CHECK_WINDOW_MS = 10 * 60 * 1000;  // за 10 хвилин
@@ -33,11 +38,14 @@ export async function POST(req: NextRequest) {
     const ip = getClientIp(req);
 
     if (action === "send") {
+      // Перший бар'єр — на замовлення (незалежно від IP), другий — на IP.
+      const rlOrder = rateLimit(`otp-send-order:${orderId}`, SEND_ORDER_LIMIT, SEND_ORDER_WINDOW_MS);
       const rl = rateLimit(`otp-send:${ip}:${orderId}`, SEND_LIMIT, SEND_WINDOW_MS);
-      if (!rl.allowed) {
+      if (!rlOrder.allowed || !rl.allowed) {
+        const retryAfter = Math.max(rlOrder.retryAfter, rl.retryAfter);
         return NextResponse.json(
           { success: false, error: "Забагато запитів на SMS. Спробуйте пізніше." },
-          { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+          { status: 429, headers: { "Retry-After": String(retryAfter) } }
         );
       }
       await ukaskoService.sendOtp(orderId, 1);

@@ -33,7 +33,14 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
     next[i] = digit;
     setDigits(next);
     if (digit && i < 5) refs.current[i + 1]?.focus();
-    if (next.every((d) => d !== "")) {
+    // Авто-підтвердження лише в момент заповнення останньої порожньої комірки,
+    // а не на кожне натискання при вже повному коді — інакше кожна правка
+    // миттєво ре-сабмітить і з'їдає ліміт спроб (5/10хв).
+    const justCompleted =
+      next.every((d) => d !== "") &&
+      digits.filter((d) => d === "").length === 1 &&
+      digits[i] === "";
+    if (justCompleted && !loading) {
       onConfirm(next.join(""));
     }
   };
@@ -49,7 +56,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
     if (text.length === 6) {
       const next = text.split("");
       setDigits(next);
-      onConfirm(text);
+      if (!loading) onConfirm(text);
     }
   };
 
@@ -95,7 +102,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           size="md"
           loading={loading}
           onClick={() => onConfirm(digits.join(""))}
-          disabled={digits.some((d) => !d)}
+          disabled={digits.some((d) => !d) || loading}
           className="w-full"
         >
           Підтвердити

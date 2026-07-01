@@ -4,16 +4,19 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Menu, X, LogOut } from "lucide-react";
+import { Shield, Menu, X, LogOut, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSession, signIn, signOut } from "next-auth/react";
 
 const navLinks = [
-  { label: "Автоцивілка", href: "#insurance" },
+  { label: "Автоцивілка", href: "/osago" },
+  { label: "КАСКО", href: "/kasko" },
+  { label: "Міні-КАСКО", href: "/mini-kasko" },
+  { label: "Зелена карта", href: "/green-card" },
 ];
 
-export function Navbar() {
+export function Navbar({ solid = false }: { solid?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { data: session, status } = useSession();
@@ -26,12 +29,15 @@ export function Navbar() {
   }, []);
 
   const isLoading = status === "loading";
+  // «Непрозорий» (світлий) стиль навбара: при скролі АБО коли під ним світлий фон
+  // (напр. екран пропозицій), щоб лого/меню не зливались із фоном.
+  const opaque = scrolled || solid;
 
   return (
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-40 transition-all duration-500",
-        scrolled
+        opaque
           ? "bg-white/95 backdrop-blur-md border-b border-zinc-100 shadow-sm"
           : "bg-white/5 backdrop-blur-md border-b border-white/10"
       )}
@@ -40,15 +46,15 @@ export function Navbar() {
         <Link href="/" className="flex items-center gap-2.5">
           <div className={cn(
             "flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-300",
-            scrolled ? "bg-indigo-600" : "bg-white/20"
+            opaque ? "bg-indigo-600" : "bg-white/20"
           )}>
             <Shield className="h-4 w-4 text-white" />
           </div>
           <span className={cn(
             "text-base font-bold transition-colors duration-300",
-            scrolled ? "text-zinc-900" : "text-white"
+            opaque ? "text-zinc-900" : "text-white"
           )}>
-            volya<span className={scrolled ? "text-indigo-600" : "text-indigo-300"}>.finance</span>
+            volya<span className={opaque ? "text-indigo-600" : "text-indigo-300"}>.finance</span>
           </span>
         </Link>
 
@@ -59,7 +65,7 @@ export function Navbar() {
                 href={link.href}
                 className={cn(
                   "rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
-                  scrolled
+                  opaque
                     ? "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
@@ -74,14 +80,14 @@ export function Navbar() {
           {isLoading ? (
             <div className="h-9 w-24 animate-pulse rounded-xl bg-white/20" />
           ) : session?.user ? (
-            <UserMenu scrolled={scrolled} user={session.user} />
+            <UserMenu scrolled={opaque} user={session.user} />
           ) : (
             <Button
               size="md"
               variant="primary"
               className={cn(
                 "flex items-center gap-2",
-                !scrolled ? "bg-white text-indigo-700 hover:bg-white/90 shadow-none" : ""
+                !opaque ? "bg-white text-indigo-700 hover:bg-white/90 shadow-none" : ""
               )}
               onClick={() => signIn("google")}
             >
@@ -140,6 +146,14 @@ export function Navbar() {
                       )}
                       <span className="text-sm font-medium text-zinc-800">{session.user.name}</span>
                     </div>
+                    <Link
+                      href="/policies"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                    >
+                      <FileText className="h-4 w-4 text-zinc-400" />
+                      Мої поліси
+                    </Link>
                     <Button
                       size="md"
                       variant="outline"
@@ -224,6 +238,14 @@ function UserMenu({
                 <p className="text-sm font-medium text-zinc-900">{user.name}</p>
                 <p className="text-xs text-zinc-500 truncate">{user.email}</p>
               </div>
+              <Link
+                href="/policies"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-zinc-400" />
+                Мої поліси
+              </Link>
               <button
                 onClick={() => { setOpen(false); signOut(); }}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"

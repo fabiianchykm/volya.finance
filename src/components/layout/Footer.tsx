@@ -1,16 +1,18 @@
 import Link from "next/link";
-import { Shield, Phone, Mail } from "lucide-react";
+import { Shield, ShieldCheck, Phone, Mail, Send, MessageCircle } from "lucide-react";
 
 const footerLinks = {
-  services: [
-    { label: "ОСЦПВ (Автоцивілка)", href: "#" },
-    { label: "Зелена карта", href: "#" },
-    { label: "Каско", href: "#" },
+  products: [
+    { label: "Автоцивілка", href: "/osago" },
+    { label: "КАСКО", href: "/kasko" },
+    { label: "Міні-КАСКО", href: "/mini-kasko" },
+    { label: "Зелена карта", href: "/green-card" },
   ],
   company: [
+    { label: "Мої поліси", href: "/policies" },
+    { label: "Поширені запитання", href: "/osago#faq" },
+    { label: "Підтримка", href: "mailto:volya.finance.team@gmail.com" },
     { label: "Про нас", href: "#" },
-    { label: "Поширені запитання", href: "#faq" },
-    { label: "Підтримка", href: "#" },
   ],
   legal: [
     { label: "Публічна оферта", href: "#" },
@@ -18,18 +20,25 @@ const footerLinks = {
   ],
 };
 
+const socials = [
+  { label: "Telegram", href: "#", icon: Send },
+  { label: "Viber", href: "#", icon: MessageCircle },
+  { label: "Instagram", href: "#", icon: InstagramIcon },
+  { label: "Facebook", href: "#", icon: FacebookIcon },
+];
+
 function LinkColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
     <div>
-      <h3 className="mb-5 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+      <h3 className="mb-5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
         {title}
       </h3>
-      <ul className="space-y-3.5">
+      <ul className="space-y-3">
         {links.map((link) => (
           <li key={link.label}>
             <Link
               href={link.href}
-              className="text-[15px] text-zinc-300 transition-colors hover:text-white"
+              className="text-[15px] text-zinc-400 transition-colors hover:text-white"
             >
               {link.label}
             </Link>
@@ -43,67 +52,107 @@ function LinkColumn({ title, links }: { title: string; links: { label: string; h
 export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-zinc-950 text-zinc-300">
-      {/* Світний акцент угорі */}
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[40rem] -translate-x-1/2 rounded-full bg-indigo-600/20 blur-3xl" />
+      {/* Тонка градієнтна лінія + світний акцент угорі */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[44rem] -translate-x-1/2 rounded-full bg-indigo-600/20 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-6 sm:px-10">
-        <div className="grid grid-cols-2 gap-10 py-16 md:grid-cols-12 md:gap-8 lg:py-20">
-          {/* Бренд + контакти */}
-          <div className="col-span-2 md:col-span-5 lg:col-span-4">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600">
+        <div className="grid gap-12 py-16 lg:grid-cols-12 lg:py-20">
+          {/* Бренд + контакти + соцмережі */}
+          <div className="lg:col-span-5">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-600/30">
                 <Shield className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-lg font-bold text-white">
+              </span>
+              <span className="text-xl font-bold tracking-tight text-white">
                 volya<span className="text-indigo-400">.finance</span>
               </span>
             </Link>
 
-            <div className="mt-7 space-y-3.5">
+            <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-zinc-400">
+              Автострахування онлайн — швидко, офіційно та вигідно. Порівнюйте
+              пропозиції провідних страхових і оформлюйте поліси за кілька хвилин.
+            </p>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:gap-4">
               <a
-                href="tel:+380800000000"
-                className="flex items-center gap-3 text-[15px] text-zinc-300 transition-colors hover:text-white"
+                href="tel:+380976898653"
+                className="group inline-flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10">
-                  <Phone className="h-4 w-4 text-indigo-400" />
-                </span>
-                0 800 000 000
+                <Phone className="h-4 w-4 text-indigo-400" />
+                <span className="text-[15px] font-medium text-zinc-200">+38 097 689 86 53</span>
               </a>
               <a
-                href="mailto:info@volya.finance"
-                className="flex items-center gap-3 text-[15px] text-zinc-300 transition-colors hover:text-white"
+                href="mailto:volya.finance.team@gmail.com"
+                className="group inline-flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10">
-                  <Mail className="h-4 w-4 text-indigo-400" />
-                </span>
-                info@volya.finance
+                <Mail className="h-4 w-4 text-indigo-400" />
+                <span className="text-[15px] font-medium text-zinc-200">volya.finance.team@gmail.com</span>
               </a>
+            </div>
+
+            <div className="mt-7 flex items-center gap-2.5">
+              {socials.map(({ label, href, icon: Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-300 ring-1 ring-white/10 transition-all hover:bg-indigo-600 hover:text-white hover:ring-indigo-500"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
             </div>
           </div>
 
           {/* Колонки посилань */}
-          <div className="md:col-span-3 lg:col-span-3 lg:col-start-6">
-            <LinkColumn title="Послуги" links={footerLinks.services} />
-          </div>
-          <div className="md:col-span-2 lg:col-span-2">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7 lg:gap-8">
+            <LinkColumn title="Продукти" links={footerLinks.products} />
             <LinkColumn title="Компанія" links={footerLinks.company} />
-          </div>
-          <div className="md:col-span-2 lg:col-span-3">
             <LinkColumn title="Документи" links={footerLinks.legal} />
           </div>
         </div>
 
+        {/* Рядок довіри */}
+        <div className="flex flex-col items-start gap-3 border-t border-white/10 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.04] px-4 py-2 ring-1 ring-white/10">
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <span className="text-sm text-zinc-300">
+              Офіційні поліси, зареєстровані в базі{" "}
+              <span className="font-semibold text-white">МТСБУ</span>
+            </span>
+          </div>
+          <span className="text-sm text-zinc-500">
+            Партнер провідних страхових компаній України
+          </span>
+        </div>
+
         {/* Нижня смуга */}
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 py-7 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 py-7 sm:flex-row">
           <p className="text-sm text-zinc-500">
-            © {new Date().getFullYear()} volya.finance. Всі права захищені.
+            © {new Date().getFullYear()} volya.finance. Усі права захищені.
           </p>
-          <p className="text-sm text-zinc-500">
-            Офіційні поліси, зареєстровані в базі{" "}
-            <span className="font-medium text-zinc-300">МТСБУ</span>
-          </p>
+          <p className="text-sm text-zinc-500">Зроблено в Україні 🇺🇦</p>
         </div>
       </div>
     </footer>
+  );
+}
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
   );
 }

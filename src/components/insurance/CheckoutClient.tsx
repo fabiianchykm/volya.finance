@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { OtpModal } from "./OtpModal";
@@ -8,8 +8,7 @@ import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import type { InsuranceOffer, Customer } from "@/types/api";
-import type { VehicleData } from "@/types/insurance";
-import type { VehicleDetails } from "./VehicleDetailsModal";
+import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 
 export function CheckoutClient() {
   const router = useRouter();
@@ -18,6 +17,7 @@ export function CheckoutClient() {
   const [vehicle, setVehicle] = useState<VehicleData | null>(null);
   const [offer, setOffer] = useState<InsuranceOffer | null>(null);
   const [periodId, setPeriodId] = useState<number>(12);
+  const [buyer, setBuyer] = useState<BuyerData>(DEFAULT_BUYER);
   const [selectedDgoId, setSelectedDgoId] = useState<string | null>(null);
   const [selectedAutolawyerId, setSelectedAutolawyerId] = useState<string | null>(null);
   
@@ -33,31 +33,43 @@ export function CheckoutClient() {
   // Network state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [priceNotice, setPriceNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     try {
       const data = sessionStorage.getItem("checkout_data");
       if (!data) {
-        if (isMounted) router.push("/");
+        if (isMounted) router.push("/osago");
         return;
       }
       
       const parsed = JSON.parse(data);
       if (isMounted) {
+        // sessionStorage доступний лише на клієнті, тож читаємо його раз на маунті
+        // в ефекті: під час SSR-рендеру window недоступний і lazy-init стану не
+        // спрацював би (React не перезапускає ініціалізатор при гідрації).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVehicle(parsed.vehicle);
         setOffer(parsed.offer);
         setPeriodId(parsed.periodId || 12);
+        setBuyer(parsed.buyer ?? DEFAULT_BUYER);
         setSelectedDgoId(parsed.selectedDgoId || null);
         setSelectedAutolawyerId(parsed.selectedAutolawyerId || null);
         setLoaded(true);
       }
     } catch (e) {
       console.error("Failed to load checkout data", e);
-      if (isMounted) router.push("/");
+      if (isMounted) router.push("/osago");
     }
     return () => { isMounted = false; };
   }, [router]);
+
+  // Повідомлення (помилка/зміна ціни) рендеряться нагорі — підкручуємо до них,
+  // бо кнопка «Продовжити» внизу довгої форми й інакше результат лишається поза екраном.
+  useEffect(() => {
+    if (error || priceNotice) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [error, priceNotice]);
 
   if (!loaded || !vehicle || !offer) {
     return <div className="p-8 text-center text-zinc-500">Завантаження...</div>;
@@ -70,25 +82,79 @@ export function CheckoutClient() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Перераховуємо ціну обраного оффера перед оформленням — вона могла змінитись,
+  // поки користувач заповнював форму. Повертає актуальний оффер або null, якщо зник.
+  const revalidateOffer = async (): Promise<InsuranceOffer | null> => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const startDate = `${String(tomorrow.getDate()).padStart(2, "0")}.${String(tomorrow.getMonth() + 1).padStart(2, "0")}.${tomorrow.getFullYear()}`;
+
+    const paramsObj = {
+      autoCategoryType: vehicle.autoCategory,
+      customerType: String(buyer.customerType),
+      registrationPlaceId: String(vehicle.cityId),
+      zone: String(vehicle.zone),
+      startDate,
+      customerPrivilege: String(buyer.privilegeId),
+      registrationType: "1",
+      period_id: String(periodId),
+      carYear: String(vehicle.year),
+      carBirthdayAt: buyer.birthDate,
+    };
+
+    // offerId Ukasko генерує заново на КОЖЕН запит (ULID), тож матчимо за стабільним
+    // ключем: компанія + тариф. Крім того, Ukasko інтермітентно повертає різний набір
+    // оферів — тому пробуємо кілька разів, поки обраний страховик не зʼявиться.
+    const matches = (o: InsuranceOffer) =>
+      o.companyId === offer.companyId && String(o.externalIdTariff) === String(offer.externalIdTariff);
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await fetch(`/api/insurance/offers?${new URLSearchParams(paramsObj)}`);
+      const json = await res.json();
+      if (!json.success) continue; // тимчасовий збій — пробуємо ще раз
+      const list: InsuranceOffer[] = Array.isArray(json.data?.data) ? json.data.data : [];
+      const found = list.find(matches);
+      if (found) return found;
+    }
+    return null;
+  };
+
   const handleVehicleSubmit = async (details: VehicleDetails) => {
     if (!customer) return;
     setLoading(true);
     setError(null);
+    setPriceNotice(null);
+    // Один ключ ідемпотентності на спробу оформлення — захищає draft/declare від
+    // дублів при подвійному кліку чи ретраї мережі.
+    const idemKey = crypto.randomUUID();
     try {
+      // Best-effort звірка ціни/свіжого offerId. Якщо Ukasko не повернув обраний оффер
+      // (буває через інтермітентну видачу) — НЕ блокуємо покупку, оформлюємо з обраним;
+      // фінальну валідацію зробить draft/declare на боці Ukasko.
+      const fresh = await revalidateOffer();
+      if (fresh && fresh.price !== offer.price) {
+        setOffer(fresh);
+        setPriceNotice(
+          `Ціна оновилася: ${offer.price} → ${fresh.price} грн. Перевірте суму й натисніть «Продовжити» ще раз.`
+        );
+        return;
+      }
+
       const payload = buildOrderPayload(
-        vehicle, 
-        offer, 
-        periodId, 
-        selectedDgoId, 
-        selectedAutolawyerId, 
-        customer, 
-        details
+        vehicle,
+        fresh ?? offer,
+        periodId,
+        selectedDgoId,
+        selectedAutolawyerId,
+        customer,
+        details,
+        buyer.privilegeId
       );
 
       // 5a. Створити чернетку
       const draftRes = await fetch("/api/insurance/order", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "idempotency-key": idemKey },
         body: JSON.stringify({ action: "draft", ...payload }),
       });
       const draftJson = await draftRes.json();
@@ -98,7 +164,7 @@ export function CheckoutClient() {
       // 5b. Заявити поліс
       const declareRes = await fetch("/api/insurance/order", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "idempotency-key": idemKey },
         body: JSON.stringify({ action: "declare", ...payload, orderId: id }),
       });
       const declareJson = await declareRes.json();
@@ -147,6 +213,27 @@ export function CheckoutClient() {
   const handlePaid = (cId: string) => {
     setContractId(cId);
     setStep("success");
+
+    // Привʼязуємо поліс до email клієнта, щоб він зʼявився в кабінеті після входу
+    // через Google (за збігом email). Fire-and-forget — не блокуємо екран успіху.
+    if (customer?.email && vehicle && offer) {
+      void fetch("/api/policies", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: cId || orderId,
+          email: customer.email,
+          contractId: cId,
+          orderId,
+          company: offer.companyNamePublic || offer.companyName,
+          vehicle: { mark: vehicle.mark, model: vehicle.model, year: vehicle.year, plate: vehicle.number },
+          price: offer.price,
+          startDate: offer.startDate,
+          endDate: offer.endDate,
+        }),
+      }).catch(() => {});
+    }
+
     sessionStorage.removeItem("checkout_data");
   };
 
@@ -156,7 +243,7 @@ export function CheckoutClient() {
         <button 
           onClick={() => {
             if (step === "vehicle") setStep("customer");
-            else router.push("/");
+            else router.push("/osago");
           }} 
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900"
         >
@@ -167,6 +254,19 @@ export function CheckoutClient() {
           <p className="text-sm text-zinc-500">Крок {step === "customer" ? 1 : step === "vehicle" ? 2 : 3} з 3</p>
         </div>
       </div>
+
+      {/* Повідомлення — НАГОРІ (під заголовком), щоб користувач їх точно побачив
+          одразу після «Продовжити», а не нижче довгої форми. */}
+      {priceNotice && step !== "otp" && (
+        <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
+          <span className="font-semibold">Увага: </span>{priceNotice}
+        </div>
+      )}
+      {error && step !== "otp" && (
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
+          <span className="font-semibold">Помилка: </span>{error}
+        </div>
+      )}
 
       <div className="rounded-2xl bg-white p-6 shadow-sm border border-zinc-200">
         {step === "customer" && (
@@ -220,7 +320,7 @@ export function CheckoutClient() {
               ? Number(offer.listDgo?.find((d) => d.id === selectedDgoId)?.cost ?? 0)
               : 0) +
             (selectedAutolawyerId
-              ? offer.listAutolawyer.find((a) => a.id === selectedAutolawyerId)?.price ?? 0
+              ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId)?.price ?? 0
               : 0)
           }
           onPaid={handlePaid}
@@ -235,11 +335,6 @@ export function CheckoutClient() {
         />
       )}
 
-      {error && step !== "otp" && (
-        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
-          <span className="font-semibold">Помилка: </span>{error}
-        </div>
-      )}
     </div>
   );
 }
@@ -247,6 +342,8 @@ export function CheckoutClient() {
 // -------------------------------------------------------------------------
 // Below are the un-modaled versions of the forms for the checkout page
 // -------------------------------------------------------------------------
+
+interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 
 function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void }) {
   const [form, setForm] = useState({
@@ -259,12 +356,29 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     dateBirth: "",
     street: "",
     house: "",
-    city: "",
     docSerial: "",
     docNumber: "",
     docIssuedBy: "",
     docDate: "",
   });
+
+  // Місто страхувальника обираємо з довідника, щоб надіслати коректний cityId
+  // (а не хардкод Києва). full_name/zone беремо з обраного запису.
+  const [cityQuery, setCityQuery] = useState("");
+  const [cityResults, setCityResults] = useState<CityOption[]>([]);
+  const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
+  const [cityError, setCityError] = useState(false);
+  const cityRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cityQuery || cityQuery.length < 2 || selectedCity) return;
+    const timer = setTimeout(async () => {
+      const res = await fetch(`/api/vehicle/cities?q=${encodeURIComponent(cityQuery)}`);
+      const json = await res.json();
+      if (json.success) setCityResults(json.data);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [cityQuery, selectedCity]);
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -272,8 +386,11 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedCity) { setCityError(true); return; }
     const dateBirth = Math.floor(new Date(form.dateBirth).getTime() / 1000);
     const dateOfIssue = Math.floor(new Date(form.docDate).getTime() / 1000);
+
+    const cityName = selectedCity.name_full_name_ua || selectedCity.name_ua;
 
     onSubmit({
       customerType: 1,
@@ -293,11 +410,11 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
         endDateOfIssue: null,
       },
       address: {
-        cityId: 1,
+        cityId: selectedCity.id,
         street: form.street,
         house: form.house,
-        cityName: form.city || "Київ",
-        full: `${form.street}, ${form.house}, ${form.city || "Київ"}`,
+        cityName,
+        full: `${cityName}, ${form.street}, ${form.house}`,
       },
     });
   };
@@ -399,8 +516,50 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
             </div>
             <Input label="Будинок / кв." value={form.house} onChange={set("house")} required />
           </div>
-          <div className="mt-4">
-            <Input label="Місто" value={form.city} onChange={set("city")} placeholder="Київ" />
+          <div className="mt-4 relative" ref={cityRef}>
+            <label className="text-sm font-medium text-zinc-700">Місто</label>
+            <input
+              type="text"
+              value={cityQuery}
+              onChange={(e) => {
+                setCityQuery(e.target.value);
+                setSelectedCity(null);
+                setCityError(false);
+              }}
+              placeholder="Почніть вводити місто..."
+              required
+              className={`mt-1.5 h-11 w-full rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors ${
+                cityError
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-500"
+                  : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500"
+              }`}
+            />
+            {selectedCity && (
+              <p className="mt-1 text-xs font-medium text-emerald-600">
+                ✓ {selectedCity.name_full_name_ua || selectedCity.name_ua} (зона {selectedCity.zone})
+              </p>
+            )}
+            {cityError && !selectedCity && (
+              <p className="mt-1 text-xs font-medium text-red-500">Оберіть місто зі списку</p>
+            )}
+            {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
+              <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
+                {cityResults.map((city) => (
+                  <button
+                    key={city.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCity(city);
+                      setCityQuery(city.name_full_name_ua || city.name_ua);
+                      setCityResults([]);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                  >
+                    {city.name_full_name_ua || city.name_ua}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -586,20 +745,29 @@ function buildOrderPayload(
   periodId: number, 
   selectedDgoId: string | null, 
   selectedAutolawyerId: string | null, 
-  customer: Customer, 
-  details: VehicleDetails
+  customer: Customer,
+  details: VehicleDetails,
+  privilegeId: number
 ) {
   const v = vehicle;
   const nowTs = Math.floor(Date.now() / 1000);
   const startDate = nowTs + 86400;
-  const finishAt = startDate + 365 * 86400;
+  // Кінець дії поліса залежить від period_id: 15/21 — це дні, 1–12 — місяці.
+  // Раніше тут було жорстко +365 днів, тож для нерічних періодів дата розходилась.
+  const finishAt = periodId === 15 || periodId === 21
+    ? startDate + periodId * 86400
+    : (() => {
+        const d = new Date(startDate * 1000);
+        d.setMonth(d.getMonth() + periodId);
+        return Math.floor(d.getTime() / 1000);
+      })();
 
   const selectedDgo = selectedDgoId
     ? offer.listDgo?.find((d) => d.id === selectedDgoId)
     : null;
 
   const selectedAutolawyer = selectedAutolawyerId
-    ? offer.listAutolawyer.find((a) => a.id === selectedAutolawyerId)
+    ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId)
     : null;
 
   const isElectric = v.autoCategory === "B5";
@@ -613,7 +781,7 @@ function buildOrderPayload(
     isTaxi: 0,
     autoCategoryType: v.autoCategory,
     registrationPlaceId: v.cityId,
-    customerPrivilege: 1,
+    customerPrivilege: privilegeId,
     isEuroCar: 0,
     otkDate: null,
     endDate: null,

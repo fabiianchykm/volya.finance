@@ -5,10 +5,6 @@ import { useRef, useState } from "react";
 import { PhoneCall, CheckCircle2, ShieldCheck, Clock, BadgePercent } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-interface CTASectionProps {
-  onStart: () => void;
-}
-
 // Форматує введені цифри у вигляд "67 123 45 67" (без коду країни)
 function formatPhone(digits: string): string {
   const d = digits.slice(0, 9);
@@ -16,7 +12,7 @@ function formatPhone(digits: string): string {
   return parts.join(" ");
 }
 
-export function CTASection({ onStart }: CTASectionProps) {
+export function CTASection() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [phone, setPhone] = useState("");

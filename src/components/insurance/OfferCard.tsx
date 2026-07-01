@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Check } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { formatPrice, formatCompanyName } from "@/lib/utils";
+import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
+import { logoSrc } from "@/lib/logos";
 import type { InsuranceCompany, InsuranceOffer } from "@/types/api";
 
 interface OfferCardProps {
@@ -37,20 +38,19 @@ function transliterate(text: string) {
 }
 
 function CompanyLogo({ cleanName }: { company: InsuranceCompany; cleanName: string }) {
-  const [errorCount, setErrorCount] = useState(0);
-  const slug = transliterate(cleanName);
-  const sources = [`/logos/${slug}.png`, `/logos/${slug}.webp`, `/logos/${slug}.svg`, `/logos/${slug}.jpeg`];
+  const [failed, setFailed] = useState(false);
+  const src = logoSrc(transliterate(cleanName));
 
-  if (errorCount >= sources.length) {
+  if (!src || failed) {
     return <span className="text-sm font-bold text-zinc-400">{cleanName.slice(0, 2).toUpperCase()}</span>;
   }
 
   return (
     <img
-      src={sources[errorCount]}
+      src={src}
       alt={cleanName}
       className="max-h-full max-w-full object-contain"
-      onError={() => setErrorCount(prev => prev + 1)}
+      onError={() => setFailed(true)}
     />
   );
 }
@@ -70,64 +70,60 @@ export function OfferCard({
 
   const cleanCompanyName = formatCompanyName(offer.company.publicName);
 
+  // Ukasko інколи повертає listDgo/listAutolawyer не масивом — нормалізуємо,
+  // щоб .find/.map/.length були безпечні скрізь.
+  const dgoList = Array.isArray(offer.listDgo) ? offer.listDgo : [];
+  const lawyerList = Array.isArray(offer.listAutolawyer) ? offer.listAutolawyer : [];
+
   const totalPrice =
     offer.price +
-    (selectedDgoId
-      ? Number(offer.listDgo?.find((d) => d.id === selectedDgoId)?.cost ?? 0)
-      : 0) +
-    (selectedAutolawyerId
-      ? offer.listAutolawyer.find((a) => a.id === selectedAutolawyerId)?.price ?? 0
-      : 0);
+    (selectedDgoId ? Number(dgoList.find((d) => d.id === selectedDgoId)?.cost ?? 0) : 0) +
+    (selectedAutolawyerId ? lawyerList.find((a) => a.id === selectedAutolawyerId)?.price ?? 0 : 0);
 
-  const isRecommended = index === 0;
+  const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
 
-  const hasOptions =
-    (offer.listDgo && offer.listDgo.length > 0) ||
-    (offer.listAutolawyer && offer.listAutolawyer.length > 0);
+  const autolawyer = lawyerList[0] ?? null;
+  const rowClass = (active: boolean) =>
+    cn(
+      "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all",
+      active ? "border-indigo-300 bg-indigo-50/60 ring-1 ring-indigo-200" : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50"
+    );
 
   const optionsBlock = (
-    <div className="flex flex-col gap-2.5">
-      {offer.listAutolawyer && offer.listAutolawyer.length > 0 && offer.listAutolawyer.slice(0, 1).map((al) => (
-        <button
-          key={al.id}
-          onClick={() => onSelectAutolawyer(selectedAutolawyerId === al.id ? null : al.id)}
-          className="flex items-center gap-2 text-sm text-zinc-700 hover:text-zinc-900 transition-colors w-fit"
-        >
-          <span className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-all duration-200 ${
-            selectedAutolawyerId === al.id
-              ? "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-200"
-              : "bg-zinc-50 border border-zinc-200 shadow-sm"
-          }`}>
-            {selectedAutolawyerId === al.id && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+    <div className="flex w-full max-w-[260px] flex-col gap-2">
+      {autolawyer && (
+        <button type="button" onClick={() => onSelectAutolawyer(selectedAutolawyerId === autolawyer.id ? null : autolawyer.id)} className={rowClass(selectedAutolawyerId === autolawyer.id)}>
+          <span className="flex min-w-0 flex-col">
+            <span className="text-sm font-medium text-zinc-800">Автоюрист</span>
+            <span className="text-[11px] text-zinc-400">Юридичний захист при ДТП</span>
           </span>
-          <span className="underline underline-offset-2">Автоюрист</span>
+          <span className="shrink-0 text-sm font-semibold text-indigo-600">
+            {autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : "Безкоштовно"}
+          </span>
         </button>
-      ))}
+      )}
 
-      {offer.listDgo && offer.listDgo.length > 0 && (
-        <div className="flex items-center gap-2">
-          <span
-            onClick={() => selectedDgoId && onSelectDgo(null)}
-            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-              selectedDgoId
-                ? "border-indigo-500 bg-indigo-500 cursor-pointer"
-                : "border-zinc-300 bg-white"
-            }`}
-          >
-            {selectedDgoId && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-          </span>
+      {/* «Додаткове покриття» — єдиний dropdown: перший пункт-плейсхолдер, далі варіанти. */}
+      {dgoList.length > 0 && (
+        <div className="relative w-full">
           <select
             value={selectedDgoId || ""}
             onChange={(e) => onSelectDgo(e.target.value || null)}
-            className="w-auto max-w-fit text-sm text-zinc-700 hover:text-zinc-900 underline underline-offset-2 bg-transparent border-none outline-none cursor-pointer transition-colors"
+            className={cn(
+              "w-full cursor-pointer appearance-none rounded-xl border py-2.5 pl-3.5 pr-9 text-sm font-medium outline-none transition-all",
+              selectedDgoId
+                ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200"
+                : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200"
+            )}
           >
             <option value="">Додаткове покриття</option>
-            {offer.listDgo.map((dgo) => (
+            {dgoList.map((dgo) => (
               <option key={dgo.id} value={dgo.id}>
-                +{dgo.coverage.toLocaleString()} за {formatPrice(Number(dgo.cost))}
+                +{Number(dgo.coverage).toLocaleString()} грн — {formatPrice(Number(dgo.cost))}
               </option>
             ))}
           </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
         </div>
       )}
     </div>
@@ -212,7 +208,7 @@ export function OfferCard({
           <div className="flex flex-col items-center shrink-0">
             <div className="flex flex-col items-center gap-2 flex-1 justify-center">
               <span className="text-3xl text-zinc-900">
-                {[offer.listDgo?.length ? 1 : 0, offer.listAutolawyer?.length ? 1 : 0].reduce((a, b) => a + b, 0)}
+                {(dgoList.length ? 1 : 0) + (lawyerList.length ? 1 : 0)}
               </span>
               <span className="text-xs text-zinc-400 font-medium">опції</span>
             </div>
@@ -227,10 +223,8 @@ export function OfferCard({
         )}
 
         {/* Блок 3: автоюрист + ДГО */}
-        <div className="flex flex-col justify-center items-center flex-1">
-          <div className="flex flex-col gap-3 items-start">
-            {optionsBlock}
-          </div>
+        <div className="flex flex-1 flex-col justify-center">
+          {optionsBlock}
         </div>
 
         {/* Блок 4: ціна + купити */}
@@ -252,7 +246,7 @@ export function OfferCard({
       {/* Розгорнута секція — однакова для обох */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
-          {offer.listAutolawyer && offer.listAutolawyer.length > 0 && (
+          {lawyerList.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-zinc-700 mb-1">Автоюрист</p>
               <p className="text-xs text-zinc-500 leading-relaxed">
@@ -260,13 +254,13 @@ export function OfferCard({
               </p>
             </div>
           )}
-          {offer.listDgo && offer.listDgo.length > 0 && (
+          {dgoList.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-zinc-700 mb-1">Додаткове покриття (ДГО)</p>
               <p className="text-xs text-zinc-500 leading-relaxed">
                 Розширення ліміту цивільної відповідальності понад базове ОСЦПВ. Доступні варіанти покриття: від{" "}
-                {Number(offer.listDgo[0].coverage).toLocaleString()} до{" "}
-                {Number(offer.listDgo[offer.listDgo.length - 1].coverage).toLocaleString()} грн.
+                {Number(dgoList[0].coverage).toLocaleString()} до{" "}
+                {Number(dgoList[dgoList.length - 1].coverage).toLocaleString()} грн.
               </p>
             </div>
           )}

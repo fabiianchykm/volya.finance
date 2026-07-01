@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { CheckoutClient } from "@/components/insurance/CheckoutClient";
+
+export const metadata: Metadata = {
+  title: "Оформлення поліса — volya.finance",
+  // Транзакційна сторінка — поза індексом.
+  robots: { index: false, follow: false },
+};
 
 export default function CheckoutPage() {
   return (

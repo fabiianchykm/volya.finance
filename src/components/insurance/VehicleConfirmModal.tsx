@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useLayoutEffect, useEffect, useRef } from "react";
-import { Car, CheckCircle, AlertCircle, Pencil } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { AlertCircle, Pencil } from "lucide-react";
 
 interface City { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 import { Modal } from "@/components/ui/Modal";
@@ -18,6 +18,8 @@ interface VehicleConfirmModalProps {
   onConfirm: (vehicle: VehicleData) => void;
   loading?: boolean;
   lookupError?: string | null;
+  /** Відкрити одразу у формі редагування (для зміни даних з екрана пропозицій). */
+  editMode?: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -47,6 +49,7 @@ export function VehicleConfirmModal({
   onConfirm,
   loading,
   lookupError,
+  editMode,
 }: VehicleConfirmModalProps) {
   const [manualMode, setManualMode] = useState(true);
   const [form, setForm] = useState({
@@ -59,26 +62,27 @@ export function VehicleConfirmModal({
   const [cityQuery, setCityQuery] = useState("");
   const [cityResults, setCityResults] = useState<City[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [wasOpen, setWasOpen] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!cityQuery || cityQuery.length < 2) { setCityResults([]); return; }
+    if (!cityQuery || cityQuery.length < 2 || selectedCity) return;
     const timer = setTimeout(async () => {
-      console.log("[city search] fetching:", cityQuery);
       const res = await fetch(`/api/vehicle/cities?q=${encodeURIComponent(cityQuery)}`);
       const json = await res.json();
-      console.log("[city search] result:", json);
       if (json.success) setCityResults(json.data);
     }, 300);
     return () => clearTimeout(timer);
-  }, [cityQuery]);
+  }, [cityQuery, selectedCity]);
 
-  // Sync internal state every time the modal opens, before the browser paints,
-  // so there is no visible flash between manual and auto mode.
-  // vehicle and lookupError are committed in the same React batch as open=true.
-  useLayoutEffect(() => {
-    if (!open) return;
-    setManualMode(!vehicle || !!lookupError);
+  // Синхронізуємо форму з даними авто в момент відкриття модалки. Робимо це
+  // під час рендеру (рекомендований React патерн «adjusting state on prop change»),
+  // а не в ефекті — так немає видимого миготіння між manual/auto і не порушується
+  // правило set-state-in-effect. Блок спрацьовує один раз на кожне відкриття.
+  if (open && !wasOpen) {
+    setWasOpen(true);
+    // editMode → одразу форма редагування; інакше форма лише якщо авто не знайдено.
+    setManualMode(!vehicle || !!lookupError || !!editMode);
     setForm({
       mark: vehicle?.mark ?? "",
       model: vehicle?.model ?? "",
@@ -87,11 +91,16 @@ export function VehicleConfirmModal({
       vin: vehicle?.vin ?? "",
     });
     if (vehicle?.cityId) {
-      setSelectedCity({ id: vehicle.cityId, name_ua: vehicle.cityName, name_full_name_ua: vehicle.cityName, zone: vehicle.zone });
-      setCityQuery(vehicle.cityName ?? "");
+      const name = vehicle.cityName ?? "";
+      setSelectedCity({ id: vehicle.cityId, name_ua: name, name_full_name_ua: name, zone: vehicle.zone ?? 0 });
+      setCityQuery(name);
+    } else {
+      setSelectedCity(null);
+      setCityQuery("");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
 
   const set = (key: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -102,6 +111,7 @@ export function VehicleConfirmModal({
       onConfirm(vehicle);
       return;
     }
+    // Ручний ввід: місто з вибору, із дефолтом Київ, якщо не обрано.
     const manualVehicle: VehicleData = {
       number: plate,
       vin: form.vin,
@@ -110,31 +120,59 @@ export function VehicleConfirmModal({
       mark: form.mark,
       autoCategory: form.autoCategory,
       cityId: selectedCity?.id ?? 1,
-      cityName: selectedCity?.name_full_name_ua ?? selectedCity?.name_ua ?? "м. Київ, Україна",
+      cityName: selectedCity?.name_full_name_ua || selectedCity?.name_ua || "м. Київ",
       zone: selectedCity?.zone ?? 1,
     };
     onConfirm(manualVehicle);
   };
 
-  const autoFields = vehicle && !manualMode
-    ? [
-        { label: "Номерний знак", value: vehicle.number },
-        { label: "Марка", value: vehicle.mark },
-        { label: "Модель", value: vehicle.model },
-        { label: "Рік випуску", value: vehicle.year },
-        { label: "VIN-код", value: vehicle.vin || "—" },
-        { label: "Категорія", value: `${vehicle.autoCategory} · ${categoryLabels[vehicle.autoCategory] ?? vehicle.autoCategory}` },
-        { label: "Місто реєстрації", value: vehicle.cityName },
-      ]
-    : [];
-
   const isFound = vehicle && !manualMode;
+
+  // Єдине поле вибору міста реєстрації — використовується і в авто-, і в ручному
+  // режимі. Засіяне з реєстру, якщо той повернув місто; інакше користувач обирає сам.
+  const cityField = (
+    <div className="relative" ref={cityRef}>
+      <label className="mb-1.5 block text-xs font-medium text-zinc-500">
+        Місто реєстрації ТЗ
+      </label>
+      <input
+        type="text"
+        value={cityQuery}
+        onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
+        placeholder="Введіть місто..."
+        className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400"
+      />
+      {selectedCity ? (
+        <p className="mt-1 text-xs text-emerald-600 font-medium">
+          ✓ {selectedCity.name_full_name_ua || selectedCity.name_ua} (зона {selectedCity.zone})
+        </p>
+      ) : (
+        <p className="mt-1 text-xs text-amber-600 font-medium">
+          Оберіть місто реєстрації зі списку
+        </p>
+      )}
+      {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
+        <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
+          {cityResults.map((city) => (
+            <button
+              key={city.id}
+              type="button"
+              onClick={() => { setSelectedCity(city); setCityQuery(city.name_full_name_ua ?? city.name_ua); setCityResults([]); }}
+              className="w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+            >
+              {city.name_full_name_ua ?? city.name_ua}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={manualMode ? "Введіть дані авто вручну" : undefined}
+      title={manualMode ? (vehicle ? "Змінити дані авто" : "Введіть дані авто вручну") : undefined}
       size="md"
       className={isFound ? "bg-emerald-50 border border-emerald-100" : ""}
     >
@@ -288,39 +326,9 @@ export function VehicleConfirmModal({
             />
 
             {/* Пошук міста реєстрації */}
-            <div className="relative" ref={cityRef}>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500">
-                Місто реєстрації ТЗ
-              </label>
-              <input
-                type="text"
-                value={cityQuery}
-                onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
-                placeholder="Введіть місто..."
-                className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400"
-              />
-              {selectedCity && (
-                <p className="mt-1 text-xs text-emerald-600 font-medium">
-                  ✓ {selectedCity.name_full_name_ua} (зона {selectedCity.zone})
-                </p>
-              )}
-              {cityResults.length > 0 && !selectedCity && (
-                <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
-                  {cityResults.map((city) => (
-                    <button
-                      key={city.id}
-                      type="button"
-                      onClick={() => { setSelectedCity(city); setCityQuery(city.name_full_name_ua ?? city.name_ua); setCityResults([]); }}
-                      className="w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-                    >
-                      {city.name_full_name_ua ?? city.name_ua}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {cityField}
 
-            {vehicle && (
+            {vehicle && !editMode && (
               <button
                 onClick={() => setManualMode(false)}
                 className="text-xs text-indigo-600 hover:underline"

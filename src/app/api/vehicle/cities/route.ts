@@ -15,9 +15,7 @@ export async function GET(req: NextRequest) {
     if (q.length < 2) return NextResponse.json({ success: true, data: [] });
 
     if (!citiesCache) {
-      console.log("[cities] fetching from Ukasko...");
       citiesCache = await ukaskoService.getCities();
-      console.log("[cities] cached", citiesCache.length, "cities");
     }
 
     const filtered = citiesCache

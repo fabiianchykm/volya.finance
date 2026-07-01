@@ -1,10 +1,3 @@
-export type InsuranceStep =
-  | "search"
-  | "vehicle-confirm"
-  | "customer-form"
-  | "offers"
-  | "payment";
-
 export interface VehicleData {
   number: string;
   vin: string;
@@ -12,30 +5,37 @@ export interface VehicleData {
   model: string;
   mark: string;
   autoCategory: string;
-  cityId: number;
-  cityName: string;
-  zone: number;
+  // Місто/зона можуть бути відсутні: реєстр не завжди повертає місце реєстрації.
+  // Не дефолтимо їх до Києва — користувач підтверджує місто у VehicleConfirmModal.
+  cityId?: number;
+  cityName?: string;
+  zone?: number;
   capacity?: number;
   numberOfSeats?: number;
   ownWeight?: number;
   totalWeight?: number;
 }
 
-export interface InsuranceFormState {
-  step: InsuranceStep;
-  vehiclePlate: string;
-  vehicleData: VehicleData | null;
-  selectedOffer: import("./api").InsuranceOffer | null;
-  selectedDgoId: string | null;
-  selectedAutolawyerId: string | null;
-  orderId: string | null;
-  periodId: number;
-  startDate: Date;
+// Дані страхувальника, що впливають на ціну поліса (вводяться на екрані пропозицій).
+// customerType виводиться з пільги: без пільги → 1 (фіз. особа), інакше → 3 (пільговик).
+export interface BuyerData {
+  customerType: number;
+  privilegeId: number; // id з PRIVILEGES
+  birthDate: string;   // формат "DD.MM.YYYY" — параметр carBirthdayAt
 }
 
-export interface PriceBreakdown {
-  base: number;
-  dgo: number;
-  autolawyer: number;
-  total: number;
+export const DEFAULT_BUYER: BuyerData = {
+  customerType: 1,
+  privilegeId: 1,
+  birthDate: "01.01.1990",
+};
+
+export interface VehicleDetails {
+  odometr: string;
+  kilometers: string;
+  capacity: string;
+  numberOfSeats: string;
+  ownWeight: string;
+  totalWeight: string;
+  birthdayAt: string;
 }

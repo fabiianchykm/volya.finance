@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
+import { logoSrc } from "@/lib/logos";
 
 const insurers = [
   { name: "ІНГО",         slug: "inho" },
@@ -25,10 +26,10 @@ const insurers = [
 ];
 
 function InsurerLogo({ name, slug, i, inView }: { name: string; slug: string; i: number; inView: boolean }) {
-  const formats = ["webp", "png", "jpeg", "svg"];
-  const [idx, setIdx] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const src = logoSrc(slug);
 
-  if (idx >= formats.length) {
+  if (!src || failed) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -49,10 +50,10 @@ function InsurerLogo({ name, slug, i, inView }: { name: string; slug: string; i:
       className="flex items-center justify-center py-5 px-4 opacity-70 hover:opacity-100 hover:scale-105 transition-all duration-200"
     >
       <img
-        src={`/logos/${slug}.${formats[idx]}`}
+        src={src}
         alt={name}
         className="h-20 max-w-[170px] object-contain"
-        onError={() => setIdx((prev) => prev + 1)}
+        onError={() => setFailed(true)}
       />
     </motion.div>
   );

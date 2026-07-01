@@ -1,0 +1,54 @@
+# Firebase App Hosting — конфіг бекенду (Cloud Run) для Next.js 16.
+# Docs: https://firebase.google.com/docs/app-hosting/configure
+#
+# App Hosting сам збирає застосунок (`npm run build`) і запускає Next-сервер —
+# кастомний start не потрібен. Секрети зберігаються в Cloud Secret Manager і
+# підключаються через `secret:`; звичайні значення — через `value:`.
+
+runConfig:
+  minInstances: 0        # 0 → холодний старт, але без оплати простою
+  maxInstances: 2        # тримаємо мало інстансів (див. примітку про rate-limit нижче)
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024        # Next SSR буває ненажерливим — 1 ГБ із запасом
+
+env:
+  # ── Публічні значення (можна комітити) ─────────────────────────────
+  # NEXT_PUBLIC_* вшивається у клієнтський бандл → має бути доступним на BUILD.
+  # ⚠️ ЗАМІНИ на реальний прод-домен після першого деплою (App Hosting видасть URL).
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://REPLACE-with-your-app-hosting-domain
+    availability:
+      - BUILD
+      - RUNTIME
+  # Базовий URL для NextAuth callback-ів — той самий прод-домен.
+  - variable: AUTH_URL
+    value: https://REPLACE-with-your-app-hosting-domain
+    availability:
+      - RUNTIME
+  # "dev" → devconnect.ukasko.ua (тест). Для реального прод-API постав "prod"
+  # І ЗАМІНИ креди Ukasko на продові (dev-креди на prod не працюють — 403).
+  - variable: UKASKO_ENV
+    value: dev
+    availability:
+      - RUNTIME
+
+  # ── Секрети (Cloud Secret Manager) ─────────────────────────────────
+  # Створити: firebase apphosting:secrets:set <secretName>
+  - variable: UKASKO_EMAIL
+    secret: ukasko-email
+  - variable: UKASKO_PASSWORD
+    secret: ukasko-password
+  - variable: AUTH_SECRET
+    secret: auth-secret
+  - variable: AUTH_GOOGLE_ID
+    secret: auth-google-id
+  - variable: AUTH_GOOGLE_SECRET
+    secret: auth-google-secret
+  - variable: TELEGRAM_BOT_TOKEN
+    secret: telegram-bot-token
+  - variable: TELEGRAM_CHAT_ID
+    secret: telegram-chat-id
+  # Postgres (Neon/Supabase, POOLED). Без нього «Мої поліси» вимкнені.
+  - variable: DATABASE_URL
+    secret: database-url

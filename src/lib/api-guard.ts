@@ -14,24 +14,55 @@ export function getClientIp(req: NextRequest): string {
   return req.headers.get("x-real-ip") ?? "unknown";
 }
 
+// Дозволені хости беремо з конфігу сервера, а НЕ із заголовка Host — він
+// контролюється клієнтом, тож порівняння Origin===Host було тавтологією
+// (зловмисник ставив Origin і Host на свій домен і проходив перевірку).
+// Розширити можна через ALLOWED_ORIGINS (домени через кому, напр. preview-деплої).
+function buildAllowedHosts(): Set<string> {
+  const hosts = new Set<string>();
+  const add = (val?: string | null) => {
+    if (!val) return;
+    try { hosts.add(new URL(val).host); }
+    catch { hosts.add(val.trim().replace(/^https?:\/\//, "").split("/")[0]); }
+  };
+  add(process.env.NEXT_PUBLIC_APP_URL);
+  add(process.env.AUTH_URL);
+  for (const o of (process.env.ALLOWED_ORIGINS ?? "").split(",")) add(o);
+  if (process.env.NODE_ENV !== "production") {
+    hosts.add("localhost:3000");
+    hosts.add("127.0.0.1:3000");
+  }
+  return hosts;
+}
+
+const ALLOWED_HOSTS = buildAllowedHosts();
+
+function hostAllowed(rawUrl: string): boolean {
+  try { return ALLOWED_HOSTS.has(new URL(rawUrl).host); }
+  catch { return false; }
+}
+
 /**
- * true — запит прийшов з нашого сайту (браузерний fetch), false — ззовні/прямий тул.
+ * true — запит виглядає як прийшлий з нашого сайту, false — ззовні/прямий тул.
+ *
+ * УВАГА: усі ці заголовки клієнт може підробити, тож це бар'єр від cross-site/CSRF
+ * та наївного скрапінгу, а НЕ повноцінний захист від цілеспрямованих скриптів.
+ * Для дій, що тригерять SMS, справжній захист — rate-limit (краще у спільному
+ * сторі) + CAPTCHA. Див. otp/route.ts.
  */
 function isSameOrigin(req: NextRequest): boolean {
-  // Сучасні браузери завжди шлють Sec-Fetch-Site для fetch/XHR.
-  const secFetchSite = req.headers.get("sec-fetch-site");
-  if (secFetchSite) {
-    return secFetchSite === "same-origin" || secFetchSite === "same-site";
-  }
-  // Запасний варіант для клієнтів без Sec-Fetch-Site — звіряємо host у Origin/Referer.
-  const host = req.headers.get("host");
+  // Головний бар'єр: якщо є Origin/Referer — їх хост має бути у нашому allowlist.
+  // Браузери шлють Origin для cross-origin і для будь-яких POST, тож для
+  // чутливих POST-роутів цей заголовок присутній і реально перевіряється.
   const source = req.headers.get("origin") ?? req.headers.get("referer");
-  if (!source || !host) return false;
-  try {
-    return new URL(source).host === host;
-  } catch {
-    return false;
-  }
+  if (source) return hostAllowed(source);
+
+  // Без Origin/Referer (буває для same-origin GET) — додатковий сигнал браузера.
+  const secFetchSite = req.headers.get("sec-fetch-site");
+  if (secFetchSite) return secFetchSite === "same-origin" || secFetchSite === "same-site";
+
+  // Жодних сигналів походження — відхиляємо.
+  return false;
 }
 
 /**

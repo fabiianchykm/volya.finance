@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { CheckCircle, Download, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle, Download, ExternalLink } from "lucide-react";
 
 interface SuccessModalProps {
   open: boolean;

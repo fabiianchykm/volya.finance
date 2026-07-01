@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Fragment } from "react";
-import { Shield, Zap, Clock, ArrowRight, ChevronRight, Search, Car, FileText, CreditCard, Download } from "lucide-react";
+import { ArrowRight, ChevronRight, Search, FileText, CreditCard, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPlate } from "@/lib/utils";
+import { logoSrc } from "@/lib/logos";
 
 const heroSteps = [
   { icon: Search, label: "Номер авто" },
-  { icon: Car, label: "Дані авто" },
   { icon: FileText, label: "Пропозиції" },
   { icon: CreditCard, label: "Оплата" },
   { icon: Download, label: "Готовий поліс" },
@@ -26,25 +26,19 @@ const insurersList = [
   { name: "ВУСО",     slug: "vuso" },
 ];
 
-const trust = [
-  { icon: Shield, label: "Офіційні поліси МТСБУ" },
-  { icon: Zap, label: "Миттєва активація" },
-  { icon: Clock, label: "Підтримка 24/7" },
-];
-
 function InsurerChip({ name, slug }: { name: string; slug: string }) {
-  const formats = ["webp", "png", "svg", "jpeg"];
-  const [idx, setIdx] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const src = logoSrc(slug);
 
-  if (idx >= formats.length) return null;
+  if (!src || failed) return null;
 
   return (
     <div className="flex items-center justify-center">
       <img
-        src={`/logos/${slug}.${formats[idx]}`}
+        src={src}
         alt={name}
         style={{ height: 56, width: "auto", maxWidth: 120, objectFit: "contain" }}
-        onError={() => setIdx((i) => i + 1)}
+        onError={() => setFailed(true)}
       />
     </div>
   );
