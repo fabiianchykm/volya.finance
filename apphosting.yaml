@@ -17,13 +17,13 @@ env:
   # NEXT_PUBLIC_* вшивається у клієнтський бандл → має бути доступним на BUILD.
   # ⚠️ ЗАМІНИ на реальний прод-домен після першого деплою (App Hosting видасть URL).
   - variable: NEXT_PUBLIC_APP_URL
-    value: https://REPLACE-with-your-app-hosting-domain
+    value: https://volya-finance--volya-finance-itsolutions.europe-west4.hosted.app
     availability:
       - BUILD
       - RUNTIME
   # Базовий URL для NextAuth callback-ів — той самий прод-домен.
   - variable: AUTH_URL
-    value: https://REPLACE-with-your-app-hosting-domain
+    value: https://volya-finance--volya-finance-itsolutions.europe-west4.hosted.app
     availability:
       - RUNTIME
   # "dev" → devconnect.ukasko.ua (тест). Для реального прод-API постав "prod"
