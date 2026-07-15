@@ -1,11 +1,18 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
-// Зручний ввід дати (переважно дати народження): текст ДД.ММ.РРРР з авто-крапками
-// + цифрова клавіатура на мобільному + кнопка-календар для вибору мишею.
-// value/onChange працюють із рядком "ДД.ММ.РРРР" — саме такий формат очікує
-// пейлоад Ukasko (`birthdayAt`) і легко конвертується в timestamp через parseUaDate.
+// Зручний ввід дати (переважно дати народження): masked-текст ДД.ММ.РРРР з
+// авто-крапками + власний сучасний календар-попап зі швидким вибором місяця/року
+// (без гортання десятиліть, як у нативному пікері). value/onChange — рядок
+// "ДД.ММ.РРРР", який очікує пейлоад Ukasko і легко парситься parseUaDate.
+
+const MONTHS = [
+  "Січень", "Лютий", "Березень", "Квітень", "Травень", "Червень",
+  "Липень", "Серпень", "Вересень", "Жовтень", "Листопад", "Грудень",
+];
+const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
 /** Вставляє крапки по ходу вводу: 01011990 → 01.01.1990 (максимум 8 цифр). */
 function maskDate(raw: string): string {
@@ -26,11 +33,6 @@ export function parseUaDate(v: string): Date | null {
   return dt;
 }
 
-function iso(dt: Date): string {
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}`;
-}
-
 function toUa(y: number, mo: number, d: number): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${p(d)}.${p(mo)}.${y}`;
@@ -48,19 +50,67 @@ interface DateInputProps {
 
 export function DateInput({ label, value, onChange, required, className, error }: DateInputProps) {
   const parsed = parseUaDate(value);
-  // Внутрішню помилку показуємо лише коли дата введена повністю (8 цифр), але некоректна.
   const errText = error || (value.replace(/\D/g, "").length === 8 && !parsed ? "Невірна дата" : "");
-  const showError = !!errText;
 
   const today = new Date();
-  const maxIso = iso(today);
+  const [open, setOpen] = useState(false);
+  // Місяць/рік, що зараз показані в календарі. За замовчуванням — 1990 (зручно для ДН).
+  const [view, setView] = useState(() => {
+    const base = parsed ?? new Date(1990, 0, 1);
+    return { y: base.getFullYear(), m: base.getMonth() };
+  });
+  const ref = useRef<HTMLDivElement>(null);
+
+  const toggle = () => {
+    setOpen((o) => {
+      const next = !o;
+      if (next && parsed) setView({ y: parsed.getFullYear(), m: parsed.getMonth() });
+      return next;
+    });
+  };
+
+  // Закриття по кліку поза компонентом / Esc — вішаємо лише коли попап відкритий.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
+
+  const years: number[] = [];
+  for (let y = today.getFullYear(); y >= 1920; y--) years.push(y);
+
+  // Сітка днів: понеділок першим.
+  const startOffset = (new Date(view.y, view.m, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const prevMonth = () => setView((v) => (v.m === 0 ? { y: v.y - 1, m: 11 } : { y: v.y, m: v.m - 1 }));
+  const nextMonth = () => setView((v) => (v.m === 11 ? { y: v.y + 1, m: 0 } : { y: v.y, m: v.m + 1 }));
+
+  const isSelected = (d: number) =>
+    parsed && parsed.getFullYear() === view.y && parsed.getMonth() === view.m && parsed.getDate() === d;
+  const isFuture = (d: number) => new Date(view.y, view.m, d) > today;
+
+  const selectClass =
+    "h-8 rounded-lg border border-zinc-200 bg-white px-2 text-sm text-zinc-800 outline-none focus:border-indigo-400";
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="relative flex flex-col gap-1.5" ref={ref}>
       {label && <label className="text-sm font-medium text-zinc-700">{label}</label>}
+
       <div
-        className={`relative flex items-center rounded-xl border bg-white transition-colors focus-within:ring-1 ${
-          showError
+        className={`flex items-center rounded-xl border bg-white transition-colors focus-within:ring-1 ${
+          errText
             ? "border-red-400 focus-within:border-red-500 focus-within:ring-red-500"
             : "border-zinc-200 focus-within:border-indigo-500 focus-within:ring-indigo-500"
         } ${className ?? ""}`}
@@ -75,27 +125,83 @@ export function DateInput({ label, value, onChange, required, className, error }
           onChange={(e) => onChange(maskDate(e.target.value))}
           className="h-11 w-full rounded-xl bg-transparent px-4 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none"
         />
-        {/* Календар: прозорий нативний date-інпут поверх іконки — клік відкриває
-            системний пікер (без гортання десятиліть у текстовому полі). */}
-        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:text-indigo-500">
-          <CalendarDays className="pointer-events-none h-5 w-5" />
-          <input
-            type="date"
-            value={parsed ? iso(parsed) : ""}
-            min="1920-01-01"
-            max={maxIso}
-            aria-label="Обрати дату з календаря"
-            onChange={(e) => {
-              const v = e.target.value; // yyyy-mm-dd
-              if (!v) return;
-              const [y, mo, d] = v.split("-").map(Number);
-              onChange(toUa(y, mo, d));
-            }}
-            className="absolute inset-0 cursor-pointer opacity-0"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label="Відкрити календар"
+          className={`flex h-11 w-11 shrink-0 items-center justify-center transition-colors hover:text-indigo-500 ${
+            open ? "text-indigo-500" : "text-zinc-400"
+          }`}
+        >
+          <CalendarDays className="h-5 w-5" />
+        </button>
       </div>
-      {showError && <p className="text-xs font-medium text-red-500">{errText}</p>}
+
+      {open && (
+        <div className="absolute top-full left-0 z-30 mt-2 w-[288px] rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl">
+          {/* Хедер: ‹ місяць рік › — місяць і рік як швидкі спадні списки */}
+          <div className="mb-2 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={prevMonth}
+              aria-label="Попередній місяць"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <select value={view.m} onChange={(e) => setView((v) => ({ ...v, m: +e.target.value }))} className={`${selectClass} flex-1`}>
+              {MONTHS.map((mn, i) => (
+                <option key={mn} value={i}>{mn}</option>
+              ))}
+            </select>
+            <select value={view.y} onChange={(e) => setView((v) => ({ ...v, y: +e.target.value }))} className={selectClass}>
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={nextMonth}
+              aria-label="Наступний місяць"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 text-center">
+            {WEEKDAYS.map((w) => (
+              <span key={w} className="pb-1 text-[11px] font-medium text-zinc-400">{w}</span>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-0.5">
+            {cells.map((d, i) =>
+              d === null ? (
+                <span key={i} />
+              ) : (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={isFuture(d)}
+                  onClick={() => { onChange(toUa(view.y, view.m + 1, d)); setOpen(false); }}
+                  className={`h-9 rounded-lg text-sm transition-colors ${
+                    isSelected(d)
+                      ? "bg-indigo-600 font-semibold text-white"
+                      : isFuture(d)
+                        ? "cursor-not-allowed text-zinc-300"
+                        : "text-zinc-700 hover:bg-indigo-50"
+                  }`}
+                >
+                  {d}
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {errText && <p className="text-xs font-medium text-red-500">{errText}</p>}
     </div>
   );
 }
