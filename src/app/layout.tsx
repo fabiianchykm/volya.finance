@@ -3,6 +3,7 @@ import { Inter, Roboto, Open_Sans } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { SITE_URL } from "@/lib/seo";
 
 const inter = Inter({
@@ -73,6 +74,7 @@ export default async function RootLayout({
     <html lang="uk" className={`${inter.variable} ${roboto.variable} ${openSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans">
         <SessionProvider session={session}>{children}</SessionProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );
