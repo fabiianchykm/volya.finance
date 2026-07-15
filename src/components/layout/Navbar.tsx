@@ -100,7 +100,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         <button
           className={cn(
             "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors md:hidden",
-            scrolled
+            opaque
               ? "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
               : "border-white/20 text-white hover:bg-white/10"
           )}

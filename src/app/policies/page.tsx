@@ -41,7 +41,7 @@ export default async function PoliciesPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar solid />
       <main className="flex-1 pt-24 pb-16">
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
           <h1 className="mb-1 text-2xl font-bold text-zinc-900">Мої поліси</h1>
