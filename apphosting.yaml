@@ -45,14 +45,14 @@ env:
     secret: auth-google-id
   - variable: AUTH_GOOGLE_SECRET
     secret: auth-google-secret
+  # Postgres (Neon, POOLED) — вмикає «Мої поліси». Таблиця створюється автоматично.
+  - variable: DATABASE_URL
+    secret: database-url
   # ── Відкладені секрети (ще не заведені) ────────────────────────────
   # Розкоментуй ПІСЛЯ `firebase apphosting:secrets:set <name>`, інакше білд
   # впаде на відсутньому секреті. Код деградує тихо, якщо змінних немає:
   #   Telegram → сповіщення про заявки КАСКО не шлються (isTelegramConfigured=false)
-  #   Postgres → «Мої поліси» вимкнені (sql=null)
   # - variable: TELEGRAM_BOT_TOKEN
   #   secret: telegram-bot-token
   # - variable: TELEGRAM_CHAT_ID
   #   secret: telegram-chat-id
-  # - variable: DATABASE_URL
-  #   secret: database-url
