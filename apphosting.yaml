@@ -21,6 +21,12 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Google Analytics 4 Measurement ID (публічне значення). Вшивається у бандл на BUILD.
+  - variable: NEXT_PUBLIC_GA_ID
+    value: G-6M78S69KC5
+    availability:
+      - BUILD
+      - RUNTIME
   # Базовий URL для NextAuth callback-ів — той самий прод-домен.
   - variable: AUTH_URL
     value: https://volya.finance
