@@ -7,6 +7,7 @@ import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
+import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 
@@ -416,6 +417,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
   const [cityResults, setCityResults] = useState<CityOption[]>([]);
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const [cityError, setCityError] = useState(false);
+  const [dobError, setDobError] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -434,8 +436,11 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const dob = parseUaDate(form.dateBirth);
+    if (!dob) { setDobError(true); return; }
+    setDobError(false);
     if (!selectedCity) { setCityError(true); return; }
-    const dateBirth = Math.floor(new Date(form.dateBirth).getTime() / 1000);
+    const dateBirth = Math.floor(dob.getTime() / 1000);
     const dateOfIssue = Math.floor(new Date(form.docDate).getTime() / 1000);
 
     const cityName = selectedCity.name_full_name_ua || selectedCity.name_ua;
@@ -484,11 +489,11 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
+          <DateInput
             label="Дата народження"
-            type="date"
             value={form.dateBirth}
-            onChange={set("dateBirth")}
+            onChange={(v) => { setForm((f) => ({ ...f, dateBirth: v })); if (dobError) setDobError(false); }}
+            error={dobError ? "Вкажіть дату народження" : undefined}
             required
           />
           <Input
@@ -685,11 +690,10 @@ function CheckoutVehicleForm({
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Водій
           </p>
-          <Input
-            label="Дата народження наймолодшого водія (дд.мм.рррр)"
-            placeholder="01.01.1990"
+          <DateInput
+            label="Дата народження наймолодшого водія"
             value={form.birthdayAt}
-            onChange={set("birthdayAt")}
+            onChange={(v) => setForm((f) => ({ ...f, birthdayAt: v }))}
             required
           />
         </div>
