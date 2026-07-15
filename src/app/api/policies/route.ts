@@ -3,6 +3,7 @@ import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { auth } from "@/auth";
 import { savePolicy, getPoliciesByEmail } from "@/lib/policies";
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
+import { resolveReferrerByCode, recordReferralConversion } from "@/lib/referral";
 
 // POST — зберегти оформлений поліс під email клієнта (логін не обовʼязковий:
 // купити можна гостем, у кабінеті поліс зʼявиться після входу з тим же email).
@@ -42,6 +43,25 @@ export async function POST(req: NextRequest) {
       `📧 Email: <code>${escapeHtml(String(email))}</code>`,
     ].filter(Boolean);
     await trySendTelegram("sales", saleLines.join("\n"));
+
+    // Реферальна атрибуція: якщо покупець прийшов за чиїмось посиланням (cookie ref),
+    // нараховуємо реферу бонус 5%. Не має ламати відповідь клієнту.
+    const ref = req.cookies.get("ref")?.value;
+    if (ref) {
+      try {
+        const referrer = await resolveReferrerByCode(ref);
+        if (referrer) {
+          await recordReferralConversion({
+            referrerEmail: referrer,
+            referredEmail: String(email),
+            policyId: String(id),
+            price: typeof price === "number" ? price : null,
+          });
+        }
+      } catch (e) {
+        console.error("[policies] referral attribution error:", e instanceof Error ? e.message : e);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (e) {

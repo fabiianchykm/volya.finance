@@ -4,6 +4,7 @@ import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { ReferralCapture } from "@/components/referral/ReferralCapture";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SITE_URL, organizationLd, websiteLd } from "@/lib/seo";
 
@@ -82,6 +83,7 @@ export default async function RootLayout({
     <html lang="uk" className={`${inter.variable} ${roboto.variable} ${openSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans">
         <SessionProvider session={session}>{children}</SessionProvider>
+        <ReferralCapture />
         <JsonLd data={[organizationLd(), websiteLd()]} />
         <GoogleAnalytics />
       </body>
