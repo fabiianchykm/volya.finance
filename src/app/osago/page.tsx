@@ -2,10 +2,11 @@ import { Footer } from "@/components/layout/Footer";
 import { InsuranceFlow } from "@/components/insurance/InsuranceFlow";
 import { FeaturesSection } from "@/components/sections/FeaturesSection";
 import { InsurersSection } from "@/components/sections/InsurersSection";
-import { FAQSection, FAQ_ITEMS } from "@/components/sections/FAQSection";
+import { FAQSection } from "@/components/sections/FAQSection";
 import { CTAWrapper } from "@/components/sections/CTAWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
+import { FAQ_ITEMS } from "@/lib/faq";
 
 export const metadata = buildMetadata({
   title: "Автоцивілка купити онлайн — ОСЦПВ (ОСАГО)",
