@@ -71,6 +71,36 @@ export function CheckoutClient() {
     if (error || priceNotice) window.scrollTo({ top: 0, behavior: "smooth" });
   }, [error, priceNotice]);
 
+  // Трекінг воронки для Telegram (fire-and-forget). Крок і контекст тримаємо у ref,
+  // щоб слухач pagehide читав актуальні значення без переприв'язки листенера.
+  const trackRef = useRef<{ step: string; context: Record<string, unknown> }>({ step, context: {} });
+  useEffect(() => {
+    trackRef.current = {
+      step,
+      context: {
+        company: offer?.companyNamePublic || offer?.companyName,
+        price: offer?.price,
+        car: [vehicle?.mark, vehicle?.model].filter(Boolean).join(" "),
+        plate: vehicle?.number,
+        phone: customer?.phone,
+        email: customer?.email,
+      },
+    };
+  }, [step, offer, vehicle, customer]);
+
+  useEffect(() => {
+    // pagehide (а не visibilitychange) — щоб перемикання на пошту за OTP-кодом не
+    // рахувалось «зривом»; спрацьовує лише при реальному виході зі сторінки.
+    const onLeave = () => {
+      const { step: s, context } = trackRef.current;
+      if (s !== "otp" && s !== "payment") return;
+      const payload = JSON.stringify({ event: "abandoned", step: s, context });
+      navigator.sendBeacon?.("/api/track", new Blob([payload], { type: "application/json" }));
+    };
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  }, []);
+
   if (!loaded || !vehicle || !offer) {
     return <div className="p-8 text-center text-zinc-500">Завантаження...</div>;
   }
@@ -201,8 +231,26 @@ export function CheckoutClient() {
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
       if (!json.valid) throw new Error("Невірний код. Спробуйте ще раз.");
-      
+
       setStep("payment");
+
+      // Sales-бот: клієнт дійшов до оплати (fire-and-forget, не блокує UI).
+      void fetch("/api/track", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          event: "payment_started",
+          step: "payment",
+          context: {
+            company: offer.companyNamePublic || offer.companyName,
+            price: offer.price,
+            car: [vehicle.mark, vehicle.model].filter(Boolean).join(" "),
+            plate: vehicle.number,
+            phone: customer?.phone,
+            email: customer?.email,
+          },
+        }),
+      }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Помилка");
     } finally {

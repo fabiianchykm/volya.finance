@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { auth } from "@/auth";
 import { savePolicy, getPoliciesByEmail } from "@/lib/policies";
+import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
 
 // POST — зберегти оформлений поліс під email клієнта (логін не обовʼязковий:
 // купити можна гостем, у кабінеті поліс зʼявиться після входу з тим же email).
@@ -27,9 +28,25 @@ export async function POST(req: NextRequest) {
       startDate: startDate ?? null,
       endDate: endDate ?? null,
     });
+
+    // Sales-бот: успішний онлайн-продаж ОСЦПВ. Не має ламати відповідь клієнту.
+    const car = [vehicle?.mark, vehicle?.model].filter(Boolean).join(" ") || "—";
+    const saleLines = [
+      "✅ <b>Оформлено ОСЦПВ</b>",
+      "",
+      `🏢 Компанія: ${escapeHtml(String(company ?? "—"))}`,
+      `🚙 Авто: ${escapeHtml(car)}${vehicle?.year ? `, ${vehicle.year}` : ""}`,
+      vehicle?.plate ? `🔢 Номер: <code>${escapeHtml(String(vehicle.plate))}</code>` : null,
+      typeof price === "number" ? `💰 Сума: <b>${price} грн</b>` : null,
+      startDate && endDate ? `📅 Період: ${escapeHtml(String(startDate))} — ${escapeHtml(String(endDate))}` : null,
+      `📧 Email: <code>${escapeHtml(String(email))}</code>`,
+    ].filter(Boolean);
+    await trySendTelegram("sales", saleLines.join("\n"));
+
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("[policies] save error:", e instanceof Error ? e.message : e);
+    await notifyDevError("policies save", e);
     return NextResponse.json({ success: false, error: "Не вдалося зберегти поліс" }, { status: 500 });
   }
 }

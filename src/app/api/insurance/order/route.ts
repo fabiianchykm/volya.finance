@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
+import { notifyDevError } from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    await notifyDevError("insurance order", error);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

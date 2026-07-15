@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest } from "@/lib/api-guard";
-import { sendTelegramMessage, escapeHtml } from "@/lib/telegram";
+import { sendTelegram, escapeHtml, notifyDevError } from "@/lib/telegram";
 import { withIdempotency } from "@/lib/idempotency";
+import { normalizePhone, isValidPhone } from "@/lib/phone";
 
 // Заявка на КАСКО. КАСКО не оформлюється онлайн — клієнт лишає телефон, заявка
 // з даними авто йде менеджеру в Telegram, він передзвонює й рахує індивідуально.
@@ -13,20 +14,6 @@ interface KaskoVehicle {
   year?: number;
   vin?: string;
   cityName?: string;
-}
-
-// Нормалізує український номер до вигляду +380XXXXXXXXX (best-effort).
-function normalizePhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 12 && digits.startsWith("380")) return `+${digits}`;
-  if (digits.length === 10 && digits.startsWith("0")) return `+38${digits}`;
-  if (digits.length === 9) return `+380${digits}`;
-  return raw.trim();
-}
-
-function isValidPhone(raw: string): boolean {
-  const digits = raw.replace(/\D/g, "");
-  return digits.length >= 9 && digits.length <= 13;
 }
 
 export async function POST(req: NextRequest) {
@@ -69,13 +56,14 @@ export async function POST(req: NextRequest) {
     const { status, body } = await withIdempotency(
       idem ? `kasko:${idem}` : null,
       async () => {
-        await sendTelegramMessage(lines.join("\n"));
+        await sendTelegram("sales", lines.join("\n"));
         return { status: 200, body: { success: true } };
       }
     );
     return NextResponse.json(body, { status });
   } catch (e) {
     console.error("[kasko] lead send error:", e instanceof Error ? e.message : e);
+    await notifyDevError("kasko lead", e);
     return NextResponse.json(
       { success: false, error: "Не вдалося надіслати заявку. Зателефонуйте нам або спробуйте пізніше." },
       { status: 500 }

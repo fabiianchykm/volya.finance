@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, Car, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { Globe, MapPin, Car, CalendarDays, Clock, Phone, ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-// Зелена карта — міжнародний поліс для виїзду за кордон. Збираємо вхідні дані
-// (територія → ТЗ → початок дії → строк), а крок пропозицій поки заглушений:
-// у поточній інтеграції Ukasko немає API-калькулятора Зеленої карти (лише ОСАГО).
-// Коли з'явиться ендпоінт — підставимо реальні офери замість плейсхолдера.
+// Зелена карта — міжнародний поліс для виїзду за кордон. Онлайн-калькулятора в
+// Ukasko поки немає (лише ОСАГО), тож це ЛІД-форма: клієнт лишає параметри поїздки
+// + телефон, заявка йде менеджеру в Telegram (/api/greencard), він передзвонює.
 
 const TERRITORIES = [
   { value: "europe", label: "Європа" },
@@ -45,18 +44,52 @@ const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
 
 export function GreenCardFlow() {
-  const [step, setStep] = useState<"form" | "offers">("form");
+  const [step, setStep] = useState<"form" | "done">("form");
 
   const [territory, setTerritory] = useState("europe");
   const [vehicleType, setVehicleType] = useState("B");
   const [startDate, setStartDate] = useState(tomorrowISO());
   const [duration, setDuration] = useState("15d");
+  const [phone, setPhone] = useState(""); // 9 цифр після +380
 
-  const valid = !!territory && !!vehicleType && !!startDate && !!duration;
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const phoneValid = phone.replace(/\D/g, "").length === 9;
+  const valid = !!territory && !!vehicleType && !!startDate && !!duration && phoneValid;
+
+  const labelOf = (arr: { value: string; label: string }[], v: string) =>
+    arr.find((x) => x.value === v)?.label ?? "";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (valid) setStep("offers");
+    if (!valid || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/greencard", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          phone: `+380${phone.replace(/\D/g, "")}`,
+          params: {
+            territory: labelOf(TERRITORIES, territory),
+            vehicle: labelOf(VEHICLE_TYPES, vehicleType),
+            startDate: startDate.split("-").reverse().join("."),
+            duration: labelOf(DURATIONS, duration),
+          },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error ?? "Не вдалося надіслати заявку");
+      }
+      setStep("done");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не вдалося надіслати заявку. Спробуйте пізніше.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -88,7 +121,7 @@ export function GreenCardFlow() {
               </span>
             </h1>
             <p className="mx-auto max-w-xl text-base text-zinc-300">
-              Заповніть дані поїздки — і ми покажемо доступні пропозиції.
+              Залиште параметри поїздки й телефон — менеджер підбере пропозиції та передзвонить.
             </p>
           </div>
 
@@ -150,22 +183,47 @@ export function GreenCardFlow() {
                 </div>
               </div>
 
-              <Button type="submit" variant="primary" size="lg" disabled={!valid} className="mt-5 w-full">
+              {/* 5. Телефон — +380 префікс, 9 цифр (як в інших формах сайту). */}
+              <div className="mt-4">
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                  <Phone className="h-3.5 w-3.5" /> Ваш телефон
+                </label>
+                <div className="flex items-center rounded-xl border border-zinc-200 bg-white focus-within:border-indigo-400">
+                  <span className="pl-3 pr-1 text-sm text-zinc-500">+380</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="67 123 45 67"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                    className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 outline-none"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <p className="mt-3 text-sm text-red-600">{error}</p>
+              )}
+
+              <Button type="submit" variant="primary" size="lg" disabled={!valid || submitting} className="mt-5 w-full">
                 <span className="flex items-center gap-2">
-                  Показати пропозиції
-                  <ArrowRight className="h-5 w-5" />
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Надсилаємо…
+                    </>
+                  ) : (
+                    <>
+                      Залишити заявку
+                      <ArrowRight className="h-5 w-5" />
+                    </>
+                  )}
                 </span>
               </Button>
             </form>
           ) : (
             <div className="mx-auto max-w-lg">
-              <OffersPlaceholder
-                territory={TERRITORIES.find((t) => t.value === territory)?.label ?? ""}
-                vehicle={VEHICLE_TYPES.find((v) => v.value === vehicleType)?.label ?? ""}
-                startDate={startDate}
-                duration={DURATIONS.find((d) => d.value === duration)?.label ?? ""}
-                onBack={() => setStep("form")}
-              />
+              <LeadReceived phone={`+380${phone.replace(/\D/g, "")}`} onBack={() => setStep("form")} />
             </div>
           )}
         </motion.div>
@@ -174,43 +232,24 @@ export function GreenCardFlow() {
   );
 }
 
-// Крок пропозицій. API-калькулятора Зеленої карти поки немає — показуємо зведення
-// введених даних і стан «очікуємо підключення». Сюди підставляться реальні офери.
-function OffersPlaceholder({
-  territory, vehicle, startDate, duration, onBack,
-}: {
-  territory: string; vehicle: string; startDate: string; duration: string; onBack: () => void;
-}) {
-  const rows = [
-    { label: "Територія", value: territory },
-    { label: "Транспортний засіб", value: vehicle },
-    { label: "Початок дії", value: startDate.split("-").reverse().join(".") },
-    { label: "Строк перебування", value: duration },
-  ];
-
+// Підтвердження прийнятої заявки. Менеджер отримав лід у Telegram і передзвонить.
+function LeadReceived({ phone, onBack }: { phone: string; onBack: () => void }) {
   return (
     <div className="rounded-2xl bg-white p-6 text-left shadow-2xl sm:p-8">
-      <h2 className="text-lg font-bold text-zinc-900">Ваші параметри</h2>
-      <dl className="mt-4 divide-y divide-zinc-100">
-        {rows.map((r) => (
-          <div key={r.label} className="flex items-center justify-between py-2.5 text-sm">
-            <dt className="text-zinc-500">{r.label}</dt>
-            <dd className="font-medium text-zinc-900">{r.value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      <div className="mt-5 flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
-        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-indigo-500" />
-        <p className="text-sm text-indigo-800">
-          Підключення до пропозицій страхових у процесі. Тут зʼявляться доступні
-          поліси Зеленої карти за вашими параметрами.
-        </p>
+      <div className="flex items-start gap-3">
+        <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-emerald-500" />
+        <div>
+          <h2 className="text-lg font-bold text-zinc-900">Заявку прийнято!</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Ми зателефонуємо на <span className="font-medium text-zinc-900">{phone}</span>, підберемо
+            вигідну Зелену карту за вашими параметрами й допоможемо оформити.
+          </p>
+        </div>
       </div>
 
-      <Button variant="outline" size="md" onClick={onBack} className="mt-5 flex items-center gap-2">
+      <Button variant="outline" size="md" onClick={onBack} className="mt-6 flex items-center gap-2">
         <ArrowLeft className="h-4 w-4" />
-        Змінити параметри
+        Нова заявка
       </Button>
     </div>
   );

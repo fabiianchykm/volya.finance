@@ -48,11 +48,14 @@ env:
   # Postgres (Neon, POOLED) — вмикає «Мої поліси». Таблиця створюється автоматично.
   - variable: DATABASE_URL
     secret: database-url
-  # ── Відкладені секрети (ще не заведені) ────────────────────────────
+  # ── Telegram: 1 бот, 2 ролі (sales-чат + dev-чат) ──────────────────
   # Розкоментуй ПІСЛЯ `firebase apphosting:secrets:set <name>`, інакше білд
-  # впаде на відсутньому секреті. Код деградує тихо, якщо змінних немає:
-  #   Telegram → сповіщення про заявки КАСКО не шлються (isTelegramConfigured=false)
+  # впаде на відсутньому секреті. Без них код деградує тихо (нічого не шле).
+  #   sales → ліди КАСКО/Зелена карта, розпочато оплату, оформлено ОСЦПВ
+  #   dev   → помилки роутів + зрив на пізньому кроці воронки
   # - variable: TELEGRAM_BOT_TOKEN
   #   secret: telegram-bot-token
-  # - variable: TELEGRAM_CHAT_ID
-  #   secret: telegram-chat-id
+  # - variable: TELEGRAM_SALES_CHAT_ID
+  #   secret: telegram-sales-chat-id
+  # - variable: TELEGRAM_DEV_CHAT_ID
+  #   secret: telegram-dev-chat-id
