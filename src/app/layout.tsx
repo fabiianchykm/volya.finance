@@ -4,7 +4,8 @@ import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
-import { SITE_URL } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { SITE_URL, organizationLd, websiteLd } from "@/lib/seo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,14 +35,21 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   // metadataBase робить og:image/canonical абсолютними (інакше Next попереджає й посилання ламаються).
   metadataBase: new URL(SITE_URL),
-  title: "volya.finance — Страхування авто онлайн",
+  title: {
+    default: "Автоцивілка, КАСКО, Зелена карта онлайн — volya.finance",
+    template: "%s | volya.finance",
+  },
   description:
-    "Оформіть ОСЦПВ (автоцивілку) онлайн за 3 хвилини. Порівняйте ціни від 18+ страхових компаній. Офіційні поліси МТСБУ.",
-  keywords: ["ОСЦПВ", "автоцивілка", "страхування авто", "онлайн страхування", "поліс", "КАСКО", "Зелена карта"],
+    "Оформіть автоцивілку (ОСЦПВ/ОСАГО) онлайн за 3 хвилини. Порівняйте ціни від 18+ страхових компаній. Офіційні електронні поліси МТСБУ. КАСКО та Зелена карта.",
+  keywords: [
+    "автоцивілка", "автоцивілка купити", "ОСЦПВ", "ОСЦПВ онлайн", "ОСАГО", "ОСАГО купити",
+    "страхування авто", "страховка на авто", "онлайн страхування", "електронний поліс",
+    "КАСКО", "КАСКО онлайн", "міні-КАСКО", "Зелена карта", "автострахування Україна",
+  ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "volya.finance — Страхування авто онлайн",
-    description: "Оформіть ОСЦПВ онлайн за 3 хвилини. Найкращі ціни від 18+ страховиків.",
+    title: "Автоцивілка, КАСКО, Зелена карта онлайн — volya.finance",
+    description: "Оформіть автоцивілку (ОСЦПВ/ОСАГО) онлайн за 3 хвилини. Порівняйте ціни від 18+ страхових компаній. Офіційні поліси МТСБУ.",
     type: "website",
     locale: "uk_UA",
     url: SITE_URL,
@@ -49,8 +57,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "volya.finance — Страхування авто онлайн",
-    description: "Оформіть ОСЦПВ онлайн за 3 хвилини. Найкращі ціни від 18+ страховиків.",
+    title: "Автоцивілка, КАСКО, Зелена карта онлайн — volya.finance",
+    description: "Оформіть автоцивілку (ОСЦПВ/ОСАГО) онлайн за 3 хвилини. Порівняйте ціни від 18+ страхових компаній.",
   },
 };
 
@@ -74,6 +82,7 @@ export default async function RootLayout({
     <html lang="uk" className={`${inter.variable} ${roboto.variable} ${openSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans">
         <SessionProvider session={session}>{children}</SessionProvider>
+        <JsonLd data={[organizationLd(), websiteLd()]} />
         <GoogleAnalytics />
       </body>
     </html>

@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const faqs = [
+// Експортуємо, щоб сторінка будувала FAQPage JSON-LD із того самого джерела.
+export const FAQ_ITEMS = [
   {
     question: "Що таке електронний поліс ОСЦПВ?",
     answer:
@@ -100,7 +101,7 @@ export function FAQSection() {
         </div>
 
         <div>
-          {faqs.map((faq, index) => (
+          {FAQ_ITEMS.map((faq, index) => (
             <FAQItem key={index} question={faq.question} answer={faq.answer} index={index} />
           ))}
         </div>
