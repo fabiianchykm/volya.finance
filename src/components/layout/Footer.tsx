@@ -76,11 +76,11 @@ export function Footer() {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:gap-4">
               <a
-                href="tel:+380976898653"
+                href="tel:+380965092400"
                 className="group inline-flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
               >
                 <Phone className="h-4 w-4 text-indigo-400" />
-                <span className="text-[15px] font-medium text-zinc-200">+38 097 689 86 53</span>
+                <span className="text-[15px] font-medium text-zinc-200">+38 096 509 24 00</span>
               </a>
               <a
                 href="mailto:volya.finance.team@gmail.com"
