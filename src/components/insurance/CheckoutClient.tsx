@@ -418,6 +418,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const [cityError, setCityError] = useState(false);
   const [dobError, setDobError] = useState(false);
+  const [docDateError, setDocDateError] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -439,9 +440,12 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     const dob = parseUaDate(form.dateBirth);
     if (!dob) { setDobError(true); return; }
     setDobError(false);
+    const issue = parseUaDate(form.docDate);
+    if (!issue) { setDocDateError(true); return; }
+    setDocDateError(false);
     if (!selectedCity) { setCityError(true); return; }
     const dateBirth = Math.floor(dob.getTime() / 1000);
-    const dateOfIssue = Math.floor(new Date(form.docDate).getTime() / 1000);
+    const dateOfIssue = Math.floor(issue.getTime() / 1000);
 
     const cityName = selectedCity.name_full_name_ua || selectedCity.name_ua;
 
@@ -452,7 +456,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
       patronymic: form.patronymic,
       identificationCode: form.identificationCode,
       dateBirth,
-      phone: form.phone,
+      phone: `+380${form.phone}`,
       email: form.email,
       documentation: {
         type: 3,
@@ -494,6 +498,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
             value={form.dateBirth}
             onChange={(v) => { setForm((f) => ({ ...f, dateBirth: v })); if (dobError) setDobError(false); }}
             error={dobError ? "Вкажіть дату народження" : undefined}
+            defaultYear={1990}
             required
           />
           <Input
@@ -505,14 +510,21 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
-            label="Телефон"
-            type="tel"
-            value={form.phone}
-            onChange={set("phone")}
-            placeholder="+38 (0XX) XXX-XX-XX"
-            required
-          />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-zinc-700">Телефон</label>
+            <div className="flex items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+              <span className="select-none pl-4 pr-1 text-sm text-zinc-500">+380</span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                placeholder="67 123 45 67"
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
+                required
+                className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none"
+              />
+            </div>
+          </div>
           <Input
             label="Email"
             type="email"
@@ -549,11 +561,11 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
               onChange={set("docIssuedBy")}
               required
             />
-            <Input
+            <DateInput
               label="Дата видачі"
-              type="date"
               value={form.docDate}
-              onChange={set("docDate")}
+              onChange={(v) => { setForm((f) => ({ ...f, docDate: v })); if (docDateError) setDocDateError(false); }}
+              error={docDateError ? "Вкажіть дату видачі" : undefined}
               required
             />
           </div>
@@ -694,6 +706,7 @@ function CheckoutVehicleForm({
             label="Дата народження наймолодшого водія"
             value={form.birthdayAt}
             onChange={(v) => setForm((f) => ({ ...f, birthdayAt: v }))}
+            defaultYear={1990}
             required
           />
         </div>

@@ -46,9 +46,11 @@ interface DateInputProps {
   className?: string;
   /** Зовнішня помилка (напр. валідація при сабміті). Має пріоритет над внутрішньою. */
   error?: string;
+  /** Рік, на якому відкривати календар без значення (ДН → 1990, дата видачі → поточний). */
+  defaultYear?: number;
 }
 
-export function DateInput({ label, value, onChange, required, className, error }: DateInputProps) {
+export function DateInput({ label, value, onChange, required, className, error, defaultYear }: DateInputProps) {
   const parsed = parseUaDate(value);
   const errText = error || (value.replace(/\D/g, "").length === 8 && !parsed ? "Невірна дата" : "");
 
@@ -56,7 +58,7 @@ export function DateInput({ label, value, onChange, required, className, error }
   const [open, setOpen] = useState(false);
   // Місяць/рік, що зараз показані в календарі. За замовчуванням — 1990 (зручно для ДН).
   const [view, setView] = useState(() => {
-    const base = parsed ?? new Date(1990, 0, 1);
+    const base = parsed ?? new Date(defaultYear ?? today.getFullYear(), 0, 1);
     return { y: base.getFullYear(), m: base.getMonth() };
   });
   const ref = useRef<HTMLDivElement>(null);
