@@ -84,6 +84,11 @@ export interface InsuranceCompany {
   website: string | null;
   companyLink: string | null;
   companyDgoLink: string | null;
+  // Обов'язкові інформаційні документи страхового продукту (посилання на PDF).
+  docProduct: string | null; // Інформація про страховий продукт
+  docCompany: string | null; // Інформація про страхову компанію
+  docAgent: string | null;   // Інформація про страхового посередника
+  docZusp: string | null;    // Загальні умови страхового продукту (ЗУСП)
   rating: number | null;
   email: string;
   ratingAdmins: string;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { logoSrc } from "@/lib/logos";
@@ -81,6 +81,16 @@ export function OfferCard({
     (selectedAutolawyerId ? lawyerList.find((a) => a.id === selectedAutolawyerId)?.price ?? 0 : 0);
 
   const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
+
+  // Обов'язкові інформаційні документи продукту (показуємо ті, що прийшли з API).
+  const docs = [
+    { label: "Інформація про страховий продукт", url: offer.company.docProduct },
+    { label: "Інформація про страхову компанію", url: offer.company.docCompany },
+    { label: "Інформація про страхового посередника", url: offer.company.docAgent },
+    { label: "Загальні умови страхового продукту", url: offer.company.docZusp },
+  ].filter((d): d is { label: string; url: string } => !!d.url && d.url.trim().length > 0);
+  const hasDocs = docs.length > 0;
+  const canExpand = hasOptions || hasDocs;
 
   const autolawyer = lawyerList[0] ?? null;
   const rowClass = (active: boolean) =>
@@ -178,7 +188,7 @@ export function OfferCard({
           >
             Купити
           </Button>
-          {hasOptions && (
+          {canExpand && (
             <button
               onClick={() => setExpanded(v => !v)}
               className="flex shrink-0 items-center gap-0.5 px-2 text-xs text-zinc-400 hover:text-indigo-600 transition-colors"
@@ -203,14 +213,18 @@ export function OfferCard({
           </span>
         </div>
 
-        {/* Блок 2: кількість опцій */}
-        {hasOptions && (
+        {/* Блок 2: кількість опцій / документи */}
+        {canExpand && (
           <div className="flex flex-col items-center shrink-0">
             <div className="flex flex-col items-center gap-2 flex-1 justify-center">
-              <span className="text-3xl text-zinc-900">
-                {(dgoList.length ? 1 : 0) + (lawyerList.length ? 1 : 0)}
-              </span>
-              <span className="text-xs text-zinc-400 font-medium">опції</span>
+              {hasOptions && (
+                <>
+                  <span className="text-3xl text-zinc-900">
+                    {(dgoList.length ? 1 : 0) + (lawyerList.length ? 1 : 0)}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-medium">опції</span>
+                </>
+              )}
             </div>
             <button
               onClick={() => setExpanded(v => !v)}
@@ -278,6 +292,25 @@ export function OfferCard({
               <p className="text-xs text-zinc-500 leading-relaxed">
                 Середній термін виплати відшкодування — до {offer.company.compensationDays} днів.
               </p>
+            </div>
+          )}
+          {hasDocs && (
+            <div>
+              <p className="mb-2 text-xs font-semibold text-zinc-700">Документи страхового продукту</p>
+              <div className="flex flex-col gap-1.5">
+                {docs.map((d) => (
+                  <a
+                    key={d.label}
+                    href={d.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs text-indigo-600 transition-colors hover:text-indigo-700 hover:underline"
+                  >
+                    <FileText className="h-3.5 w-3.5 shrink-0" />
+                    {d.label}
+                  </a>
+                ))}
+              </div>
             </div>
           )}
         </div>
