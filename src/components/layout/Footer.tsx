@@ -15,6 +15,7 @@ const footerLinks = {
     { label: "Про нас", href: "#" },
   ],
   legal: [
+    { label: "Інформація про Субагента", href: "/subagent" },
     { label: "Публічна оферта", href: "#" },
     { label: "Політика конфіденційності", href: "#" },
   ],
