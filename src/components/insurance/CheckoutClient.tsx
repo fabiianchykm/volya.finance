@@ -419,6 +419,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
   const [cityError, setCityError] = useState(false);
   const [dobError, setDobError] = useState(false);
   const [docDateError, setDocDateError] = useState(false);
+  const [docType, setDocType] = useState<1 | 3>(3); // 3 = ID-карта, 1 = паспорт старого зразка
   const cityRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -433,6 +434,37 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((f) => ({ ...f, [key]: e.target.value }));
+  };
+
+  // Тестове автозаповнення: ввести "007" у поле «Прізвище» → форма заповнюється
+  // валідними тестовими даними (щоб не вбивати все вручну під час тестування).
+  const fillTestData = () => {
+    setForm({
+      name: "Тест",
+      surname: "Тестовий",
+      patronymic: "Тестович",
+      phone: "671234567",
+      email: "test@volya.finance",
+      identificationCode: "1234567890",
+      dateBirth: "01.01.1990",
+      street: "Хрещатик",
+      house: "1",
+      docSerial: "19860427-09718",
+      docNumber: "123456789",
+      docIssuedBy: "1234",
+      docDate: "01.01.2020",
+    });
+    setSelectedCity({ id: 1, name_ua: "Київ", name_full_name_ua: "м. Київ, Україна", zone: 1 });
+    setCityQuery("м. Київ, Україна");
+    setCityError(false);
+    setDobError(false);
+    setDocDateError(false);
+    setDocType(3);
+  };
+
+  const handleSurname = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value.trim() === "007") { fillTestData(); return; }
+    setForm((f) => ({ ...f, surname: e.target.value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -459,7 +491,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
       phone: `+380${form.phone}`,
       email: form.email,
       documentation: {
-        type: 3,
+        type: docType,
         serial: form.docSerial,
         number: form.docNumber,
         issuedBy: form.docIssuedBy,
@@ -486,7 +518,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
             Особисті дані
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="Прізвище" value={form.surname} onChange={set("surname")} required />
+            <Input label="Прізвище" value={form.surname} onChange={handleSurname} required />
             <Input label="Ім'я" value={form.name} onChange={set("name")} required />
             <Input label="По-батькові" value={form.patronymic} onChange={set("patronymic")} />
           </div>
@@ -537,28 +569,50 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
         <div className="border-t border-zinc-100 pt-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            ID-карта (документ)
+            Документ, що посвідчує особу
           </p>
+          {/* Вибір типу документа: ID-карта (type 3) або паспорт старого зразка (type 1) */}
+          <div className="mb-4 grid grid-cols-2 gap-2">
+            {[
+              { t: 3 as const, label: "ID-карта" },
+              { t: 1 as const, label: "Паспорт (старого зразка)" },
+            ].map(({ t, label }) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setDocType(t)}
+                className={`h-11 rounded-xl border px-2 text-sm font-medium transition-colors ${
+                  docType === t
+                    ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
-              label="Серія/Запис №"
+              label={docType === 3 ? "Запис № (УНЗР)" : "Серія"}
               value={form.docSerial}
               onChange={set("docSerial")}
-              placeholder="19860427-09718"
+              placeholder={docType === 3 ? "19860427-09718" : "АА"}
               required
             />
             <Input
               label="Номер документа"
               value={form.docNumber}
               onChange={set("docNumber")}
+              placeholder={docType === 3 ? "" : "123456"}
               required
             />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
-              label="Ким видано (код органу)"
+              label={docType === 3 ? "Ким видано (код органу)" : "Ким виданий"}
               value={form.docIssuedBy}
               onChange={set("docIssuedBy")}
+              placeholder={docType === 3 ? "1234" : "Назва органу, що видав"}
               required
             />
             <DateInput
@@ -575,56 +629,60 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Адреса проживання
           </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {/* ПК: Місто + Вулиця + Будинок в один ряд; моб: стек. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-5 sm:items-start">
+            {/* Місто (з автопідбором) */}
+            <div className="relative sm:col-span-2" ref={cityRef}>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-700">Місто</label>
+              <input
+                type="text"
+                value={cityQuery}
+                onChange={(e) => {
+                  setCityQuery(e.target.value);
+                  setSelectedCity(null);
+                  setCityError(false);
+                }}
+                placeholder="Почніть вводити місто..."
+                required
+                className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors ${
+                  cityError
+                    ? "border-red-400 focus:border-red-500 focus:ring-red-500"
+                    : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500"
+                }`}
+              />
+              {selectedCity && (
+                <p className="mt-1 text-xs font-medium text-emerald-600">
+                  ✓ {selectedCity.name_full_name_ua || selectedCity.name_ua} (зона {selectedCity.zone})
+                </p>
+              )}
+              {cityError && !selectedCity && (
+                <p className="mt-1 text-xs font-medium text-red-500">Оберіть місто зі списку</p>
+              )}
+              {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
+                <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
+                  {cityResults.map((city) => (
+                    <button
+                      key={city.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCity(city);
+                        setCityQuery(city.name_full_name_ua || city.name_ua);
+                        setCityResults([]);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                    >
+                      {city.name_full_name_ua || city.name_ua}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Вулиця */}
             <div className="sm:col-span-2">
               <Input label="Вулиця" value={form.street} onChange={set("street")} required />
             </div>
+            {/* Будинок */}
             <Input label="Будинок / кв." value={form.house} onChange={set("house")} required />
-          </div>
-          <div className="mt-4 relative" ref={cityRef}>
-            <label className="text-sm font-medium text-zinc-700">Місто</label>
-            <input
-              type="text"
-              value={cityQuery}
-              onChange={(e) => {
-                setCityQuery(e.target.value);
-                setSelectedCity(null);
-                setCityError(false);
-              }}
-              placeholder="Почніть вводити місто..."
-              required
-              className={`mt-1.5 h-11 w-full rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors ${
-                cityError
-                  ? "border-red-400 focus:border-red-500 focus:ring-red-500"
-                  : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500"
-              }`}
-            />
-            {selectedCity && (
-              <p className="mt-1 text-xs font-medium text-emerald-600">
-                ✓ {selectedCity.name_full_name_ua || selectedCity.name_ua} (зона {selectedCity.zone})
-              </p>
-            )}
-            {cityError && !selectedCity && (
-              <p className="mt-1 text-xs font-medium text-red-500">Оберіть місто зі списку</p>
-            )}
-            {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
-              <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
-                {cityResults.map((city) => (
-                  <button
-                    key={city.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCity(city);
-                      setCityQuery(city.name_full_name_ua || city.name_ua);
-                      setCityResults([]);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-                  >
-                    {city.name_full_name_ua || city.name_ua}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
