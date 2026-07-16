@@ -650,8 +650,9 @@ function CheckoutVehicleForm({
   loading: boolean
 }) {
   const [form, setForm] = useState<VehicleDetails>({
-    odometr: "",
-    kilometers: "",
+    // Пробіг більше не запитуємо у формі — API його не вимагатиме; шлемо дефолт "0".
+    odometr: "0",
+    kilometers: "0",
     capacity: vehicle.capacity ? String(vehicle.capacity) : "",
     numberOfSeats: vehicle.numberOfSeats ? String(vehicle.numberOfSeats) : "",
     ownWeight: vehicle.ownWeight ? String(vehicle.ownWeight) : "",
@@ -711,28 +712,6 @@ function CheckoutVehicleForm({
           />
         </div>
 
-        {/* Пробіг */}
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Пробіг
-          </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input
-              label="Поточний пробіг (км)"
-              placeholder="50000"
-              value={form.odometr}
-              onChange={set("odometr")}
-              required
-            />
-            <Input
-              label="Максимальний пробіг ТЗ (км)"
-              placeholder="200000"
-              value={form.kilometers}
-              onChange={set("kilometers")}
-              required
-            />
-          </div>
-        </div>
 
         {/* Технічні характеристики */}
         <div className="border-t border-zinc-100 pt-5">
