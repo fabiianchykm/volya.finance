@@ -27,6 +27,15 @@ const nextConfig: NextConfig = {
     // білда + ризик неправильного резолву залежностей + надмірне стеження за ФС).
     root: projectRoot,
   },
+  // Дефолтні шляхи іконок, які просять браузери/боти, ведемо на згенеровані
+  // /icon та /apple-icon — інакше вони давали 404 (зайвий шум у метриках).
+  async redirects() {
+    return [
+      { source: "/favicon.ico", destination: "/icon", permanent: true },
+      { source: "/apple-touch-icon.png", destination: "/apple-icon", permanent: true },
+      { source: "/apple-touch-icon-precomposed.png", destination: "/apple-icon", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
