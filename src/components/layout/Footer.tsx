@@ -79,15 +79,15 @@ export function Footer() {
                 href="tel:+380965092400"
                 className="group inline-flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
               >
-                <Phone className="h-4 w-4 text-indigo-400" />
-                <span className="text-[15px] font-medium text-zinc-200">+38 096 509 24 00</span>
+                <Phone className="h-4 w-4 shrink-0 text-indigo-400" />
+                <span className="whitespace-nowrap text-[15px] font-medium text-zinc-200">+38 096 509 24 00</span>
               </a>
               <a
                 href="mailto:volya.finance.team@gmail.com"
                 className="group inline-flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
               >
-                <Mail className="h-4 w-4 text-indigo-400" />
-                <span className="text-[15px] font-medium text-zinc-200">volya.finance.team@gmail.com</span>
+                <Mail className="h-4 w-4 shrink-0 text-indigo-400" />
+                <span className="whitespace-nowrap text-[15px] font-medium text-zinc-200">volya.finance.team@gmail.com</span>
               </a>
             </div>
 
