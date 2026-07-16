@@ -11,6 +11,12 @@ import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 
+// Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
+function formatUaPhone(digits: string): string {
+  const d = digits.replace(/\D/g, "").slice(0, 9);
+  return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(" ");
+}
+
 export function CheckoutClient() {
   const router = useRouter();
   
@@ -419,7 +425,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
   const [cityError, setCityError] = useState(false);
   const [dobError, setDobError] = useState(false);
   const [docDateError, setDocDateError] = useState(false);
-  const [docType, setDocType] = useState<1 | 3>(3); // 3 = ID-карта, 1 = паспорт старого зразка
+  const [docType, setDocType] = useState<1 | 3 | 4>(3); // 3 = ID-карта, 1 = паспорт, 4 = водійське посвідчення
   const cityRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -466,6 +472,13 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     if (e.target.value.trim() === "007") { fillTestData(); return; }
     setForm((f) => ({ ...f, surname: e.target.value }));
   };
+
+  // Підписи/плейсхолдери полів документа залежно від обраного типу.
+  const docFields = {
+    3: { serial: "Запис № (УНЗР)", serialPh: "19860427-09718", number: "Номер документа", numberPh: "", issuedBy: "Ким видано (код органу)", issuedByPh: "1234" },
+    1: { serial: "Серія", serialPh: "АА", number: "Номер", numberPh: "123456", issuedBy: "Ким виданий", issuedByPh: "Назва органу, що видав" },
+    4: { serial: "Серія", serialPh: "ААХ", number: "Номер", numberPh: "123456", issuedBy: "Ким видано", issuedByPh: "Орган, що видав" },
+  }[docType];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -550,7 +563,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                 type="tel"
                 inputMode="numeric"
                 placeholder="67 123 45 67"
-                value={form.phone}
+                value={formatUaPhone(form.phone)}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
                 required
                 className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none"
@@ -572,16 +585,17 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
             Документ, що посвідчує особу
           </p>
           {/* Вибір типу документа: ID-карта (type 3) або паспорт старого зразка (type 1) */}
-          <div className="mb-4 grid grid-cols-2 gap-2">
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {[
               { t: 3 as const, label: "ID-карта" },
               { t: 1 as const, label: "Паспорт (старого зразка)" },
+              { t: 4 as const, label: "Водійське посвідчення" },
             ].map(({ t, label }) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setDocType(t)}
-                className={`h-11 rounded-xl border px-2 text-sm font-medium transition-colors ${
+                className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium leading-tight transition-colors ${
                   docType === t
                     ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200"
                     : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
@@ -593,26 +607,26 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
-              label={docType === 3 ? "Запис № (УНЗР)" : "Серія"}
+              label={docFields.serial}
               value={form.docSerial}
               onChange={set("docSerial")}
-              placeholder={docType === 3 ? "19860427-09718" : "АА"}
+              placeholder={docFields.serialPh}
               required
             />
             <Input
-              label="Номер документа"
+              label={docFields.number}
               value={form.docNumber}
               onChange={set("docNumber")}
-              placeholder={docType === 3 ? "" : "123456"}
+              placeholder={docFields.numberPh}
               required
             />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
-              label={docType === 3 ? "Ким видано (код органу)" : "Ким виданий"}
+              label={docFields.issuedBy}
               value={form.docIssuedBy}
               onChange={set("docIssuedBy")}
-              placeholder={docType === 3 ? "1234" : "Назва органу, що видав"}
+              placeholder={docFields.issuedByPh}
               required
             />
             <DateInput
