@@ -16,6 +16,11 @@ const AUTH_URL = isDev
   ? "https://devconnect.ukasko.ua/api"
   : "https://uconnect.com.ua/api";
 
+// Прод-API (uconnect.com.ua) стоїть за Cloudflare, який блокує запити без
+// браузерного User-Agent (403). Шлемо реалістичний UA у кожному запиті.
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
 // Помилка HTTP зі збереженим статусом — щоб логіка вище могла відрізнити
 // протухлий токен (401) від інших збоїв і перевипустити його.
 class HttpError extends Error {
@@ -55,6 +60,7 @@ async function postForm(
   const headers: Record<string, string> = {
     accept: "application/json",
     "content-type": "application/x-www-form-urlencoded",
+    "user-agent": UA,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
@@ -95,6 +101,7 @@ async function postJson(
   const headers: Record<string, string> = {
     accept: "application/json",
     "content-type": "application/json",
+    "user-agent": UA,
     Authorization: `Bearer ${token}`,
   };
 
@@ -134,6 +141,7 @@ async function getJson(url: string, token: string): Promise<unknown> {
     headers: {
       accept: "application/json",
       "content-type": "application/json",
+      "user-agent": UA,
       Authorization: `Bearer ${token}`,
     },
     redirect: "follow",
@@ -228,7 +236,7 @@ export class UkaskoService {
     // Endpoint не потребує авторизації, використовуємо AUTH_URL (без /test або /prod)
     const res = await fetch(`${AUTH_URL}/directories/cities/all`, {
       method: "GET",
-      headers: { accept: "application/json" },
+      headers: { accept: "application/json", "user-agent": UA },
       cache: "no-store",
     });
     if (!res.ok) {

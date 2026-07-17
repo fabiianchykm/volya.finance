@@ -32,10 +32,10 @@ env:
     value: https://volya.finance
     availability:
       - RUNTIME
-  # "dev" → devconnect.ukasko.ua (тест). Для реального прод-API постав "prod"
-  # І ЗАМІНИ креди Ukasko на продові (dev-креди на prod не працюють — 403).
+  # "prod" → uconnect.com.ua/api/prod (бойовий, реальні поліси). "dev" →
+  # devconnect.ukasko.ua (тест). Креди Ukasko в секретах мають відповідати env.
   - variable: UKASKO_ENV
-    value: dev
+    value: prod
     availability:
       - RUNTIME
 
