@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 const isDev = process.env.UKASKO_ENV === "dev";
-const AUTH_URL = isDev ? "https://devconnect.ukasko.ua/api" : "https://connect.ukasko.ua/api";
-const BASE_URL = isDev ? "https://devconnect.ukasko.ua/api/test" : "https://connect.ukasko.ua/api/prod";
+const AUTH_URL = isDev ? "https://devconnect.ukasko.ua/api" : "https://uconnect.com.ua/api";
+const BASE_URL = isDev ? "https://devconnect.ukasko.ua/api/test" : "https://uconnect.com.ua/api/prod";
 
 export async function GET() {
   // Діагностичний ендпоінт — лише для локальної розробки.

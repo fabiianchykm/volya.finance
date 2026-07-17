@@ -10,11 +10,11 @@ const isDev = process.env.UKASKO_ENV === "dev";
 
 const BASE_URL = isDev
   ? "https://devconnect.ukasko.ua/api/test"
-  : "https://connect.ukasko.ua/api/prod";
+  : "https://uconnect.com.ua/api/prod";
 
 const AUTH_URL = isDev
   ? "https://devconnect.ukasko.ua/api"
-  : "https://connect.ukasko.ua/api";
+  : "https://uconnect.com.ua/api";
 
 // Помилка HTTP зі збереженим статусом — щоб логіка вище могла відрізнити
 // протухлий токен (401) від інших збоїв і перевипустити його.
