@@ -279,30 +279,50 @@ export class UkaskoService {
     orderData: Record<string, unknown>
   ): Promise<{ id: string; status: string; mtsbuLink?: string }> {
     const payload = { ...orderData, statusId: 2 } as Record<string, unknown>;
-    const raw = await this.withAuth((token) => postJson(
-      `${BASE_URL}/insurance/order/osago`,
-      payload,
-      token
-    )) as Record<string, unknown>;
+    let raw: Record<string, unknown>;
+    try {
+      raw = await this.withAuth((token) => postJson(
+        `${BASE_URL}/insurance/order/osago`,
+        payload,
+        token
+      )) as Record<string, unknown>;
+    } catch (e) {
+      // Деякі модулі страхових (напр. ІНТЕР-ПОЛІС) при невалідних даних падають
+      // 500-кою з PHP-помилкою ("Undefined offset", "Server Error") замість чистої
+      // валідації. Показуємо дружнє повідомлення замість технічного сміття.
+      const m = e instanceof Error ? e.message : String(e);
+      if (/undefined offset|server error|undefined (index|array key)/i.test(m)) {
+        throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
+      }
+      throw e;
+    }
 
-    // Якщо API повернув помилку валідації всередині status:"success"
+    // Ukasko може повернути помилку валідації в кількох формах: status:"error",
+    // message з "result":false, або просто текст повідомлення. Розбираємо всі.
+    const status = raw.status as string | undefined;
     const msg = raw.message as string | undefined;
+
     if (msg && msg.includes('"result":false')) {
       try {
         const parsed = JSON.parse(msg) as { error?: string; errors?: Record<string, string> };
-        const errText =
-          parsed.error ||
-          Object.values(parsed.errors ?? {}).join("; ") ||
-          "Помилка заявлення поліса";
-        throw new Error(errText);
+        throw new Error(
+          parsed.error || Object.values(parsed.errors ?? {}).join("; ") || "Помилка заявлення поліса"
+        );
       } catch (parseErr) {
         if (parseErr instanceof Error && parseErr.message !== msg) throw parseErr;
         throw new Error(msg);
       }
     }
 
+    // status:"error" з людським текстом (напр. "Невірний ідентифікаційний код").
+    if (status === "error" && msg) {
+      throw new Error(/undefined offset|server error/i.test(msg)
+        ? "Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію."
+        : msg);
+    }
+
     const data = raw as { data: [{ id: string; status: string; mtsbuLink?: string }] };
-    if (!data.data?.[0]) throw new Error("Порожня відповідь від сервера");
+    if (!data.data?.[0]) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
     return data.data[0];
   }
 
