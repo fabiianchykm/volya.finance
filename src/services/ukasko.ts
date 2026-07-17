@@ -302,27 +302,39 @@ export class UkaskoService {
     const status = raw.status as string | undefined;
     const msg = raw.message as string | undefined;
 
-    if (msg && msg.includes('"result":false')) {
+    // Витягує людський текст помилки з довільної структури Ukasko-відповіді.
+    const extractError = (source: string): string | null => {
       try {
-        const parsed = JSON.parse(msg) as { error?: string; errors?: Record<string, string> };
-        throw new Error(
-          parsed.error || Object.values(parsed.errors ?? {}).join("; ") || "Помилка заявлення поліса"
-        );
-      } catch (parseErr) {
-        if (parseErr instanceof Error && parseErr.message !== msg) throw parseErr;
-        throw new Error(msg);
+        const p = JSON.parse(source) as Record<string, unknown>;
+        const errorsObj = p.errors as Record<string, unknown> | undefined;
+        const fromErrors = errorsObj
+          ? Object.values(errorsObj).flat().map(String).join("; ")
+          : "";
+        const candidate =
+          (p.error as string) || (p.message as string) || (p.msg as string) ||
+          (p.text as string) || fromErrors || "";
+        return candidate.trim() || null;
+      } catch {
+        return null;
       }
-    }
+    };
 
-    // status:"error" з людським текстом (напр. "Невірний ідентифікаційний код").
-    if (status === "error" && msg) {
-      throw new Error(/undefined offset|server error/i.test(msg)
-        ? "Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію."
-        : msg);
+    if ((msg && msg.includes('"result":false')) || status === "error") {
+      const rawText = msg ?? JSON.stringify(raw);
+      // Логуємо СИРУ відповідь — щоб бачити реальну причину відмови в Cloud Logging.
+      console.error("[ukasko declare] rejected. raw:", rawText.slice(0, 800));
+      if (/undefined offset|server error/i.test(rawText)) {
+        throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
+      }
+      const clean = extractError(rawText) || (msg && !msg.startsWith("{") ? msg : null);
+      throw new Error(clean || `Страхова відхилила заявку: ${rawText.slice(0, 200)}`);
     }
 
     const data = raw as { data: [{ id: string; status: string; mtsbuLink?: string }] };
-    if (!data.data?.[0]) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    if (!data.data?.[0]) {
+      console.error("[ukasko declare] empty data. raw:", JSON.stringify(raw).slice(0, 800));
+      throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    }
     return data.data[0];
   }
 
