@@ -358,11 +358,16 @@ export class UkaskoService {
   }
 
   async getInvoice(orderId: string, resultUrl: string) {
+    // Ukasko: метод для get-invoice — POST. Обовʼязковий параметр paidBy визначає,
+    // хто платить комісію еквайрингу: "client" (клієнт) або "agent" (агент).
+    // У нас комісію платить клієнт. GET лишаємо як запасні спроби.
+    const paidBy = "client";
+    const qs = `result_url=${encodeURIComponent(resultUrl)}&paidBy=${paidBy}`;
     const attempts = [
-      { method: "GET" as const, url: `${AUTH_URL}/orders/${orderId}/get-invoice?result_url=${encodeURIComponent(resultUrl)}` },
-      { method: "GET" as const, url: `${BASE_URL}/orders/${orderId}/get-invoice?result_url=${encodeURIComponent(resultUrl)}` },
       { method: "POST" as const, url: `${AUTH_URL}/orders/${orderId}/get-invoice` },
       { method: "POST" as const, url: `${BASE_URL}/orders/${orderId}/get-invoice` },
+      { method: "GET" as const, url: `${AUTH_URL}/orders/${orderId}/get-invoice?${qs}` },
+      { method: "GET" as const, url: `${BASE_URL}/orders/${orderId}/get-invoice?${qs}` },
     ];
 
     return this.withAuth(async (token) => {
@@ -370,7 +375,7 @@ export class UkaskoService {
         try {
           const raw = method === "GET"
             ? await getJson(url, token) as Record<string, unknown>
-            : await postForm(url, { result_url: resultUrl }, token) as Record<string, unknown>;
+            : await postForm(url, { result_url: resultUrl, paidBy }, token) as Record<string, unknown>;
 
           const d = (raw.data ?? raw) as Record<string, unknown>;
           if (d.invoiceLink) {
