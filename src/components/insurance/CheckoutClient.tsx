@@ -8,6 +8,7 @@ import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
+import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 
@@ -442,6 +443,53 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     setForm((f) => ({ ...f, [key]: e.target.value }));
   };
 
+  // Підставляє збережений профіль у всі поля форми.
+  const applyProfile = (p: CustomerProfile) => {
+    setForm({
+      name: p.name,
+      surname: p.surname,
+      patronymic: p.patronymic,
+      phone: p.phone,
+      email: p.email,
+      identificationCode: p.identificationCode,
+      dateBirth: p.dateBirth,
+      street: p.street,
+      house: p.house,
+      docSerial: p.docSerial,
+      docNumber: p.docNumber,
+      docIssuedBy: p.docIssuedBy,
+      docDate: p.docDate,
+    });
+    setDocType(p.docType);
+    if (p.city) {
+      setSelectedCity(p.city);
+      setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
+    }
+    setCityError(false);
+    setDobError(false);
+    setDocDateError(false);
+  };
+
+  // При відкритті форми — підставляємо останній збережений профіль (свій пристрій),
+  // щоб повторним клієнтам не вводити все заново. Порожній email → нічого не робимо.
+  const didAutofill = useRef(false);
+  useEffect(() => {
+    if (didAutofill.current) return;
+    didAutofill.current = true;
+    const last = loadLastProfile();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (last) applyProfile(last);
+  }, []);
+
+  // Email — окремий обробник: якщо введений email збігається зі збереженим профілем,
+  // автозаповнюємо решту полів. Так «прив'язка під email» працює й при зміні пошти.
+  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    setForm((f) => ({ ...f, email }));
+    const saved = loadProfile(email);
+    if (saved) applyProfile(saved);
+  };
+
   // Тестове автозаповнення: ввести "007" у поле «Прізвище» → форма заповнюється
   // валідними тестовими даними (щоб не вбивати все вручну під час тестування).
   const fillTestData = () => {
@@ -493,6 +541,26 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     const dateOfIssue = Math.floor(issue.getTime() / 1000);
 
     const cityName = selectedCity.name_full_name_ua || selectedCity.name_ua;
+
+    // Зберігаємо профіль на пристрої під email — для автозаповнення наступного разу.
+    saveProfile({
+      surname: form.surname,
+      name: form.name,
+      patronymic: form.patronymic,
+      phone: form.phone,
+      email: form.email,
+      identificationCode: form.identificationCode,
+      dateBirth: form.dateBirth,
+      street: form.street,
+      house: form.house,
+      docType,
+      docSerial: form.docSerial,
+      docNumber: form.docNumber,
+      docIssuedBy: form.docIssuedBy,
+      docDate: form.docDate,
+      city: selectedCity,
+      cityQuery,
+    });
 
     onSubmit({
       customerType: 1,
@@ -574,7 +642,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
             label="Email"
             type="email"
             value={form.email}
-            onChange={set("email")}
+            onChange={handleEmail}
             placeholder="email@example.com"
             required
           />
