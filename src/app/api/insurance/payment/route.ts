@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ukaskoService } from "@/services/ukasko";
+import { ukaskoService, UKASKO_IS_DEV } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
@@ -23,11 +23,12 @@ export async function POST(req: NextRequest) {
           const resultUrl = `${BASE_URL}/payment-success?orderId=${orderId}`;
           try {
             const data = await ukaskoService.getInvoice(orderId, resultUrl);
-            return { status: 200, body: { success: true, data } };
+            return { status: 200, body: { success: true, data, testMode: UKASKO_IS_DEV } };
           } catch {
-            // invoiceLink недоступний — повертаємо order info з mtsbuLink
+            // invoiceLink недоступний — повертаємо order info з mtsbuLink.
+            // testMode каже клієнту, чи можна підтверджувати БЕЗ оплати (лише dev).
             const orderData = await ukaskoService.getOrderInfo(orderId);
-            return { status: 200, body: { success: true, data: orderData } };
+            return { status: 200, body: { success: true, data: orderData, testMode: UKASKO_IS_DEV } };
           }
         }
       );

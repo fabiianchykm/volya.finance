@@ -16,6 +16,9 @@ interface PaymentModalProps {
 
 export function PaymentModal({ open, onClose, orderId, amount, onPaid }: PaymentModalProps) {
   const [invoice, setInvoice] = useState<{ invoiceLink?: string; qrCode?: string; mtsbuLink?: string } | null>(null);
+  // testMode приходить із сервера (UKASKO_ENV). Лише в dev дозволено підтверджувати
+  // поліс БЕЗ оплати. На проді такого шляху немає — інакше видаємо поліси безкоштовно.
+  const [testMode, setTestMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -33,6 +36,7 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid }: Payment
           body: JSON.stringify({ action: "invoice", orderId }),
         });
         const json = await res.json();
+        setTestMode(json.testMode === true);
         if (json.success && json.data?.invoiceLink) {
           setInvoice(json.data);
         } else {
@@ -147,8 +151,9 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid }: Payment
           </>
         )}
 
-        {/* Поліс зареєстровано в МТСБУ — якщо invoice недоступний */}
-        {!loading && !paid && invoice && !invoice.invoiceLink && (
+        {/* DEV-only: invoiceLink недоступний у тесті → дозволяємо підтвердити поліс
+            без реальної оплати. На проді цей блок НЕ показується (testMode=false). */}
+        {!loading && !paid && testMode && invoice && !invoice.invoiceLink && (
           <>
             <div className="flex flex-col items-center gap-3 text-center py-2">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
@@ -179,6 +184,28 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid }: Payment
               Тест-режим: оплата через LiqPay недоступна в dev-середовищі
             </p>
           </>
+        )}
+
+        {/* PROD: рахунок LiqPay не згенерувався → НЕ оформлюємо поліс без оплати.
+            Показуємо помилку й контакт підтримки. Поліс лишається несплаченим. */}
+        {!loading && !paid && !testMode && invoice && !invoice.invoiceLink && (
+          <div className="flex flex-col items-center gap-3 text-center py-2">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+              <ShieldCheck className="h-7 w-7 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-zinc-900">Не вдалося сформувати рахунок</p>
+              <p className="text-sm text-zinc-500 mt-1">
+                Сплатити онлайн зараз неможливо. Ваш поліс зарезервовано — звʼяжіться з підтримкою,
+                щоб завершити оплату та оформлення.
+              </p>
+            </div>
+            <a href="tel:+380965092400" className="w-full">
+              <Button variant="primary" size="lg" className="w-full">
+                Звʼязатися з підтримкою
+              </Button>
+            </a>
+          </div>
         )}
 
         {!loading && error && (

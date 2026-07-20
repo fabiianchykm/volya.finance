@@ -8,6 +8,11 @@ import type {
 
 const isDev = process.env.UKASKO_ENV === "dev";
 
+// Чи це dev-середовище. Використовується фронтендом (через API), щоб дозволити
+// підтвердження поліса БЕЗ оплати ЛИШЕ в тесті. На проді такого шляху бути не
+// повинно — інакше видаються реальні поліси безкоштовно.
+export const UKASKO_IS_DEV = isDev;
+
 const BASE_URL = isDev
   ? "https://devconnect.ukasko.ua/api/test"
   : "https://uconnect.com.ua/api/prod";
@@ -371,9 +376,13 @@ export class UkaskoService {
           if (d.invoiceLink) {
             return d as unknown as { invoiceLink: string; qrCode: string };
           }
+          // Ендпоінт відповів, але без invoiceLink — логуємо, що саме прийшло,
+          // щоб зрозуміти, чому на проді не генерується рахунок LiqPay.
+          console.error(`[ukasko get-invoice] ${method} ${url} — no invoiceLink. raw:`, JSON.stringify(raw).slice(0, 500));
         } catch (e) {
           // Протухлий токен пробрасуємо нагору — withAuth перевипустить і повторить.
           if (e instanceof HttpError && e.status === 401) throw e;
+          console.error(`[ukasko get-invoice] ${method} ${url} — error:`, e instanceof Error ? e.message.slice(0, 300) : String(e));
           // Інші збої цієї спроби — пробуємо наступний ендпоінт.
         }
       }
