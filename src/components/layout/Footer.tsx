@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { Shield, ShieldCheck, Phone, Mail, Send, MessageCircle } from "lucide-react";
+import { Shield, ShieldCheck, Phone, Mail, Send } from "lucide-react";
+
+// Telegram-контакт менеджера. За номером телефону (Telegram відкриває чат із цим
+// акаунтом). Пізніше можна замінити на @username бота.
+const TELEGRAM_URL = "https://t.me/+380965092400";
 
 const footerLinks = {
   products: [
@@ -22,10 +26,7 @@ const footerLinks = {
 };
 
 const socials = [
-  { label: "Telegram", href: "#", icon: Send },
-  { label: "Viber", href: "#", icon: MessageCircle },
-  { label: "Instagram", href: "#", icon: InstagramIcon },
-  { label: "Facebook", href: "#", icon: FacebookIcon },
+  { label: "Telegram", href: TELEGRAM_URL, icon: Send },
 ];
 
 function LinkColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
@@ -97,6 +98,8 @@ export function Footer() {
                 <a
                   key={label}
                   href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={label}
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-300 ring-1 ring-white/10 transition-all hover:bg-indigo-600 hover:text-white hover:ring-indigo-500"
                 >
@@ -137,23 +140,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  );
-}
-
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-    </svg>
-  );
-}
-
-function FacebookIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
   );
 }
