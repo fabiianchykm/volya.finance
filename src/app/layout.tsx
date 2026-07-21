@@ -48,6 +48,8 @@ export const metadata: Metadata = {
     "КАСКО", "КАСКО онлайн", "міні-КАСКО", "Зелена карта", "автострахування Україна",
   ],
   alternates: { canonical: "/" },
+  // Підтвердження власності в Google Search Console (запасний метод — основний DNS).
+  verification: { google: "Jr75QDNCCI9csZpWqb5b6_4zaz33Cxnp-HtQGZTHidE" },
   openGraph: {
     title: "Автоцивілка, КАСКО, Зелена карта онлайн — volya.finance",
     description: "Оформіть автоцивілку (ОСЦПВ/ОСАГО) онлайн за 3 хвилини. Порівняйте ціни від 18+ страхових компаній. Офіційні поліси МТСБУ.",
