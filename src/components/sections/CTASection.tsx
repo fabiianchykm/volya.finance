@@ -17,15 +17,32 @@ export function CTASection() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [phone, setPhone] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const digits = phone.replace(/\D/g, "");
   const isValid = digits.length === 9;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isValid) {
+    if (!isValid || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ phone: `380${digits}`, source: "Головна — Оформити з консультантом" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        throw new Error(json.error ?? "Не вдалося надіслати заявку. Спробуйте ще раз.");
+      }
       setSubmitted(true);
-      // TODO: API call to submit "+380" + digits
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Сталася помилка. Спробуйте ще раз.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -125,11 +142,16 @@ export function CTASection() {
                     <Button
                       type="submit"
                       size="xl"
-                      disabled={!isValid}
+                      loading={submitting}
+                      disabled={!isValid || submitting}
                       className="w-full rounded-xl bg-white font-bold text-indigo-700 shadow-xl shadow-indigo-950/30 hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:hover:scale-100"
                     >
                       Замовити дзвінок
                     </Button>
+
+                    {error && (
+                      <p className="text-center text-sm font-medium text-rose-200">{error}</p>
+                    )}
 
                     <p className="text-center text-xs leading-relaxed text-indigo-200/80">
                       Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних
