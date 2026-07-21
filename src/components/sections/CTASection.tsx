@@ -173,7 +173,7 @@ export function CTASection() {
                 </h3>
                 <p className="mx-auto max-w-md text-indigo-200">
                   Наш консультант зв&apos;яжеться з вами на номер{" "}
-                  <span className="font-semibold text-white">+380 {phone}</span>{" "}
+                  <span className="whitespace-nowrap font-semibold text-white">+380&nbsp;{phone}</span>{" "}
                   найближчим часом.
                 </p>
               </motion.div>
