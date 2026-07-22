@@ -119,11 +119,16 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Рядок довіри */}
+        {/* Рядок довіри — офіційне лого МТСБУ на світлому чипі + галочка */}
         <div className="flex items-center border-t border-white/10 py-6">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] px-4 py-2 ring-1 ring-white/10">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-            <span className="text-sm font-semibold text-white">МТСБУ</span>
+          <div className="inline-flex items-center gap-2.5 rounded-full bg-white px-4 py-2 ring-1 ring-black/5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/mtsbu-logo.svg"
+              alt="МТСБУ — Моторне (транспортне) страхове бюро України"
+              className="h-5 w-auto"
+            />
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
         </div>
 
