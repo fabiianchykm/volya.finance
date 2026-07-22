@@ -101,12 +101,9 @@ export function PhoneLogin() {
     <>
       {step === "phone" ? (
         <form onSubmit={sendCode} className="space-y-3">
-          <div className="flex items-center rounded-2xl border border-zinc-200 bg-white px-3 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
-            <span className="flex select-none items-center gap-1.5 pl-1 pr-2 text-base font-semibold text-zinc-600">
-              <span className="text-lg leading-none">🇺🇦</span>
-              +380
-            </span>
-            <span className="mr-2 h-6 w-px bg-zinc-200" />
+          <div className="flex items-center rounded-2xl border border-zinc-200 bg-white px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
+            <span className="select-none pr-3 text-xl font-semibold text-zinc-500">+380</span>
+            <span className="mr-3 h-7 w-px bg-zinc-200" />
             <input
               type="tel"
               inputMode="numeric"
@@ -114,7 +111,7 @@ export function PhoneLogin() {
               placeholder="67 123 45 67"
               value={formatUaPhone(phone)}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-              className="w-full bg-transparent py-3.5 text-base font-medium tracking-wide text-zinc-900 placeholder:font-normal placeholder:text-zinc-300 outline-none"
+              className="w-full bg-transparent py-3.5 text-xl font-semibold tracking-wider text-zinc-900 placeholder:font-normal placeholder:tracking-normal placeholder:text-zinc-300 outline-none"
             />
           </div>
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
