@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Phone, Mail, Send } from "lucide-react";
+import { CheckCircle2, Phone, Mail, Send } from "lucide-react";
 import { VMark, BarlessA } from "./VMark";
 
 // Telegram-контакт менеджера. За номером телефону (Telegram відкриває чат із цим
@@ -120,17 +120,11 @@ export function Footer() {
         </div>
 
         {/* Рядок довіри */}
-        <div className="flex flex-col items-start gap-3 border-t border-white/10 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.04] px-4 py-2 ring-1 ring-white/10">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            <span className="text-sm text-zinc-300">
-              Офіційні поліси, зареєстровані в базі{" "}
-              <span className="font-semibold text-white">МТСБУ</span>
-            </span>
+        <div className="flex items-center border-t border-white/10 py-6">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] px-4 py-2 ring-1 ring-white/10">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <span className="text-sm font-semibold text-white">МТСБУ</span>
           </div>
-          <span className="text-sm text-zinc-500">
-            Партнер провідних страхових компаній України
-          </span>
         </div>
 
         {/* Нижня смуга */}
@@ -138,7 +132,6 @@ export function Footer() {
           <p className="text-sm text-zinc-500">
             © {new Date().getFullYear()} volya.finance. Усі права захищені.
           </p>
-          <p className="text-sm text-zinc-500">Зроблено в Україні 🇺🇦</p>
         </div>
       </div>
     </footer>
