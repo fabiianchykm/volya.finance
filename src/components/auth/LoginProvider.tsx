@@ -4,7 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { signIn } from "next-auth/react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { TelegramLoginButton } from "./TelegramLoginButton";
+import { TelegramCodeLogin } from "./TelegramCodeLogin";
 
 // Глобальне вікно входу: Google + Telegram. Будь-де викликаємо useLogin().open().
 
@@ -37,7 +37,7 @@ export function LoginProvider({ children }: { children: ReactNode }) {
             <span className="h-px flex-1 bg-zinc-200" />
           </div>
 
-          <TelegramLoginButton />
+          <TelegramCodeLogin />
 
           <p className="text-center text-xs text-zinc-400">
             Немає Telegram? Незабаром додамо вхід за SMS.

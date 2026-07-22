@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { verifyTelegramAuth, type TelegramAuthData } from "@/lib/telegram-auth";
+import { consumeLoginCode } from "@/lib/tg-login";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Довіряємо хосту з заголовків запиту (потрібно для self-hosted деплою
@@ -12,24 +12,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
-    // Вхід через Telegram Login Widget — перевіряємо підпис даних токеном бота.
+    // Вхід через Telegram за одноразовим кодом: бот надсилає код у чат, користувач
+    // вводить його на сайті. Код перевіряємо в БД (одноразовий, живе 5 хв).
     Credentials({
       id: "telegram",
       name: "Telegram",
-      credentials: {
-        id: {}, first_name: {}, last_name: {}, username: {},
-        photo_url: {}, auth_date: {}, hash: {},
-      },
+      credentials: { code: {} },
       authorize: async (raw) => {
-        const data = raw as TelegramAuthData;
-        if (!verifyTelegramAuth(data, process.env.TELEGRAM_BOT_TOKEN ?? "")) return null;
-        const name =
-          [data.first_name, data.last_name].filter(Boolean).join(" ") ||
-          (data.username ? `@${data.username}` : `tg${data.id}`);
+        const code = String((raw as { code?: string }).code ?? "").trim();
+        if (!/^\d{6}$/.test(code)) return null;
+        const user = await consumeLoginCode(code);
+        if (!user) return null;
         return {
-          id: `tg:${data.id}`,
-          name,
-          image: data.photo_url ?? null,
+          id: `tg:${user.tg_id}`,
+          name: user.name || (user.username ? `@${user.username}` : `tg${user.tg_id}`),
+          image: user.photo_url || null,
         };
       },
     }),
