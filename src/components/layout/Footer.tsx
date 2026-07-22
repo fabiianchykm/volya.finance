@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Shield, ShieldCheck, Phone, Mail, Send } from "lucide-react";
+import { ShieldCheck, Phone, Mail, Send } from "lucide-react";
+import { VMark } from "./VMark";
 
 // Telegram-контакт менеджера. За номером телефону (Telegram відкриває чат із цим
 // акаунтом). Пізніше можна замінити на @username бота.
@@ -64,7 +65,7 @@ export function Footer() {
           <div className="lg:col-span-5">
             <Link href="/" className="inline-flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-600/30">
-                <Shield className="h-5 w-5 text-white" />
+                <VMark className="h-6 w-6 text-white" />
               </span>
               <span className="text-xl font-bold tracking-tight text-white">
                 volya<span className="text-indigo-400">.finance</span>

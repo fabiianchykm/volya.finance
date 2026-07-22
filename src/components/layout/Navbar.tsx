@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Menu, X, LogOut, FileText } from "lucide-react";
+import { Menu, X, LogOut, FileText } from "lucide-react";
+import { VMark } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSession, signIn, signOut } from "next-auth/react";
@@ -48,7 +49,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             "flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-300",
             opaque ? "bg-indigo-600" : "bg-white/20"
           )}>
-            <Shield className="h-4 w-4 text-white" />
+            <VMark className="h-5 w-5 text-white" />
           </div>
           <span className={cn(
             "text-base font-bold transition-colors duration-300",
