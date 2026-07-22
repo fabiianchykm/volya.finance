@@ -101,8 +101,12 @@ export function PhoneLogin() {
     <>
       {step === "phone" ? (
         <form onSubmit={sendCode} className="space-y-3">
-          <div className="flex items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-            <span className="select-none pl-4 pr-1 text-sm text-zinc-500">+380</span>
+          <div className="flex items-center rounded-2xl border border-zinc-200 bg-white px-3 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
+            <span className="flex select-none items-center gap-1.5 pl-1 pr-2 text-base font-semibold text-zinc-600">
+              <span className="text-lg leading-none">🇺🇦</span>
+              +380
+            </span>
+            <span className="mr-2 h-6 w-px bg-zinc-200" />
             <input
               type="tel"
               inputMode="numeric"
@@ -110,11 +114,11 @@ export function PhoneLogin() {
               placeholder="67 123 45 67"
               value={formatUaPhone(phone)}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-              className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none"
+              className="w-full bg-transparent py-3.5 text-base font-medium tracking-wide text-zinc-900 placeholder:font-normal placeholder:text-zinc-300 outline-none"
             />
           </div>
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
-          <Button type="submit" variant="primary" size="lg" loading={loading} disabled={phoneDigits.length !== 9 || loading} className="w-full">
+          <Button type="submit" variant="primary" size="lg" loading={loading} disabled={phoneDigits.length !== 9 || loading} className="w-full rounded-2xl">
             Отримати код
           </Button>
         </form>
@@ -132,13 +136,13 @@ export function PhoneLogin() {
             inputMode="numeric"
             autoFocus
             maxLength={6}
-            placeholder="______"
+            placeholder="••••••"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            className="h-12 w-full rounded-xl border border-zinc-200 bg-white text-center text-2xl font-bold tracking-[0.4em] text-zinc-900 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            className="h-14 w-full rounded-2xl border border-zinc-200 bg-white text-center text-2xl font-bold tracking-[0.5em] text-zinc-900 shadow-sm outline-none transition-all placeholder:text-zinc-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           />
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
-          <Button type="submit" variant="primary" size="lg" loading={loading} disabled={code.length !== 6 || loading} className="w-full">
+          <Button type="submit" variant="primary" size="lg" loading={loading} disabled={code.length !== 6 || loading} className="w-full rounded-2xl">
             Підтвердити
           </Button>
           <button type="button" onClick={() => { setStep("phone"); setCode(""); setError(null); }} className="w-full text-center text-xs text-indigo-600 hover:underline">
