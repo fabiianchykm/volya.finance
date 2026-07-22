@@ -29,6 +29,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return { id: `phone:${phone}`, name: phone };
       },
     }),
+    // Вхід за номером через SMS (Firebase Phone Auth). Клієнт проходить Firebase-
+    // флоу (reCAPTCHA + SMS) і надсилає ID-токен; перевіряємо його на сервері.
+    Credentials({
+      id: "firebase-phone",
+      name: "SMS",
+      credentials: { idToken: {} },
+      authorize: async (raw) => {
+        const idToken = String((raw as { idToken?: string }).idToken ?? "");
+        if (!idToken) return null;
+        // Динамічний імпорт — щоб firebase-admin не тягнувся у загальний бандл auth.
+        const { verifyFirebasePhone } = await import("@/lib/firebase-admin");
+        const rawPhone = await verifyFirebasePhone(idToken);
+        const phone = rawPhone ? normalizePhone(rawPhone) : null;
+        if (!phone) return null;
+        return { id: `phone:${phone}`, name: phone };
+      },
+    }),
   ],
   pages: {
     signIn: "/",

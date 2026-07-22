@@ -31,12 +31,9 @@ export async function POST(req: NextRequest) {
   const { deliverable, requestId } = await checkTelegramDeliverable(phone);
 
   if (!deliverable) {
-    // Немає Telegram → тут буде SMS (поки не підключено).
-    return NextResponse.json({
-      success: false,
-      channel: "sms",
-      error: "Цей номер не в Telegram. Вхід за SMS буде доступний незабаром.",
-    });
+    // Немає Telegram → SMS через Firebase Phone Auth (код надсилає клієнт через
+    // Firebase SDK, тут лише кажемо канал).
+    return NextResponse.json({ success: true, channel: "sms" });
   }
 
   const code = await createPhoneCode(phone);
