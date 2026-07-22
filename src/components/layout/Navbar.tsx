@@ -45,10 +45,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
     >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-1">
-          <VMark className={cn(
-            "h-9 w-9 transition-colors duration-300",
-            opaque ? "text-indigo-600" : "text-white"
-          )} />
+          <VMark id="vmark-nav" className="h-9 w-9" />
           <span
             style={{ fontFamily: "var(--font-logo)" }}
             className={cn(

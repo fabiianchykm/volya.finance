@@ -64,7 +64,7 @@ export function Footer() {
           {/* Бренд + контакти + соцмережі */}
           <div className="lg:col-span-5">
             <Link href="/" className="inline-flex items-center gap-1">
-              <VMark className="h-11 w-11 text-indigo-400" />
+              <VMark id="vmark-footer" className="h-11 w-11" />
               <span
                 style={{ fontFamily: "var(--font-logo)" }}
                 className="text-3xl font-medium uppercase tracking-[0.2em] text-white"

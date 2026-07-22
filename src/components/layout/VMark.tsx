@@ -13,18 +13,22 @@ export function BarlessA({ className }: { className?: string }) {
   );
 }
 
-export function VMark({ className }: { className?: string }) {
+// Фірмовий знак «V» із фіолетовим градієнт-переливом (як у бренд-лого). Працює
+// і на світлому, і на темному фоні. id має бути унікальним на сторінці (передаємо
+// різний для хедера й футера), бо градієнт визначається через <linearGradient id>.
+export function VMark({ className, id = "vmark" }: { className?: string; id?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#c4b5fd" />
+          <stop offset="1" stopColor="#6d28d9" />
+        </linearGradient>
+      </defs>
       {/* Ліва грань — рівномірна ширина, спадає вправо-вниз до низу V */}
-      <path d="M3.6 3 L7.0 3 L12.5 21 L9.1 21 Z" />
+      <path d="M3.6 3 L7.0 3 L12.5 21 L9.1 21 Z" fill={`url(#${id})`} />
       {/* Права грань — рівномірна (не звужується), іде від низу лівої вгору-вправо */}
-      <path d="M16.6 3 L19.4 3 L15.7 21 L12.9 21 Z" />
+      <path d="M16.6 3 L19.4 3 L15.7 21 L12.9 21 Z" fill={`url(#${id})`} />
     </svg>
   );
 }
