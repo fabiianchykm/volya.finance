@@ -10,7 +10,7 @@ import { LeadModal, type LeadMode } from "./LeadModal";
 // Telegram (лінк), Дзвінок і Email (спільне віконце заявки). Ховаємо у флоу
 // оформлення, щоб не перекривати кнопки/оплату.
 
-const TELEGRAM_URL = "https://t.me/+380965092400";
+const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 
 export function ContactWidget() {
   const pathname = usePathname();

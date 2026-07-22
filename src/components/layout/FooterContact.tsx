@@ -8,7 +8,7 @@ import { LeadModal, type LeadMode } from "./LeadModal";
 // щоб було очевидно, що це способи звʼязку. Телефон/email відкривають віконце
 // заявки (спільний LeadModal); Telegram веде в чат менеджера.
 
-const TELEGRAM_URL = "https://t.me/+380965092400";
+const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 
 export function FooterContact() {
   const [mode, setMode] = useState<LeadMode>(null);
