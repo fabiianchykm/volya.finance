@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Roboto, Open_Sans } from "next/font/google";
+import { Inter, Roboto, Open_Sans, Jost } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
@@ -25,6 +25,14 @@ const openSans = Open_Sans({
   weight: ["400", "500", "600", "700"],
   variable: "--font-open-sans",
   subsets: ["latin", "cyrillic"],
+  display: "swap",
+});
+
+// Логотипний шрифт — тонкий геометричний (у стилі Futura), як у бренд-лого.
+const jost = Jost({
+  weight: ["300", "400", "500"],
+  variable: "--font-logo",
+  subsets: ["latin"],
   display: "swap",
 });
 
@@ -82,7 +90,7 @@ export default async function RootLayout({
     console.error("[auth] не вдалося отримати сесію (перевірте AUTH_SECRET):", e instanceof Error ? e.message : e);
   }
   return (
-    <html lang="uk" className={`${inter.variable} ${roboto.variable} ${openSans.variable} h-full antialiased`}>
+    <html lang="uk" className={`${inter.variable} ${roboto.variable} ${openSans.variable} ${jost.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans">
         <SessionProvider session={session}>{children}</SessionProvider>
         <ReferralCapture />

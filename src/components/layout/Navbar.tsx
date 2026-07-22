@@ -44,16 +44,19 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
       )}
     >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-1">
           <VMark className={cn(
             "h-9 w-9 transition-colors duration-300",
             opaque ? "text-indigo-600" : "text-white"
           )} />
-          <span className={cn(
-            "text-base font-bold transition-colors duration-300",
-            opaque ? "text-zinc-900" : "text-white"
-          )}>
-            volya<span className={opaque ? "text-indigo-600" : "text-indigo-300"}>.finance</span>
+          <span
+            style={{ fontFamily: "var(--font-logo)" }}
+            className={cn(
+              "text-2xl font-light uppercase tracking-[0.2em] transition-colors duration-300",
+              opaque ? "text-zinc-900" : "text-white"
+            )}
+          >
+            OLYA
           </span>
         </Link>
 
