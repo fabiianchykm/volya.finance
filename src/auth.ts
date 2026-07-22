@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { normalizePhone, verifyPhoneCode } from "@/lib/phone-login";
-import { getPoliciesByPhone } from "@/lib/policies";
+import { getPoliciesByPhone, getPoliciesByEmail } from "@/lib/policies";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Довіряємо хосту з заголовків запиту (потрібно для self-hosted деплою
@@ -25,13 +25,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const code = String(rawCode ?? "").trim();
         if (!phone || !/^\d{6}$/.test(code)) return null;
         if (!(await verifyPhoneCode(phone, code))) return null;
-        // Ім'я беремо з останнього полісу за цим номером (якщо є), інакше — номер.
-        let name = phone;
-        try {
-          const pols = await getPoliciesByPhone(phone);
-          if (pols[0]?.customerName) name = pols[0].customerName;
-        } catch { /* ігноруємо — покажемо номер */ }
-        return { id: `phone:${phone}`, name };
+        // Канонічне ім'я підставить jwt-callback з даних полісу.
+        return { id: `phone:${phone}`, name: phone };
       },
     }),
   ],
@@ -41,6 +36,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     authorized({ auth }) {
       return !!auth?.user;
+    },
+    // Канонічні дані профілю беремо з ОФОРМЛЕНОГО ПОЛІСУ (те, що клієнт сам ввів) —
+    // і для Google (за email), і для входу за номером. Так на сайті завжди коректне
+    // ім'я (напр. «Михайло»), а не значення з Google/email. Запит лише при вході.
+    async jwt({ token, user }) {
+      if (user) {
+        const email = user.email ?? null;
+        const uid = user.id ?? "";
+        const phone = uid.startsWith("phone:") ? uid.slice("phone:".length) : null;
+        try {
+          const pols = phone
+            ? await getPoliciesByPhone(phone)
+            : email
+              ? await getPoliciesByEmail(email)
+              : [];
+          if (pols[0]?.customerName) token.name = pols[0].customerName;
+        } catch { /* ігноруємо — лишиться дефолтне ім'я */ }
+      }
+      return token;
     },
     // Прокидаємо id користувача (для Google — google id, для входу за номером —
     // "phone:+380…") у сесію, щоб /policies знав, за чим шукати поліси.

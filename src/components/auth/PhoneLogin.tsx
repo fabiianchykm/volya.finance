@@ -18,6 +18,7 @@ export function PhoneLogin() {
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
+  const [channel, setChannel] = useState<"telegram" | "sms">("telegram");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +37,7 @@ export function PhoneLogin() {
       });
       const json = await res.json().catch(() => ({}));
       if (json.success) {
+        setChannel(json.channel === "sms" ? "sms" : "telegram");
         setStep("code");
       } else {
         setError(json.error ?? "Не вдалося надіслати код. Спробуйте ще раз.");
@@ -82,9 +84,8 @@ export function PhoneLogin() {
           />
         </div>
         {error && <p className="text-sm font-medium text-red-500">{error}</p>}
-        <Button type="submit" variant="outline" size="lg" loading={loading} disabled={phoneDigits.length !== 9 || loading} className="flex w-full items-center justify-center gap-2">
-          <Send className="h-4 w-4 text-sky-500" />
-          Отримати код у Telegram
+        <Button type="submit" variant="primary" size="lg" loading={loading} disabled={phoneDigits.length !== 9 || loading} className="flex w-full items-center justify-center gap-2">
+          Отримати код
         </Button>
       </form>
     );
@@ -92,8 +93,12 @@ export function PhoneLogin() {
 
   return (
     <form onSubmit={verify} className="space-y-3">
-      <p className="text-sm text-zinc-500">
-        Код надіслано у Telegram на <span className="font-medium text-zinc-700">+380 {formatUaPhone(phone)}</span>. Введіть його:
+      <p className="flex items-start gap-2 text-sm text-zinc-500">
+        <Send className={`mt-0.5 h-4 w-4 shrink-0 ${channel === "sms" ? "text-emerald-500" : "text-sky-500"}`} />
+        <span>
+          Код надіслано {channel === "sms" ? "по SMS" : "в Telegram"} на{" "}
+          <span className="font-medium text-zinc-700">+380 {formatUaPhone(phone)}</span>. Введіть його:
+        </span>
       </p>
       <input
         type="text"

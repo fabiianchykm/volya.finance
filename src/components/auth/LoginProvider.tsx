@@ -19,7 +19,19 @@ export function LoginProvider({ children }: { children: ReactNode }) {
       {children}
       <Modal open={open} onClose={() => setOpen(false)} title="Вхід у кабінет" size="sm">
         <div className="space-y-5">
-          <p className="text-sm text-zinc-500">Оберіть зручний спосіб входу:</p>
+          <div>
+            <p className="mb-2 text-sm text-zinc-500">Вхід за номером телефону:</p>
+            <PhoneLogin />
+            <p className="mt-2 text-center text-xs text-zinc-400">
+              Код надійде в Telegram, а якщо номера немає в Telegram — по SMS.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs text-zinc-400">
+            <span className="h-px flex-1 bg-zinc-200" />
+            або
+            <span className="h-px flex-1 bg-zinc-200" />
+          </div>
 
           <Button
             variant="outline"
@@ -30,18 +42,6 @@ export function LoginProvider({ children }: { children: ReactNode }) {
             <GoogleIcon className="h-4 w-4" />
             Продовжити з Google
           </Button>
-
-          <div className="flex items-center gap-3 text-xs text-zinc-400">
-            <span className="h-px flex-1 bg-zinc-200" />
-            або за номером телефону
-            <span className="h-px flex-1 bg-zinc-200" />
-          </div>
-
-          <PhoneLogin />
-
-          <p className="text-center text-xs text-zinc-400">
-            Код надійде у Telegram. Немає Telegram? Незабаром додамо вхід за SMS.
-          </p>
         </div>
       </Modal>
     </LoginContext.Provider>
