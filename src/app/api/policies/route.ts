@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { auth } from "@/auth";
-import { savePolicy, getPoliciesByEmail } from "@/lib/policies";
+import { savePolicy, getPoliciesByEmail, getPoliciesByPhone } from "@/lib/policies";
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
 import { resolveReferrerByCode, recordReferralConversion } from "@/lib/referral";
 
@@ -14,13 +14,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, email, contractId, orderId, company, vehicle, price, startDate, endDate } = body ?? {};
+    const { id, email, phone, customerName, customer, contractId, orderId, company, vehicle, price, startDate, endDate } = body ?? {};
     if (!id || !email) {
       return NextResponse.json({ success: false, error: "Бракує id або email" }, { status: 400 });
     }
     await savePolicy({
       id: String(id),
       email: String(email),
+      phone: phone ?? null,
+      customerName: customerName ?? null,
+      customer: customer ?? null,
       contractId: contractId ?? null,
       orderId: orderId ?? null,
       company: company ?? null,
@@ -40,6 +43,8 @@ export async function POST(req: NextRequest) {
       vehicle?.plate ? `🔢 Номер: <code>${escapeHtml(String(vehicle.plate))}</code>` : null,
       typeof price === "number" ? `💰 Сума: <b>${price} грн</b>` : null,
       startDate && endDate ? `📅 Період: ${escapeHtml(String(startDate))} — ${escapeHtml(String(endDate))}` : null,
+      customerName ? `👤 ${escapeHtml(String(customerName))}` : null,
+      phone ? `📞 <code>${escapeHtml(String(phone))}</code>` : null,
       `📧 Email: <code>${escapeHtml(String(email))}</code>`,
     ].filter(Boolean);
     await trySendTelegram("sales", saleLines.join("\n"));
@@ -71,19 +76,22 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET — поліси ЛИШЕ залогіненого користувача (ключ — email його акаунта).
+// GET — поліси ЛИШЕ залогіненого користувача. Ключ: email (Google) або телефон
+// (вхід за номером, session.user.id = "phone:+380…").
 export async function GET(req: NextRequest) {
   const originBlocked = assertSameOrigin(req);
   if (originBlocked) return originBlocked;
 
   const session = await auth();
-  const email = session?.user?.email;
-  if (!email) {
+  const email = session?.user?.email ?? null;
+  const uid = (session?.user as { id?: string } | undefined)?.id ?? "";
+  const phone = uid.startsWith("phone:") ? uid.slice("phone:".length) : null;
+  if (!email && !phone) {
     return NextResponse.json({ success: false, error: "Не авторизовано" }, { status: 401 });
   }
 
   try {
-    const policies = await getPoliciesByEmail(email);
+    const policies = phone ? await getPoliciesByPhone(phone) : await getPoliciesByEmail(email!);
     return NextResponse.json({ success: true, data: policies });
   } catch (e) {
     console.error("[policies] list error:", e instanceof Error ? e.message : e);

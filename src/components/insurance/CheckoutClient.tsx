@@ -270,15 +270,19 @@ export function CheckoutClient() {
     setContractId(cId);
     setStep("success");
 
-    // Привʼязуємо поліс до email клієнта, щоб він зʼявився в кабінеті після входу
-    // через Google (за збігом email). Fire-and-forget — не блокуємо екран успіху.
+    // Зберігаємо поліс із ПОВНИМИ даними клієнта. Прив'язка до акаунта — і за email
+    // (Google), і за телефоном (вхід за номером). Fire-and-forget — не блокуємо екран.
     if (customer?.email && vehicle && offer) {
+      const customerName = [customer.surname, customer.name, customer.patronymic].filter(Boolean).join(" ");
       void fetch("/api/policies", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           id: cId || orderId,
           email: customer.email,
+          phone: customer.phone,
+          customerName,
+          customer, // повний об'єкт: ПІБ, ІПН, документ, адреса, дата народження…
           contractId: cId,
           orderId,
           company: offer.companyNamePublic || offer.companyName,

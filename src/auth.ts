@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { normalizePhone, verifyPhoneCode } from "@/lib/phone-login";
+import { getPoliciesByPhone } from "@/lib/policies";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Довіряємо хосту з заголовків запиту (потрібно для self-hosted деплою
@@ -24,8 +25,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const code = String(rawCode ?? "").trim();
         if (!phone || !/^\d{6}$/.test(code)) return null;
         if (!(await verifyPhoneCode(phone, code))) return null;
-        // Ідентифікуємо користувача за номером; ім'я = номер (можна оновити пізніше).
-        return { id: `phone:${phone}`, name: phone };
+        // Ім'я беремо з останнього полісу за цим номером (якщо є), інакше — номер.
+        let name = phone;
+        try {
+          const pols = await getPoliciesByPhone(phone);
+          if (pols[0]?.customerName) name = pols[0].customerName;
+        } catch { /* ігноруємо — покажемо номер */ }
+        return { id: `phone:${phone}`, name };
       },
     }),
   ],
@@ -35,6 +41,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     authorized({ auth }) {
       return !!auth?.user;
+    },
+    // Прокидаємо id користувача (для Google — google id, для входу за номером —
+    // "phone:+380…") у сесію, щоб /policies знав, за чим шукати поліси.
+    session({ session, token }) {
+      if (session.user && token.sub) {
+        (session.user as { id?: string }).id = token.sub;
+      }
+      return session;
     },
   },
 });

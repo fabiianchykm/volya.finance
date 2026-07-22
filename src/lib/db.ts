@@ -46,6 +46,12 @@ export function ensureSchema(): Promise<void> {
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS policies_email_idx ON policies (lower(email))`;
+      // Повні дані клієнта з полісом: телефон+ім'я (індекс/показ) і весь customer
+      // (ПІБ, ІПН, документ, адреса…) як jsonb — щоб мати повний запис по кожному полісу.
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS phone text`;
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS customer_name text`;
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS customer jsonb NOT NULL DEFAULT '{}'::jsonb`;
+      await sql`CREATE INDEX IF NOT EXISTS policies_phone_idx ON policies (phone)`;
     })().catch((e) => {
       schemaPromise = null;
       throw e;
