@@ -31,9 +31,9 @@ export function FooterContact() {
             <span className={label}>Дзвінок</span>
           </div>
           <div className="flex flex-col items-center gap-1.5">
-            <button type="button" aria-label="Написати на email" title="Написати на email" className={btn} onClick={() => setMode("email")}>
+            <a href="mailto:volya.finance.team@gmail.com" aria-label="Написати на email" title="Написати на email" className={btn}>
               <Mail className="h-5 w-5" />
-            </button>
+            </a>
             <span className={label}>Email</span>
           </div>
           <div className="flex flex-col items-center gap-1.5">

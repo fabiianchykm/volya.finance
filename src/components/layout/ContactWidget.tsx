@@ -40,7 +40,7 @@ export function ContactWidget() {
       label: "Написати на email",
       icon: Mail,
       color: "bg-indigo-500 hover:bg-indigo-600",
-      onClick: () => { setMode("email"); setOpen(false); },
+      href: "mailto:volya.finance.team@gmail.com",
     },
   ];
 
@@ -74,7 +74,14 @@ export function ContactWidget() {
                   className="flex items-center gap-2.5"
                 >
                   {o.href ? (
-                    <a href={o.href} target="_blank" rel="noopener noreferrer" aria-label={o.label} onClick={() => setOpen(false)} className="flex items-center gap-2.5">
+                    <a
+                      href={o.href}
+                      target={o.href.startsWith("http") ? "_blank" : undefined}
+                      rel={o.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                      aria-label={o.label}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-2.5"
+                    >
                       {inner}
                     </a>
                   ) : (
