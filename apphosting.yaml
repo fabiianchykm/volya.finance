@@ -64,6 +64,9 @@ env:
     secret: telegram-sales-chat-id
   - variable: TELEGRAM_DEV_CHAT_ID
     secret: telegram-dev-chat-id
+  # Telegram Gateway API — коди підтвердження на номер телефону (вхід за номером).
+  - variable: TELEGRAM_GATEWAY_TOKEN
+    secret: telegram-gateway-token
   # Супергрупа підтримки з Темами: бот заводить тему на клієнта, оператори
   # відповідають у темах. id групи (не секрет). Порожньо → режим одного оператора.
   - variable: TELEGRAM_SUPPORT_GROUP_ID

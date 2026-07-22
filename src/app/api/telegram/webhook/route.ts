@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { getThreadForClient, getClientForThread, saveThread } from "@/lib/support";
-import { createLoginCode } from "@/lib/tg-login";
 
 // Вебхук Telegram-бота = чат підтримки.
 //
@@ -100,23 +99,6 @@ export async function POST(req: NextRequest) {
   if (text.trim() === "/id") {
     await tg("sendMessage", { chat_id: chatId, text: `chat_id: ${chatId}\ntype: ${chat.type ?? "?"}` });
     return NextResponse.json({ ok: true });
-  }
-
-  // Вхід на сайт: deep-link t.me/<bot>?start=login → генеруємо код і надсилаємо в чат.
-  if (chat.type === "private" && text.startsWith("/start")) {
-    const payload = text.slice("/start".length).trim();
-    if (payload === "login") {
-      await tg("deleteMessage", { chat_id: chatId, message_id: messageId });
-      const code = await createLoginCode({ tg_id: chatId, name: fullName, username, photo_url: "" });
-      await tg("sendMessage", {
-        chat_id: chatId,
-        parse_mode: "HTML",
-        text: code
-          ? `🔐 Ваш код для входу на <b>volya.finance</b>:\n\n<code>${code}</code>\n\nВведіть його на сайті. Код дійсний 5 хвилин.`
-          : "Не вдалося створити код. Спробуйте ще раз за хвилину.",
-      });
-      return NextResponse.json({ ok: true });
-    }
   }
 
   try {
