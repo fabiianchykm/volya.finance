@@ -44,7 +44,7 @@ async function tg(method: string, payload: Record<string, unknown>): Promise<Rec
 }
 
 const greeting = (firstName: string) =>
-  `Вітаю, ${esc(firstName)}! Мене звати Володя, служба турботи volya.finance ${CARE_ICON}\n\n` +
+  `Вітаю, ${esc(firstName)}! Мене звати Володимир, служба турботи volya.finance ${CARE_ICON}\n\n` +
   `Ваше звернення прийнято — відповім найближчим часом.`;
 
 const welcome = () =>
@@ -113,8 +113,10 @@ export async function POST(req: NextRequest) {
         if (!threadId) return NextResponse.json({ ok: true }); // General / без теми
         const clientId = await getClientForThread(threadId);
         if (!clientId) return NextResponse.json({ ok: true });
+        // Клієнт бачить ім'я оператора, який відповів.
+        const opName = from.first_name || "Оператор";
         if (text) {
-          await tg("sendMessage", { chat_id: clientId, text });
+          await tg("sendMessage", { chat_id: clientId, parse_mode: "HTML", text: `<b>${esc(opName)}</b>: ${esc(text)}` });
         } else {
           await tg("copyMessage", { chat_id: clientId, from_chat_id: SUPPORT_GROUP_ID, message_id: messageId });
         }
@@ -149,7 +151,7 @@ export async function POST(req: NextRequest) {
       const replied = msg.reply_to_message as { text?: string } | undefined;
       const m = replied?.text?.match(/🆔\s*(\d+)/);
       if (m && text) {
-        await tg("sendMessage", { chat_id: m[1], text });
+        await tg("sendMessage", { chat_id: m[1], parse_mode: "HTML", text: `<b>${esc(from.first_name || "Оператор")}</b>: ${esc(text)}` });
         await tg("sendMessage", { chat_id: chatId, text: "✅ Надіслано клієнту." });
       }
       return NextResponse.json({ ok: true });
