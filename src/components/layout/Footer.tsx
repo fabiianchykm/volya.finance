@@ -1,11 +1,7 @@
 import Link from "next/link";
-import { CheckCircle2, Send } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { VMark, BarlessA } from "./VMark";
 import { FooterContact } from "./FooterContact";
-
-// Telegram-контакт менеджера. За номером телефону (Telegram відкриває чат із цим
-// акаунтом). Пізніше можна замінити на @username бота.
-const TELEGRAM_URL = "https://t.me/+380965092400";
 
 const footerLinks = {
   products: [
@@ -26,10 +22,6 @@ const footerLinks = {
     { label: "Політика конфіденційності", href: "#" },
   ],
 };
-
-const socials = [
-  { label: "Telegram", href: TELEGRAM_URL, icon: Send },
-];
 
 function LinkColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
@@ -80,21 +72,6 @@ export function Footer() {
             </p>
 
             <FooterContact />
-
-            <div className="mt-7 flex items-center gap-2.5">
-              {socials.map(({ label, href, icon: Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-300 ring-1 ring-white/10 transition-all hover:bg-indigo-600 hover:text-white hover:ring-indigo-500"
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Колонки посилань */}

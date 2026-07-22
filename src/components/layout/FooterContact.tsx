@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, Mail, CheckCircle2 } from "lucide-react";
+import { Phone, Mail, Send, CheckCircle2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
-// Контактні іконки у футері. Клік → віконце: телефон («залиште номер — передзвонимо»)
-// або email («залиште email — напишемо»). Заявка йде в sales-бот через /api/lead.
+// Контактні кнопки у футері: телефон, email, Telegram — в один ряд, із підписами,
+// щоб було очевидно, що це способи звʼязку. Телефон/email відкривають віконце
+// («залиште номер/email — ми звʼяжемось»), заявка йде в sales-бот через /api/lead.
+// Telegram веде в чат менеджера.
+
+const TELEGRAM_URL = "https://t.me/+380965092400";
 
 type Mode = null | "phone" | "email";
 
@@ -63,16 +67,34 @@ export function FooterContact() {
 
   const btn =
     "flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.04] text-indigo-400 ring-1 ring-white/10 transition-colors hover:bg-indigo-600 hover:text-white hover:ring-indigo-500";
+  const label = "text-[11px] font-medium text-zinc-400";
 
   return (
     <>
-      <div className="mt-7 flex items-center gap-3">
-        <button type="button" aria-label="Замовити дзвінок" className={btn} onClick={() => setMode("phone")}>
-          <Phone className="h-5 w-5" />
-        </button>
-        <button type="button" aria-label="Написати на email" className={btn} onClick={() => setMode("email")}>
-          <Mail className="h-5 w-5" />
-        </button>
+      <div className="mt-7">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+          Звʼяжіться з нами
+        </p>
+        <div className="flex items-start gap-4">
+          <div className="flex flex-col items-center gap-1.5">
+            <button type="button" aria-label="Замовити дзвінок" title="Замовити дзвінок" className={btn} onClick={() => setMode("phone")}>
+              <Phone className="h-5 w-5" />
+            </button>
+            <span className={label}>Дзвінок</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <button type="button" aria-label="Написати на email" title="Написати на email" className={btn} onClick={() => setMode("email")}>
+              <Mail className="h-5 w-5" />
+            </button>
+            <span className={label}>Email</span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Написати в Telegram" title="Написати в Telegram" className={btn}>
+              <Send className="h-5 w-5" />
+            </a>
+            <span className={label}>Telegram</span>
+          </div>
+        </div>
       </div>
 
       <Modal open={mode !== null} onClose={close} title={mode === "email" ? "Написати нам" : "Замовити дзвінок"} size="sm">
