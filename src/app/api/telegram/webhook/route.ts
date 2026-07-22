@@ -82,6 +82,9 @@ export async function POST(req: NextRequest) {
 
   // ── Клієнт ──
   if (text.startsWith("/start")) {
+    // Видаляємо саме повідомлення «/start», щоб чат лишався чистим (у приватному
+    // чаті бот може видаляти вхідні повідомлення).
+    await tg("deleteMessage", { chat_id: chatId, message_id: msg.message_id });
     await tg("sendMessage", {
       chat_id: chatId,
       parse_mode: "HTML",
