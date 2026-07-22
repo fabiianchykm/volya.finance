@@ -51,11 +51,8 @@ const welcome = () =>
   `👋 Вітаємо у службі турботи <b>volya.finance</b>! ${CARE_ICON}\n\n` +
   `Напишіть своє запитання — і наш оператор відповість вам якнайшвидше.`;
 
-// Знаходить існуючу тему клієнта або створює нову в супергрупі.
-async function ensureTopic(clientChatId: string, fullName: string, username: string): Promise<number | null> {
-  const existing = await getThreadForClient(clientChatId);
-  if (existing) return existing;
-
+// Створює нову тему клієнта в супергрупі (викликаємо лише при першому зверненні).
+async function createTopic(clientChatId: string, fullName: string, username: string): Promise<number | null> {
   const name = `${fullName}${username ? ` ${username}` : ""}`.slice(0, 120) || `Клієнт ${clientChatId}`;
   const created = await tg("createForumTopic", { chat_id: SUPPORT_GROUP_ID, name });
   const threadId = created?.message_thread_id as number | undefined;
@@ -131,9 +128,13 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ ok: true });
         }
 
-        await tg("sendMessage", { chat_id: chatId, parse_mode: "HTML", text: greeting(firstName) });
-
-        const threadId = await ensureTopic(chatId, fullName, username);
+        // Вітаємо ЛИШЕ при першому зверненні (коли теми ще немає). Ознака «першого» —
+        // відсутність теми в БД, тож повторно не спамимо.
+        let threadId = await getThreadForClient(chatId);
+        if (!threadId) {
+          await tg("sendMessage", { chat_id: chatId, parse_mode: "HTML", text: greeting(firstName) });
+          threadId = await createTopic(chatId, fullName, username);
+        }
         if (threadId) {
           if (text) {
             await tg("sendMessage", { chat_id: SUPPORT_GROUP_ID, message_thread_id: threadId, text });
