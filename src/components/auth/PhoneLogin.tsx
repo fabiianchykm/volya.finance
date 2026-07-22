@@ -61,8 +61,10 @@ export function PhoneLogin() {
         setChannel("telegram");
       }
       setStep("code");
-    } catch {
-      setError("Не вдалося надіслати код. Спробуйте ще раз.");
+    } catch (err) {
+      const code = (err as { code?: string })?.code ?? "";
+      console.error("[phone-login] send failed:", code, err instanceof Error ? err.message : err);
+      setError(`Не вдалося надіслати код${code ? ` (${code})` : ""}. Спробуйте ще раз.`);
     } finally {
       setLoading(false);
     }
