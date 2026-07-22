@@ -44,13 +44,11 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
       )}
     >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-300",
-            opaque ? "bg-indigo-600" : "bg-white/20"
-          )}>
-            <VMark className="h-5 w-5 text-white" />
-          </div>
+        <Link href="/" className="flex items-center gap-2">
+          <VMark className={cn(
+            "h-9 w-9 transition-colors duration-300",
+            opaque ? "text-indigo-600" : "text-white"
+          )} />
           <span className={cn(
             "text-base font-bold transition-colors duration-300",
             opaque ? "text-zinc-900" : "text-white"

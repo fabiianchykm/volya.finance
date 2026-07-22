@@ -63,10 +63,8 @@ export function Footer() {
         <div className="grid gap-12 py-16 lg:grid-cols-12 lg:py-20">
           {/* Бренд + контакти + соцмережі */}
           <div className="lg:col-span-5">
-            <Link href="/" className="inline-flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-600/30">
-                <VMark className="h-6 w-6 text-white" />
-              </span>
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <VMark className="h-11 w-11 text-indigo-400" />
               <span className="text-xl font-bold tracking-tight text-white">
                 volya<span className="text-indigo-400">.finance</span>
               </span>
