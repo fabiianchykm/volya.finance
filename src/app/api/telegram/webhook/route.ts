@@ -15,11 +15,6 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const OPERATOR_CHAT_ID = process.env.TELEGRAM_OPERATOR_CHAT_ID || process.env.TELEGRAM_SALES_CHAT_ID;
 const CARE_ICON = "💜";
 
-// Хто вже отримав привітання (щоб не слати його на кожне повідомлення). In-memory —
-// живе, поки живий інстанс (у нас minInstances:1). Повторне привітання після
-// редеплою нешкідливе.
-const greeted = new Set<string>();
-
 export function webhookSecret(): string {
   return createHash("sha256").update(`${BOT_TOKEN ?? ""}:webhook`).digest("hex").slice(0, 40);
 }
@@ -95,18 +90,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Привітання — один раз на клієнта.
-  if (!greeted.has(chatId)) {
-    greeted.add(chatId);
-    if (greeted.size > 5000) greeted.delete(greeted.values().next().value as string);
-    await tg("sendMessage", {
-      chat_id: chatId,
-      parse_mode: "HTML",
-      text:
-        `Вітаю, ${esc(firstName)}! Мене звати Володя, служба турботи volya.finance ${CARE_ICON}\n\n` +
-        `Ваше звернення прийнято — відповім найближчим часом.`,
-    });
-  }
+  // Автовідповідь на кожне повідомлення клієнта.
+  await tg("sendMessage", {
+    chat_id: chatId,
+    parse_mode: "HTML",
+    text:
+      `Вітаю, ${esc(firstName)}! Мене звати Володя, служба турботи volya.finance ${CARE_ICON}\n\n` +
+      `Ваше звернення прийнято — відповім найближчим часом.`,
+  });
 
   // Пересилання оператору.
   if (OPERATOR_CHAT_ID) {
