@@ -3,6 +3,7 @@ import { Inter, Roboto, Open_Sans, Jost } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { LoginProvider } from "@/components/auth/LoginProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { ReferralCapture } from "@/components/referral/ReferralCapture";
 import { ContactWidget } from "@/components/layout/ContactWidget";
@@ -93,7 +94,9 @@ export default async function RootLayout({
   return (
     <html lang="uk" className={`${inter.variable} ${roboto.variable} ${openSans.variable} ${jost.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans">
-        <SessionProvider session={session}>{children}</SessionProvider>
+        <SessionProvider session={session}>
+          <LoginProvider>{children}</LoginProvider>
+        </SessionProvider>
         <ContactWidget />
         <ReferralCapture />
         <JsonLd data={[organizationLd(), websiteLd()]} />
