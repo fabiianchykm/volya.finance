@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CheckCircle2, Phone, Mail, Send } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
 import { VMark, BarlessA } from "./VMark";
+import { FooterContact } from "./FooterContact";
 
 // Telegram-контакт менеджера. За номером телефону (Telegram відкриває чат із цим
 // акаунтом). Пізніше можна замінити на @username бота.
@@ -78,22 +79,7 @@ export function Footer() {
               пропозиції провідних страхових і оформлюйте поліси за кілька хвилин.
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:gap-4">
-              <a
-                href="tel:+380965092400"
-                className="group inline-flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
-              >
-                <Phone className="h-4 w-4 shrink-0 text-indigo-400" />
-                <span className="whitespace-nowrap text-[15px] font-medium text-zinc-200">+38 096 509 24 00</span>
-              </a>
-              <a
-                href="mailto:volya.finance.team@gmail.com"
-                className="group inline-flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-2.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
-              >
-                <Mail className="h-4 w-4 shrink-0 text-indigo-400" />
-                <span className="whitespace-nowrap text-[15px] font-medium text-zinc-200">volya.finance.team@gmail.com</span>
-              </a>
-            </div>
+            <FooterContact />
 
             <div className="mt-7 flex items-center gap-2.5">
               {socials.map(({ label, href, icon: Icon }) => (
@@ -119,9 +105,15 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Рядок довіри — офіційне лого МТСБУ на світлому чипі + галочка */}
+        {/* Рядок довіри — офіційне лого МТСБУ (лінк на реєстр) + галочка */}
         <div className="flex items-center border-t border-white/10 py-6">
-          <div className="inline-flex items-center gap-2.5 rounded-full bg-white px-4 py-2 ring-1 ring-black/5">
+          <a
+            href="https://policy.mtsbu.ua"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Перевірити поліс у реєстрі МТСБУ"
+            className="inline-flex items-center gap-2.5 rounded-full bg-white px-4 py-2 ring-1 ring-black/5 transition-transform hover:scale-[1.03]"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/mtsbu-logo.svg"
@@ -129,7 +121,7 @@ export function Footer() {
               className="h-5 w-auto"
             />
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          </div>
+          </a>
         </div>
 
         {/* Нижня смуга */}
