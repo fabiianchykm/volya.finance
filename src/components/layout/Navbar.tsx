@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, LogOut, FileText } from "lucide-react";
-import { VMark } from "./VMark";
+import { VMark, BarlessA } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSession, signIn, signOut } from "next-auth/react";
@@ -52,11 +52,11 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
           <span
             style={{ fontFamily: "var(--font-logo)" }}
             className={cn(
-              "text-2xl font-light uppercase tracking-[0.2em] transition-colors duration-300",
+              "text-2xl font-medium uppercase tracking-[0.2em] transition-colors duration-300",
               opaque ? "text-zinc-900" : "text-white"
             )}
           >
-            OLYA
+            OLY<BarlessA className="inline-block h-[0.72em] w-auto align-baseline" />
           </span>
         </Link>
 

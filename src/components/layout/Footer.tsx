@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ShieldCheck, Phone, Mail, Send } from "lucide-react";
-import { VMark } from "./VMark";
+import { VMark, BarlessA } from "./VMark";
 
 // Telegram-контакт менеджера. За номером телефону (Telegram відкриває чат із цим
 // акаунтом). Пізніше можна замінити на @username бота.
@@ -67,9 +67,9 @@ export function Footer() {
               <VMark className="h-11 w-11 text-indigo-400" />
               <span
                 style={{ fontFamily: "var(--font-logo)" }}
-                className="text-3xl font-light uppercase tracking-[0.2em] text-white"
+                className="text-3xl font-medium uppercase tracking-[0.2em] text-white"
               >
-                OLYA
+                OLY<BarlessA className="inline-block h-[0.72em] w-auto align-baseline" />
               </span>
             </Link>
 

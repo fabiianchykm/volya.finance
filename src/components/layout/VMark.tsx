@@ -2,6 +2,17 @@
 // Малюється поточним кольором (currentColor), тож усередині кольорового бейджа
 // білий, а окремо може бути будь-якого кольору. Масштабується без втрат.
 
+// Літера «A» без середньої поперечки (гострий трикутник) — стилізована під бренд.
+// Малюється поточним кольором; висоту задавай в em (напр. h-[0.72em]) + align-baseline,
+// щоб збігалася з висотою великих літер тексту поруч.
+export function BarlessA({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M0 20 L10 0 L20 20 L17 20 L10 6 L3 20 Z" />
+    </svg>
+  );
+}
+
 export function VMark({ className }: { className?: string }) {
   return (
     <svg
