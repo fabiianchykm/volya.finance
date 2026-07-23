@@ -9,10 +9,12 @@ import { OtpModal } from "@/components/insurance/OtpModal";
 import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { GreenCardOffer } from "@/types/api";
+import type { VehicleData } from "@/types/insurance";
 
 // Анкета оформлення «Зелена карта» (аналог CheckoutClient для ОСЦПВ):
-// дані страхувальника (ПІБ укр + латиниця, документ, адреса) + авто →
-// заявлення (order/create) → OTP → оплата → contract/confirm → готовий поліс.
+// дані страхувальника (ПІБ укр + латиниця, документ, адреса) → заявлення
+// (order/create) → OTP → оплата → contract/confirm → готовий поліс.
+// Дані авто підтягуються за номером на попередньому кроці.
 
 export interface GreenCardContext {
   offer: GreenCardOffer;
@@ -20,6 +22,7 @@ export interface GreenCardContext {
   periodOption: number;   // 15/21 дні, 1..12 міс
   carType: string;        // B/C/D/A/E
   startDate: string;      // "ДД.ММ.РРРР"
+  vehicle: VehicleData;   // з пошуку за номером
 }
 
 const DOC_TYPES = [
@@ -49,6 +52,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const v = ctx.vehicle;
   const [f, setF] = useState({
     surnameUa: "", nameUa: "", patronymicUa: "",
     surnameLat: "", nameLat: "",
@@ -56,8 +60,13 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     phone: "", email: "",
     docType: 3 as 1 | 3 | 4, docSerial: "", docNumber: "", docIssuedBy: "", docDate: "",
     street: "", house: "", apartment: "",
-    brand: "", model: "", number: "", vin: "", year: "",
-    ownWeight: "", totalWeight: "", nSeating: "", engineSize: "",
+    // Авто — попередньо заповнене з пошуку за номером.
+    brand: v.mark ?? "", model: v.model ?? "", number: v.number ?? "", vin: v.vin ?? "",
+    year: v.year ? String(v.year) : "",
+    ownWeight: v.ownWeight ? String(v.ownWeight) : "",
+    totalWeight: v.totalWeight ? String(v.totalWeight) : "",
+    nSeating: v.numberOfSeats ? String(v.numberOfSeats) : "",
+    engineSize: v.capacity ? String(v.capacity) : "",
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
 
