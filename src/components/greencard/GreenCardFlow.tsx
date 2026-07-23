@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, Car, CalendarDays, Clock, Phone, ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Globe, MapPin, Car, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 // Зелена карта — міжнародний поліс для виїзду за кордон. Онлайн-калькулятора в
@@ -50,13 +50,11 @@ export function GreenCardFlow() {
   const [vehicleType, setVehicleType] = useState("B");
   const [startDate, setStartDate] = useState(tomorrowISO());
   const [duration, setDuration] = useState("15d");
-  const [phone, setPhone] = useState(""); // 9 цифр після +380
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const phoneValid = phone.replace(/\D/g, "").length === 9;
-  const valid = !!territory && !!vehicleType && !!startDate && !!duration && phoneValid;
+  const valid = !!territory && !!vehicleType && !!startDate && !!duration;
 
   const labelOf = (arr: { value: string; label: string }[], v: string) =>
     arr.find((x) => x.value === v)?.label ?? "";
@@ -71,7 +69,6 @@ export function GreenCardFlow() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          phone: `+380${phone.replace(/\D/g, "")}`,
           params: {
             territory: labelOf(TERRITORIES, territory),
             vehicle: labelOf(VEHICLE_TYPES, vehicleType),
@@ -121,7 +118,7 @@ export function GreenCardFlow() {
               </span>
             </h1>
             <p className="mx-auto max-w-xl text-base text-zinc-300">
-              Залиште параметри поїздки й телефон — менеджер підбере пропозиції та передзвонить.
+              Залиште параметри поїздки — ми підберемо вигідну Зелену карту.
             </p>
           </div>
 
@@ -183,24 +180,6 @@ export function GreenCardFlow() {
                 </div>
               </div>
 
-              {/* 5. Телефон — +380 префікс, 9 цифр (як в інших формах сайту). */}
-              <div className="mt-4">
-                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                  <Phone className="h-3.5 w-3.5" /> Ваш телефон
-                </label>
-                <div className="flex items-center rounded-xl border border-zinc-200 bg-white focus-within:border-indigo-400">
-                  <span className="pl-3 pr-1 text-sm text-zinc-500">+380</span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="67 123 45 67"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                    className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 outline-none"
-                  />
-                </div>
-              </div>
-
               {error && (
                 <p className="mt-3 text-sm text-red-600">{error}</p>
               )}
@@ -223,7 +202,7 @@ export function GreenCardFlow() {
             </form>
           ) : (
             <div className="mx-auto max-w-lg">
-              <LeadReceived phone={`+380${phone.replace(/\D/g, "")}`} onBack={() => setStep("form")} />
+              <LeadReceived onBack={() => setStep("form")} />
             </div>
           )}
         </motion.div>
@@ -232,8 +211,8 @@ export function GreenCardFlow() {
   );
 }
 
-// Підтвердження прийнятої заявки. Менеджер отримав лід у Telegram і передзвонить.
-function LeadReceived({ phone, onBack }: { phone: string; onBack: () => void }) {
+// Підтвердження прийнятої заявки. Менеджер отримав параметри поїздки в Telegram.
+function LeadReceived({ onBack }: { onBack: () => void }) {
   return (
     <div className="rounded-2xl bg-white p-6 text-left shadow-2xl sm:p-8">
       <div className="flex items-start gap-3">
@@ -241,8 +220,8 @@ function LeadReceived({ phone, onBack }: { phone: string; onBack: () => void }) 
         <div>
           <h2 className="text-lg font-bold text-zinc-900">Заявку прийнято!</h2>
           <p className="mt-1 text-sm text-zinc-600">
-            Ми зателефонуємо на <span className="font-medium text-zinc-900">{phone}</span>, підберемо
-            вигідну Зелену карту за вашими параметрами й допоможемо оформити.
+            Ми підберемо вигідну Зелену карту за вашими параметрами. Щоб ми звʼязалися з вами,
+            скористайтеся кнопкою звʼязку внизу-праворуч або напишіть нам у Telegram.
           </p>
         </div>
       </div>

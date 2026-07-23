@@ -29,14 +29,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Некоректний запит" }, { status: 400 });
   }
 
-  if (!isValidPhone(phone)) {
-    return NextResponse.json({ success: false, error: "Введіть коректний номер телефону" }, { status: 400 });
-  }
-
+  // Телефон необовʼязковий — форма Зеленої карти його більше не збирає.
   const lines = [
     "🌍 <b>Нова заявка на Зелену карту</b>",
     "",
-    `📞 Телефон: <code>${escapeHtml(normalizePhone(phone))}</code>`,
+    phone && isValidPhone(phone) ? `📞 Телефон: <code>${escapeHtml(normalizePhone(phone))}</code>` : null,
     params.territory ? `📍 Територія: ${escapeHtml(params.territory)}` : null,
     params.vehicle ? `🚙 ТЗ: ${escapeHtml(params.vehicle)}` : null,
     params.startDate ? `📅 Початок: ${escapeHtml(params.startDate)}` : null,
