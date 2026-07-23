@@ -16,6 +16,7 @@ const navLinks = [
   { label: "КАСКО", href: "/kasko" },
   { label: "Міні-КАСКО", href: "/mini-kasko" },
   { label: "Зелена карта", href: "/green-card" },
+  { label: "Туристичне", href: "/tourism" },
 ];
 
 export function Navbar({ solid = false }: { solid?: boolean }) {
