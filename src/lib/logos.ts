@@ -11,7 +11,7 @@ const LOGO_FILES: Record<string, string> = {
   esa: "/logos/esa.webp",
   euroins: "/logos/euroins.webp",
   express: "/logos/express.svg",
-  guardian: "/logos/guardian.png",
+  guardian: "/logos/guardian.svg",
   ingo: "/logos/ingo.webp",
   inho: "/logos/inho.webp",
   "inter-polis": "/logos/inter-polis.webp",
