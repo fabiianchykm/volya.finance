@@ -2,6 +2,8 @@
 // jpeg/jpg НЕ використовуємо для логотипів (немає прозорості, артефакти на тексті).
 // Якщо для слага файлу немає — компонент показує ініціали (без 404-запитів).
 
+import { formatCompanyName } from "./utils";
+
 const LOGO_FILES: Record<string, string> = {
   arsenal: "/logos/arsenal.svg",
   arx: "/logos/arx.webp",
@@ -48,6 +50,24 @@ const LOGO_ALIASES: Record<string, string> = {
 function safe(path: string | undefined): string | null {
   if (!path) return null;
   return /\.jpe?g$/i.test(path) ? null : path;
+}
+
+// Транслітерація Ukr→Lat для отримання слага з назви компанії (та сама логіка,
+// що в OfferCard). ь → '' (нульовий символ), а не '-'.
+const TR: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ye", ж: "zh",
+  з: "z", и: "y", і: "i", ї: "yi", й: "y", к: "k", л: "l", м: "m", н: "n",
+  о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts",
+  ч: "ch", ш: "sh", щ: "shch", ь: "", ю: "yu", я: "ya",
+};
+function transliterate(text: string): string {
+  return text.toLowerCase().split("").map((c) => TR[c] ?? c).join("")
+    .replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
+
+/** Лого страхової за її публічною назвою (напр. з пропозиції Ukasko). */
+export function companyLogo(publicName: string): string | null {
+  return logoSrc(transliterate(formatCompanyName(publicName)));
 }
 
 export function logoSrc(slug: string): string | null {

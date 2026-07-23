@@ -224,3 +224,25 @@ export type PeriodId = 15 | 21 | 1 | 2 | 3 | 4 | 5 | 6 | 12;
 export type CustomerTypeId = 1 | 2 | 3;
 export type RegistrationTypeId = 1 | 2 | 3;
 export type PrivilegeId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+// Пропозиція «Зелена карта» (POST /insurance/greencard/calculator).
+export interface GreenCardOffer {
+  offerId: string;
+  moduleId: number;
+  price: number;
+  startDate?: string;
+  companyId?: string;
+  companyName: string;
+  companyNamePublic: string;
+  company?: { logo?: string | null; [k: string]: unknown };
+  dateFromMax?: number;
+}
+
+export interface GreenCardParams {
+  country: number;       // 60 = Європа, 117 = Молдова
+  userType: number;      // 1 = фізособа, 2 = юрособа
+  startDate: string;     // YYYY-MM-DD
+  periodOption: number;  // 15/21 = дні, 1..12 = місяці
+  carType: string;       // B/C/D/A/E
+  carNumber?: string;
+}

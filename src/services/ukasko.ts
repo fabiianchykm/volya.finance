@@ -4,6 +4,8 @@ import type {
   City,
   OffersResponse,
   CalculatorParams,
+  GreenCardOffer,
+  GreenCardParams,
 } from "@/types/api";
 
 const isDev = process.env.UKASKO_ENV === "dev";
@@ -269,6 +271,15 @@ export class UkaskoService {
       return inner as unknown as OffersResponse;
     }
     return raw as unknown as OffersResponse;
+  }
+
+  // Калькулятор «Зелена карта»: POST з JSON-параметрами → масив пропозицій.
+  async getGreenCardOffers(params: GreenCardParams): Promise<GreenCardOffer[]> {
+    const raw = await withRetry(() =>
+      this.withAuth((token) => postJson(`${BASE_URL}/insurance/greencard/calculator`, params, token))
+    ) as Record<string, unknown>;
+    const data = raw.data;
+    return Array.isArray(data) ? (data as GreenCardOffer[]) : [];
   }
 
   async createDraft(orderData: Record<string, unknown>): Promise<{ id: string; status: string }> {

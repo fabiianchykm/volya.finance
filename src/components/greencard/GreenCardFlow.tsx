@@ -2,18 +2,22 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, Car, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Globe, MapPin, Car, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
+import { companyLogo } from "@/lib/logos";
+import { formatPrice } from "@/lib/utils";
+import type { GreenCardOffer } from "@/types/api";
 
-// Зелена карта — міжнародний поліс для виїзду за кордон. Онлайн-калькулятора в
-// Ukasko поки немає (лише ОСАГО), тож це ЛІД-форма: клієнт лишає параметри поїздки
-// + телефон, заявка йде менеджеру в Telegram (/api/greencard), він передзвонює.
+// Зелена карта — міжнародний поліс. Калькулятор Ukasko (POST greencard/calculator)
+// повертає реальні пропозиції з цінами. Оформлення (order/OTP/оплата) — наступний етап.
 
+const TELEGRAM_BOT = "https://t.me/volya_finance_bot";
+
+// country ID з довідника Ukasko: 60 = Європа, 117 = Молдова (інших для ЗК немає).
 const TERRITORIES = [
-  { value: "europe", label: "Європа" },
-  { value: "azerbaijan", label: "Азербайджан" },
-  { value: "moldova", label: "Молдова" },
+  { value: "60", label: "Європа" },
+  { value: "117", label: "Молдова" },
 ];
 
 const VEHICLE_TYPES = [
@@ -24,15 +28,22 @@ const VEHICLE_TYPES = [
   { value: "E", label: "Причіп" },
 ];
 
+// periodOption: 15/21 = дні, 1..12 = місяці.
 const DURATIONS = [
-  { value: "15d", label: "15 днів" },
-  { value: "1m", label: "1 місяць" },
-  { value: "2m", label: "2 місяці" },
-  { value: "3m", label: "3 місяці" },
-  { value: "4m", label: "4 місяці" },
-  { value: "5m", label: "5 місяців" },
-  { value: "6m", label: "6 місяців" },
-  { value: "1y", label: "1 рік" },
+  { value: "15", label: "15 днів" },
+  { value: "21", label: "21 день" },
+  { value: "1", label: "1 місяць" },
+  { value: "2", label: "2 місяці" },
+  { value: "3", label: "3 місяці" },
+  { value: "4", label: "4 місяці" },
+  { value: "5", label: "5 місяців" },
+  { value: "6", label: "6 місяців" },
+  { value: "7", label: "7 місяців" },
+  { value: "8", label: "8 місяців" },
+  { value: "9", label: "9 місяців" },
+  { value: "10", label: "10 місяців" },
+  { value: "11", label: "11 місяців" },
+  { value: "12", label: "12 місяців" },
 ];
 
 function tomorrowUa(): string {
@@ -46,53 +57,52 @@ const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
 
 export function GreenCardFlow() {
-  const [step, setStep] = useState<"form" | "done">("form");
+  const [step, setStep] = useState<"form" | "offers">("form");
 
-  const [territory, setTerritory] = useState("europe");
+  const [territory, setTerritory] = useState("60");
   const [vehicleType, setVehicleType] = useState("B");
   const [startDate, setStartDate] = useState(tomorrowUa()); // "ДД.ММ.РРРР"
-  const [duration, setDuration] = useState("15d");
+  const [duration, setDuration] = useState("15");
 
-  const [submitting, setSubmitting] = useState(false);
+  const [offers, setOffers] = useState<GreenCardOffer[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Дозволяємо старт від сьогодні до +1 року.
   const today = new Date();
   const maxStart = new Date();
   maxStart.setFullYear(maxStart.getFullYear() + 1);
 
   const valid = !!territory && !!vehicleType && !!duration && parseUaDate(startDate) != null;
 
-  const labelOf = (arr: { value: string; label: string }[], v: string) =>
-    arr.find((x) => x.value === v)?.label ?? "";
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valid || submitting) return;
-    setSubmitting(true);
+    if (!valid || loading) return;
+    setLoading(true);
     setError(null);
     try {
+      const d = parseUaDate(startDate)!;
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/greencard", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          params: {
-            territory: labelOf(TERRITORIES, territory),
-            vehicle: labelOf(VEHICLE_TYPES, vehicleType),
-            startDate,
-            duration: labelOf(DURATIONS, duration),
-          },
+          country: Number(territory),
+          userType: 1,
+          startDate: iso,
+          periodOption: Number(duration),
+          carType: vehicleType,
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error ?? "Не вдалося надіслати заявку");
-      }
-      setStep("done");
+      if (!res.ok || !data?.success) throw new Error(data?.error ?? "Не вдалося отримати пропозиції");
+      const list: GreenCardOffer[] = (data.offers ?? []).filter((o: GreenCardOffer) => o && o.price > 0);
+      list.sort((a, b) => a.price - b.price);
+      setOffers(list);
+      setStep("offers");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не вдалося надіслати заявку. Спробуйте пізніше.");
+      setError(err instanceof Error ? err.message : "Не вдалося отримати пропозиції. Спробуйте пізніше.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -125,18 +135,13 @@ export function GreenCardFlow() {
               </span>
             </h1>
             <p className="mx-auto max-w-xl text-base text-zinc-300">
-              Залиште параметри поїздки — ми підберемо вигідну Зелену карту.
+              Оберіть параметри поїздки — і побачите пропозиції страхових із цінами.
             </p>
           </div>
 
           {step === "form" ? (
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7"
-            >
-              {/* Поля в ряд колонками зліва-направо; на мобільному згортаються. */}
+            <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {/* 1. Територія */}
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                     <MapPin className="h-3.5 w-3.5" /> Куди прямуєте?
@@ -148,7 +153,6 @@ export function GreenCardFlow() {
                   </select>
                 </div>
 
-                {/* 2. Транспортний засіб */}
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                     <Car className="h-3.5 w-3.5" /> Транспортний засіб
@@ -160,7 +164,6 @@ export function GreenCardFlow() {
                   </select>
                 </div>
 
-                {/* 3. Початок дії */}
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                     <CalendarDays className="h-3.5 w-3.5" /> Початок дії поліса
@@ -174,7 +177,6 @@ export function GreenCardFlow() {
                   />
                 </div>
 
-                {/* 4. Строк перебування */}
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                     <Clock className="h-3.5 w-3.5" /> Строк перебування
@@ -187,20 +189,18 @@ export function GreenCardFlow() {
                 </div>
               </div>
 
-              {error && (
-                <p className="mt-3 text-sm text-red-600">{error}</p>
-              )}
+              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-              <Button type="submit" variant="primary" size="lg" disabled={!valid || submitting} className="mt-5 w-full">
+              <Button type="submit" variant="primary" size="lg" disabled={!valid || loading} className="mt-5 w-full">
                 <span className="flex items-center gap-2">
-                  {submitting ? (
+                  {loading ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      Надсилаємо…
+                      Шукаємо пропозиції…
                     </>
                   ) : (
                     <>
-                      Залишити заявку
+                      Показати пропозиції
                       <ArrowRight className="h-5 w-5" />
                     </>
                   )}
@@ -208,9 +208,7 @@ export function GreenCardFlow() {
               </Button>
             </form>
           ) : (
-            <div className="mx-auto max-w-lg">
-              <LeadReceived onBack={() => setStep("form")} />
-            </div>
+            <GreenCardOffers offers={offers} onBack={() => setStep("form")} />
           )}
         </motion.div>
       </div>
@@ -218,25 +216,65 @@ export function GreenCardFlow() {
   );
 }
 
-// Підтвердження прийнятої заявки. Менеджер отримав параметри поїздки в Telegram.
-function LeadReceived({ onBack }: { onBack: () => void }) {
+function GreenCardOffers({ offers, onBack }: { offers: GreenCardOffer[]; onBack: () => void }) {
   return (
-    <div className="rounded-2xl bg-white p-6 text-left shadow-2xl sm:p-8">
-      <div className="flex items-start gap-3">
-        <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-emerald-500" />
-        <div>
-          <h2 className="text-lg font-bold text-zinc-900">Заявку прийнято!</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Ми підберемо вигідну Зелену карту за вашими параметрами. Щоб ми звʼязалися з вами,
-            скористайтеся кнопкою звʼязку внизу-праворуч або напишіть нам у Telegram.
-          </p>
-        </div>
+    <div className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-zinc-900">
+          {offers.length ? `Знайдено пропозицій: ${offers.length}` : "Пропозицій не знайдено"}
+        </h2>
+        <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline">
+          <ArrowLeft className="h-4 w-4" />
+          Змінити параметри
+        </button>
       </div>
 
-      <Button variant="outline" size="md" onClick={onBack} className="mt-6 flex items-center gap-2">
-        <ArrowLeft className="h-4 w-4" />
-        Нова заявка
-      </Button>
+      {offers.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          За обраними параметрами пропозицій немає. Спробуйте інший строк чи територію, або звʼяжіться з нами.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {offers.map((o) => (
+            <GreenCardOfferCard key={o.offerId} offer={o} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GreenCardOfferCard({ offer }: { offer: GreenCardOffer }) {
+  const src = companyLogo(offer.companyNamePublic || offer.companyName);
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:gap-4">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5">
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={offer.companyNamePublic} className="max-h-full max-w-full object-contain" />
+        ) : (
+          <span className="text-xs font-bold text-zinc-400">{(offer.companyNamePublic || offer.companyName).slice(0, 2).toUpperCase()}</span>
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold uppercase text-zinc-900">{offer.companyNamePublic || offer.companyName}</p>
+        <p className="text-xs text-zinc-500">Зелена карта</p>
+      </div>
+
+      <div className="shrink-0 text-right">
+        <p className="text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
+      </div>
+
+      <a
+        href={TELEGRAM_BOT}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+      >
+        <Send className="h-4 w-4" />
+        Оформити
+      </a>
     </div>
   );
 }

@@ -1,60 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest } from "@/lib/api-guard";
-import { sendTelegram, escapeHtml, notifyDevError } from "@/lib/telegram";
-import { withIdempotency } from "@/lib/idempotency";
-import { normalizePhone, isValidPhone } from "@/lib/phone";
+import { ukaskoService } from "@/services/ukasko";
+import { notifyDevError } from "@/lib/telegram";
+import type { GreenCardParams } from "@/types/api";
 
-// Заявка на Зелену карту. Онлайн-калькулятора в Ukasko поки немає, тож це лід:
-// клієнт лишає телефон + параметри поїздки, менеджеру падає заявка в Telegram.
-
-interface GreenCardParams {
-  territory?: string;
-  vehicle?: string;
-  startDate?: string;
-  duration?: string;
-}
+// Калькулятор «Зелена карта»: параметри поїздки → реальні пропозиції з цінами
+// (Ukasko POST /insurance/greencard/calculator).
 
 export async function POST(req: NextRequest) {
-  // Захист від cross-site + ліміт, щоб формою не спамили.
-  const blocked = guardRequest(req, { name: "greencard", limit: 10, windowMs: 10 * 60 * 1000 });
+  const blocked = guardRequest(req, { name: "greencard", limit: 30, windowMs: 10 * 60 * 1000 });
   if (blocked) return blocked;
 
-  let phone: string;
   let params: GreenCardParams;
   try {
     const body = await req.json();
-    phone = String(body?.phone ?? "");
-    params = (body?.params ?? {}) as GreenCardParams;
+    params = {
+      country: Number(body?.country),
+      userType: Number(body?.userType ?? 1),
+      startDate: String(body?.startDate ?? ""),      // YYYY-MM-DD
+      periodOption: Number(body?.periodOption),
+      carType: String(body?.carType ?? ""),
+      carNumber: body?.carNumber ? String(body.carNumber) : undefined,
+    };
   } catch {
     return NextResponse.json({ success: false, error: "Некоректний запит" }, { status: 400 });
   }
 
-  // Телефон необовʼязковий — форма Зеленої карти його більше не збирає.
-  const lines = [
-    "🌍 <b>Нова заявка на Зелену карту</b>",
-    "",
-    phone && isValidPhone(phone) ? `📞 Телефон: <code>${escapeHtml(normalizePhone(phone))}</code>` : null,
-    params.territory ? `📍 Територія: ${escapeHtml(params.territory)}` : null,
-    params.vehicle ? `🚙 ТЗ: ${escapeHtml(params.vehicle)}` : null,
-    params.startDate ? `📅 Початок: ${escapeHtml(params.startDate)}` : null,
-    params.duration ? `⏳ Строк: ${escapeHtml(params.duration)}` : null,
-  ].filter(Boolean);
+  if (!params.country || !params.periodOption || !params.carType || !/^\d{4}-\d{2}-\d{2}$/.test(params.startDate)) {
+    return NextResponse.json({ success: false, error: "Заповніть усі поля" }, { status: 400 });
+  }
 
   try {
-    const idem = req.headers.get("idempotency-key");
-    const { status, body } = await withIdempotency(
-      idem ? `greencard:${idem}` : null,
-      async () => {
-        await sendTelegram("sales", lines.join("\n"));
-        return { status: 200, body: { success: true } };
-      }
-    );
-    return NextResponse.json(body, { status });
+    const offers = await ukaskoService.getGreenCardOffers(params);
+    return NextResponse.json({ success: true, offers });
   } catch (e) {
-    console.error("[greencard] lead send error:", e instanceof Error ? e.message : e);
-    await notifyDevError("greencard lead", e);
+    console.error("[greencard] calc error:", e instanceof Error ? e.message : e);
+    await notifyDevError("greencard calculator", e);
     return NextResponse.json(
-      { success: false, error: "Не вдалося надіслати заявку. Зателефонуйте нам або спробуйте пізніше." },
+      { success: false, error: "Не вдалося отримати пропозиції. Спробуйте пізніше." },
       { status: 500 }
     );
   }
