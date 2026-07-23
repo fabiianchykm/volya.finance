@@ -159,7 +159,7 @@ export function OfferCard({
             <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
           </div>
 
-          <p className="flex-1 min-w-0 text-sm font-semibold text-zinc-900 leading-snug">
+          <p className="flex-1 min-w-0 text-sm font-semibold uppercase text-zinc-900 leading-snug">
             {cleanCompanyName}
           </p>
 
@@ -208,7 +208,7 @@ export function OfferCard({
           <div className="flex h-[152px] w-[152px] items-center justify-center overflow-hidden">
             <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
           </div>
-          <span className="text-sm text-zinc-900 leading-tight text-center">
+          <span className="text-sm uppercase text-zinc-900 leading-tight text-center">
             {cleanCompanyName}
           </span>
         </div>
