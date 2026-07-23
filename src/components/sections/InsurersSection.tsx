@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
+import { ShieldCheck } from "lucide-react";
 import { logoSrc } from "@/lib/logos";
 
 const insurers = [
@@ -11,50 +12,42 @@ const insurers = [
   { name: "Уніка",        slug: "unika" },
   { name: "Оранта",       slug: "oranta" },
   { name: "Княжа",        slug: "knyazha" },
-  { name: "УСГ",          slug: "ush" },
+  { name: "УСГ",          slug: "usg" },
   { name: "ВУСО",         slug: "vuso" },
   { name: "ТАС",          slug: "tas" },
   { name: "Євроінс",      slug: "euroins" },
   { name: "Арсенал",      slug: "arsenal" },
   { name: "Брокбізнес",   slug: "brokbyzness" },
-  { name: "Експрес",      slug: "ekspres-strakhuvannya" },
-  { name: "Еталон",       slug: "etalon" },
+  { name: "Експрес",      slug: "express" },
   { name: "Гардіан",      slug: "guardian" },
   { name: "Інтер-Поліс",  slug: "inter-polis" },
   { name: "ЮТІКО",        slug: "utico" },
-  { name: "ЄСА",          slug: "esa" },
+  { name: "ЄСА",          slug: "eia" },
+  { name: "ББС Іншуранс", slug: "bbs-insurance" },
 ];
 
-function InsurerLogo({ name, slug, i, inView }: { name: string; slug: string; i: number; inView: boolean }) {
+function InsurerCard({ name, slug, i, inView }: { name: string; slug: string; i: number; inView: boolean }) {
   const [failed, setFailed] = useState(false);
   const src = logoSrc(slug);
 
-  if (!src || failed) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={inView ? { opacity: 1 } : {}}
-        transition={{ duration: 0.3, delay: i * 0.03 }}
-        className="flex items-center justify-center py-5 px-4 h-20"
-      >
-        <span className="text-lg font-semibold text-zinc-400">{name}</span>
-      </motion.div>
-    );
-  }
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.35, delay: i * 0.03 }}
-      className="flex items-center justify-center py-5 px-4 opacity-70 hover:opacity-100 hover:scale-105 transition-all duration-200"
+      transition={{ duration: 0.4, delay: i * 0.03, ease: "easeOut" }}
+      className="group flex h-24 items-center justify-center rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm ring-1 ring-black/[0.02] transition-all duration-200 hover:-translate-y-1 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-100/50"
     >
-      <img
-        src={src}
-        alt={name}
-        className="h-20 max-w-[170px] object-contain"
-        onError={() => setFailed(true)}
-      />
+      {src && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={name}
+          className="max-h-12 max-w-[130px] object-contain transition-transform duration-200 group-hover:scale-105"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span className="text-center text-sm font-semibold text-zinc-500">{name}</span>
+      )}
     </motion.div>
   );
 }
@@ -64,30 +57,34 @@ export function InsurersSection() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="py-16 sm:py-20" style={{ background: "#F4F0EF" }} ref={ref}>
-      <div className="mx-auto max-w-7xl px-6 sm:px-10">
+    <section className="relative overflow-hidden bg-gradient-to-b from-zinc-50 via-white to-zinc-50 py-16 sm:py-24" ref={ref}>
+      {/* М'які світні акценти для «дорогого» відчуття */}
+      <div className="pointer-events-none absolute -top-24 left-1/4 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-indigo-200/25 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 right-1/4 h-72 w-[40rem] translate-x-1/2 rounded-full bg-violet-200/25 blur-3xl" />
+
+      <div className="relative mx-auto max-w-7xl px-6 sm:px-10">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
           className="mb-12 text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Наші партнери
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600 shadow-sm ring-1 ring-indigo-100">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Партнери
+          </span>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+            Провідні страхові компанії України
           </h2>
-          <p className="mt-3 text-base text-zinc-500">
-            18+ акредитованих страхових компаній України
+          <p className="mx-auto mt-3 max-w-xl text-base text-zinc-500">
+            Порівнюйте пропозиції 18+ акредитованих страховиків в одному місці — і обирайте найкраще.
           </p>
         </motion.div>
 
-        <div className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:overflow-visible sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="grid snap-x snap-mandatory grid-flow-col grid-rows-3 auto-cols-[30%] gap-x-2 gap-y-6 sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-3 sm:gap-x-4 sm:gap-y-8 md:grid-cols-6">
-            {insurers.map(({ name, slug }, i) => (
-              <div key={slug} className="snap-start sm:snap-align-none">
-                <InsurerLogo name={name} slug={slug} i={i} inView={inView} />
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-6">
+          {insurers.map(({ name, slug }, i) => (
+            <InsurerCard key={slug} name={name} slug={slug} i={i} inView={inView} />
+          ))}
         </div>
       </div>
     </section>
