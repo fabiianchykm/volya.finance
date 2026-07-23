@@ -208,20 +208,6 @@ export function OffersSection({
           </div>
         )}
 
-        <div className="mt-8 rounded-2xl border border-zinc-200 bg-white p-5">
-          <div className="flex flex-wrap items-center justify-center gap-6 text-center">
-            {[
-              { label: "Офіційні поліси", sub: "Реєстрація в МТСБУ" },
-              { label: "Безпечна оплата", sub: "Через LiqPay" },
-              { label: "Поліс на email", sub: "Протягом 5 хвилин" },
-            ].map(({ label, sub }) => (
-              <div key={label}>
-                <div className="text-sm font-semibold text-zinc-900">{label}</div>
-                <div className="text-xs text-zinc-500">{sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
         </div>{/* кінець лівої колонки */}
 
         {/* Права колонка: реферальний банер */}
