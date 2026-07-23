@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Phone } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+
+// "671234567" → "67 123 45 67" (зберігаємо лише цифри у стані).
+function formatUaPhone(digits: string): string {
+  const d = digits.replace(/\D/g, "").slice(0, 9);
+  return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(" ");
+}
 
 interface PhoneModalProps {
   open: boolean;
@@ -36,19 +41,17 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
           <label className="mb-1.5 block text-xs font-medium text-zinc-500">
             Номер телефону
           </label>
-          <div className="flex items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-400">
-            <span className="flex items-center gap-1.5 border-r border-zinc-200 pl-3.5 pr-3 text-sm font-medium text-zinc-500">
-              <Phone className="h-4 w-4 text-zinc-400" />
-              +380
-            </span>
+          <div className="flex items-center rounded-2xl border border-zinc-200 bg-white px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
+            <span className="select-none pr-3 text-xl font-semibold text-zinc-500">+380</span>
+            <span className="mr-3 h-7 w-px bg-zinc-200" />
             <input
               type="tel"
               inputMode="numeric"
               autoFocus
-              value={digits}
+              value={formatUaPhone(digits)}
               onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 9))}
               placeholder="67 123 45 67"
-              className="w-full bg-transparent px-3.5 py-2.5 text-sm tracking-wide text-zinc-900 placeholder:text-zinc-400 outline-none"
+              className="w-full bg-transparent py-3.5 text-xl font-semibold tracking-wider text-zinc-900 placeholder:font-normal placeholder:tracking-normal placeholder:text-zinc-300 outline-none"
             />
           </div>
           {error && <p className="mt-1.5 text-sm text-red-500">{error}</p>}
