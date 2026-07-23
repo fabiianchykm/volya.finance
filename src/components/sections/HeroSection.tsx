@@ -16,14 +16,18 @@ const heroSteps = [
 ];
 
 const insurersList = [
-  { name: "ІНГО",     slug: "inho" },
-  { name: "PZU",      slug: "pzu" },
-  { name: "ARX",      slug: "arx" },
-  { name: "Уніка",    slug: "unika" },
-  { name: "Оранта",   slug: "oranta" },
-  { name: "Княжа",    slug: "knyazha" },
-  { name: "УСГ",      slug: "ush" },
-  { name: "ВУСО",     slug: "vuso" },
+  { name: "ІНГО",       slug: "inho" },
+  { name: "PZU",        slug: "pzu" },
+  { name: "ARX",        slug: "arx" },
+  { name: "Уніка",      slug: "unika" },
+  { name: "Оранта",     slug: "oranta" },
+  { name: "Княжа",      slug: "knyazha" },
+  { name: "УСГ",        slug: "usg" },
+  { name: "ВУСО",       slug: "vuso" },
+  { name: "ТАС",        slug: "tas" },
+  { name: "Євроінс",    slug: "euroins" },
+  { name: "Арсенал",    slug: "arsenal" },
+  { name: "Гардіан",    slug: "guardian" },
 ];
 
 function InsurerChip({ name, slug }: { name: string; slug: string }) {
@@ -32,12 +36,14 @@ function InsurerChip({ name, slug }: { name: string; slug: string }) {
 
   if (!src || failed) return null;
 
+  // Біла картка — щоб темні логотипи чітко читались на темному фоні hero.
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex h-16 w-32 shrink-0 items-center justify-center rounded-2xl bg-white px-4 shadow-lg shadow-black/25 ring-1 ring-white/10 sm:h-[68px] sm:w-36">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={name}
-        style={{ height: 56, width: "auto", maxWidth: 120, objectFit: "contain" }}
+        style={{ maxHeight: 36, maxWidth: 104, objectFit: "contain" }}
         onError={() => setFailed(true)}
       />
     </div>
@@ -165,7 +171,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 sm:w-24 bg-gradient-to-r from-[#06040f] to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 sm:w-24 bg-gradient-to-l from-[#06040f] to-transparent" />
         
-        <div className="animate-marquee py-2 flex items-center gap-8 sm:gap-14 shrink-0 px-4">
+        <div className="animate-marquee py-2 flex items-center gap-3 sm:gap-4 shrink-0 px-4">
           {[...insurersList, ...insurersList, ...insurersList, ...insurersList].map(({ name, slug }, i) => (
             <InsurerChip key={`${slug}-${i}`} name={name} slug={slug} />
           ))}
