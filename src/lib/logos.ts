@@ -6,7 +6,7 @@ import { formatCompanyName } from "./utils";
 
 const LOGO_FILES: Record<string, string> = {
   arsenal: "/logos/arsenal.svg",
-  arx: "/logos/arx.webp",
+  arx: "/logos/arx.svg",
   "bbs-insurance": "/logos/bbs-insurance.webp",
   brokbyzness: "/logos/brokbyzness.png",
   eia: "/logos/eia.webp",
