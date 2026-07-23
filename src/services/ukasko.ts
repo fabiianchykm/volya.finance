@@ -282,6 +282,46 @@ export class UkaskoService {
     return Array.isArray(data) ? (data as GreenCardOffer[]) : [];
   }
 
+  // Заявлення «Зелена карта» (POST greencard/order/create) → orderId. Далі —
+  // спільні OTP та оплата по orderId (як в ОСЦПВ), потім contract/confirm.
+  async createGreenCardOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string; mtsbuLink?: string }> {
+    const raw = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/greencard/order/create`,
+      orderData,
+      token
+    )) as Record<string, unknown>;
+    const msg = raw.message as string | undefined;
+    if (raw.status === "error" || raw.status === "validation" || (msg && msg.includes('"result":false'))) {
+      const errText = JSON.stringify(raw.data ?? raw).slice(0, 300);
+      console.error("[greencard order] rejected. raw:", JSON.stringify(raw).slice(0, 800));
+      throw new Error(`Страхова відхилила заявку: ${errText}`);
+    }
+    const data = raw as { data?: Array<{ id: string; status?: string; mtsbuLink?: string }> };
+    const first = data.data?.[0];
+    if (!first?.id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    return first;
+  }
+
+  // Оформлення (укладення) договору ЗК після оплати → contractId.
+  async confirmGreenCard(orderId: string): Promise<{ contractId: string; status?: string }> {
+    const data = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/greencard/contract/confirm`,
+      { orderId },
+      token
+    )) as { data: [{ contractId: string; status?: string }] };
+    return data.data[0];
+  }
+
+  // Завантаження полісу ЗК.
+  async downloadGreenCardContract(contractId: string): Promise<{ mtsbuLink?: string; contract?: string }> {
+    const data = await this.withAuth((token) => postForm(
+      `${BASE_URL}/insurance/greencard/contract/take`,
+      { contractId },
+      token
+    )) as { data: { mtsbuLink?: string; contract?: string } };
+    return data.data;
+  }
+
   async createDraft(orderData: Record<string, unknown>): Promise<{ id: string; status: string }> {
     const data = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/order/osago`,
