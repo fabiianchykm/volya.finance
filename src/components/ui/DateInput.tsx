@@ -48,13 +48,21 @@ interface DateInputProps {
   error?: string;
   /** Рік, на якому відкривати календар без значення (ДН → 1990, дата видачі → поточний). */
   defaultYear?: number;
+  /** Мінімальна доступна дата (за замовч. — без обмеження знизу). */
+  minDate?: Date;
+  /** Максимальна доступна дата (за замовч. — сьогодні, тобто майбутнє заблоковане). */
+  maxDate?: Date;
 }
 
-export function DateInput({ label, value, onChange, required, className, error, defaultYear }: DateInputProps) {
+export function DateInput({ label, value, onChange, required, className, error, defaultYear, minDate, maxDate }: DateInputProps) {
   const parsed = parseUaDate(value);
   const errText = error || (value.replace(/\D/g, "").length === 8 && !parsed ? "Невірна дата" : "");
 
   const today = new Date();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  // За замовч.: min — далеко в минуле, max — сьогодні (для дат народження/видачі).
+  const min = minDate ? startOfDay(minDate) : new Date(1900, 0, 1);
+  const max = maxDate ? startOfDay(maxDate) : startOfDay(today);
   const [open, setOpen] = useState(false);
   // Місяць/рік, що зараз показані в календарі. За замовчуванням — 1990 (зручно для ДН).
   const [view, setView] = useState(() => {
@@ -87,7 +95,7 @@ export function DateInput({ label, value, onChange, required, className, error, 
   }, [open]);
 
   const years: number[] = [];
-  for (let y = today.getFullYear(); y >= 1920; y--) years.push(y);
+  for (let y = max.getFullYear(); y >= min.getFullYear(); y--) years.push(y);
 
   // Сітка днів: понеділок першим.
   const startOffset = (new Date(view.y, view.m, 1).getDay() + 6) % 7;
@@ -101,7 +109,10 @@ export function DateInput({ label, value, onChange, required, className, error, 
 
   const isSelected = (d: number) =>
     parsed && parsed.getFullYear() === view.y && parsed.getMonth() === view.m && parsed.getDate() === d;
-  const isFuture = (d: number) => new Date(view.y, view.m, d) > today;
+  const isDisabled = (d: number) => {
+    const dt = new Date(view.y, view.m, d);
+    return dt < min || dt > max;
+  };
 
   const selectClass =
     "h-8 rounded-lg border border-zinc-200 bg-white px-2 text-sm text-zinc-800 outline-none focus:border-indigo-400";
@@ -185,12 +196,12 @@ export function DateInput({ label, value, onChange, required, className, error, 
                 <button
                   key={i}
                   type="button"
-                  disabled={isFuture(d)}
+                  disabled={isDisabled(d)}
                   onClick={() => { onChange(toUa(view.y, view.m + 1, d)); setOpen(false); }}
                   className={`h-9 rounded-lg text-sm transition-colors ${
                     isSelected(d)
                       ? "bg-indigo-600 font-semibold text-white"
-                      : isFuture(d)
+                      : isDisabled(d)
                         ? "cursor-not-allowed text-zinc-300"
                         : "text-zinc-700 hover:bg-indigo-50"
                   }`}

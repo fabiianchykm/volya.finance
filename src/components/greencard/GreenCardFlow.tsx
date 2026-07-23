@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Globe, MapPin, Car, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 
 // Зелена карта — міжнародний поліс для виїзду за кордон. Онлайн-калькулятора в
 // Ukasko поки немає (лише ОСАГО), тож це ЛІД-форма: клієнт лишає параметри поїздки
@@ -34,10 +35,11 @@ const DURATIONS = [
   { value: "1y", label: "1 рік" },
 ];
 
-function tomorrowISO(): string {
+function tomorrowUa(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
 const selectClass =
@@ -48,13 +50,18 @@ export function GreenCardFlow() {
 
   const [territory, setTerritory] = useState("europe");
   const [vehicleType, setVehicleType] = useState("B");
-  const [startDate, setStartDate] = useState(tomorrowISO());
+  const [startDate, setStartDate] = useState(tomorrowUa()); // "ДД.ММ.РРРР"
   const [duration, setDuration] = useState("15d");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const valid = !!territory && !!vehicleType && !!startDate && !!duration;
+  // Дозволяємо старт від сьогодні до +1 року.
+  const today = new Date();
+  const maxStart = new Date();
+  maxStart.setFullYear(maxStart.getFullYear() + 1);
+
+  const valid = !!territory && !!vehicleType && !!duration && parseUaDate(startDate) != null;
 
   const labelOf = (arr: { value: string; label: string }[], v: string) =>
     arr.find((x) => x.value === v)?.label ?? "";
@@ -72,7 +79,7 @@ export function GreenCardFlow() {
           params: {
             territory: labelOf(TERRITORIES, territory),
             vehicle: labelOf(VEHICLE_TYPES, vehicleType),
-            startDate: startDate.split("-").reverse().join("."),
+            startDate,
             duration: labelOf(DURATIONS, duration),
           },
         }),
@@ -158,12 +165,12 @@ export function GreenCardFlow() {
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                     <CalendarDays className="h-3.5 w-3.5" /> Початок дії поліса
                   </label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={startDate}
-                    min={new Date().toISOString().slice(0, 10)}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className={selectClass}
+                    onChange={setStartDate}
+                    minDate={today}
+                    maxDate={maxStart}
+                    defaultYear={today.getFullYear()}
                   />
                 </div>
 
