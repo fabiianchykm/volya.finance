@@ -40,7 +40,8 @@ export function addDays(date: Date, days: number): Date {
 export function formatCompanyName(name: string): string {
   if (!name) return "";
   
-  let formatted = name.replace(/["«»',]/g, ' ');
+  // Прибираємо всі види лапок (прямі, кутові, типографські «„""''‚`») та коми.
+  let formatted = name.replace(/["«»„“”‘’‚'`,]/g, ' ');
   
   const stopwords = [
     "ПРАТ", "ПАТ", "АТ", "ТДВ", "СК", "НАСК", "СТРАХОВА КОМПАНІЯ", "СТРАХОВЕ ТОВАРИСТВО", "ТОВ", "ДП"
