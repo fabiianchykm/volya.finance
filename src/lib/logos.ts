@@ -7,8 +7,10 @@ const LOGO_FILES: Record<string, string> = {
   arx: "/logos/arx.webp",
   "bbs-insurance": "/logos/bbs-insurance.webp",
   brokbyzness: "/logos/brokbyzness.png",
+  eia: "/logos/eia.webp",
   esa: "/logos/esa.webp",
   euroins: "/logos/euroins.webp",
+  express: "/logos/express.svg",
   guardian: "/logos/guardian.png",
   ingo: "/logos/ingo.webp",
   inho: "/logos/inho.webp",
@@ -36,6 +38,10 @@ const LOGO_ALIASES: Record<string, string> = {
   "ukrayinska-transportna": "utico",                  // Українська транспортна (страхова компанія)
   "ukrayinska-transportna-kompaniya": "utico",
   "ukrayinska-strakhova-hrupa": "usg",                // Українська страхова група
+  "yevropeyskyy-strakhovyy-alyans": "eia",            // Європейський страховий альянс
+  yesa: "eia",
+  ekspres: "express",                                 // Експрес Страхування
+  "ekspres-strakhuvannya": "express",
 };
 
 // Ніколи не віддаємо jpeg/jpg (додатковий захист, навіть якщо хтось додасть у мапу).
