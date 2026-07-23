@@ -16,7 +16,7 @@ const LOGO_FILES: Record<string, string> = {
   inho: "/logos/inho.webp",
   "inter-polis": "/logos/inter-polis.webp",
   interpolis: "/logos/interpolis.webp",
-  knyazha: "/logos/knyazha.webp",
+  knyazha: "/logos/knyazha.svg",
   oranta: "/logos/oranta.webp",
   pzu: "/logos/pzu.webp",
   tas: "/logos/tas.webp",
