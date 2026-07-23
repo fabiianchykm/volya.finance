@@ -43,7 +43,7 @@ export function formatCompanyName(name: string): string {
   let formatted = name.replace(/["«»',]/g, ' ');
   
   const stopwords = [
-    "ПРАТ", "ПАТ", "АТ", "ТДВ", "СК", "СТРАХОВА КОМПАНІЯ", "СТРАХОВЕ ТОВАРИСТВО", "ТОВ", "ДП"
+    "ПРАТ", "ПАТ", "АТ", "ТДВ", "СК", "НАСК", "СТРАХОВА КОМПАНІЯ", "СТРАХОВЕ ТОВАРИСТВО", "ТОВ", "ДП"
   ];
   
   stopwords.forEach(word => {

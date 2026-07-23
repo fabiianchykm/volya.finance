@@ -1,17 +1,14 @@
-// Мапа наявних логотипів страхових (згенеровано з public/logos).
-// Запитуємо одразу правильний файл — без «промацування» форматів через onError,
-// яке робило реальні 404-запити й засмічувало консоль/«Issues» у dev.
-// Якщо для слага файлу немає — повертаємо null, і компонент показує ініціали.
+// Мапа логотипів страхових. ТІЛЬКИ якісні формати: SVG / WebP / PNG.
+// jpeg/jpg НЕ використовуємо для логотипів (немає прозорості, артефакти на тексті).
+// Якщо для слага файлу немає — компонент показує ініціали (без 404-запитів).
 
 const LOGO_FILES: Record<string, string> = {
   arsenal: "/logos/arsenal.svg",
   arx: "/logos/arx.webp",
+  "bbs-insurance": "/logos/bbs-insurance.webp",
   brokbyzness: "/logos/brokbyzness.png",
-  "ekspres-strakhuvannya": "/logos/ekspres-strakhuvannya.jpeg",
   esa: "/logos/esa.webp",
-  etalon: "/logos/etalon.jpeg",
   euroins: "/logos/euroins.webp",
-  express: "/logos/express.jpeg",
   guardian: "/logos/guardian.png",
   ingo: "/logos/ingo.webp",
   inho: "/logos/inho.webp",
@@ -20,15 +17,48 @@ const LOGO_FILES: Record<string, string> = {
   knyazha: "/logos/knyazha.webp",
   oranta: "/logos/oranta.webp",
   pzu: "/logos/pzu.webp",
-  tas: "/logos/tas.jpeg",
+  tas: "/logos/tas.webp",
   unika: "/logos/unika.webp",
   usg: "/logos/usg.webp",
   ush: "/logos/ush.webp",
-  utico: "/logos/utico.jpeg",
+  utico: "/logos/utico.png",
   vuso: "/logos/vuso.webp",
   "yevroins-ukrayina": "/logos/yevroins-ukrayina.webp",
 };
 
+// Аліаси: слаг транслітерованої назви з Ukasko → ключ файлу в LOGO_FILES.
+// Потрібні, коли бренд-файл відрізняється від юридичної назви (UTICO, ББС),
+// або коли транслітерація дає інше (Г→h: «ГАРДІАН» → "hardian").
+const LOGO_ALIASES: Record<string, string> = {
+  hardian: "guardian",                                // ГАРДІАН
+  "bbs-inshurans": "bbs-insurance",                   // ББС Іншуранс
+  bbs: "bbs-insurance",
+  "ukrayinska-transportna": "utico",                  // Українська транспортна (страхова компанія)
+  "ukrayinska-transportna-kompaniya": "utico",
+  "ukrayinska-strakhova-hrupa": "usg",                // Українська страхова група
+};
+
+// Ніколи не віддаємо jpeg/jpg (додатковий захист, навіть якщо хтось додасть у мапу).
+function safe(path: string | undefined): string | null {
+  if (!path) return null;
+  return /\.jpe?g$/i.test(path) ? null : path;
+}
+
 export function logoSrc(slug: string): string | null {
-  return LOGO_FILES[slug] ?? null;
+  const direct = safe(LOGO_FILES[slug]);
+  if (direct) return direct;
+
+  const aliased = LOGO_ALIASES[slug] && safe(LOGO_FILES[LOGO_ALIASES[slug]]);
+  if (aliased) return aliased;
+
+  // Пробуємо коротші версії, відкидаючи хвостові слова: "pzu-ukrayina" → "pzu".
+  const parts = slug.split("-");
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const key = parts.slice(0, i).join("-");
+    const byFile = safe(LOGO_FILES[key]);
+    if (byFile) return byFile;
+    const byAlias = LOGO_ALIASES[key] && safe(LOGO_FILES[LOGO_ALIASES[key]]);
+    if (byAlias) return byAlias;
+  }
+  return null;
 }

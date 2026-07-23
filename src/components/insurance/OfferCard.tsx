@@ -30,7 +30,7 @@ function transliterate(text: string) {
   return text
     .toLowerCase()
     .split('')
-    .map(char => map[char] || char)
+    .map(char => map[char] ?? char)
     .join('')
     .replace(/[^a-z0-9]/g, '-')
     .replace(/-+/g, '-')
