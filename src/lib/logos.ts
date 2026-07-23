@@ -4,7 +4,7 @@
 // Якщо для слага файлу немає — повертаємо null, і компонент показує ініціали.
 
 const LOGO_FILES: Record<string, string> = {
-  arsenal: "/logos/arsenal.webp",
+  arsenal: "/logos/arsenal.svg",
   arx: "/logos/arx.webp",
   brokbyzness: "/logos/brokbyzness.png",
   "ekspres-strakhuvannya": "/logos/ekspres-strakhuvannya.jpeg",
