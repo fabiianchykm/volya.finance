@@ -51,14 +51,24 @@ export function logoSrc(slug: string): string | null {
   const aliased = LOGO_ALIASES[slug] && safe(LOGO_FILES[LOGO_ALIASES[slug]]);
   if (aliased) return aliased;
 
+  const parts = slug.split("-").filter(Boolean);
+  const resolve = (key: string): string | null =>
+    safe(LOGO_FILES[key]) || (LOGO_ALIASES[key] ? safe(LOGO_FILES[LOGO_ALIASES[key]]) : null);
+
   // Пробуємо коротші версії, відкидаючи хвостові слова: "pzu-ukrayina" → "pzu".
-  const parts = slug.split("-");
   for (let i = parts.length - 1; i >= 1; i--) {
-    const key = parts.slice(0, i).join("-");
-    const byFile = safe(LOGO_FILES[key]);
-    if (byFile) return byFile;
-    const byAlias = LOGO_ALIASES[key] && safe(LOGO_FILES[LOGO_ALIASES[key]]);
-    if (byAlias) return byAlias;
+    const r = resolve(parts.slice(0, i).join("-"));
+    if (r) return r;
+  }
+  // Бренд-слово може бути будь-де в довгій юридичній назві: шукаємо збіг за
+  // парою токенів (inter-polis, bbs-insurance…) чи окремим токеном (knyazha, tas…).
+  for (let i = 0; i < parts.length - 1; i++) {
+    const r = resolve(`${parts[i]}-${parts[i + 1]}`);
+    if (r) return r;
+  }
+  for (const t of parts) {
+    const r = resolve(t);
+    if (r) return r;
   }
   return null;
 }
