@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, Car, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2, Send } from "lucide-react";
+import { Globe, MapPin, Car, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { companyLogo } from "@/lib/logos";
 import { formatPrice } from "@/lib/utils";
+import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
 import type { GreenCardOffer } from "@/types/api";
 
-// Зелена карта — міжнародний поліс. Калькулятор Ukasko (POST greencard/calculator)
-// повертає реальні пропозиції з цінами. Оформлення (order/OTP/оплата) — наступний етап.
-
-const TELEGRAM_BOT = "https://t.me/volya_finance_bot";
+// Зелена карта — міжнародний поліс. Калькулятор Ukasko → пропозиції з цінами →
+// повна анкета оформлення (заявлення → OTP → оплата → поліс), як в ОСЦПВ.
 
 // country ID з довідника Ukasko: 60 = Європа, 117 = Молдова (інших для ЗК немає).
 const TERRITORIES = [
@@ -57,7 +56,7 @@ const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
 
 export function GreenCardFlow() {
-  const [step, setStep] = useState<"form" | "offers">("form");
+  const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
 
   const [territory, setTerritory] = useState("60");
   const [vehicleType, setVehicleType] = useState("B");
@@ -65,8 +64,13 @@ export function GreenCardFlow() {
   const [duration, setDuration] = useState("15");
 
   const [offers, setOffers] = useState<GreenCardOffer[]>([]);
+  const [selectedOffer, setSelectedOffer] = useState<GreenCardOffer | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const checkoutCtx = (offer: GreenCardOffer): GreenCardContext => ({
+    offer, country: Number(territory), periodOption: Number(duration), carType: vehicleType, startDate,
+  });
 
   const today = new Date();
   const maxStart = new Date();
@@ -139,7 +143,9 @@ export function GreenCardFlow() {
             </p>
           </div>
 
-          {step === "form" ? (
+          {step === "checkout" && selectedOffer ? (
+            <GreenCardCheckout ctx={checkoutCtx(selectedOffer)} onBack={() => setStep("offers")} />
+          ) : step === "form" ? (
             <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
@@ -208,7 +214,11 @@ export function GreenCardFlow() {
               </Button>
             </form>
           ) : (
-            <GreenCardOffers offers={offers} onBack={() => setStep("form")} />
+            <GreenCardOffers
+              offers={offers}
+              onBack={() => setStep("form")}
+              onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); }}
+            />
           )}
         </motion.div>
       </div>
@@ -216,7 +226,7 @@ export function GreenCardFlow() {
   );
 }
 
-function GreenCardOffers({ offers, onBack }: { offers: GreenCardOffer[]; onBack: () => void }) {
+function GreenCardOffers({ offers, onBack, onSelect }: { offers: GreenCardOffer[]; onBack: () => void; onSelect: (o: GreenCardOffer) => void }) {
   return (
     <div className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
       <div className="mb-4 flex items-center justify-between">
@@ -236,7 +246,7 @@ function GreenCardOffers({ offers, onBack }: { offers: GreenCardOffer[]; onBack:
       ) : (
         <div className="space-y-3">
           {offers.map((o) => (
-            <GreenCardOfferCard key={o.offerId} offer={o} />
+            <GreenCardOfferCard key={o.offerId} offer={o} onSelect={() => onSelect(o)} />
           ))}
         </div>
       )}
@@ -244,7 +254,7 @@ function GreenCardOffers({ offers, onBack }: { offers: GreenCardOffer[]; onBack:
   );
 }
 
-function GreenCardOfferCard({ offer }: { offer: GreenCardOffer }) {
+function GreenCardOfferCard({ offer, onSelect }: { offer: GreenCardOffer; onSelect: () => void }) {
   const src = companyLogo(offer.companyNamePublic || offer.companyName);
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:gap-4">
@@ -266,15 +276,13 @@ function GreenCardOfferCard({ offer }: { offer: GreenCardOffer }) {
         <p className="text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
       </div>
 
-      <a
-        href={TELEGRAM_BOT}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
+        onClick={onSelect}
         className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
       >
-        <Send className="h-4 w-4" />
         Оформити
-      </a>
+      </button>
     </div>
   );
 }

@@ -12,9 +12,13 @@ interface PaymentModalProps {
   orderId: string;
   amount: number;
   onPaid: (contractId: string) => void;
+  /** Ендпоінт підтвердження договору. ОСЦПВ — дефолт; Зелена карта передає свій. */
+  confirmEndpoint?: string;
+  /** action для підтвердження на ендпоінті (за замовч. "confirm"). */
+  confirmAction?: string;
 }
 
-export function PaymentModal({ open, onClose, orderId, amount, onPaid }: PaymentModalProps) {
+export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEndpoint = "/api/insurance/contract", confirmAction = "confirm" }: PaymentModalProps) {
   const [invoice, setInvoice] = useState<{ invoiceLink?: string; qrCode?: string; mtsbuLink?: string } | null>(null);
   // testMode приходить із сервера (UKASKO_ENV). Лише в dev дозволено підтверджувати
   // поліс БЕЗ оплати. На проді такого шляху немає — інакше видаємо поліси безкоштовно.
@@ -91,10 +95,10 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid }: Payment
   const confirmPolicy = async () => {
     setConfirming(true);
     try {
-      const res = await fetch("/api/insurance/contract", {
+      const res = await fetch(confirmEndpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "confirm", orderId }),
+        body: JSON.stringify({ action: confirmAction, orderId }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
