@@ -63,6 +63,7 @@ export function Footer() {
                 className="text-3xl font-medium uppercase tracking-[0.2em] text-white"
               >
                 OLY<BarlessA className="inline-block h-[0.72em] w-auto align-baseline" />
+                <span className="text-[0.7em] font-semibold normal-case tracking-normal text-indigo-400">.finance</span>
               </span>
             </Link>
 

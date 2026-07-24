@@ -57,6 +57,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             )}
           >
             OLY<BarlessA className="inline-block h-[0.72em] w-auto align-baseline" />
+            <span className={cn("text-[0.7em] font-semibold normal-case tracking-normal", opaque ? "text-indigo-600" : "text-indigo-300")}>.finance</span>
           </span>
         </Link>
 
