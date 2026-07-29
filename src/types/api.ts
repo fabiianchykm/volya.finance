@@ -246,3 +246,26 @@ export interface GreenCardParams {
   carType: string;       // B/C/D/A/E
   carNumber?: string;
 }
+
+// Туристичне страхування (POST /insurance/calculator/tourism).
+export interface TourismParams {
+  birthDates: string[];              // дати народження туристів, "d.m.Y"
+  country: { id: number; name: string };
+  date: string;                      // початок поїздки, "d.m.Y"
+  days: number;
+  multiVisa: boolean;
+  tourists: number;
+}
+
+export interface TourismOffer {
+  offerId: string;
+  company?: { logo?: string | null; name?: string; publicName?: string; [k: string]: unknown };
+  name?: string;
+  title?: string;
+  tripProgram?: string;        // econom | standart | elit
+  price: number;
+  coverage?: number | string;  // сума покриття (може прийти рядком "30000.00")
+  limit?: number;
+  limit_currency?: string;     // EUR | USD
+  covid_help?: boolean;
+}

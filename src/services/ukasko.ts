@@ -6,6 +6,8 @@ import type {
   CalculatorParams,
   GreenCardOffer,
   GreenCardParams,
+  TourismOffer,
+  TourismParams,
 } from "@/types/api";
 
 const isDev = process.env.UKASKO_ENV === "dev";
@@ -280,6 +282,15 @@ export class UkaskoService {
     ) as Record<string, unknown>;
     const data = raw.data;
     return Array.isArray(data) ? (data as GreenCardOffer[]) : [];
+  }
+
+  // Калькулятор туристичного страхування → масив пропозицій.
+  async getTourismOffers(params: TourismParams): Promise<TourismOffer[]> {
+    const raw = await withRetry(() =>
+      this.withAuth((token) => postJson(`${BASE_URL}/insurance/calculator/tourism`, params, token))
+    ) as Record<string, unknown>;
+    const data = raw.data;
+    return Array.isArray(data) ? (data as TourismOffer[]) : [];
   }
 
   // Заявлення «Зелена карта» (POST greencard/order/create) → orderId. Далі —

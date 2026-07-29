@@ -1,13 +1,13 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { TourismHero } from "@/components/tourism/TourismHero";
+import { TourismFlow } from "@/components/tourism/TourismFlow";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Туристичне страхування онлайн — поліс для подорожей за кордон",
   description:
-    "Туристичне страхування онлайн — медична допомога та захист у подорожі за кордон. Поліс для віз і виїзду. Залиште номер — підберемо вигідну пропозицію.",
+    "Туристичне страхування онлайн — медична допомога та захист у подорожі за кордон. Поліс для віз і виїзду. Порівняйте пропозиції провідних страхових і оформіть за кілька хвилин.",
   path: "/tourism",
   keywords: [
     "туристичне страхування", "страховка для подорожей", "медичне страхування за кордон",
@@ -35,7 +35,7 @@ export default function TourismPage() {
       />
       <Navbar />
       <main className="flex-1">
-        <TourismHero />
+        <TourismFlow />
       </main>
       <Footer />
     </>
