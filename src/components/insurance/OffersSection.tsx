@@ -304,8 +304,8 @@ export function OffersSection({
 // Динамічний індикатор пошуку: «опитуємо» страховиків по черзі — реальні назви
 // компаній змінюються, щоб було відчуття живого порівняння тарифів.
 const SEARCHED_INSURERS = [
-  "ІНГО", "PZU", "УНІКА", "ARX", "Оранта", "ТАС", "Княжа", "УСГ",
-  "VUSO", "Euroins", "Guardian", "Арсенал", "Експрес", "EIA", "UTICO", "BBS Insurance",
+  "ІНГО", "ПЗУ", "УНІКА", "ОРАНТА", "ТАС", "КНЯЖА", "УСГ", "ВУСО",
+  "ЄВРОІНС", "ГАРДІАН", "АРСЕНАЛ", "ЕКСПРЕС", "ЄСА", "УТІКО", "ІНТЕР-ПОЛІС", "ББС ІНШУРАНС",
 ];
 
 function SearchingInsurers() {
@@ -318,9 +318,9 @@ function SearchingInsurers() {
   return (
     <div className="mb-4 flex items-center justify-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3">
       <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500" />
-      <p className="flex flex-wrap items-center justify-center gap-x-1.5 text-sm text-zinc-600">
+      <p className="flex items-center justify-center gap-x-1.5 text-sm text-zinc-600">
         <span>Порівнюємо тарифи страховиків —</span>
-        <span className="inline-flex min-w-[7rem] justify-center overflow-hidden">
+        <span className="relative inline-grid">
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={name + i}
@@ -328,7 +328,7 @@ function SearchingInsurers() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="font-semibold text-indigo-600"
+              className="col-start-1 row-start-1 whitespace-nowrap font-semibold text-indigo-600"
             >
               {name}
             </motion.span>
