@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Scale, ShieldPlus, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { logoSrc } from "@/lib/logos";
@@ -257,43 +257,54 @@ export function OfferCard({
         </div>
       </div>
 
-      {/* Розгорнута секція — однакова для обох */}
+      {/* Розгорнута секція — лише реальні дані з API: опції, факти, документи */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
-          {lawyerList.length > 0 && (
+          {/* Додаткові опції — назви й конкретні значення з API (без вигаданих описів) */}
+          {hasOptions && (
             <div>
-              <p className="text-xs font-semibold text-zinc-700 mb-1">Автоюрист</p>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                Юридична допомога у випадку ДТП: консультації, представництво інтересів, допомога з оформленням документів та відшкодуванням збитків.
-              </p>
+              <p className="mb-2 text-xs font-semibold text-zinc-700">Додаткові опції</p>
+              <div className="flex flex-col gap-2">
+                {autolawyer && (
+                  <div className="flex items-center gap-2 text-xs text-zinc-600">
+                    <Scale className="h-4 w-4 shrink-0 text-indigo-500" />
+                    <span className="font-medium text-zinc-800">Автоюрист</span>
+                    <span className="text-zinc-300">·</span>
+                    <span>{autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : "безкоштовно"}</span>
+                  </div>
+                )}
+                {dgoList.length > 0 && (
+                  <div className="flex items-start gap-2 text-xs text-zinc-600">
+                    <ShieldPlus className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+                    <span>
+                      <span className="font-medium text-zinc-800">Додаткове покриття (ДГО)</span>
+                      <span className="mt-0.5 block text-zinc-500">
+                        Ліміти: {dgoList.map((d) => `${Number(d.coverage).toLocaleString()}`).join(", ")} грн
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-          {dgoList.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-zinc-700 mb-1">Додаткове покриття (ДГО)</p>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                Розширення ліміту цивільної відповідальності понад базове ОСЦПВ. Доступні варіанти покриття: від{" "}
-                {Number(dgoList[0].coverage).toLocaleString()} до{" "}
-                {Number(dgoList[dgoList.length - 1].coverage).toLocaleString()} грн.
-              </p>
+
+          {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
+          {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {offer.company.directSettlement === 1 && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Пряме врегулювання
+                </span>
+              )}
+              {offer.company.compensationDays > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
+                  <Clock className="h-3.5 w-3.5 text-indigo-500" /> Виплата до {offer.company.compensationDays} дн.
+                </span>
+              )}
             </div>
           )}
-          {offer.company.directSettlement === 1 && (
-            <div>
-              <p className="text-xs font-semibold text-zinc-700 mb-1">Пряме врегулювання</p>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                Можливість звернутись до своєї страхової компанії за відшкодуванням, незалежно від того, хто є винуватцем ДТП.
-              </p>
-            </div>
-          )}
-          {offer.company.compensationDays > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-zinc-700 mb-1">Термін виплати</p>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                Середній термін виплати відшкодування — до {offer.company.compensationDays} днів.
-              </p>
-            </div>
-          )}
+
+          {/* Документи — посилання з API */}
           {hasDocs && (
             <div>
               <p className="mb-2 text-xs font-semibold text-zinc-700">Документи страхового продукту</p>
