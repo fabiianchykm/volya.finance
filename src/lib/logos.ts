@@ -8,7 +8,6 @@ const LOGO_FILES: Record<string, string> = {
   arsenal: "/logos/arsenal.svg",
   arx: "/logos/arx.svg",
   "bbs-insurance": "/logos/bbs-insurance.webp",
-  brokbyzness: "/logos/brokbyzness.png",
   eia: "/logos/eia.webp",
   esa: "/logos/esa.webp",
   euroins: "/logos/euroins.svg",
@@ -37,6 +36,9 @@ const LOGO_ALIASES: Record<string, string> = {
   hardian: "guardian",                                // ГАРДІАН
   "bbs-inshurans": "bbs-insurance",                   // ББС Іншуранс
   bbs: "bbs-insurance",
+  brokbiznes: "bbs-insurance",                        // Брокбізнес = стара назва BBS Insurance
+  brokbyznes: "bbs-insurance",
+  brokbyzness: "bbs-insurance",
   "ukrayinska-transportna": "utico",                  // Українська транспортна (страхова компанія)
   "ukrayinska-transportna-kompaniya": "utico",
   "ukrayinska-strakhova-hrupa": "usg",                // Українська страхова група
