@@ -25,6 +25,11 @@ const AUTH_URL = isDev
   ? "https://devconnect.ukasko.ua/api"
   : "https://uconnect.com.ua/api";
 
+// Модулі страхових Зеленої карти (прод): 9 УСГ, 10 ВУСО, 11 ТАС, 17 УТІКО,
+// 18 ОРАНТА, 29 ІНГО, 31 АРКС. Використовуються лише для деградованого fallback
+// getGreenCardOffers, коли повний батч калькулятора падає через один модуль.
+const GC_MODULE_IDS = [9, 10, 11, 17, 18, 29, 31];
+
 // Прод-API (uconnect.com.ua) стоїть за Cloudflare, який блокує запити без
 // браузерного User-Agent (403). Шлемо реалістичний UA у кожному запиті.
 const UA =
@@ -280,14 +285,39 @@ export class UkaskoService {
   }
 
   // Калькулятор «Зелена карта»: POST з JSON-параметрами → масив пропозицій.
-  // retry500=true: модуль INGO періодично падає 500-кою й зносить усі пропозиції.
+  // Проблема: калькулятор рахує всі страхові одним батчем, і якщо ОДИН модуль
+  // падає 500-кою (регулярно — АТ «СК «ІНГО», moduleId 29), Ukasko віддає 500 на
+  // ВЕСЬ запит — зникають усі пропозиції. retry500 рятує від коротких флапів, а
+  // якщо не допомогло — деградований fallback: опитуємо кожну страхову окремо
+  // (moduleId обмежує розрахунок однією СК) і зливаємо ті, що відповіли.
   async getGreenCardOffers(params: GreenCardParams): Promise<GreenCardOffer[]> {
-    const raw = await withRetry(() =>
-      this.withAuth((token) => postJson(`${BASE_URL}/insurance/greencard/calculator`, params, token)),
-      3, 700, true
-    ) as Record<string, unknown>;
-    const data = raw.data;
-    return Array.isArray(data) ? (data as GreenCardOffer[]) : [];
+    const url = `${BASE_URL}/insurance/greencard/calculator`;
+    try {
+      const raw = await withRetry(
+        () => this.withAuth((token) => postJson(url, params, token)),
+        3, 700, true
+      ) as Record<string, unknown>;
+      const data = raw.data;
+      return Array.isArray(data) ? (data as GreenCardOffer[]) : [];
+    } catch (e) {
+      console.error("[greencard] full batch failed → per-module fallback:", e instanceof Error ? e.message.slice(0, 160) : e);
+      const results = await Promise.allSettled(
+        GC_MODULE_IDS.map((moduleId) =>
+          withRetry(() => this.withAuth((token) => postJson(url, { ...params, moduleId }, token)), 2, 500)
+        )
+      );
+      const byId = new Map<string, GreenCardOffer>();
+      for (const r of results) {
+        if (r.status !== "fulfilled") continue;
+        const d = (r.value as Record<string, unknown>).data;
+        if (Array.isArray(d)) for (const o of d as GreenCardOffer[]) if (o?.offerId) byId.set(o.offerId, o);
+      }
+      const offers = [...byId.values()];
+      const ok = results.filter((r) => r.status === "fulfilled").length;
+      if (offers.length === 0) throw e; // геть усе впало — віддаємо оригінальну помилку
+      console.error(`[greencard] fallback recovered ${offers.length} offers from ${ok}/${GC_MODULE_IDS.length} insurers`);
+      return offers;
+    }
   }
 
   // Калькулятор туристичного страхування → масив пропозицій.
