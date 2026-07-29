@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, Scale, ShieldPlus, CheckCircle2, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { logoSrc } from "@/lib/logos";
@@ -105,7 +105,7 @@ export function OfferCard({
         <button type="button" onClick={() => onSelectAutolawyer(selectedAutolawyerId === autolawyer.id ? null : autolawyer.id)} className={rowClass(selectedAutolawyerId === autolawyer.id)}>
           <span className="flex min-w-0 flex-col">
             <span className="text-sm font-medium text-zinc-800">Автоюрист</span>
-            <span className="text-[11px] text-zinc-400">Окрема послуга від партнера · не входить у поліс</span>
+            <span className="text-[11px] text-zinc-400">Додаткова опція</span>
           </span>
           <span className="shrink-0 text-sm font-semibold text-indigo-600">
             {autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : "Безкоштовно"}
@@ -260,37 +260,6 @@ export function OfferCard({
       {/* Розгорнута секція — лише реальні дані з API: опції, факти, документи */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
-          {/* Додаткові опції — назви й конкретні значення з API (без вигаданих описів) */}
-          {hasOptions && (
-            <div>
-              <p className="mb-2 text-xs font-semibold text-zinc-700">Додаткові опції</p>
-              <div className="flex flex-col gap-2">
-                {autolawyer && (
-                  <div className="flex items-start gap-2 text-xs text-zinc-600">
-                    <Scale className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
-                    <span>
-                      <span className="font-medium text-zinc-800">Автоюрист</span>
-                      <span className="text-zinc-300"> · </span>
-                      <span>{autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : "безкоштовно"}</span>
-                      <span className="mt-0.5 block text-zinc-500">Окрема послуга від партнера — юридичний супровід, що не входить у страховий поліс.</span>
-                    </span>
-                  </div>
-                )}
-                {dgoList.length > 0 && (
-                  <div className="flex items-start gap-2 text-xs text-zinc-600">
-                    <ShieldPlus className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
-                    <span>
-                      <span className="font-medium text-zinc-800">Додаткове покриття (ДГО)</span>
-                      <span className="mt-0.5 block text-zinc-500">
-                        Ліміти: {dgoList.map((d) => `${Number(d.coverage).toLocaleString()}`).join(", ")} грн
-                      </span>
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
           {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
             <div className="flex flex-wrap gap-2">
