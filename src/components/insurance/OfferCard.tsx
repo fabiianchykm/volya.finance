@@ -136,6 +136,22 @@ export function OfferCard({
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
         </div>
       )}
+
+      {/* Допомога (евакуатор + швидка) — окрема послуга. Поки заморожена («скоро»):
+          не клікабельна й НЕ входить у суму до оплати. */}
+      <div
+        aria-disabled="true"
+        className="flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-3.5 py-2.5 opacity-70"
+      >
+        <span className="flex min-w-0 flex-col">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-zinc-500">
+            Допомога
+            <span className="rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">скоро</span>
+          </span>
+          <span className="text-[11px] text-zinc-400">Евакуатор, швидка допомога</span>
+        </span>
+        <span className="shrink-0 text-sm font-semibold text-zinc-400">2000 грн</span>
+      </div>
     </div>
   );
 
@@ -171,12 +187,10 @@ export function OfferCard({
           </span>
         </div>
 
-        {/* Опції */}
-        {hasOptions && (
-          <div className="mt-3 border-t border-zinc-100 pt-3">
-            {optionsBlock}
-          </div>
-        )}
+        {/* Опції (автоюрист / ДГО / Допомога) */}
+        <div className="mt-3 border-t border-zinc-100 pt-3">
+          {optionsBlock}
+        </div>
 
         {/* Ряд 2: кнопка купити + детальніше */}
         <div className="mt-4 flex items-center gap-3">
