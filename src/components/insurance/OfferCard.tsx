@@ -137,21 +137,25 @@ export function OfferCard({
         </div>
       )}
 
-      {/* Допомога (евакуатор + швидка) — окрема послуга. Поки заморожена («скоро»):
-          не клікабельна й НЕ входить у суму до оплати. */}
-      <div
-        aria-disabled="true"
-        className="flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-3.5 py-2.5 opacity-70"
-      >
-        <span className="flex min-w-0 flex-col">
+      {/* Евакуатор і медична страховка — окремі послуги. Поки заморожені («скоро»):
+          не клікабельні й НЕ входять у суму до оплати. */}
+      {[
+        { label: "Евакуатор", price: 500 },
+        { label: "Мед допомога", price: 400 },
+        { label: "Страхування від нещасних випадків", price: 400 },
+      ].map((h) => (
+        <div
+          key={h.label}
+          aria-disabled="true"
+          className="flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-3.5 py-2.5 opacity-70"
+        >
           <span className="flex items-center gap-1.5 text-sm font-medium text-zinc-500">
-            Допомога
+            {h.label}
             <span className="rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">скоро</span>
           </span>
-          <span className="text-[11px] text-zinc-400">Евакуатор, швидка допомога</span>
-        </span>
-        <span className="shrink-0 text-sm font-semibold text-zinc-400">{formatPrice(900)}</span>
-      </div>
+          <span className="shrink-0 text-sm font-semibold text-zinc-400">{formatPrice(h.price)}</span>
+        </div>
+      ))}
     </div>
   );
 

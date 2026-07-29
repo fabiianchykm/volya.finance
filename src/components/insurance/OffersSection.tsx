@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { signIn } from "next-auth/react";
 import { Gift, ChevronRight, Pencil, Home, Copy, Check, Loader2 } from "lucide-react";
 import { OfferCard } from "./OfferCard";
@@ -162,10 +163,7 @@ export function OffersSection({
 
         {loading ? (
           <div className="space-y-3">
-            <p className="mb-4 flex items-center justify-center gap-2 text-sm text-zinc-500">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500" />
-              Шукаємо найкращі пропозиції від страховиків…
-            </p>
+            <SearchingInsurers />
             {Array.from({ length: 5 }).map((_, i) => (
               <OfferCardSkeleton key={i} />
             ))}
@@ -288,6 +286,44 @@ export function OffersSection({
 }
 
 // Placeholder card shown while offers are loading.
+// Динамічний індикатор пошуку: «опитуємо» страховиків по черзі — реальні назви
+// компаній змінюються, щоб було відчуття живого порівняння тарифів.
+const SEARCHED_INSURERS = [
+  "ІНГО", "PZU", "УНІКА", "ARX", "Оранта", "ТАС", "Княжа", "УСГ",
+  "VUSO", "Euroins", "Guardian", "Арсенал", "Експрес", "EIA", "UTICO", "BBS Insurance",
+];
+
+function SearchingInsurers() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setI((v) => v + 1), 480);
+    return () => clearInterval(t);
+  }, []);
+  const name = SEARCHED_INSURERS[i % SEARCHED_INSURERS.length];
+  return (
+    <div className="mb-4 flex items-center justify-center gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3">
+      <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500" />
+      <p className="flex flex-wrap items-center justify-center gap-x-1.5 text-sm text-zinc-600">
+        <span>Порівнюємо тарифи страховиків —</span>
+        <span className="inline-flex min-w-[7rem] justify-center overflow-hidden">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={name + i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="font-semibold text-indigo-600"
+            >
+              {name}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+      </p>
+    </div>
+  );
+}
+
 function OfferCardSkeleton() {
   return (
     <div className="animate-pulse rounded-2xl bg-white border border-zinc-100 shadow-sm px-6 py-5">
