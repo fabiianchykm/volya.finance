@@ -261,6 +261,12 @@ export function InsuranceFlow() {
           onEdit={handleEditVehicle}
           onEditBuyer={handleEditBuyer}
           onSelectOffer={handleSelectOffer}
+          periodId={state.periodId}
+          onPeriodChange={(periodId) => {
+            if (!state.vehicle) return;
+            setState((s) => ({ ...s, periodId, offers: [], offersLoading: true }));
+            void fetchOffers(state.vehicle, state.buyer, periodId);
+          }}
         />
         {vehicleModal}
         <BuyerModal

@@ -19,6 +19,9 @@ interface OffersSectionProps {
   onEdit: () => void;
   onEditBuyer: () => void;
   onSelectOffer: (offer: InsuranceOffer, dgoId: string | null, autolawyerId: string | null) => void;
+  /** Період поліса (12 = рік, 6 = пів року) + зміна прямо на екрані пропозицій. */
+  periodId: number;
+  onPeriodChange: (periodId: number) => void;
 }
 
 type SortKey = "price_asc" | "price_desc";
@@ -32,6 +35,8 @@ export function OffersSection({
   onEdit,
   onEditBuyer,
   onSelectOffer,
+  periodId,
+  onPeriodChange,
 }: OffersSectionProps) {
   // Чи заповнив користувач дані страхувальника (відрізняються від дефолтних)?
   const buyerSet = buyer.privilegeId !== DEFAULT_BUYER.privilegeId || buyer.birthDate !== DEFAULT_BUYER.birthDate;
@@ -108,6 +113,25 @@ export function OffersSection({
                 <Pencil className="h-4 w-4" />
               </button>
             </p>
+
+            {/* Період поліса — видно й змінюється прямо тут (ціни перерахуються) */}
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-xs font-medium text-zinc-400">Період поліса:</span>
+              <div className="inline-flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5">
+                {[{ v: 12, l: "1 рік" }, { v: 6, l: "Пів року" }].map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => { if (o.v !== periodId) onPeriodChange(o.v); }}
+                    className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${
+                      periodId === o.v ? "bg-white text-indigo-600 shadow-sm ring-1 ring-black/5" : "text-zinc-500 hover:text-zinc-700"
+                    }`}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Пільга + дата народження — впливають на ціну. Прикріплено під авто. */}
