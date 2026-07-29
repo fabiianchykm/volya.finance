@@ -24,6 +24,12 @@ export interface PolicyRecord {
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
+  /** 'issued' — оформлений у нас; 'manual' — доданий клієнтом вручну. */
+  source: string;
+  /** Вид страхування (osago/kasko/greencard/tourism) — переважно для manual. */
+  product: string | null;
+  /** Номер полісу (для manual). */
+  policyNumber: string | null;
 }
 
 export interface SavePolicyInput {
@@ -41,6 +47,9 @@ export interface SavePolicyInput {
   price?: number | null;
   startDate?: string | null;
   endDate?: string | null;
+  source?: string | null;
+  product?: string | null;
+  policyNumber?: string | null;
 }
 
 // Приводить телефон до "+380XXXXXXXXX" (щоб збігалося зі входом за номером).
@@ -61,11 +70,12 @@ export async function savePolicy(p: SavePolicyInput): Promise<void> {
   const email = p.email.trim().toLowerCase();
   const phone = normPhone(p.phone);
   await sql`
-    INSERT INTO policies (id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date)
+    INSERT INTO policies (id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, source, product, policy_number)
     VALUES (
       ${p.id}, ${email}, ${phone}, ${p.customerName ?? null}, ${json(p.customer)},
       ${p.contractId ?? null}, ${p.orderId ?? null}, ${p.company ?? null},
-      ${json(p.vehicle)}, ${p.price ?? null}, ${p.startDate ?? null}, ${p.endDate ?? null}
+      ${json(p.vehicle)}, ${p.price ?? null}, ${p.startDate ?? null}, ${p.endDate ?? null},
+      ${p.source ?? "issued"}, ${p.product ?? null}, ${p.policyNumber ?? null}
     )
     ON CONFLICT (id) DO UPDATE SET
       phone         = EXCLUDED.phone,
@@ -76,8 +86,27 @@ export async function savePolicy(p: SavePolicyInput): Promise<void> {
       vehicle       = EXCLUDED.vehicle,
       price         = EXCLUDED.price,
       start_date    = EXCLUDED.start_date,
-      end_date      = EXCLUDED.end_date
+      end_date      = EXCLUDED.end_date,
+      source        = EXCLUDED.source,
+      product       = EXCLUDED.product,
+      policy_number = EXCLUDED.policy_number
   `;
+}
+
+// Видалення полісу (лише manual) з перевіркою власника за email АБО phone.
+export async function deletePolicy(id: string, owner: { email?: string | null; phone?: string | null }): Promise<boolean> {
+  if (!sql) return false;
+  await ensureSchema();
+  const email = owner.email ? owner.email.trim().toLowerCase() : null;
+  const phone = normPhone(owner.phone);
+  if (!email && !phone) return false;
+  const rows = await sql`
+    DELETE FROM policies
+    WHERE id = ${id} AND source = 'manual'
+      AND (${email}::text IS NOT NULL AND lower(email) = ${email} OR ${phone}::text IS NOT NULL AND phone = ${phone})
+    RETURNING id
+  `;
+  return rows.length > 0;
 }
 
 interface PolicyRow {
@@ -94,6 +123,9 @@ interface PolicyRow {
   start_date: string | null;
   end_date: string | null;
   created_at: Date;
+  source: string | null;
+  product: string | null;
+  policy_number: string | null;
 }
 
 function mapRow(r: PolicyRow): PolicyRecord {
@@ -111,10 +143,13 @@ function mapRow(r: PolicyRow): PolicyRecord {
     startDate: r.start_date,
     endDate: r.end_date,
     createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+    source: r.source ?? "issued",
+    product: r.product,
+    policyNumber: r.policy_number,
   };
 }
 
-const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at`;
+const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at, source, product, policy_number`;
 
 export async function getPoliciesByEmail(email: string): Promise<PolicyRecord[]> {
   if (!sql) return [];

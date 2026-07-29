@@ -52,6 +52,11 @@ export function ensureSchema(): Promise<void> {
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS customer_name text`;
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS customer jsonb NOT NULL DEFAULT '{}'::jsonb`;
       await sql`CREATE INDEX IF NOT EXISTS policies_phone_idx ON policies (phone)`;
+      // Поліси, додані клієнтом вручну (куплені деінде): source='manual',
+      // product — вид (osago/kasko/greencard/tourism), policy_number — номер полісу.
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'issued'`;
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS product text`;
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS policy_number text`;
     })().catch((e) => {
       schemaPromise = null;
       throw e;
