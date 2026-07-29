@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, CalendarDays, ArrowRight, ArrowLeft, Loader2, Search, Car } from "lucide-react";
+import { Globe, MapPin, CalendarDays, ArrowRight, ArrowLeft, Loader2, Search, Car, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatPlate } from "@/lib/utils";
+import { BONUS_RATE } from "@/lib/constants";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
 import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
@@ -275,7 +276,12 @@ function GreenCardOfferCard({ offer, onSelect }: { offer: GreenCardOffer; onSele
         <p className="truncate text-sm font-semibold uppercase text-zinc-900">{offer.companyNamePublic || offer.companyName}</p>
         <p className="text-xs text-zinc-500">Зелена карта</p>
       </div>
-      <p className="shrink-0 text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
+      <div className="flex shrink-0 flex-col items-end">
+        <p className="text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
+        <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-emerald-600">
+          <Coins className="h-3 w-3" /> +{formatPrice(Math.round(offer.price * BONUS_RATE))} бонус
+        </span>
+      </div>
       <button type="button" onClick={onSelect} className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
         Оформити
       </button>

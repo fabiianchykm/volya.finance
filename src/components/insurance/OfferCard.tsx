@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
+import { BONUS_RATE } from "@/lib/constants";
 import { logoSrc } from "@/lib/logos";
 import type { InsuranceCompany, InsuranceOffer } from "@/types/api";
 
@@ -79,6 +80,9 @@ export function OfferCard({
     offer.price +
     (selectedDgoId ? Number(dgoList.find((d) => d.id === selectedDgoId)?.cost ?? 0) : 0) +
     (selectedAutolawyerId ? lawyerList.find((a) => a.id === selectedAutolawyerId)?.price ?? 0 : 0);
+
+  // Бонус 1% від вартості полісу — нараховується на бонусний рахунок клієнта.
+  const bonus = Math.round(totalPrice * BONUS_RATE);
 
   const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
 
@@ -182,12 +186,19 @@ export function OfferCard({
             {cleanCompanyName}
           </p>
 
-          <span
-            className="shrink-0 text-lg font-bold text-zinc-900 tabular-nums"
-            style={{ fontFamily: 'var(--font-roboto)' }}
-          >
-            {formatPrice(totalPrice)}
-          </span>
+          <div className="flex shrink-0 flex-col items-end">
+            <span
+              className="text-lg font-bold text-zinc-900 tabular-nums"
+              style={{ fontFamily: 'var(--font-roboto)' }}
+            >
+              {formatPrice(totalPrice)}
+            </span>
+            {bonus > 0 && (
+              <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-emerald-600">
+                <Coins className="h-3 w-3" /> +{formatPrice(bonus)} бонус
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Опції (автоюрист / ДГО / Допомога) */}
@@ -260,8 +271,15 @@ export function OfferCard({
 
         {/* Блок 4: ціна + купити */}
         <div className="flex flex-col items-center justify-center gap-3 shrink-0" style={{ width: 200 }}>
-          <div className="text-2xl text-zinc-900" style={{ fontFamily: 'var(--font-roboto)' }}>
-            {formatPrice(totalPrice)}
+          <div className="flex flex-col items-center gap-1">
+            <div className="text-2xl text-zinc-900" style={{ fontFamily: 'var(--font-roboto)' }}>
+              {formatPrice(totalPrice)}
+            </div>
+            {bonus > 0 && (
+              <span title="1% від вартості полісу на бонусний рахунок" className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
+                <Coins className="h-3.5 w-3.5" /> +{formatPrice(bonus)} на рахунок
+              </span>
+            )}
           </div>
           <Button
             variant="primary"

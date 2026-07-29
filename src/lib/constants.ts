@@ -60,3 +60,7 @@ export const REGISTRATION_TYPES = [
   { id: 2, label: "Тимчасова реєстрація" },
   { id: 3, label: "Тимчасовий в'їзд" },
 ] as const;
+
+// Бонус за покупку полісу — % від вартості, що нараховується на бонусний
+// рахунок клієнта. Показується у пропозиціях (див. OfferCard, GreenCard/Tourism).
+export const BONUS_RATE = 0.01; // 1%
