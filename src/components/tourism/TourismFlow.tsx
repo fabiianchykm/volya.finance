@@ -184,10 +184,11 @@ function TourismOffers({ offers, onBack }: { offers: TourismOffer[]; onBack: () 
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
   const currency = offers.find((o) => coverageOf(o) === coverage)?.limit_currency || "EUR";
 
-  // За обраним покриттям — найдешевша пропозиція від кожної страхової.
+  // За обраним покриттям — найдешевший варіант для кожної пари «страхова + програма»
+  // (Економ/Стандарт/Еліт як окремі пропозиції), щоб було з чого обирати.
   const best = new Map<string, TourismOffer>();
   for (const o of offers.filter((o) => coverageOf(o) === coverage)) {
-    const key = o.company?.publicName || o.company?.name || o.offerId;
+    const key = [o.company?.publicName || o.company?.name, o.tripProgram].filter(Boolean).join("|") || o.offerId;
     const prev = best.get(key);
     if (!prev || o.price < prev.price) best.set(key, o);
   }
