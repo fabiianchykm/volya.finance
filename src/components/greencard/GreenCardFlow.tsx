@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, CalendarDays, Clock, ArrowRight, ArrowLeft, Loader2, Search, Car } from "lucide-react";
+import { Globe, MapPin, CalendarDays, ArrowRight, ArrowLeft, Loader2, Search, Car } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { DateInput, parseUaDate } from "@/components/ui/DateInput";
+import { parseUaDate } from "@/components/ui/DateInput";
+import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatPlate } from "@/lib/utils";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
@@ -19,24 +20,20 @@ const TERRITORIES = [
   { value: "117", label: "Молдова" },
 ];
 
-// periodOption: 15/21 = дні, 1..12 = місяці.
-const DURATIONS = [
-  { value: "15", label: "15 днів" },
-  { value: "21", label: "21 день" },
-  ...Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} ${i === 0 ? "місяць" : i < 4 ? "місяці" : "місяців"}` })),
-];
+// periodOption Зеленої карти дискретний: 15/21 = дні, 1..12 = місяці. Користувач
+// обирає діапазон дат, а ми підбираємо НАЙМЕНШИЙ період ЗК, що покриває поїздку
+// (мінімум — 15 днів). Повертаємо і значення periodOption, і людський підпис.
+function periodFromDays(days: number): { value: number; label: string } {
+  if (days <= 15) return { value: 15, label: "15 днів" };
+  if (days <= 21) return { value: 21, label: "21 день" };
+  const m = Math.min(12, Math.ceil(days / 30));
+  return { value: m, label: `${m} ${m === 1 ? "місяць" : m < 5 ? "місяці" : "місяців"}` };
+}
 
 // Категорія ТЗ Ukasko (B1/B2/C1/D1/A1/E…) → тип для Зеленої карти (B/C/D/A/E).
 function toGcCarType(autoCategory?: string): string {
   const c = (autoCategory ?? "B")[0]?.toUpperCase();
   return ["A", "B", "C", "D", "E"].includes(c) ? c : "B";
-}
-
-function tomorrowUa(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
 const selectClass =
@@ -49,8 +46,8 @@ export function GreenCardFlow() {
   const [vehicle, setVehicle] = useState<VehicleData | null>(null);
 
   const [territory, setTerritory] = useState("60");
-  const [startDate, setStartDate] = useState(tomorrowUa());
-  const [duration, setDuration] = useState("15");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [offers, setOffers] = useState<GreenCardOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<GreenCardOffer | null>(null);
@@ -60,6 +57,11 @@ export function GreenCardFlow() {
   const today = new Date();
   const maxStart = new Date();
   maxStart.setFullYear(maxStart.getFullYear() + 1);
+
+  // Діапазон дат → період ЗК (найменший, що покриває поїздку).
+  const startD = parseUaDate(startDate);
+  const endD = parseUaDate(endDate);
+  const period = startD && endD ? periodFromDays(daysBetween(startD, endD)) : null;
 
   // Крок 1 — пошук авто за номером.
   const findCar = async (e: React.FormEvent) => {
@@ -95,12 +97,11 @@ export function GreenCardFlow() {
   // Крок 2 — розрахунок пропозицій.
   const calc = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vehicle || !parseUaDate(startDate) || loading) return;
+    if (!vehicle || !startD || !period || loading) return;
     setLoading(true);
     setError(null);
     try {
-      const d = parseUaDate(startDate)!;
-      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const iso = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}-${String(startD.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/greencard", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -108,7 +109,7 @@ export function GreenCardFlow() {
           country: Number(territory),
           userType: 1,
           startDate: iso,
-          periodOption: Number(duration),
+          periodOption: period.value,
           carType: toGcCarType(vehicle.autoCategory),
           carNumber: vehicle.number,
         }),
@@ -127,7 +128,7 @@ export function GreenCardFlow() {
   };
 
   const checkoutCtx = (offer: GreenCardOffer): GreenCardContext => ({
-    offer, country: Number(territory), periodOption: Number(duration),
+    offer, country: Number(territory), periodOption: period?.value ?? 15,
     carType: toGcCarType(vehicle!.autoCategory), startDate, vehicle: vehicle!,
   });
 
@@ -198,7 +199,7 @@ export function GreenCardFlow() {
                 <button type="button" onClick={() => { setVehicle(null); setStep("plate"); }} className="ml-auto text-xs font-medium text-indigo-600 hover:underline">Змінити</button>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
                   <select value={territory} onChange={(e) => setTerritory(e.target.value)} className={selectClass}>
@@ -206,20 +207,18 @@ export function GreenCardFlow() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
-                  <DateInput value={startDate} onChange={setStartDate} minDate={today} maxDate={maxStart} defaultYear={today.getFullYear()} />
-                </div>
-                <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Clock className="h-3.5 w-3.5" /> Термін перебування</label>
-                  <select value={duration} onChange={(e) => setDuration(e.target.value)} className={selectClass}>
-                    {DURATIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-                  </select>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки</label>
+                  <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
                 </div>
               </div>
 
+              {period && (
+                <p className="mt-3 text-xs text-zinc-500">Поліс Зелена карта: <span className="font-semibold text-zinc-700">{period.label}</span> <span className="text-zinc-400">(мінімальний термін — 15 днів)</span></p>
+              )}
+
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-              <Button type="submit" variant="primary" size="lg" loading={loading} className="mt-5 w-full">
+              <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!period || loading} className="mt-5 w-full">
                 <span className="flex items-center gap-2">
                   {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Шукаємо пропозиції…</> : <>Показати пропозиції <ArrowRight className="h-5 w-5" /></>}
                 </span>
