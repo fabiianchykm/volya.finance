@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { savePolicy, getPoliciesByEmail, getPoliciesByPhone } from "@/lib/policies";
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
 import { resolveReferrerByCode, recordReferralConversion } from "@/lib/referral";
+import { creditBonus } from "@/lib/bonus";
+import { BONUS_RATE } from "@/lib/constants";
 
 // POST — зберегти оформлений поліс під email клієнта (логін не обовʼязковий:
 // купити можна гостем, у кабінеті поліс зʼявиться після входу з тим же email).
@@ -48,6 +50,15 @@ export async function POST(req: NextRequest) {
       `📧 Email: <code>${escapeHtml(String(email))}</code>`,
     ].filter(Boolean);
     await trySendTelegram("sales", saleLines.join("\n"));
+
+    // Бонус за покупку: 1% від вартості полісу на бонусний рахунок покупця.
+    if (typeof price === "number" && price > 0) {
+      try {
+        await creditBonus({ email: String(email), kind: "purchase", policyId: String(id), amount: Math.round(price * BONUS_RATE) });
+      } catch (e) {
+        console.error("[policies] purchase bonus error:", e instanceof Error ? e.message : e);
+      }
+    }
 
     // Реферальна атрибуція: якщо покупець прийшов за чиїмось посиланням (cookie ref),
     // нараховуємо реферу бонус 5%. Не має ламати відповідь клієнту.

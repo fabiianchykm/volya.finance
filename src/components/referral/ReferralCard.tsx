@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Gift, Copy, Check } from "lucide-react";
+import { Wallet, Copy, Check, ShoppingBag, Users } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 import type { ReferralSummary } from "@/lib/referral";
 
-// Блок реферальної програми в кабінеті: посилання (копіювати), баланс бонусів,
-// к-сть запрошених. Бонус = 5% від полісів друзів; знижка на наступний поліс.
+// Єдиний бонусний рахунок у кабінеті: загальний баланс (1% з покупок + 5% з
+// рефералів), розбивка, посилання для запрошень і к-сть запрошених.
 
 export function ReferralCard({ summary }: { summary: ReferralSummary }) {
   const [copied, setCopied] = useState(false);
+  const { balance } = summary;
 
   const copy = async () => {
     try {
@@ -22,25 +24,44 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
 
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm">
-      <div className="flex items-center gap-3 bg-gradient-to-br from-indigo-500 to-violet-600 px-5 py-4 text-white">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20">
-          <Gift className="h-5 w-5" />
+      {/* Баланс бонусного рахунку */}
+      <div className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 py-5 text-white">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-indigo-100">Бонусний рахунок</p>
+            <p className="text-2xl font-bold leading-tight">{formatPrice(balance.total)}</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-base font-bold leading-tight">Запрошуй друзів — отримуй 5%</h2>
-          <p className="text-xs text-indigo-100">Друг оформлює поліс — вам 5% бонусами на наступний</p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-white/10 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[11px] text-indigo-100">
+              <ShoppingBag className="h-3.5 w-3.5" /> З покупок · 1%
+            </div>
+            <div className="mt-0.5 text-base font-bold">{formatPrice(balance.purchase)}</div>
+          </div>
+          <div className="rounded-xl bg-white/10 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-[11px] text-indigo-100">
+              <Users className="h-3.5 w-3.5" /> Реферальні · 5%
+            </div>
+            <div className="mt-0.5 text-base font-bold">{formatPrice(balance.referral)}</div>
+          </div>
         </div>
       </div>
 
+      {/* Запрошення друзів */}
       <div className="p-5">
-        <div className="mb-4 flex gap-3">
-          <div className="flex-1 rounded-xl bg-zinc-50 px-4 py-3 text-center">
-            <div className="text-xl font-bold text-zinc-900">{summary.bonusTotal} грн</div>
-            <div className="text-xs text-zinc-500">бонусів накопичено</div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-zinc-900">Запрошуй друзів — отримуй 5%</h2>
+            <p className="text-xs text-zinc-500">Друг оформлює поліс — вам 5% на бонусний рахунок</p>
           </div>
-          <div className="flex-1 rounded-xl bg-zinc-50 px-4 py-3 text-center">
-            <div className="text-xl font-bold text-zinc-900">{summary.invitedCount}</div>
-            <div className="text-xs text-zinc-500">запрошено з покупкою</div>
+          <div className="shrink-0 rounded-lg bg-zinc-50 px-3 py-1.5 text-center">
+            <div className="text-base font-bold text-zinc-900">{summary.invitedCount}</div>
+            <div className="text-[10px] text-zinc-500">запрошено</div>
           </div>
         </div>
 
@@ -63,8 +84,8 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
         </div>
 
         <p className="mt-3 text-xs text-zinc-400">
-          Бонуси нараховуються, коли друг оформлює поліс за вашим посиланням. Застосування
-          знижки на наступний поліс — за підтримки менеджера.
+          На рахунок нараховується 1% від кожної вашої покупки та 5% від покупок запрошених друзів.
+          Застосування бонусів — за підтримки менеджера.
         </p>
       </div>
     </div>

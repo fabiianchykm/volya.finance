@@ -1,6 +1,7 @@
 import { ulid } from "ulid";
 import { sql } from "./db";
 import { SITE_URL } from "./seo";
+import { creditBonus, getBonusBreakdown } from "./bonus";
 
 // Реферальна програма. Кожен залогінений користувач (email) має унікальний код
 // і посилання ?ref=КОД. Коли друг за цим посиланням оформлює поліс, тому, хто
@@ -104,6 +105,8 @@ export async function recordReferralConversion(input: {
     VALUES (${input.policyId}, ${referrer}, ${referred}, ${price || null}, ${bonus})
     ON CONFLICT (id) DO NOTHING
   `;
+  // Нараховуємо реферальний бонус на СПІЛЬНИЙ бонусний рахунок рефера.
+  await creditBonus({ email: referrer, kind: "referral", policyId: input.policyId, amount: bonus });
 }
 
 export interface ReferralItem {
@@ -116,8 +119,10 @@ export interface ReferralSummary {
   code: string;
   link: string;
   invitedCount: number;
-  bonusTotal: number;
+  bonusTotal: number;      // сума саме реферальних бонусів (історія запрошень)
   items: ReferralItem[];
+  /** Єдиний бонусний рахунок: покупки (1%) + реферальні (5%). */
+  balance: { total: number; purchase: number; referral: number };
 }
 
 /** Зведення для кабінету: код, посилання, к-сть запрошених, сумарний бонус, історія. */
@@ -137,6 +142,8 @@ export async function getReferralSummary(email: string): Promise<ReferralSummary
     ORDER BY created_at DESC LIMIT 20
   `;
 
+  const balance = await getBonusBreakdown(e);
+
   return {
     code,
     link: `${SITE_URL}/?ref=${code}`,
@@ -147,5 +154,6 @@ export async function getReferralSummary(email: string): Promise<ReferralSummary
       policyPrice: r.policy_price !== null ? Number(r.policy_price) : null,
       createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
     })),
+    balance,
   };
 }
