@@ -9,7 +9,6 @@ const LOGO_FILES: Record<string, string> = {
   arx: "/logos/arx.svg",
   "bbs-insurance": "/logos/bbs-insurance.webp",
   eia: "/logos/eia.webp",
-  esa: "/logos/esa.webp",
   euroins: "/logos/euroins.svg",
   express: "/logos/express.svg",
   guardian: "/logos/guardian.svg",
@@ -42,8 +41,9 @@ const LOGO_ALIASES: Record<string, string> = {
   "ukrayinska-transportna": "utico",                  // Українська транспортна (страхова компанія)
   "ukrayinska-transportna-kompaniya": "utico",
   "ukrayinska-strakhova-hrupa": "usg",                // Українська страхова група
-  "yevropeyskyy-strakhovyy-alyans": "eia",            // Європейський страховий альянс
+  "yevropeyskyy-strakhovyy-alyans": "eia",            // Європейський страховий альянс (= ЄСА)
   yesa: "eia",
+  esa: "eia",
   ekspres: "express",                                 // Експрес Страхування
   "ekspres-strakhuvannya": "express",
 };
