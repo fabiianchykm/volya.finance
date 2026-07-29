@@ -150,7 +150,7 @@ export function OfferCard({
           </span>
           <span className="text-[11px] text-zinc-400">Евакуатор, швидка допомога</span>
         </span>
-        <span className="shrink-0 text-sm font-semibold text-zinc-400">900 грн</span>
+        <span className="shrink-0 text-sm font-semibold text-zinc-400">{formatPrice(900)}</span>
       </div>
     </div>
   );
