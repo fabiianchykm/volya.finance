@@ -738,7 +738,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
               />
               {selectedCity && (
                 <p className="mt-1 text-xs font-medium text-emerald-600">
-                  ✓ {selectedCity.name_full_name_ua || selectedCity.name_ua} (зона {selectedCity.zone})
+                  {(selectedCity.name_full_name_ua || selectedCity.name_ua).replace(/\s*\(зона\s*\d+\)\s*$/i, "")}
                 </p>
               )}
               {cityError && !selectedCity && (

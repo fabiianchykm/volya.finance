@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signIn } from "next-auth/react";
-import { Gift, ChevronRight, Pencil, Home, Copy, Check, Loader2 } from "lucide-react";
+import { Gift, ChevronRight, Pencil, Home, Copy, Check, Loader2, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
@@ -147,16 +147,28 @@ export function OffersSection({
         </div>
 
         {!loading && offers.length > 0 && (
-          <div className="mb-5 flex items-center justify-end gap-2">
-            <span className="text-xs font-medium text-zinc-500">Сортувати:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-300 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-colors cursor-pointer"
-            >
-              <option value="price_asc">Дешевше</option>
-              <option value="price_desc">Дорожче</option>
-            </select>
+          <div className="mb-5 flex items-center justify-end gap-2.5">
+            <span className="text-xs font-medium text-zinc-400">Сортувати</span>
+            <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-100/70 p-0.5">
+              {([
+                { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
+                { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
+              ] as const).map(({ k, label, Icon }) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setSortBy(k)}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                    sortBy === k
+                      ? "bg-white text-indigo-600 shadow-sm ring-1 ring-black/5"
+                      : "text-zinc-500 hover:text-zinc-700"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
