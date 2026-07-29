@@ -293,6 +293,59 @@ export class UkaskoService {
     return Array.isArray(data) ? (data as TourismOffer[]) : [];
   }
 
+  // ── Туристичне: заявлення (save) → orderId; фіналізація (nextFinal) → contractId;
+  //    завантаження полісу (tourism/contract/take). OTP та оплата — спільні по orderId.
+  private tourismErr(raw: Record<string, unknown>, ctx: string): void {
+    const status = raw.status as string | undefined;
+    const msg = raw.message as string | undefined;
+    const isErr = status === "error" || status === "validation" || (msg && msg.includes('"result":false'));
+    if (!isErr) return;
+    console.error(`[tourism ${ctx}] rejected. raw:`, JSON.stringify(raw).slice(0, 800));
+    if (/undefined (index|offset|array key)|server error/i.test(msg ?? JSON.stringify(raw))) {
+      throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Оберіть іншу пропозицію.");
+    }
+    // Витягуємо людський текст із errorMessage/валідації.
+    let clean = "";
+    try {
+      const inner = JSON.parse(msg ?? "{}") as { result?: { errorMessage?: string } };
+      clean = inner.result?.errorMessage ?? "";
+    } catch { /* not json */ }
+    if (!clean && raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+      clean = Object.values(raw.data as Record<string, unknown>).flat().map(String).join("; ");
+    }
+    throw new Error(clean || `Страхова відхилила заявку: ${(msg ?? "").slice(0, 200)}`);
+  }
+
+  async declareTourismOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
+    const payload = { ...orderData, params: { type: "save", statusId: 1 } };
+    const raw = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/tourism/order/create`, payload, token
+    )) as Record<string, unknown>;
+    this.tourismErr(raw, "declare");
+    const first = (raw as { data?: Array<{ id: string; status?: string }> }).data?.[0];
+    if (!first?.id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    return first;
+  }
+
+  async confirmTourismOrder(orderData: Record<string, unknown>): Promise<{ contractId: string; status?: string }> {
+    const payload = { ...orderData, params: { type: "nextFinal", statusId: 2 } };
+    const raw = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/tourism/order/create`, payload, token
+    )) as Record<string, unknown>;
+    this.tourismErr(raw, "confirm");
+    const first = (raw as { data?: Array<{ contract?: { id: string; status?: string } }> }).data?.[0];
+    const contractId = first?.contract?.id;
+    if (!contractId) throw new Error("Договір не сформувався. Зверніться до підтримки.");
+    return { contractId, status: first?.contract?.status };
+  }
+
+  async takeTourismContract(contractId: string): Promise<{ contract?: string; mtsbuLink?: string; mtsbuCode?: string }> {
+    const data = await this.withAuth((token) => postForm(
+      `${BASE_URL}/insurance/tourism/contract/take`, { contractId }, token
+    )) as { data: { contract?: string; mtsbuCode?: string } };
+    return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode };
+  }
+
   // Заявлення «Зелена карта» (POST greencard/order/create) → orderId. Далі —
   // спільні OTP та оплата по orderId (як в ОСЦПВ), потім contract/confirm.
   async createGreenCardOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string; mtsbuLink?: string }> {

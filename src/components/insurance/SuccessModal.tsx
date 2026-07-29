@@ -9,9 +9,11 @@ interface SuccessModalProps {
   open: boolean;
   onClose: () => void;
   contractId: string;
+  /** Ендпоінт завантаження договору. ОСЦПВ/ЗК — дефолт; туристичне передає свій. */
+  downloadEndpoint?: string;
 }
 
-export function SuccessModal({ open, onClose, contractId }: SuccessModalProps) {
+export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/api/insurance/contract" }: SuccessModalProps) {
   const [loading, setLoading] = useState(false);
   const [contract, setContract] = useState<{ mtsbuLink: string; contract: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,7 @@ export function SuccessModal({ open, onClose, contractId }: SuccessModalProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/insurance/contract", {
+      const res = await fetch(downloadEndpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "download", contractId }),

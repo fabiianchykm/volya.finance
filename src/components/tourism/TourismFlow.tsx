@@ -8,6 +8,7 @@ import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatCompanyName } from "@/lib/utils";
+import { TourismCheckout, type TourismCheckoutCtx } from "./TourismCheckout";
 import type { TourismOffer } from "@/types/api";
 
 const PROGRAM_LABELS: Record<string, string> = {
@@ -18,8 +19,6 @@ const coverageOf = (o: TourismOffer) => Number(o.coverage ?? o.limit ?? 0);
 
 // Туристичне страхування — калькулятор Ukasko (POST /insurance/calculator/tourism)
 // повертає реальні пропозиції з покриттям і цінами. Зони — з /api/countries/list.
-
-const TELEGRAM_BOT = "https://t.me/volya_finance_bot";
 
 // Зони покриття (id + точна назва з довідника Ukasko).
 const ZONES = [
@@ -35,7 +34,8 @@ const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
 
 export function TourismFlow() {
-  const [step, setStep] = useState<"form" | "offers">("form");
+  const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
+  const [selectedOffer, setSelectedOffer] = useState<TourismOffer | null>(null);
   const [zoneId, setZoneId] = useState("60");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -162,16 +162,34 @@ export function TourismFlow() {
                 </span>
               </Button>
             </form>
-          ) : (
-            <TourismOffers offers={offers} onBack={() => setStep("form")} />
-          )}
+          ) : step === "offers" ? (
+            <TourismOffers
+              offers={offers}
+              onBack={() => setStep("form")}
+              onSelect={(offer) => { setSelectedOffer(offer); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            />
+          ) : selectedOffer ? (
+            <TourismCheckout
+              ctx={{
+                offer: selectedOffer,
+                countryId: Number(zoneId),
+                countryName: ZONES.find((z) => String(z.id) === zoneId)?.name ?? "",
+                startDate,
+                endDate,
+                days,
+                multiVisa,
+                birthDates,
+              } satisfies TourismCheckoutCtx}
+              onBack={() => setStep("offers")}
+            />
+          ) : null}
         </motion.div>
       </div>
     </section>
   );
 }
 
-function TourismOffers({ offers, onBack }: { offers: TourismOffer[]; onBack: () => void }) {
+function TourismOffers({ offers, onBack, onSelect }: { offers: TourismOffer[]; onBack: () => void; onSelect: (offer: TourismOffer) => void }) {
   // Рівні покриття, наявні у відповіді (10к…100к EUR). Мінімум для Шенгену — 30 000.
   const coverages = Array.from(new Set(offers.map(coverageOf).filter((c) => c > 0))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
@@ -214,14 +232,14 @@ function TourismOffers({ offers, onBack }: { offers: TourismOffer[]; onBack: () 
         <p className="text-sm text-zinc-500">За обраними параметрами пропозицій немає. Спробуйте інші дати чи зону.</p>
       ) : (
         <div className="space-y-3">
-          {cards.map((o) => <TourismOfferCard key={o.offerId} offer={o} />)}
+          {cards.map((o) => <TourismOfferCard key={o.offerId} offer={o} onSelect={() => onSelect(o)} />)}
         </div>
       )}
     </div>
   );
 }
 
-function TourismOfferCard({ offer }: { offer: TourismOffer }) {
+function TourismOfferCard({ offer, onSelect }: { offer: TourismOffer; onSelect: () => void }) {
   const publicName = offer.company?.publicName || offer.company?.name || "";
   const src = companyLogo(publicName) || offer.company?.logo || null;
   const displayName = formatCompanyName(publicName).toUpperCase();
@@ -247,9 +265,9 @@ function TourismOfferCard({ offer }: { offer: TourismOffer }) {
         </p>
       </div>
       <p className="shrink-0 text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
-      <a href={TELEGRAM_BOT} target="_blank" rel="noopener noreferrer" className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
+      <button type="button" onClick={onSelect} className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
         Оформити
-      </a>
+      </button>
     </div>
   );
 }
