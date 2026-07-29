@@ -347,27 +347,15 @@ export function VehicleConfirmModal({
         {/* Період дії поліса — рік (за замовч.) або пів року. Лише ОСЦПВ. */}
         {periodId !== undefined && (
           <div className="border-t border-zinc-100 pt-3">
-            <label className="mb-2 block text-xs font-medium text-zinc-500">Період страхування</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { v: 12, l: "1 рік", note: "стандартний" },
-                { v: 6, l: "Пів року", note: "дешевше" },
-              ].map((o) => (
-                <button
-                  key={o.v}
-                  type="button"
-                  onClick={() => setPeriod(o.v)}
-                  className={`flex flex-col items-center rounded-xl border px-3 py-2 transition-colors ${
-                    period === o.v
-                      ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-200"
-                      : "border-zinc-200 bg-white hover:border-indigo-300"
-                  }`}
-                >
-                  <span className={`text-sm font-semibold ${period === o.v ? "text-indigo-700" : "text-zinc-700"}`}>{o.l}</span>
-                  <span className={`text-[11px] ${period === o.v ? "text-indigo-400" : "text-zinc-400"}`}>{o.note}</span>
-                </button>
-              ))}
-            </div>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500">Період страхування</label>
+            <select
+              value={String(period)}
+              onChange={(e) => setPeriod(Number(e.target.value))}
+              className="h-11 w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-900 outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+            >
+              <option value="12">1 рік</option>
+              <option value="6">Пів року (6 місяців)</option>
+            </select>
           </div>
         )}
 

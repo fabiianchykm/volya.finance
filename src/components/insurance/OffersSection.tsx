@@ -117,20 +117,14 @@ export function OffersSection({
             {/* Період поліса — видно й змінюється прямо тут (ціни перерахуються) */}
             <div className="mt-3 flex items-center gap-2">
               <span className="text-xs font-medium text-zinc-400">Період поліса:</span>
-              <div className="inline-flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5">
-                {[{ v: 12, l: "1 рік" }, { v: 6, l: "Пів року" }].map((o) => (
-                  <button
-                    key={o.v}
-                    type="button"
-                    onClick={() => { if (o.v !== periodId) onPeriodChange(o.v); }}
-                    className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${
-                      periodId === o.v ? "bg-white text-indigo-600 shadow-sm ring-1 ring-black/5" : "text-zinc-500 hover:text-zinc-700"
-                    }`}
-                  >
-                    {o.l}
-                  </button>
-                ))}
-              </div>
+              <select
+                value={String(periodId)}
+                onChange={(e) => { const v = Number(e.target.value); if (v !== periodId) onPeriodChange(v); }}
+                className="h-9 cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 outline-none transition-colors hover:border-zinc-300 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+              >
+                <option value="12">1 рік</option>
+                <option value="6">Пів року</option>
+              </select>
             </div>
           </div>
 
