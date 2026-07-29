@@ -147,27 +147,35 @@ export function OffersSection({
         </div>
 
         {!loading && offers.length > 0 && (
-          <div className="mb-5 flex items-center justify-end gap-2.5">
+          <div className="mb-5 flex items-center justify-end gap-3">
             <span className="text-xs font-medium text-zinc-400">Сортувати</span>
-            <div className="inline-flex rounded-xl border border-zinc-200 bg-zinc-100/70 p-0.5">
+            <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               {([
                 { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
                 { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
-              ] as const).map(({ k, label, Icon }) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setSortBy(k)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                    sortBy === k
-                      ? "bg-white text-indigo-600 shadow-sm ring-1 ring-black/5"
-                      : "text-zinc-500 hover:text-zinc-700"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              ))}
+              ] as const).map(({ k, label, Icon }) => {
+                const active = sortBy === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setSortBy(k)}
+                    className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                      active ? "text-white" : "text-zinc-500 hover:text-zinc-800"
+                    }`}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="sortPill"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                        className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30"
+                      />
+                    )}
+                    <Icon className="relative z-10 h-3.5 w-3.5" />
+                    <span className="relative z-10">{label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
