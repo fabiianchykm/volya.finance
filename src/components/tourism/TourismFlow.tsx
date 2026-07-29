@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plane, MapPin, CalendarDays, Clock, Users, ArrowRight, ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
+import { Plane, MapPin, CalendarDays, Users, ArrowRight, ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
+import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatCompanyName } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
@@ -30,21 +31,14 @@ const ZONES = [
   { id: 199, name: "Чехія", label: "Чехія" },
 ];
 
-function tomorrowUa(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
-}
-
 const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
 
 export function TourismFlow() {
   const [step, setStep] = useState<"form" | "offers">("form");
   const [zoneId, setZoneId] = useState("60");
-  const [startDate, setStartDate] = useState(tomorrowUa());
-  const [days, setDays] = useState("14");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [birthDates, setBirthDates] = useState<string[]>([""]); // по туристу
   const [multiVisa, setMultiVisa] = useState(false);
 
@@ -63,7 +57,10 @@ export function TourismFlow() {
     return next;
   });
 
-  const valid = !!parseUaDate(startDate) && Number(days) > 0 && birthDates.every((b) => parseUaDate(b));
+  const startD = parseUaDate(startDate);
+  const endD = parseUaDate(endDate);
+  const days = startD && endD ? daysBetween(startD, endD) : 0;
+  const valid = !!startD && !!endD && days > 0 && birthDates.every((b) => parseUaDate(b));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +76,7 @@ export function TourismFlow() {
           birthDates,                       // dd.mm.yyyy = d.m.Y
           country: { id: zone.id, name: zone.name },
           date: startDate,
-          days: Number(days),
+          days,
           multiVisa,
           tourists: birthDates.length,
         }),
@@ -123,20 +120,16 @@ export function TourismFlow() {
 
           {step === "form" ? (
             <form onSubmit={submit} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
                   <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={selectClass}>
                     {ZONES.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
-                  <DateInput value={startDate} onChange={setStartDate} minDate={today} maxDate={maxStart} defaultYear={today.getFullYear()} />
-                </div>
-                <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Clock className="h-3.5 w-3.5" /> Днів у поїздці</label>
-                  <input type="number" min={1} max={365} value={days} onChange={(e) => setDays(e.target.value.replace(/\D/g, ""))} className={selectClass} />
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки{days > 0 && <span className="text-zinc-400">· {days} дн.</span>}</label>
+                  <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
                 </div>
               </div>
 
