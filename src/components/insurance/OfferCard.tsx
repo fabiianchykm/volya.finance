@@ -150,13 +150,11 @@ export function OfferCard({
         <div
           key={h.label}
           aria-disabled="true"
-          className="flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-3.5 py-2.5 opacity-70"
+          className="relative flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-3.5 py-2.5"
         >
+          <span className="absolute -top-2 right-3 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 shadow-sm ring-1 ring-white">скоро</span>
           <span className="min-w-0 text-sm font-medium leading-snug text-zinc-500">{h.label}</span>
-          <span className="flex shrink-0 items-center gap-2">
-            <span className="rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">скоро</span>
-            <span className="text-sm font-semibold text-zinc-400">{formatPrice(h.price)}</span>
-          </span>
+          <span className="shrink-0 text-sm font-semibold text-zinc-400">{formatPrice(h.price)}</span>
         </div>
       ))}
     </div>
