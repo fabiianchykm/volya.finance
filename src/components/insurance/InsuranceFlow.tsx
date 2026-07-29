@@ -122,14 +122,15 @@ export function InsuranceFlow() {
 
   // Step 2: vehicle confirmed — validate synchronously, then transition to the
   // offers screen immediately and load offers asynchronously in the background.
-  const handleVehicleConfirm = (vehicle: VehicleData) => {
+  const handleVehicleConfirm = (vehicle: VehicleData, periodId?: number) => {
+    const period = periodId ?? state.periodId;
     // --- Validate vehicle data before sending ---
     const missing: string[] = [];
     if (!vehicle.autoCategory) missing.push("autoCategory");
     if (!vehicle.year || vehicle.year < 1900 || vehicle.year > new Date().getFullYear() + 1) missing.push(`year=${vehicle.year}`);
     if (!vehicle.cityId) missing.push("cityId (registrationPlaceId)");
     if (vehicle.zone === undefined || vehicle.zone === null || vehicle.zone < 0) missing.push(`zone=${vehicle.zone}`);
-    if (!state.periodId) missing.push("periodId");
+    if (!period) missing.push("periodId");
 
     if (missing.length > 0) {
       // Keep the modal open so the user can correct the data.
@@ -141,10 +142,10 @@ export function InsuranceFlow() {
     setError(null);
     setShowVehicleModal(false);
     setEditingVehicle(false);
-    setState((s) => ({ ...s, step: "offers", vehicle, offers: [], offersLoading: true }));
+    setState((s) => ({ ...s, step: "offers", vehicle, periodId: period, offers: [], offersLoading: true }));
 
-    // Fetch offers without blocking the UI transition.
-    void fetchOffers(vehicle, state.buyer);
+    // Fetch offers without blocking the UI transition (period передаємо явно).
+    void fetchOffers(vehicle, state.buyer, period);
   };
 
   // Зміна даних страхувальника з банера → зберігаємо й перераховуємо пропозиції.
@@ -152,12 +153,12 @@ export function InsuranceFlow() {
     setShowBuyerModal(false);
     if (!state.vehicle) return;
     setState((s) => ({ ...s, buyer, offers: [], offersLoading: true }));
-    void fetchOffers(state.vehicle, buyer);
+    void fetchOffers(state.vehicle, buyer, state.periodId);
   };
 
   // Loads offers for a confirmed vehicle and updates state when they arrive.
   // buyer передаємо явно (а не зі state), щоб одразу після зміни читати свіжі дані.
-  const fetchOffers = async (vehicle: VehicleData, buyer: BuyerData) => {
+  const fetchOffers = async (vehicle: VehicleData, buyer: BuyerData, periodId: number) => {
     try {
       // --- Build params ---
       const tomorrow = new Date();
@@ -172,7 +173,7 @@ export function InsuranceFlow() {
         startDate,
         customerPrivilege: String(buyer.privilegeId),
         registrationType: "1",
-        period_id: String(state.periodId),
+        period_id: String(periodId),
         carYear: String(vehicle.year),
         carBirthdayAt: buyer.birthDate,
       };
@@ -205,10 +206,10 @@ export function InsuranceFlow() {
     if (state.step !== "offers" || !state.vehicle) return;
     const vehicle = state.vehicle;
     const buyer = state.buyer;
-    const id = setInterval(() => { void fetchOffers(vehicle, buyer); }, OFFERS_TTL_MS);
+    const period = state.periodId;
+    const id = setInterval(() => { void fetchOffers(vehicle, buyer, period); }, OFFERS_TTL_MS);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.step, state.vehicle, state.buyer]);
+  }, [state.step, state.vehicle, state.buyer, state.periodId]);
 
   // Step 3: user selects offer → store data and navigate to /checkout
   const handleSelectOffer = (
@@ -243,7 +244,6 @@ export function InsuranceFlow() {
       lookupError={lookupError}
       editMode={editingVehicle}
       periodId={state.periodId}
-      onPeriodChange={(periodId) => setState((s) => ({ ...s, periodId }))}
     />
   );
 
