@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signIn } from "next-auth/react";
-import { Gift, ChevronRight, Pencil, Home, Copy, Check, Loader2, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { Gift, ChevronRight, Pencil, Home, Copy, Check, Loader2, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
@@ -84,66 +84,61 @@ export function OffersSection({
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* Ліва колонка: пропозиції */}
         <div className="flex-1 min-w-0">
-        {/* Картка авто */}
-        <div className="mb-6 rounded-2xl bg-white border border-zinc-100 shadow-sm px-6 py-4">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-3">
-            <button onClick={onBack} className="hover:text-indigo-500 transition-colors">
-              <Home className="h-3.5 w-3.5" />
-            </button>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-zinc-600 font-medium">Автоцивілка</span>
-          </div>
-
-          <p className="font-bold text-zinc-900 inline-flex items-center gap-2 flex-wrap" style={{ fontSize: 19 }}>
-            {vehicle.mark} {vehicle.model}
-            {vehicle.year && `, ${vehicle.year}`}
-            {vehicle.cityName && `, ${vehicle.cityName.replace(/,?\s*Україна$/i, '')}`}
-            <button
-              onClick={onEdit}
-              aria-label="Змінити дані авто"
-              className="text-zinc-300 hover:text-indigo-500 transition-colors"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-          </p>
-        </div>
-
-        {/* Банер даних страхувальника (впливають на ціну) */}
-        <div
-          onClick={onEditBuyer}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onEditBuyer(); }}
-          className="mb-5 relative overflow-hidden rounded-2xl px-6 py-5 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
-          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)' }}
-        >
-          {/* Glow ефект */}
-          <div className="absolute -top-8 -right-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-6 -left-4 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-
-          <div className="relative flex items-center justify-between gap-4">
-            {buyerSet ? (
-              <div>
-                <p className="text-white font-bold text-base mb-0.5">Дані страхувальника</p>
-                <p className="text-indigo-100 text-sm leading-snug">
-                  {privilegeLabel} · нар. {buyer.birthDate}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-white font-bold text-base mb-0.5">Знайдіть найвигіднішу пропозицію</p>
-                <p className="text-indigo-200 text-sm leading-snug">
-                  Вкажіть пільгу й дату народження — ціна може зменшитись.
-                </p>
-              </div>
-            )}
-            <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 group-hover:bg-white/30 transition-colors">
-              {buyerSet
-                ? <Pencil className="h-4 w-4 text-white" />
-                : <ChevronRight className="h-5 w-5 text-white" />}
+        {/* Картка авто + дані страхувальника (пільга/ДН) як інтегрована секція */}
+        <div className="mb-6 overflow-hidden rounded-2xl bg-white border border-zinc-100 shadow-sm">
+          <div className="px-6 pt-4 pb-4">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-3">
+              <button onClick={onBack} className="hover:text-indigo-500 transition-colors">
+                <Home className="h-3.5 w-3.5" />
+              </button>
+              <ChevronRight className="h-3 w-3" />
+              <span className="text-zinc-600 font-medium">Автоцивілка</span>
             </div>
+
+            <p className="font-bold text-zinc-900 inline-flex items-center gap-2 flex-wrap" style={{ fontSize: 19 }}>
+              {vehicle.mark} {vehicle.model}
+              {vehicle.year && `, ${vehicle.year}`}
+              {vehicle.cityName && `, ${vehicle.cityName.replace(/,?\s*Україна$/i, '')}`}
+              <button
+                onClick={onEdit}
+                aria-label="Змінити дані авто"
+                className="text-zinc-300 hover:text-indigo-500 transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            </p>
           </div>
+
+          {/* Пільга + дата народження — впливають на ціну. Прикріплено під авто. */}
+          <button
+            type="button"
+            onClick={onEditBuyer}
+            className="flex w-full items-center justify-between gap-3 border-t border-zinc-100 bg-indigo-50/40 px-6 py-3.5 text-left transition-colors hover:bg-indigo-50"
+          >
+            <span className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                <Percent className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                {buyerSet ? (
+                  <>
+                    <span className="block text-sm font-semibold text-zinc-800">Дані страхувальника</span>
+                    <span className="block truncate text-xs text-zinc-500">{privilegeLabel} · нар. {buyer.birthDate}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="block text-sm font-semibold text-zinc-800">Пільга та дата народження</span>
+                    <span className="block text-xs text-zinc-500">Вкажіть — ціна може зменшитись</span>
+                  </>
+                )}
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-600">
+              {buyerSet ? "Змінити" : "Вказати"}
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          </button>
         </div>
 
         {!loading && offers.length > 0 && (
