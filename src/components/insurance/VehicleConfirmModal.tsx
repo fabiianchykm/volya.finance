@@ -20,6 +20,9 @@ interface VehicleConfirmModalProps {
   lookupError?: string | null;
   /** Відкрити одразу у формі редагування (для зміни даних з екрана пропозицій). */
   editMode?: boolean;
+  /** Період поліса: 12 = рік, 6 = пів року. Лише для ОСЦПВ (у КАСКО немає). */
+  periodId?: number;
+  onPeriodChange?: (periodId: number) => void;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -50,6 +53,8 @@ export function VehicleConfirmModal({
   loading,
   lookupError,
   editMode,
+  periodId,
+  onPeriodChange,
 }: VehicleConfirmModalProps) {
   const [manualMode, setManualMode] = useState(true);
   const [form, setForm] = useState({
@@ -144,7 +149,7 @@ export function VehicleConfirmModal({
       />
       {selectedCity ? (
         <p className="mt-1 text-xs text-emerald-600 font-medium">
-          ✓ {selectedCity.name_full_name_ua || selectedCity.name_ua} (зона {selectedCity.zone})
+          {(selectedCity.name_full_name_ua || selectedCity.name_ua).replace(/\s*\(зона\s*\d+\)\s*$/i, "")}
         </p>
       ) : (
         <p className="mt-1 text-xs text-amber-600 font-medium">
@@ -336,6 +341,21 @@ export function VehicleConfirmModal({
                 ← Повернутись до автоматичних даних
               </button>
             )}
+          </div>
+        )}
+
+        {/* Період дії поліса — рік (за замовч.) або пів року. Лише ОСЦПВ. */}
+        {periodId !== undefined && onPeriodChange && (
+          <div className="border-t border-zinc-100 pt-3">
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500">Період страхування</label>
+            <select
+              value={String(periodId)}
+              onChange={(e) => onPeriodChange(Number(e.target.value))}
+              className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400"
+            >
+              <option value="12">1 рік</option>
+              <option value="6">Пів року (6 місяців)</option>
+            </select>
           </div>
         )}
 

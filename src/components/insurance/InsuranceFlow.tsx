@@ -242,6 +242,8 @@ export function InsuranceFlow() {
       loading={loading}
       lookupError={lookupError}
       editMode={editingVehicle}
+      periodId={state.periodId}
+      onPeriodChange={(periodId) => setState((s) => ({ ...s, periodId }))}
     />
   );
 
