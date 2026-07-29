@@ -43,14 +43,18 @@ class HttpError extends Error {
 // або довго рахує). Кілька повторів зі зростаючою паузою помітно підвищують
 // успішність важких запитів (калькулятор, пошук авто). ВИКОРИСТОВУВАТИ ЛИШЕ для
 // ідемпотентних GET — мутуючі (draft/declare/confirm) ретраїти не можна (дублі).
-async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 700): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 700, retry500 = false): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn();
     } catch (e) {
       lastErr = e;
-      const transient = e instanceof HttpError && (e.status === 502 || e.status === 503 || e.status === 504);
+      // 502/503/504 — завжди тимчасові. 500 ретраїмо лише для калькуляторів
+      // (retry500): деякі модулі страхових, напр. INGO у Зеленій карті, час від
+      // часу падають 500-кою й зносять УВесь список пропозицій — повтор рятує.
+      const status = e instanceof HttpError ? e.status : 0;
+      const transient = status === 502 || status === 503 || status === 504 || (retry500 && status === 500);
       if (!transient || i === attempts - 1) throw e;
       await new Promise((r) => setTimeout(r, baseDelayMs * (i + 1)));
     }
@@ -276,9 +280,11 @@ export class UkaskoService {
   }
 
   // Калькулятор «Зелена карта»: POST з JSON-параметрами → масив пропозицій.
+  // retry500=true: модуль INGO періодично падає 500-кою й зносить усі пропозиції.
   async getGreenCardOffers(params: GreenCardParams): Promise<GreenCardOffer[]> {
     const raw = await withRetry(() =>
-      this.withAuth((token) => postJson(`${BASE_URL}/insurance/greencard/calculator`, params, token))
+      this.withAuth((token) => postJson(`${BASE_URL}/insurance/greencard/calculator`, params, token)),
+      3, 700, true
     ) as Record<string, unknown>;
     const data = raw.data;
     return Array.isArray(data) ? (data as GreenCardOffer[]) : [];

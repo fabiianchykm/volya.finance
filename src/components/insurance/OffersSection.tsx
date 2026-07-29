@@ -20,7 +20,7 @@ interface OffersSectionProps {
   onSelectOffer: (offer: InsuranceOffer, dgoId: string | null, autolawyerId: string | null) => void;
 }
 
-type SortKey = "price_asc" | "price_desc" | "options";
+type SortKey = "price_asc" | "price_desc";
 
 export function OffersSection({
   offers,
@@ -73,12 +73,8 @@ export function OffersSection({
   };
 
   const sorted = [...offers].sort((a, b) => {
-    if (sortBy === "price_asc") return a.price - b.price;
     if (sortBy === "price_desc") return b.price - a.price;
-    if (sortBy === "options")
-      return ((b.listDgo?.length ?? 0) + (b.listAutolawyer?.length ?? 0)) -
-             ((a.listDgo?.length ?? 0) + (a.listAutolawyer?.length ?? 0));
-    return 0;
+    return a.price - b.price; // price_asc
   });
 
   return (
@@ -159,7 +155,6 @@ export function OffersSection({
             >
               <option value="price_asc">Дешевше</option>
               <option value="price_desc">Дорожче</option>
-              <option value="options">Кількість опцій</option>
             </select>
           </div>
         )}
