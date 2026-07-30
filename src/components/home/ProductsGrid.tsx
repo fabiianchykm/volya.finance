@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Car, Coins, Globe, Plane, ArrowRight, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, ArrowRight, type LucideIcon } from "lucide-react";
 
 interface Product {
   href: string;
@@ -42,6 +42,13 @@ const products: Product[] = [
     desc: "Медичний захист у подорожі за кордон. Поліс для віз і виїзду — з цінами онлайн.",
     badge: "Онлайн",
   },
+  {
+    href: "/pets",
+    icon: PawPrint,
+    title: "Тварини",
+    desc: "Страхування котів і собак — ветеринарні витрати та ризики. Розрахунок онлайн.",
+    badge: "Онлайн",
+  },
 ];
 
 export function ProductsGrid() {
@@ -54,7 +61,7 @@ export function ProductsGrid() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {products.map(({ href, icon: Icon, title, desc, badge }) => (
           <Link
             key={href}
