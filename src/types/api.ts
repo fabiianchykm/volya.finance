@@ -269,3 +269,23 @@ export interface TourismOffer {
   limit_currency?: string;     // EUR | USD
   covid_help?: boolean;
 }
+
+// Страхування тварин (POST /insurance/pets/calculator).
+export interface PetsParams {
+  startFrom: string;               // "d.m.Y", не раніше ніж через 10 днів
+  insurancePeriod: "6m" | "9m" | "12m";
+  earnings: number;                // комісія агента (тариф), напр. 15
+}
+
+export interface PetsOffer {
+  offerId: string;
+  price: number;
+  insurancePeriod: string;
+  moduleId?: number;
+  companyName?: string;
+  companyNamePublic?: string;
+  companyLogo?: string | null;
+  company?: { publicName?: string; logo?: string | null; [k: string]: unknown };
+  earnings?: number;
+  startFrom?: string;
+}

@@ -20,6 +20,7 @@ const AUTO_LINKS = [
 ];
 const OTHER_LINKS = [
   { label: "Туристичне", href: "/tourism" },
+  { label: "Тварини", href: "/pets" },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...AUTO_LINKS, ...OTHER_LINKS];

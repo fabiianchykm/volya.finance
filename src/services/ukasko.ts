@@ -8,6 +8,8 @@ import type {
   GreenCardParams,
   TourismOffer,
   TourismParams,
+  PetsOffer,
+  PetsParams,
 } from "@/types/api";
 
 const isDev = process.env.UKASKO_ENV === "dev";
@@ -318,6 +320,49 @@ export class UkaskoService {
       console.error(`[greencard] fallback recovered ${offers.length} offers from ${ok}/${GC_MODULE_IDS.length} insurers`);
       return offers;
     }
+  }
+
+  // Калькулятор страхування тварин → масив пропозицій (startFrom/insurancePeriod/earnings).
+  async getPetsOffers(params: PetsParams): Promise<PetsOffer[]> {
+    const raw = await withRetry(() =>
+      this.withAuth((token) => postJson(`${BASE_URL}/insurance/pets/calculator`, params, token))
+    ) as Record<string, unknown>;
+    const data = raw.data;
+    return Array.isArray(data) ? (data as PetsOffer[]) : [];
+  }
+
+  // Заявлення страхування тварин (order/create statusId:5 → повне) → orderId.
+  async declarePetsOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
+    const raw = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/pets/order/create`, { ...orderData, statusId: 5, orderId: orderData.orderId ?? null }, token
+    )) as Record<string, unknown>;
+    const status = raw.status as string | undefined;
+    const msg = raw.message as string | undefined;
+    if (status === "error" || status === "validation" || (msg && msg.includes('"result":false'))) {
+      console.error("[pets declare] rejected. raw:", JSON.stringify(raw).slice(0, 800));
+      let clean = "";
+      if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+        clean = Object.values(raw.data as Record<string, unknown>).flat().map(String).join("; ");
+      }
+      throw new Error(clean || `Страхова відхилила заявку: ${(msg ?? "").slice(0, 200)}`);
+    }
+    const first = (raw as { data?: Array<{ id: string; status?: string }> }).data?.[0];
+    if (!first?.id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    return first;
+  }
+
+  async confirmPetsOrder(orderId: string): Promise<{ contractId: string; status?: string }> {
+    const data = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/pets/contract/confirm`, { orderId }, token
+    )) as { data: [{ contractId: string; status?: string }] };
+    return data.data[0];
+  }
+
+  async takePetsContract(contractId: string): Promise<{ contract?: string; mtsbuLink?: string; mtsbuCode?: string }> {
+    const data = await this.withAuth((token) => postForm(
+      `${BASE_URL}/insurance/pets/contract/take`, { contractId }, token
+    )) as { data: { contract?: string; mtsbuCode?: string } };
+    return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode };
   }
 
   // Калькулятор туристичного страхування → масив пропозицій.
