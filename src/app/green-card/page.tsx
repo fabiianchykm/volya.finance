@@ -1,4 +1,3 @@
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { GreenCardFlow } from "@/components/greencard/GreenCardFlow";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -33,7 +32,6 @@ export default function GreenCardPage() {
           ]),
         ]}
       />
-      <Navbar />
       <main className="flex-1">
         <GreenCardFlow />
       </main>
