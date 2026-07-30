@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, CalendarDays, ArrowRight, ArrowLeft, Loader2, Search, Car, Coins } from "lucide-react";
+import { Globe, MapPin, CalendarDays, ArrowRight, ArrowLeft, Search, Car, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -221,7 +221,7 @@ export function GreenCardFlow() {
 
               <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!period || loading} className="mt-5 w-full">
                 <span className="flex items-center gap-2">
-                  {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Шукаємо пропозиції…</> : <>Показати пропозиції <ArrowRight className="h-5 w-5" /></>}
+                  {loading ? "Шукаємо пропозиції…" : <>Показати пропозиції <ArrowRight className="h-5 w-5" /></>}
                 </span>
               </Button>
             </form>
