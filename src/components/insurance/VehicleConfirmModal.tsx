@@ -371,8 +371,8 @@ export function VehicleConfirmModal({
 
 // Гарний кастомний dropdown вибору періоду поліса (замість нативного select).
 const PERIOD_OPTIONS = [
-  { v: 12, l: "1 рік", note: "стандартний період" },
-  { v: 6, l: "Пів року", note: "6 місяців · дешевше" },
+  { v: 12, l: "1 рік" },
+  { v: 6, l: "Пів року" },
 ];
 
 function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -402,10 +402,7 @@ function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
             <CalendarRange className="h-4 w-4" />
           </span>
-          <span className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold text-zinc-900">{cur.l}</span>
-            <span className="text-[11px] text-zinc-400">{cur.note}</span>
-          </span>
+          <span className="text-sm font-semibold text-zinc-900">{cur.l}</span>
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -423,10 +420,7 @@ function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number
                   active ? "bg-indigo-50" : "hover:bg-zinc-50"
                 }`}
               >
-                <span className="flex flex-col leading-tight">
-                  <span className={`text-sm font-semibold ${active ? "text-indigo-700" : "text-zinc-800"}`}>{o.l}</span>
-                  <span className="text-[11px] text-zinc-400">{o.note}</span>
-                </span>
+                <span className={`text-sm font-semibold ${active ? "text-indigo-700" : "text-zinc-800"}`}>{o.l}</span>
                 {active && <Check className="h-4 w-4 shrink-0 text-indigo-600" />}
               </button>
             );
