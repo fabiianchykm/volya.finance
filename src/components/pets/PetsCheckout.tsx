@@ -19,6 +19,7 @@ export interface PetsCheckoutCtx {
   petType: string;          // cat | dog
   insurancePeriod: string;  // 6m | 9m | 12m
   startDate: string;        // ДД.ММ.РРРР
+  earnings: number;         // комісія, з якою пораховано офер
 }
 
 const DOC_TYPES = [
@@ -75,7 +76,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       startDate: toUnix(ctx.startDate),
       petType: ctx.petType,
       insurancePeriod: ctx.insurancePeriod,
-      earnings: 15,
+      earnings: ctx.earnings,
       petAlias: f.petAlias.trim(),
       petBreed: f.petBreed.trim(),
       petSex: f.petSex,

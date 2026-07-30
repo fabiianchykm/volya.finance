@@ -52,6 +52,7 @@ export function PetsFlow() {
   const [period, setPeriod] = useState<"6m" | "9m" | "12m">("12m");
 
   const [offers, setOffers] = useState<PetsOffer[]>([]);
+  const [earnings, setEarnings] = useState<number>(15);
   const [selectedOffer, setSelectedOffer] = useState<PetsOffer | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +77,7 @@ export function PetsFlow() {
       const list: PetsOffer[] = (data.offers ?? []).filter((o: PetsOffer) => o && o.price > 0);
       list.sort((a, b) => a.price - b.price);
       setOffers(list);
+      if (typeof data.earnings === "number") setEarnings(data.earnings);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не вдалося отримати пропозиції.");
     } finally {
@@ -107,7 +109,7 @@ export function PetsFlow() {
               </div>
             ) : selectedOffer ? (
               <PetsCheckout
-                ctx={{ offer: selectedOffer, petType, insurancePeriod: period, startDate } satisfies PetsCheckoutCtx}
+                ctx={{ offer: selectedOffer, petType, insurancePeriod: period, startDate, earnings } satisfies PetsCheckoutCtx}
                 onBack={() => setStep("offers")}
               />
             ) : null}

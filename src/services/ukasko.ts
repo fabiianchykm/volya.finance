@@ -322,6 +322,16 @@ export class UkaskoService {
     }
   }
 
+  // Доступні тарифи комісії агента для тварин (earnings). Напр. [15, 40].
+  async getPetsTariffs(): Promise<number[]> {
+    const raw = await withRetry(() =>
+      this.withAuth((token) => getJson(`${BASE_URL}/insurance/pets/tariffs`, token))
+    ) as Record<string, unknown>;
+    const data = raw.data;
+    if (!Array.isArray(data)) return [];
+    return (data as Array<{ value?: number }>).map((t) => Number(t.value)).filter((v) => !Number.isNaN(v));
+  }
+
   // Калькулятор страхування тварин → масив пропозицій (startFrom/insurancePeriod/earnings).
   async getPetsOffers(params: PetsParams): Promise<PetsOffer[]> {
     const raw = await withRetry(() =>
