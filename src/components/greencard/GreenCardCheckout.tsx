@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
@@ -47,6 +47,8 @@ function toDMY(ua: string): string {
 
 export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBack: () => void }) {
   const [step, setStep] = useState<"form" | "otp" | "payment" | "success">("form");
+  // Анкета у 2 кроки (як в ОСЦПВ): 1 — страхувальник, 2 — авто.
+  const [formStep, setFormStep] = useState<"customer" | "vehicle">("customer");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -126,6 +128,20 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     };
   };
 
+  // Крок 1 → 2: валідуємо дані страхувальника перед переходом до авто.
+  const goToVehicle = () => {
+    if (!f.surnameUa || !f.nameUa || !f.surnameLat || !f.nameLat) { setError("Заповніть ПІБ"); return; }
+    if (!parseUaDate(f.dateBirth)) { setError("Вкажіть коректну дату народження"); return; }
+    if (f.phone.replace(/\D/g, "").length < 9) { setError("Вкажіть номер телефону"); return; }
+    if (!f.email) { setError("Вкажіть email"); return; }
+    if (!f.docSerial || !f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError("Заповніть дані документа"); return; }
+    if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
+    if (!f.street || !f.house) { setError("Вкажіть адресу проживання"); return; }
+    setError(null);
+    setFormStep("vehicle");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -182,13 +198,17 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   return (
     <div className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
       <div className="mb-5 flex items-center gap-3">
-        <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 text-zinc-500 hover:text-zinc-900">
+        <button
+          type="button"
+          onClick={() => (formStep === "vehicle" ? setFormStep("customer") : onBack())}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 text-zinc-500 hover:text-zinc-900"
+        >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
           <h2 className="text-lg font-bold text-zinc-900">Оформлення Зеленої карти</h2>
           <p className="text-sm text-zinc-500">
-            {ctx.offer.companyNamePublic} · <span className="font-semibold text-zinc-900">{ctx.offer.price} грн</span>
+            Крок {formStep === "customer" ? 1 : 2} з 2 · <span className="font-semibold text-zinc-900">{ctx.offer.price} грн</span>
           </p>
         </div>
       </div>
@@ -196,6 +216,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {formStep === "customer" && (
+        <>
         {/* Страхувальник */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Страхувальник</p>
@@ -270,6 +292,16 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           </div>
         </div>
 
+        <div className="border-t border-zinc-100 pt-4">
+          <Button type="button" onClick={goToVehicle} variant="primary" size="lg" className="w-full sm:w-auto sm:px-8">
+            <span className="flex items-center gap-2">Далі <ArrowRight className="h-5 w-5" /></span>
+          </Button>
+        </div>
+        </>
+        )}
+
+        {formStep === "vehicle" && (
+        <>
         {/* Авто */}
         <div className="border-t border-zinc-100 pt-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Транспортний засіб</p>
@@ -295,6 +327,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
             Продовжити до оплати
           </Button>
         </div>
+        </>
+        )}
       </form>
 
       <OtpModal

@@ -145,7 +145,7 @@ export function GreenCardFlow() {
       <>
         <Navbar solid />
         <section className="min-h-screen pt-20 pb-10">
-          <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
             {step === "offers" ? (
               <GreenCardOffers
                 offers={offers}
