@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
-import { DateInput, parseUaDate } from "@/components/ui/DateInput";
+import { parseUaDate } from "@/components/ui/DateInput";
 import { OfferCard } from "@/components/insurance/OfferCard";
 import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
@@ -42,7 +42,13 @@ function toPetsInsuranceOffer(o: PetsOffer): InsuranceOffer {
 export function PetsFlow() {
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
   const [petType, setPetType] = useState("cat");
-  const [startDate, setStartDate] = useState("");
+  // Дата початку зашита за замовчуванням (мінімум за API — через 10 днів), поле не показуємо.
+  const [startDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 10);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+  });
   const [period, setPeriod] = useState<"6m" | "9m" | "12m">("12m");
 
   const [offers, setOffers] = useState<PetsOffer[]>([]);
@@ -50,14 +56,7 @@ export function PetsFlow() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Старт — не раніше ніж через 10 днів від сьогодні.
-  const minStart = new Date();
-  minStart.setDate(minStart.getDate() + 10);
-  const maxStart = new Date();
-  maxStart.setFullYear(maxStart.getFullYear() + 1);
-
-  const startD = parseUaDate(startDate);
-  const valid = !!startD && startD >= new Date(minStart.getFullYear(), minStart.getMonth(), minStart.getDate());
+  const valid = !!parseUaDate(startDate);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +99,6 @@ export function PetsFlow() {
                     error={error}
                     petLabel={PET_TYPES.find((p) => p.value === petType)?.label ?? ""}
                     periodLabel={PERIOD_LABEL[period]}
-                    startDate={startDate}
                     onBack={() => { setError(null); setStep("form"); }}
                     onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   />
@@ -141,28 +139,22 @@ export function PetsFlow() {
             </div>
 
             <form onSubmit={submit} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
-              <div>
-                <p className="mb-2 text-xs font-medium text-zinc-500">Вид улюбленця</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {PET_TYPES.map((p) => (
-                    <button key={p.value} type="button" onClick={() => setPetType(p.value)}
-                      className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
-                        petType === p.value ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
-                      }`}>
-                      <span className="text-base">{p.emoji}</span> {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
-                  <DateInput value={startDate} onChange={setStartDate} minDate={minStart} maxDate={maxStart} defaultYear={minStart.getFullYear()} />
-                  <p className="mt-1 text-[11px] text-zinc-400">Не раніше ніж через 10 днів</p>
+                  <label className="mb-2 block text-xs font-medium text-zinc-500">Вид улюбленця</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PET_TYPES.map((p) => (
+                      <button key={p.value} type="button" onClick={() => setPetType(p.value)}
+                        className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition-colors ${
+                          petType === p.value ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
+                        }`}>
+                        <span className="text-base">{p.emoji}</span> {p.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Clock className="h-3.5 w-3.5" /> Строк страхування</label>
+                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Clock className="h-3.5 w-3.5" /> Строк страхування</label>
                   <select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className={selectClass}>
                     {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
@@ -184,19 +176,18 @@ export function PetsFlow() {
   );
 }
 
-function PetsOffers({ offers, loading, error, petLabel, periodLabel, startDate, onBack, onSelect }: {
+function PetsOffers({ offers, loading, error, petLabel, periodLabel, onBack, onSelect }: {
   offers: PetsOffer[];
   loading: boolean;
   error: string | null;
   petLabel: string;
   periodLabel: string;
-  startDate: string;
   onBack: () => void;
   onSelect: (o: PetsOffer) => void;
 }) {
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
   const cards = [...offers].sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
-  const summary = [petLabel, periodLabel, startDate && `з ${startDate}`].filter(Boolean).join(" · ");
+  const summary = [petLabel, periodLabel].filter(Boolean).join(" · ");
 
   return (
     <div>
