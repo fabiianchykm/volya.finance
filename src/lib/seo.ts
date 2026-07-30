@@ -60,7 +60,7 @@ export function organizationLd() {
     "@id": `${SITE_URL}/#organization`,
     name: BRAND,
     // Кириличні написання бренду — щоб Google повʼязував запити «Воля Фінанс» із сайтом.
-    alternateName: ["Воля Фінанс", "Воля фінанс", "воля фінанс", "воля финанс", "Volya Finance"],
+    alternateName: ["Воля Фінанс", "Воля фінанс", "воля фінанс", "воля финанс", "Volya Finance", "volya finance"],
     url: SITE_URL,
     image: `${SITE_URL}/opengraph-image`,
     logo: `${SITE_URL}/icon`,
