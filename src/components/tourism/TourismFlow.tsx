@@ -152,7 +152,7 @@ export function TourismFlow() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
             <div className="space-y-4">
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-                Туристичне страхування —
+                Туристичне страхування
                 <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
                   захист у подорожі за кордон
                 </span>

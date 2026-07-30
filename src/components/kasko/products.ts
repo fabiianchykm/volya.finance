@@ -28,7 +28,7 @@ export interface KaskoProductConfig {
 export const KASKO_PRODUCTS: Record<KaskoProduct, KaskoProductConfig> = {
   kasko: {
     label: "КАСКО",
-    heroTitleLead: "КАСКО —",
+    heroTitleLead: "КАСКО",
     heroTitleHighlight: "повний захист вашого авто",
     heroSubtitle:
       "Введіть номер авто — підберемо найкращі умови КАСКО та передзвонимо з персональним розрахунком.",
@@ -47,7 +47,7 @@ export const KASKO_PRODUCTS: Record<KaskoProduct, KaskoProductConfig> = {
   },
   "mini-kasko": {
     label: "Міні-КАСКО",
-    heroTitleLead: "Міні-КАСКО —",
+    heroTitleLead: "Міні-КАСКО",
     heroTitleHighlight: "захист від головних ризиків за менші гроші",
     heroSubtitle:
       "Бюджетний варіант КАСКО з покриттям ключових ризиків. Введіть номер авто — передзвонимо й розрахуємо вартість.",
