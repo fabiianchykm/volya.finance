@@ -44,6 +44,7 @@ const LOGO_ALIASES: Record<string, string> = {
   "yevropeyskyy-strakhovyy-alyans": "eia",            // Європейський страховий альянс (= ЄСА)
   yesa: "eia",
   esa: "eia",
+  arks: "arx",                                        // АРКС (АТ «СК «АРКС») → arx.svg
   ekspres: "express",                                 // Експрес Страхування
   "ekspres-strakhuvannya": "express",
 };
