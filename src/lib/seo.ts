@@ -59,6 +59,8 @@ export function organizationLd() {
     "@type": "InsuranceAgency",
     "@id": `${SITE_URL}/#organization`,
     name: BRAND,
+    // Кириличні написання бренду — щоб Google повʼязував запити «Воля Фінанс» із сайтом.
+    alternateName: ["Воля Фінанс", "Воля фінанс", "воля фінанс", "воля финанс", "Volya Finance"],
     url: SITE_URL,
     image: `${SITE_URL}/opengraph-image`,
     logo: `${SITE_URL}/icon`,
@@ -76,6 +78,7 @@ export function websiteLd() {
     "@type": "WebSite",
     "@id": `${SITE_URL}/#website`,
     name: BRAND,
+    alternateName: ["Воля Фінанс", "воля фінанс"],
     url: SITE_URL,
     inLanguage: "uk-UA",
     publisher: { "@id": `${SITE_URL}/#organization` },
