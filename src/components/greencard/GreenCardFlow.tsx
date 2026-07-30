@@ -9,7 +9,7 @@ import { parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { companyLogo } from "@/lib/logos";
-import { formatPrice, formatPlate } from "@/lib/utils";
+import { formatPrice, formatPlate, formatCompanyName } from "@/lib/utils";
 import { BONUS_RATE } from "@/lib/constants";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
 import type { GreenCardOffer } from "@/types/api";
@@ -355,7 +355,7 @@ function GreenCardOffers({
 
 function GreenCardOfferCard({ offer, onSelect }: { offer: GreenCardOffer; onSelect: () => void }) {
   const src = companyLogo(offer.companyNamePublic || offer.companyName);
-  const name = offer.companyNamePublic || offer.companyName;
+  const name = formatCompanyName(offer.companyNamePublic || offer.companyName);
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-all hover:border-zinc-200 hover:shadow-md sm:gap-4 sm:p-5">
       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5">
