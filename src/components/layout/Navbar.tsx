@@ -4,20 +4,25 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, LogIn, FileText } from "lucide-react";
+import { Menu, X, LogOut, LogIn, FileText, ChevronDown } from "lucide-react";
 import { VMark, BarlessA } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
 import { useLogin } from "@/components/auth/LoginProvider";
 
-const navLinks = [
+// Авто-продукти згруповані в дропдаун «Автострахування», щоб меню не розтягувалось.
+const AUTO_LINKS = [
   { label: "Автоцивілка", href: "/osago" },
   { label: "КАСКО", href: "/kasko" },
   { label: "Міні-КАСКО", href: "/mini-kasko" },
   { label: "Зелена карта", href: "/green-card" },
+];
+const OTHER_LINKS = [
   { label: "Туристичне", href: "/tourism" },
 ];
+// Плаский список для мобільного меню (там ширини вистачає).
+const navLinks = [...AUTO_LINKS, ...OTHER_LINKS];
 
 export function Navbar({ solid = false }: { solid?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -62,7 +67,33 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
+          {/* Дропдаун «Автострахування» */}
+          <li className="group relative">
+            <button
+              type="button"
+              className={cn(
+                "flex items-center gap-1 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
+                opaque
+                  ? "text-zinc-600 group-hover:bg-zinc-100 group-hover:text-zinc-900"
+                  : "text-white/70 group-hover:bg-white/10 group-hover:text-white"
+              )}
+            >
+              Автострахування
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
+            </button>
+            {/* pt-2 — місток, щоб курсор не «зривався» між кнопкою і панеллю */}
+            <div className="absolute left-0 top-full hidden pt-2 group-hover:block">
+              <div className="w-52 rounded-xl border border-zinc-100 bg-white p-1.5 shadow-lg">
+                {AUTO_LINKS.map((l) => (
+                  <Link key={l.href} href={l.href} className="block rounded-lg px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-indigo-600">
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </li>
+
+          {OTHER_LINKS.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
