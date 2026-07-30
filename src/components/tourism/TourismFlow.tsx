@@ -273,22 +273,22 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
           <span className="font-medium text-zinc-600">Туристичне страхування</span>
         </div>
         <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
-      </div>
 
-      {/* Сума покриття */}
-      {coverages.length > 1 && (
-        <div className="mb-4">
-          <p className="mb-2 text-xs font-medium text-zinc-500">Сума покриття</p>
-          <div className="flex flex-wrap gap-2">
-            {coverages.map((c) => (
-              <button key={c} type="button" onClick={() => setCoverage(c)}
-                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${c === coverage ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"}`}>
-                {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
-              </button>
-            ))}
+        {/* Сума покриття — притулена до картки з параметрами */}
+        {coverages.length > 1 && (
+          <div className="mt-4 border-t border-zinc-100 pt-4">
+            <p className="mb-2 text-xs font-medium text-zinc-500">Сума покриття</p>
+            <div className="flex flex-wrap gap-2">
+              {coverages.map((c) => (
+                <button key={c} type="button" onClick={() => setCoverage(c)}
+                  className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${c === coverage ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"}`}>
+                  {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Сортування */}
       {cards.length > 0 && (
