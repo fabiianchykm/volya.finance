@@ -263,20 +263,22 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
 
   return (
     <div>
-      {/* Картка-підсумок (breadcrumb + параметри з 1 екрана) */}
-      <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
-          <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
-            <Home className="h-3.5 w-3.5" />
-          </button>
-          <ChevronRight className="h-3 w-3" />
-          <span className="font-medium text-zinc-600">Туристичне страхування</span>
+      {/* Картка-підсумок (breadcrumb + параметри) + сума покриття прикріплена знизу */}
+      <div className="mb-6 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+        <div className="px-6 pt-4 pb-4">
+          <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
+            <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
+              <Home className="h-3.5 w-3.5" />
+            </button>
+            <ChevronRight className="h-3 w-3" />
+            <span className="font-medium text-zinc-600">Туристичне страхування</span>
+          </div>
+          <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
         </div>
-        <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
 
-        {/* Сума покриття — притулена до картки з параметрами */}
+        {/* Сума покриття — прикріплена смуга (як пільга/ДН в автоцивілці) */}
         {coverages.length > 1 && (
-          <div className="mt-4 border-t border-zinc-100 pt-4">
+          <div className="border-t border-zinc-100 bg-indigo-50/40 px-6 py-3.5">
             <p className="mb-2 text-xs font-medium text-zinc-500">Сума покриття</p>
             <div className="flex flex-wrap gap-2">
               {coverages.map((c) => (
