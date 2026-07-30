@@ -85,8 +85,8 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
           className="space-y-10 sm:space-y-12"
         >
           <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-            Автоцивілка{" "}
-            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+            Автоцивілка
+            <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
               швидко та вигідно
             </span>
           </h1>
