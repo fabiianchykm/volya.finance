@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, CalendarDays, ArrowRight, ArrowLeft, Search, Car, Coins, Home, ChevronRight } from "lucide-react";
+import { Globe, MapPin, CalendarDays, ArrowRight, Search, Car, Coins, Home, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
@@ -289,18 +289,15 @@ function GreenCardOffers({
       {/* Картка-підсумок */}
       <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
         <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
-          <Home className="h-3.5 w-3.5" />
+          <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
+            <Home className="h-3.5 w-3.5" />
+          </button>
           <ChevronRight className="h-3 w-3" />
           <span className="font-medium text-zinc-600">Зелена карта</span>
         </div>
-        <div className="flex items-start justify-between gap-3">
-          <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>
-            {auto}{summary ? `, ${summary}` : ""}
-          </p>
-          <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline">
-            <ArrowLeft className="h-4 w-4" /> Змінити
-          </button>
-        </div>
+        <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>
+          {auto}{summary ? `, ${summary}` : ""}
+        </p>
       </div>
 
       {/* Сортування */}
