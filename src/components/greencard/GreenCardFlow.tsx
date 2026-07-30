@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, CalendarDays, ArrowRight, Search, Car, Coins, Home, ChevronRight } from "lucide-react";
+import { Globe, MapPin, CalendarDays, ArrowRight, Search, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
-import { companyLogo } from "@/lib/logos";
-import { formatPrice, formatPlate, formatCompanyName } from "@/lib/utils";
-import { BONUS_RATE } from "@/lib/constants";
+import { OfferCard } from "@/components/insurance/OfferCard";
+import { formatPlate } from "@/lib/utils";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
-import type { GreenCardOffer } from "@/types/api";
+import type { GreenCardOffer, InsuranceOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
 
 // Зелена карта — потік і дизайн як в ОСЦПВ: темний герой для вводу номера/параметрів,
@@ -144,7 +143,7 @@ export function GreenCardFlow() {
     return (
       <>
         <Navbar solid />
-        <section className="min-h-screen bg-zinc-50 pt-20 pb-10">
+        <section className="min-h-screen pt-20 pb-10">
           <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
             {step === "offers" ? (
               <GreenCardOffers
@@ -306,14 +305,14 @@ function GreenCardOffers({
           <span className="text-xs font-medium text-zinc-400">Сортувати</span>
           <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             {([
-              { k: "price_asc", label: "Спершу дешевші" },
-              { k: "price_desc", label: "Спершу дорожчі" },
-            ] as const).map(({ k, label }) => (
+              { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
+              { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
+            ] as const).map(({ k, label, Icon }) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => setSortBy(k)}
-                className={`relative rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                   sortBy === k ? "text-white" : "text-zinc-500 hover:text-zinc-800"
                 }`}
               >
@@ -321,6 +320,7 @@ function GreenCardOffers({
                   <motion.span layoutId="gcSortPill" transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
                 )}
+                <Icon className="relative z-10 h-3.5 w-3.5" />
                 <span className="relative z-10">{label}</span>
               </button>
             ))}
@@ -343,40 +343,37 @@ function GreenCardOffers({
         </div>
       ) : (
         <div className="space-y-3">
-          {sorted.map((o) => <GreenCardOfferCard key={o.offerId} offer={o} onSelect={() => onSelect(o)} />)}
+          {sorted.map((o, i) => (
+            <OfferCard
+              key={o.offerId}
+              index={i}
+              offer={toInsuranceOffer(o)}
+              selected={false}
+              selectedDgoId={null}
+              selectedAutolawyerId={null}
+              onSelect={() => {}}
+              onSelectDgo={() => {}}
+              onSelectAutolawyer={() => {}}
+              onBuy={() => onSelect(o)}
+              hideExtras
+            />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function GreenCardOfferCard({ offer, onSelect }: { offer: GreenCardOffer; onSelect: () => void }) {
-  const src = companyLogo(offer.companyNamePublic || offer.companyName);
-  const name = formatCompanyName(offer.companyNamePublic || offer.companyName);
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-all hover:border-zinc-200 hover:shadow-md sm:gap-4 sm:p-5">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5">
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={name} className="max-h-full max-w-full object-contain" />
-        ) : (
-          <span className="text-xs font-bold text-zinc-400">{name.slice(0, 2).toUpperCase()}</span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold uppercase text-zinc-900">{name}</p>
-      </div>
-      <div className="flex shrink-0 flex-col items-end">
-        <p className="text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
-        <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-emerald-600">
-          <Coins className="h-3 w-3" /> +{formatPrice(Math.round(offer.price * BONUS_RATE))} бонус
-        </span>
-      </div>
-      <button type="button" onClick={onSelect} className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-        Купити
-      </button>
-    </div>
-  );
+// Мапимо офер Зеленої карти у форму InsuranceOffer, щоб переюзати OSAGO OfferCard
+// (той самий дизайн: лого+назва, ціна, бонус, кнопка). Опцій ЗК не має.
+function toInsuranceOffer(o: GreenCardOffer): InsuranceOffer {
+  return {
+    offerId: o.offerId,
+    price: o.price,
+    company: { publicName: o.companyNamePublic || o.companyName },
+    listDgo: [],
+    listAutolawyer: [],
+  } as unknown as InsuranceOffer;
 }
 
 function GreenCardSkeleton() {

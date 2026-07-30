@@ -19,6 +19,8 @@ interface OfferCardProps {
   onSelectDgo: (id: string | null) => void;
   onSelectAutolawyer: (id: string | null) => void;
   index: number;
+  /** Приховати «скоро»-опції (евакуатор/страхування) — напр. для Зеленої карти. */
+  hideExtras?: boolean;
 }
 
 function transliterate(text: string) {
@@ -66,6 +68,7 @@ export function OfferCard({
   onSelectDgo,
   onSelectAutolawyer,
   index,
+  hideExtras,
 }: OfferCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -85,6 +88,8 @@ export function OfferCard({
   const bonus = Math.round(totalPrice * BONUS_RATE);
 
   const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
+  // Чи є що показувати в блоці опцій (реальні опції або «скоро»-екстри).
+  const showOptionsBlock = hasOptions || !hideExtras;
 
   // Обов'язкові інформаційні документи продукту (показуємо ті, що прийшли з API).
   const docs = [
@@ -143,7 +148,7 @@ export function OfferCard({
 
       {/* Евакуатор і медична страховка — окремі послуги. Поки заморожені («скоро»):
           не клікабельні й НЕ входять у суму до оплати. */}
-      {[
+      {!hideExtras && [
         { label: "Евакуатор + медична допомога", price: 600 },
         { label: "Страхування від нещасних випадків", price: 400 },
       ].map((h) => (
@@ -200,9 +205,11 @@ export function OfferCard({
         </div>
 
         {/* Опції (автоюрист / ДГО / Допомога) */}
-        <div className="mt-3 border-t border-zinc-100 pt-3">
-          {optionsBlock}
-        </div>
+        {showOptionsBlock && (
+          <div className="mt-3 border-t border-zinc-100 pt-3">
+            {optionsBlock}
+          </div>
+        )}
 
         {/* Ряд 2: кнопка купити + детальніше */}
         <div className="mt-4 flex items-center gap-3">
