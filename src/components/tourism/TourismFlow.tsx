@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Users, ArrowRight, ArrowLeft, Minus, Plus, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { MapPin, CalendarDays, Users, ArrowRight, Minus, Plus, ArrowDownWideNarrow, ArrowUpWideNarrow, Home, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { OfferCard } from "@/components/insurance/OfferCard";
+import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
+import { Navbar } from "@/components/layout/Navbar";
 import { TourismCheckout, type TourismCheckoutCtx } from "./TourismCheckout";
 import type { TourismOffer, InsuranceOffer } from "@/types/api";
 
@@ -93,28 +95,71 @@ export function TourismFlow() {
     }
   };
 
-  return (
-    <section
-      className="relative overflow-x-hidden pb-20 pt-32 sm:pb-28 sm:pt-40 animate-gradient"
-      style={{ backgroundImage: "linear-gradient(135deg, #06040f, #0f0c29, #1e1060, #4f46e5, #7c3aed, #1e1060, #06040f)" }}
-    >
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 48%, transparent 0%, rgba(0,0,0,0.1) 100%)" }} />
-
-      <div className="relative mx-auto max-w-5xl px-4 sm:px-6 w-full">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
-          <div className="space-y-4">
-            <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-              Туристичне страхування —
-              <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-                захист у подорожі за кордон
-              </span>
-            </h1>
-            {step === "form" && (
-              <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть параметри подорожі — і побачите пропозиції з цінами й покриттям.</p>
-            )}
+  // ── Світлий екран: пропозиції / оформлення (як в автоцивілці) ──
+  if (step === "offers" || step === "checkout") {
+    return (
+      <>
+        <Navbar solid />
+        <section className="min-h-screen pt-20 pb-10">
+          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
+            {step === "offers" ? (
+              <div className="flex flex-col items-start gap-6 lg:flex-row">
+                <div className="min-w-0 flex-1">
+                  <TourismOffers
+                    offers={offers}
+                    zoneLabel={ZONES.find((z) => String(z.id) === zoneId)?.label ?? ""}
+                    dates={startDate && endDate ? `${startDate} – ${endDate}` : ""}
+                    days={days}
+                    tourists={birthDates.length}
+                    onBack={() => setStep("form")}
+                    onSelect={(offer) => { setSelectedOffer(offer); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  />
+                </div>
+                <InviteFriendCard />
+              </div>
+            ) : selectedOffer ? (
+              <TourismCheckout
+                ctx={{
+                  offer: selectedOffer,
+                  countryId: Number(zoneId),
+                  countryName: ZONES.find((z) => String(z.id) === zoneId)?.name ?? "",
+                  startDate,
+                  endDate,
+                  days,
+                  multiVisa,
+                  birthDates,
+                } satisfies TourismCheckoutCtx}
+                onBack={() => setStep("offers")}
+              />
+            ) : null}
           </div>
+        </section>
+      </>
+    );
+  }
 
-          {step === "form" ? (
+  // ── Темний герой: форма підбору ──
+  return (
+    <>
+      <Navbar />
+      <section
+        className="relative overflow-x-hidden pb-20 pt-32 sm:pb-28 sm:pt-40 animate-gradient"
+        style={{ backgroundImage: "linear-gradient(135deg, #06040f, #0f0c29, #1e1060, #4f46e5, #7c3aed, #1e1060, #06040f)" }}
+      >
+        <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 48%, transparent 0%, rgba(0,0,0,0.1) 100%)" }} />
+
+        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 w-full">
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
+                Туристичне страхування —
+                <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+                  захист у подорожі за кордон
+                </span>
+              </h1>
+              <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть параметри подорожі — і побачите пропозиції з цінами й покриттям.</p>
+            </div>
+
             <form onSubmit={submit} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -169,30 +214,10 @@ export function TourismFlow() {
                 </span>
               </Button>
             </form>
-          ) : step === "offers" ? (
-            <TourismOffers
-              offers={offers}
-              onBack={() => setStep("form")}
-              onSelect={(offer) => { setSelectedOffer(offer); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            />
-          ) : selectedOffer ? (
-            <TourismCheckout
-              ctx={{
-                offer: selectedOffer,
-                countryId: Number(zoneId),
-                countryName: ZONES.find((z) => String(z.id) === zoneId)?.name ?? "",
-                startDate,
-                endDate,
-                days,
-                multiVisa,
-                birthDates,
-              } satisfies TourismCheckoutCtx}
-              onBack={() => setStep("offers")}
-            />
-          ) : null}
-        </motion.div>
-      </div>
-    </section>
+          </motion.div>
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -210,7 +235,15 @@ function toTourismInsuranceOffer(o: TourismOffer): InsuranceOffer {
   } as unknown as InsuranceOffer;
 }
 
-function TourismOffers({ offers, onBack, onSelect }: { offers: TourismOffer[]; onBack: () => void; onSelect: (offer: TourismOffer) => void }) {
+function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSelect }: {
+  offers: TourismOffer[];
+  zoneLabel: string;
+  dates: string;
+  days: number;
+  tourists: number;
+  onBack: () => void;
+  onSelect: (offer: TourismOffer) => void;
+}) {
   // Рівні покриття (10к…100к EUR). Мінімум для Шенгену — 30 000. Виносимо зверху.
   const coverages = Array.from(new Set(offers.map(coverageOf).filter((c) => c > 0))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
@@ -225,58 +258,66 @@ function TourismOffers({ offers, onBack, onSelect }: { offers: TourismOffer[]; o
   }
   const cards = Array.from(best.values()).sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
 
+  const touristsLabel = `${tourists} ${tourists === 1 ? "турист" : tourists < 5 ? "туристи" : "туристів"}`;
+  const summary = [touristsLabel, zoneLabel, dates, days ? `${days} дн.` : ""].filter(Boolean).join(" · ");
+
   return (
-    <div className="space-y-4 text-left">
-      {/* Панель керування: покриття (зверху) + сортування */}
-      <div className="rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
-        <div className="mb-3 flex items-center gap-2.5">
-          <button type="button" onClick={onBack} aria-label="Змінити параметри" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900">
-            <ArrowLeft className="h-4 w-4" />
+    <div>
+      {/* Картка-підсумок (breadcrumb + параметри з 1 екрана) */}
+      <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
+          <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
+            <Home className="h-3.5 w-3.5" />
           </button>
-          <h2 className="text-base font-bold text-zinc-900">{cards.length ? `Пропозицій: ${cards.length}` : "Пропозицій не знайдено"}</h2>
+          <ChevronRight className="h-3 w-3" />
+          <span className="font-medium text-zinc-600">Туристичне страхування</span>
         </div>
-
-        {coverages.length > 1 && (
-          <div className="mb-3">
-            <p className="mb-1.5 text-xs font-medium text-zinc-500">Сума покриття</p>
-            <div className="flex flex-wrap gap-2">
-              {coverages.map((c) => (
-                <button key={c} type="button" onClick={() => setCoverage(c)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${c === coverage ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 text-zinc-600 hover:border-indigo-200"}`}>
-                  {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {cards.length > 0 && (
-          <div className="flex items-center justify-end gap-3">
-            <span className="text-xs font-medium text-zinc-400">Сортувати</span>
-            <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-              {([
-                { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
-                { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
-              ] as const).map(({ k, label, Icon }) => (
-                <button key={k} type="button" onClick={() => setSortBy(k)}
-                  className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 hover:text-zinc-800"}`}>
-                  {sortBy === k && (
-                    <motion.span layoutId="tourSortPill" transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                      className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
-                  )}
-                  <Icon className="relative z-10 h-3.5 w-3.5" />
-                  <span className="relative z-10">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
       </div>
+
+      {/* Сума покриття */}
+      {coverages.length > 1 && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-medium text-zinc-500">Сума покриття</p>
+          <div className="flex flex-wrap gap-2">
+            {coverages.map((c) => (
+              <button key={c} type="button" onClick={() => setCoverage(c)}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${c === coverage ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"}`}>
+                {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Сортування */}
+      {cards.length > 0 && (
+        <div className="mb-5 flex items-center justify-end gap-3">
+          <span className="text-xs font-medium text-zinc-400">Сортувати</span>
+          <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+            {([
+              { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
+              { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
+            ] as const).map(({ k, label, Icon }) => (
+              <button key={k} type="button" onClick={() => setSortBy(k)}
+                className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 hover:text-zinc-800"}`}>
+                {sortBy === k && (
+                  <motion.span layoutId="tourSortPill" transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
+                )}
+                <Icon className="relative z-10 h-3.5 w-3.5" />
+                <span className="relative z-10">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Картки (переюз OSAGO OfferCard) */}
       {cards.length === 0 ? (
-        <div className="rounded-2xl bg-white p-6 text-center shadow-2xl">
-          <p className="text-sm text-zinc-500">За обраними параметрами пропозицій немає. Спробуйте інші дати чи зону.</p>
+        <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
+          <p className="text-base font-semibold text-zinc-900">Пропозицій не знайдено</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">Спробуйте інші дати чи зону.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -293,7 +334,7 @@ function TourismOffers({ offers, onBack, onSelect }: { offers: TourismOffer[]; o
               onSelectAutolawyer={() => {}}
               onBuy={() => onSelect(o)}
               hideExtras
-              subtitle={o.tripProgram ? PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram : undefined}
+              cornerBadge={o.tripProgram ? PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram : undefined}
             />
           ))}
         </div>

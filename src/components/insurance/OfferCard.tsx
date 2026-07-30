@@ -23,6 +23,8 @@ interface OfferCardProps {
   hideExtras?: boolean;
   /** Підпис під назвою страхової (напр. програма туристичного «Економ»). */
   subtitle?: string;
+  /** Бейдж у верхньому лівому куті рамки картки (напр. програма «Економ»). */
+  cornerBadge?: string;
 }
 
 function transliterate(text: string) {
@@ -72,6 +74,7 @@ export function OfferCard({
   index,
   hideExtras,
   subtitle,
+  cornerBadge,
 }: OfferCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -173,12 +176,17 @@ export function OfferCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
+      className={`relative rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
         selected
           ? "border-indigo-400 shadow-md shadow-indigo-100 ring-1 ring-indigo-400"
           : "border-zinc-100 hover:border-zinc-200 hover:shadow-md"
       }`}
     >
+      {cornerBadge && (
+        <span className="absolute left-0 top-0 z-10 rounded-br-xl rounded-tl-2xl bg-indigo-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+          {cornerBadge}
+        </span>
+      )}
 
       {/* ── MOBILE layout (< lg) ── */}
       <div className="p-4 lg:hidden">

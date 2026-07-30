@@ -1,4 +1,3 @@
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { TourismFlow } from "@/components/tourism/TourismFlow";
 import { FeaturesSection } from "@/components/sections/FeaturesSection";
@@ -36,7 +35,6 @@ export default function TourismPage() {
           ]),
         ]}
       />
-      <Navbar />
       <main className="flex-1">
         <TourismFlow />
         <FeaturesSection />
