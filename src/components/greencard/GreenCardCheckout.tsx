@@ -236,7 +236,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-zinc-700">Телефон</label>
+              <label className="text-xs font-medium text-zinc-500">Телефон</label>
               <div className="flex items-center rounded-xl border border-zinc-200 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                 <span className="pl-4 pr-1 text-sm text-zinc-500">+380</span>
                 <input type="tel" inputMode="numeric" placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
@@ -274,7 +274,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Адреса проживання</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-sm font-medium text-zinc-700">Місто</label>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500">Місто</label>
               <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" required
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }} className={inputCls} />
               {selectedCity && <p className="mt-1 text-xs font-medium text-emerald-600">✓ {selectedCity.name_full_name_ua || selectedCity.name_ua}</p>}

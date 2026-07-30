@@ -119,7 +119,7 @@ export function DateInput({ label, value, onChange, required, className, error, 
 
   return (
     <div className="relative flex flex-col gap-1.5" ref={ref}>
-      {label && <label className="text-sm font-medium text-zinc-700">{label}</label>}
+      {label && <label className="text-xs font-medium text-zinc-500">{label}</label>}
 
       <div
         className={`flex items-center rounded-xl border bg-white transition-colors focus-within:ring-1 ${
