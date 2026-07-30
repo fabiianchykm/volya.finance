@@ -210,7 +210,7 @@ export function TourismFlow() {
 
               <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!valid || loading} className="mt-5 w-full">
                 <span className="flex items-center gap-2">
-                  {loading ? "Шукаємо пропозиції…" : <>Показати пропозиції <ArrowRight className="h-5 w-5" /></>}
+                  {loading ? "Шукаємо пропозиції…" : <>Розрахувати вартість <ArrowRight className="h-5 w-5" /></>}
                 </span>
               </Button>
             </form>

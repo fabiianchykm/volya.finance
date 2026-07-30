@@ -253,7 +253,7 @@ export function GreenCardFlow() {
 
                 <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!period || loading} className="mt-5 w-full">
                   <span className="flex items-center gap-2">
-                    Показати пропозиції <ArrowRight className="h-5 w-5" />
+                    Розрахувати вартість <ArrowRight className="h-5 w-5" />
                   </span>
                 </Button>
               </form>
