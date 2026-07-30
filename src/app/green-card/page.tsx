@@ -1,5 +1,8 @@
 import { Footer } from "@/components/layout/Footer";
 import { GreenCardFlow } from "@/components/greencard/GreenCardFlow";
+import { FeaturesSection } from "@/components/sections/FeaturesSection";
+import { InsurersSection } from "@/components/sections/InsurersSection";
+import { CTAWrapper } from "@/components/sections/CTAWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
 
@@ -34,6 +37,9 @@ export default function GreenCardPage() {
       />
       <main className="flex-1">
         <GreenCardFlow />
+        <FeaturesSection />
+        <InsurersSection />
+        <CTAWrapper />
       </main>
       <Footer />
     </>

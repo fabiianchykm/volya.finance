@@ -9,6 +9,7 @@ import { parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
+import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { formatPlate } from "@/lib/utils";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
 import type { GreenCardOffer, InsuranceOffer } from "@/types/api";
@@ -284,7 +285,9 @@ function GreenCardOffers({
   const auto = vehicle ? [vehicle.mark, vehicle.model].filter(Boolean).join(" ") + (vehicle.year ? `, ${vehicle.year}` : "") : "Авто";
 
   return (
-    <div className="mx-auto max-w-[820px]">
+    <div className="mx-auto max-w-[1200px]">
+      <div className="flex flex-col items-start gap-6 lg:flex-row">
+        <div className="min-w-0 flex-1">
       {/* Картка-підсумок */}
       <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
         <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
@@ -360,6 +363,11 @@ function GreenCardOffers({
           ))}
         </div>
       )}
+        </div>{/* кінець лівої колонки */}
+
+        {/* Права колонка: запросити друга */}
+        <InviteFriendCard />
+      </div>
     </div>
   );
 }
