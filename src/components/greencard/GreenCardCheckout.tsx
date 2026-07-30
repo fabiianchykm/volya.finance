@@ -292,7 +292,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-4">
+        <div className="flex justify-end border-t border-zinc-100 pt-4">
           <Button type="button" onClick={goToVehicle} variant="primary" size="lg" className="w-full sm:w-auto sm:px-8">
             <span className="flex items-center gap-2">Далі <ArrowRight className="h-5 w-5" /></span>
           </Button>
@@ -322,7 +322,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-4">
+        <div className="flex justify-end border-t border-zinc-100 pt-4">
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto sm:px-8">
             Продовжити до оплати
           </Button>

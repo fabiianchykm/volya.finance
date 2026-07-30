@@ -303,7 +303,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-4">
+        <div className="flex justify-end border-t border-zinc-100 pt-4">
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto sm:px-8">
             Продовжити до оплати
           </Button>
