@@ -19,9 +19,8 @@ interface OffersSectionProps {
   onEdit: () => void;
   onEditBuyer: () => void;
   onSelectOffer: (offer: InsuranceOffer, dgoId: string | null, autolawyerId: string | null) => void;
-  /** Період поліса (12 = рік, 6 = пів року) + зміна прямо на екрані пропозицій. */
+  /** Період поліса (12 = рік, 6 = пів року) — показуємо в рядку авто. */
   periodId: number;
-  onPeriodChange: (periodId: number) => void;
 }
 
 type SortKey = "price_asc" | "price_desc";
@@ -36,8 +35,8 @@ export function OffersSection({
   onEditBuyer,
   onSelectOffer,
   periodId,
-  onPeriodChange,
 }: OffersSectionProps) {
+  const periodLabel = periodId === 6 ? "пів року" : "1 рік";
   // Чи заповнив користувач дані страхувальника (відрізняються від дефолтних)?
   const buyerSet = buyer.privilegeId !== DEFAULT_BUYER.privilegeId || buyer.birthDate !== DEFAULT_BUYER.birthDate;
   const privilegeLabel = PRIVILEGES.find((p) => p.id === buyer.privilegeId)?.label ?? "Без пільг";
@@ -105,6 +104,7 @@ export function OffersSection({
               {vehicle.mark} {vehicle.model}
               {vehicle.year && `, ${vehicle.year}`}
               {vehicle.cityName && `, ${vehicle.cityName.replace(/,?\s*Україна$/i, '')}`}
+              {`, ${periodLabel}`}
               <button
                 onClick={onEdit}
                 aria-label="Змінити дані авто"
@@ -113,19 +113,6 @@ export function OffersSection({
                 <Pencil className="h-4 w-4" />
               </button>
             </p>
-
-            {/* Період поліса — видно й змінюється прямо тут (ціни перерахуються) */}
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs font-medium text-zinc-400">Період поліса:</span>
-              <select
-                value={String(periodId)}
-                onChange={(e) => { const v = Number(e.target.value); if (v !== periodId) onPeriodChange(v); }}
-                className="h-9 cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 outline-none transition-colors hover:border-zinc-300 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
-              >
-                <option value="12">1 рік</option>
-                <option value="6">Пів року</option>
-              </select>
-            </div>
           </div>
 
           {/* Пільга + дата народження — впливають на ціну. Прикріплено під авто. */}
