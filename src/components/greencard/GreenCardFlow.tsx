@@ -368,7 +368,6 @@ function GreenCardOfferCard({ offer, onSelect }: { offer: GreenCardOffer; onSele
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold uppercase text-zinc-900">{name}</p>
-        <p className="text-xs text-zinc-500">Зелена карта</p>
       </div>
       <div className="flex shrink-0 flex-col items-end">
         <p className="text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
