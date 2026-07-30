@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { AlertCircle, Pencil } from "lucide-react";
+import { AlertCircle, Pencil, ChevronDown, Check, CalendarRange } from "lucide-react";
 
 interface City { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 import { Modal } from "@/components/ui/Modal";
@@ -348,14 +348,7 @@ export function VehicleConfirmModal({
         {periodId !== undefined && (
           <div className="border-t border-zinc-100 pt-3">
             <label className="mb-1.5 block text-xs font-medium text-zinc-500">Період страхування</label>
-            <select
-              value={String(period)}
-              onChange={(e) => setPeriod(Number(e.target.value))}
-              className="h-11 w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-900 outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
-            >
-              <option value="12">1 рік</option>
-              <option value="6">Пів року (6 місяців)</option>
-            </select>
+            <PeriodSelect value={period} onChange={setPeriod} />
           </div>
         )}
 
@@ -373,5 +366,73 @@ export function VehicleConfirmModal({
         </div>
       </div>
     </Modal>
+  );
+}
+
+// Гарний кастомний dropdown вибору періоду поліса (замість нативного select).
+const PERIOD_OPTIONS = [
+  { v: 12, l: "1 рік", note: "стандартний період" },
+  { v: 6, l: "Пів року", note: "6 місяців · дешевше" },
+];
+
+function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+
+  const cur = PERIOD_OPTIONS.find((o) => o.v === value) ?? PERIOD_OPTIONS[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex h-12 w-full items-center justify-between rounded-xl border bg-white px-3 text-left transition-colors ${
+          open ? "border-indigo-400 ring-1 ring-indigo-400" : "border-zinc-200 hover:border-indigo-300"
+        }`}
+      >
+        <span className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <CalendarRange className="h-4 w-4" />
+          </span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold text-zinc-900">{cur.l}</span>
+            <span className="text-[11px] text-zinc-400">{cur.note}</span>
+          </span>
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-xl">
+          {PERIOD_OPTIONS.map((o) => {
+            const active = o.v === value;
+            return (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => { onChange(o.v); setOpen(false); }}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors ${
+                  active ? "bg-indigo-50" : "hover:bg-zinc-50"
+                }`}
+              >
+                <span className="flex flex-col leading-tight">
+                  <span className={`text-sm font-semibold ${active ? "text-indigo-700" : "text-zinc-800"}`}>{o.l}</span>
+                  <span className="text-[11px] text-zinc-400">{o.note}</span>
+                </span>
+                {active && <Check className="h-4 w-4 shrink-0 text-indigo-600" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
