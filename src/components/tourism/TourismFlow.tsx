@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plane, MapPin, CalendarDays, Users, ArrowRight, ArrowLeft, ShieldCheck, Coins } from "lucide-react";
+import { MapPin, CalendarDays, Users, ArrowRight, ArrowLeft, ShieldCheck, Coins, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -105,9 +105,6 @@ export function TourismFlow() {
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 w-full">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
           <div className="space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm">
-              <Plane className="h-7 w-7 text-indigo-300" />
-            </div>
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
               Туристичне страхування —
               <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
@@ -134,25 +131,36 @@ export function TourismFlow() {
                 </div>
               </div>
 
-              <div className="mt-4">
-                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Users className="h-3.5 w-3.5" /> Туристи ({birthDates.length})</label>
-                <div className="mb-2 flex items-center gap-2">
-                  {[1, 2, 3, 4, 5, 6].map((n) => (
-                    <button key={n} type="button" onClick={() => setTourists(n)}
-                      className={`h-9 w-9 rounded-lg border text-sm font-medium transition-colors ${birthDates.length === n ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 text-zinc-600 hover:border-indigo-200"}`}>{n}</button>
-                  ))}
-                  <span className="ml-1 text-xs text-zinc-400">кількість туристів</span>
+              <div className="mt-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Users className="h-3.5 w-3.5" /> Туристи</label>
+                  <div className="flex items-center gap-2">
+                    <button type="button" aria-label="Менше туристів" disabled={birthDates.length <= 1}
+                      onClick={() => setTourists(Math.max(1, birthDates.length - 1))}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40">
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-6 text-center text-sm font-semibold text-zinc-900">{birthDates.length}</span>
+                    <button type="button" aria-label="Більше туристів" disabled={birthDates.length >= 6}
+                      onClick={() => setTourists(Math.min(6, birthDates.length + 1))}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {birthDates.map((b, i) => (
-                    <DateInput key={i} label={`Дата народження ${i + 1}`} value={b} onChange={(v) => setBirth(i, v)} defaultYear={1990} required />
+                    <DateInput key={i} label={birthDates.length > 1 ? `Дата народження · турист ${i + 1}` : "Дата народження"} value={b} onChange={(v) => setBirth(i, v)} defaultYear={1990} required />
                   ))}
                 </div>
               </div>
 
-              <label className="mt-4 flex cursor-pointer items-center gap-2.5">
-                <input type="checkbox" checked={multiVisa} onChange={(e) => setMultiVisa(e.target.checked)} className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" />
-                <span className="text-sm text-zinc-700">Річний поліс (мультивіза) — багато поїздок за рік</span>
+              <label className="mt-5 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-indigo-200">
+                <span className="flex flex-col">
+                  <span className="text-sm font-medium text-zinc-800">Річний поліс (мультивіза)</span>
+                  <span className="text-xs text-zinc-400">Багато поїздок протягом року</span>
+                </span>
+                <input type="checkbox" checked={multiVisa} onChange={(e) => setMultiVisa(e.target.checked)} className="h-5 w-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" />
               </label>
 
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
