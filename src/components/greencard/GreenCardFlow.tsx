@@ -216,7 +216,7 @@ export function GreenCardFlow() {
                 </div>
                 {error && <p className="text-sm font-medium text-rose-200">{error}</p>}
                 <Button type="submit" size="xl" loading={loading} className="rounded-2xl bg-white px-10 font-bold text-indigo-700 hover:bg-indigo-50">
-                  <span className="flex items-center gap-2"><Search className="h-5 w-5" /> Знайти авто</span>
+                  <span className="flex items-center gap-2"><Search className="h-5 w-5" /> Розрахувати вартість</span>
                 </Button>
               </form>
             )}
