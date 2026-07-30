@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Users, ArrowRight, ArrowLeft, ShieldCheck, Coins, Minus, Plus } from "lucide-react";
+import { MapPin, CalendarDays, Users, ArrowRight, ArrowLeft, Minus, Plus, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
-import { companyLogo } from "@/lib/logos";
-import { formatPrice, formatCompanyName } from "@/lib/utils";
-import { BONUS_RATE } from "@/lib/constants";
+import { OfferCard } from "@/components/insurance/OfferCard";
 import { TourismCheckout, type TourismCheckoutCtx } from "./TourismCheckout";
-import type { TourismOffer } from "@/types/api";
+import type { TourismOffer, InsuranceOffer } from "@/types/api";
 
 const PROGRAM_LABELS: Record<string, string> = {
   econom: "Економ", economy: "Економ", standart: "Стандарт", standard: "Стандарт", elit: "Еліт", elite: "Еліт",
@@ -198,90 +196,108 @@ export function TourismFlow() {
   );
 }
 
+// EUR → €, USD → $ для суми покриття.
+const currencySymbol = (cur?: string) => (cur === "USD" ? "$" : "€");
+
+// Мапимо офер туристичного у форму InsuranceOffer, щоб переюзати OSAGO OfferCard.
+function toTourismInsuranceOffer(o: TourismOffer): InsuranceOffer {
+  return {
+    offerId: o.offerId,
+    price: o.price,
+    company: { publicName: o.company?.publicName || o.company?.name || "" },
+    listDgo: [],
+    listAutolawyer: [],
+  } as unknown as InsuranceOffer;
+}
+
 function TourismOffers({ offers, onBack, onSelect }: { offers: TourismOffer[]; onBack: () => void; onSelect: (offer: TourismOffer) => void }) {
-  // Рівні покриття, наявні у відповіді (10к…100к EUR). Мінімум для Шенгену — 30 000.
+  // Рівні покриття (10к…100к EUR). Мінімум для Шенгену — 30 000. Виносимо зверху.
   const coverages = Array.from(new Set(offers.map(coverageOf).filter((c) => c > 0))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
-  const currency = offers.find((o) => coverageOf(o) === coverage)?.limit_currency || "EUR";
+  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
 
-  // За обраним покриттям — найдешевший варіант для кожної пари «страхова + програма»
-  // (Економ/Стандарт/Еліт як окремі пропозиції), щоб було з чого обирати.
+  // За обраним покриттям — найдешевший варіант для кожної пари «страхова + програма».
   const best = new Map<string, TourismOffer>();
   for (const o of offers.filter((o) => coverageOf(o) === coverage)) {
     const key = [o.company?.publicName || o.company?.name, o.tripProgram].filter(Boolean).join("|") || o.offerId;
     const prev = best.get(key);
     if (!prev || o.price < prev.price) best.set(key, o);
   }
-  const cards = Array.from(best.values()).sort((a, b) => a.price - b.price);
+  const cards = Array.from(best.values()).sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
 
   return (
-    <div className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-zinc-900">{cards.length ? `Пропозицій: ${cards.length}` : "Пропозицій не знайдено"}</h2>
-        <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline">
-          <ArrowLeft className="h-4 w-4" /> Змінити параметри
-        </button>
-      </div>
+    <div className="space-y-4 text-left">
+      {/* Панель керування: покриття (зверху) + сортування */}
+      <div className="rounded-2xl bg-white p-4 shadow-2xl sm:p-5">
+        <div className="mb-3 flex items-center gap-2.5">
+          <button type="button" onClick={onBack} aria-label="Змінити параметри" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h2 className="text-base font-bold text-zinc-900">{cards.length ? `Пропозицій: ${cards.length}` : "Пропозицій не знайдено"}</h2>
+        </div>
 
-      {coverages.length > 1 && (
-        <div className="mb-5">
-          <p className="mb-2 text-xs font-medium text-zinc-500">Сума покриття</p>
-          <div className="flex flex-wrap gap-2">
-            {coverages.map((c) => (
-              <button key={c} type="button" onClick={() => setCoverage(c)}
-                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${c === coverage ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 text-zinc-600 hover:border-indigo-200"}`}>
-                {new Intl.NumberFormat("uk-UA").format(c)} {currency}
-              </button>
-            ))}
+        {coverages.length > 1 && (
+          <div className="mb-3">
+            <p className="mb-1.5 text-xs font-medium text-zinc-500">Сума покриття</p>
+            <div className="flex flex-wrap gap-2">
+              {coverages.map((c) => (
+                <button key={c} type="button" onClick={() => setCoverage(c)}
+                  className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${c === coverage ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 text-zinc-600 hover:border-indigo-200"}`}>
+                  {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {cards.length === 0 ? (
-        <p className="text-sm text-zinc-500">За обраними параметрами пропозицій немає. Спробуйте інші дати чи зону.</p>
-      ) : (
-        <div className="space-y-3">
-          {cards.map((o) => <TourismOfferCard key={o.offerId} offer={o} onSelect={() => onSelect(o)} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TourismOfferCard({ offer, onSelect }: { offer: TourismOffer; onSelect: () => void }) {
-  const publicName = offer.company?.publicName || offer.company?.name || "";
-  const src = companyLogo(publicName) || offer.company?.logo || null;
-  const displayName = formatCompanyName(publicName).toUpperCase();
-  const program = offer.tripProgram ? PROGRAM_LABELS[offer.tripProgram.toLowerCase()] ?? offer.tripProgram : null;
-  const cov = coverageOf(offer);
-  const limit = cov ? `${new Intl.NumberFormat("uk-UA").format(cov)} ${offer.limit_currency || "EUR"}` : null;
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:gap-4">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5">
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={displayName || "logo"} className="max-h-full max-w-full object-contain" />
-        ) : (
-          <ShieldCheck className="h-6 w-6 text-zinc-300" />
+        {cards.length > 0 && (
+          <div className="flex items-center justify-end gap-3">
+            <span className="text-xs font-medium text-zinc-400">Сортувати</span>
+            <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+              {([
+                { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
+                { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
+              ] as const).map(({ k, label, Icon }) => (
+                <button key={k} type="button" onClick={() => setSortBy(k)}
+                  className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 hover:text-zinc-800"}`}>
+                  {sortBy === k && (
+                    <motion.span layoutId="tourSortPill" transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
+                  )}
+                  <Icon className="relative z-10 h-3.5 w-3.5" />
+                  <span className="relative z-10">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-zinc-900">{displayName}</p>
-        <p className="text-xs text-zinc-500">
-          {program && <span>{program}</span>}
-          {program && limit && <span> · </span>}
-          {limit && <span>покриття {limit}</span>}
-        </p>
-      </div>
-      <div className="flex shrink-0 flex-col items-end">
-        <p className="text-lg font-bold text-zinc-900">{formatPrice(offer.price)}</p>
-        <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-emerald-600">
-          <Coins className="h-3 w-3" /> +{formatPrice(Math.round(offer.price * BONUS_RATE))} бонус
-        </span>
-      </div>
-      <button type="button" onClick={onSelect} className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-        Оформити
-      </button>
+
+      {/* Картки (переюз OSAGO OfferCard) */}
+      {cards.length === 0 ? (
+        <div className="rounded-2xl bg-white p-6 text-center shadow-2xl">
+          <p className="text-sm text-zinc-500">За обраними параметрами пропозицій немає. Спробуйте інші дати чи зону.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {cards.map((o, i) => (
+            <OfferCard
+              key={o.offerId}
+              index={i}
+              offer={toTourismInsuranceOffer(o)}
+              selected={false}
+              selectedDgoId={null}
+              selectedAutolawyerId={null}
+              onSelect={() => {}}
+              onSelectDgo={() => {}}
+              onSelectAutolawyer={() => {}}
+              onBuy={() => onSelect(o)}
+              hideExtras
+              subtitle={o.tripProgram ? PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram : undefined}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

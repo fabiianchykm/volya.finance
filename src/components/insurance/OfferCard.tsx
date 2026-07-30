@@ -21,6 +21,8 @@ interface OfferCardProps {
   index: number;
   /** Приховати «скоро»-опції (евакуатор/страхування) — напр. для Зеленої карти. */
   hideExtras?: boolean;
+  /** Підпис під назвою страхової (напр. програма туристичного «Економ»). */
+  subtitle?: string;
 }
 
 function transliterate(text: string) {
@@ -69,6 +71,7 @@ export function OfferCard({
   onSelectAutolawyer,
   index,
   hideExtras,
+  subtitle,
 }: OfferCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -185,9 +188,12 @@ export function OfferCard({
             <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
           </div>
 
-          <p className="flex-1 min-w-0 text-sm font-semibold uppercase text-zinc-900 leading-snug">
-            {cleanCompanyName}
-          </p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold uppercase text-zinc-900 leading-snug">
+              {cleanCompanyName}
+            </p>
+            {subtitle && <p className="mt-0.5 text-xs text-zinc-400">{subtitle}</p>}
+          </div>
 
           <div className="flex shrink-0 flex-col items-end">
             <span
@@ -244,6 +250,7 @@ export function OfferCard({
           <span className="text-sm uppercase text-zinc-900 leading-tight text-center">
             {cleanCompanyName}
           </span>
+          {subtitle && <span className="text-xs text-zinc-400 text-center">{subtitle}</span>}
         </div>
 
         {/* Блок 2: кількість опцій / документи */}
