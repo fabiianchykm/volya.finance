@@ -40,7 +40,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              "w-full bg-transparent px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none",
+              "h-11 w-full bg-transparent px-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none",
               prefix && "pl-2",
               suffix && "pr-2"
             )}

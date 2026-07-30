@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, MapPin, CalendarDays, ArrowRight, Search, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, Search, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
@@ -178,9 +178,6 @@ export function GreenCardFlow() {
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6 w-full">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
             <div className="space-y-4">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm">
-                <Globe className="h-7 w-7 text-indigo-300" />
-              </div>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
                 Зелена карта —
                 <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
