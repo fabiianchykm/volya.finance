@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { auth } from "@/auth";
 import { savePolicy, deletePolicy } from "@/lib/policies";
+import { notifyDevError } from "@/lib/telegram";
 
 // Наявний поліс (куплений деінде), доданий клієнтом у кабінет вручну.
 // POST — додати; DELETE — прибрати. Лише для залогіненого користувача.
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("[policies/manual] add error:", e instanceof Error ? e.message : e);
+    await notifyDevError("policies manual add", e);
     return NextResponse.json({ success: false, error: "Не вдалося додати поліс" }, { status: 500 });
   }
 }

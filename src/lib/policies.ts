@@ -1,4 +1,5 @@
 import { sql, ensureSchema } from "./db";
+import { checkDbHealth } from "./db-health";
 
 // Поліс, привʼязаний до email клієнта. Звʼязок з акаунтом — за email: після входу
 // через Google показуємо поліси, де email == email акаунта (навіть якщо купували гостем).
@@ -91,6 +92,9 @@ export async function savePolicy(p: SavePolicyInput): Promise<void> {
       product       = EXCLUDED.product,
       policy_number = EXCLUDED.policy_number
   `;
+  // Ненав'язливий моніторинг розміру БД (throttled) — алерт у dev-Telegram, якщо
+  // сховище наближається до ліміту. Не блокує основний потік.
+  void checkDbHealth();
 }
 
 // Видалення полісу (лише manual) з перевіркою власника за email АБО phone.
