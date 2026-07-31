@@ -19,8 +19,8 @@ const AUTO_LINKS = [
   { label: "Зелена карта", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон" },
 ];
 const OTHER_LINKS = [
-  { label: "Туристичне", href: "/tourism", icon: Plane },
-  { label: "Тварини", href: "/pets", icon: PawPrint },
+  { label: "Туристичне", href: "/tourism", icon: Plane, badge: undefined as string | undefined },
+  { label: "Тварини", href: "/pets", icon: PawPrint, badge: "скоро" },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...AUTO_LINKS, ...OTHER_LINKS];
@@ -104,7 +104,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             </div>
           </li>
 
-          {OTHER_LINKS.map(({ href, label, icon: Icon }) => (
+          {OTHER_LINKS.map(({ href, label, icon: Icon, badge }) => (
             <li key={href}>
               <Link
                 href={href}
@@ -117,6 +117,9 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
               >
                 <Icon className="h-4 w-4 opacity-80" />
                 {label}
+                {badge && (
+                  <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{badge}</span>
+                )}
               </Link>
             </li>
           ))}
@@ -171,10 +174,13 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                  className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
+                  {(link as { badge?: string }).badge && (
+                    <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{(link as { badge?: string }).badge}</span>
+                  )}
                 </Link>
               ))}
               <div className="mt-3 border-t border-zinc-100 pt-3">
