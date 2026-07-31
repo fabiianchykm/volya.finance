@@ -13,7 +13,7 @@ import { useLogin } from "@/components/auth/LoginProvider";
 
 // Авто-продукти згруповані в дропдаун «Автострахування», щоб меню не розтягувалось.
 const AUTO_LINKS = [
-  { label: "Автоцивілка", href: "/osago", icon: ShieldCheck, desc: "ОСЦПВ онлайн за 3 хв" },
+  { label: "Автоцивілка", href: "/osago", icon: ShieldCheck, desc: "ОСЦПВ" },
   { label: "КАСКО", href: "/kasko", icon: Car, desc: "Повний захист авто" },
   { label: "Міні-КАСКО", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше" },
   { label: "Зелена карта", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон" },
