@@ -46,17 +46,7 @@ export default function SubagentPage() {
           <p className="text-sm font-medium text-indigo-600">Інформація про страхового посередника</p>
           <h1 className="mt-1 mb-4 text-2xl font-bold text-zinc-900 sm:text-3xl">Інформація про Субагента</h1>
 
-          <a
-            href="https://uconnect.com.ua/sub-agent?orderId=01ksj09bjcrdfbefegvh8fjezn"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-8 inline-flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
-          >
-            Офіційний портал субагента (Ukasko)
-            <span aria-hidden>↗</span>
-          </a>
-
-          <div className="space-y-6">
+          <div className="mt-6 space-y-6">
             <Section title="1. Субагент">
               <p><span className="font-medium text-zinc-800">Повне найменування:</span> ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ «ПРОІНШУРЕНС УКРАЇНА»</p>
               <p><span className="font-medium text-zinc-800">Скорочене найменування:</span> ТОВ «ПРОІНШУРЕНС УКРАЇНА»</p>
