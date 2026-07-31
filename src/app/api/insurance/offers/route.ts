@@ -3,6 +3,13 @@ import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import type { CalculatorParams } from "@/types/api";
 
+// Калькулятор Ukasko рахує 18+ страхових ~7с. Кешуємо успішні результати по
+// точних параметрах на кілька хвилин: повернення назад, TTL-переоновлення та
+// поширені комбінації (у різних клієнтів) віддаються миттєво. Ціна на checkout
+// усе одно перевіряється наново, тож короткий кеш безпечний.
+const OFFERS_CACHE_TTL_MS = 3 * 60 * 1000;
+const offersCache = new Map<string, { data: unknown; expires: number }>();
+
 export async function GET(req: NextRequest) {
   try {
     const blocked = guardRequest(req, { name: "offers", limit: 30, windowMs: 10 * 60 * 1000 });
@@ -28,7 +35,19 @@ export async function GET(req: NextRequest) {
       "car[birthdayAt]": searchParams.get("carBirthdayAt") ?? "01.01.1990",
     };
 
+    const cacheKey = JSON.stringify(params);
+    const now = Date.now();
+    const hit = offersCache.get(cacheKey);
+    if (hit && hit.expires > now) {
+      return NextResponse.json({ success: true, data: hit.data, cached: true });
+    }
+
     const data = await ukaskoService.getOffers(params);
+    offersCache.set(cacheKey, { data, expires: now + OFFERS_CACHE_TTL_MS });
+    // Періодичне прибирання протухлих записів, щоб мапа не росла безмежно.
+    if (offersCache.size > 200) {
+      for (const [k, v] of offersCache) if (v.expires <= now) offersCache.delete(k);
+    }
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
