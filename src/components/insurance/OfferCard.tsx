@@ -94,8 +94,8 @@ export function OfferCard({
   const bonus = Math.round(totalPrice * BONUS_RATE);
 
   const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
-  // Чи є що показувати в блоці опцій (реальні опції або «скоро»-екстри).
-  const showOptionsBlock = hasOptions || !hideExtras;
+  // Блок опцій (у картці) показуємо лише за наявності реальних опцій.
+  const showOptionsBlock = hasOptions;
 
   // Обов'язкові інформаційні документи продукту (показуємо ті, що прийшли з API).
   const docs = [
@@ -105,7 +105,10 @@ export function OfferCard({
     { label: "Загальні умови страхового продукту", url: offer.company.docZusp },
   ].filter((d): d is { label: string; url: string } => !!d.url && d.url.trim().length > 0);
   const hasDocs = docs.length > 0;
-  const canExpand = hasOptions || hasDocs;
+  const hasFacts = offer.company.directSettlement === 1 || offer.company.compensationDays > 0;
+  // «Скоро»-послуги (евакуатор/страхування) тепер у «Додатково». Розгортання
+  // доступне, якщо є що показати: екстри, характеристики або документи.
+  const canExpand = !hideExtras || hasFacts || hasDocs;
 
   const autolawyer = lawyerList[0] ?? null;
   const rowClass = (active: boolean) =>
@@ -151,23 +154,29 @@ export function OfferCard({
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
         </div>
       )}
+    </div>
+  );
 
-      {/* Евакуатор і медична страховка — окремі послуги. Поки заморожені («скоро»):
-          не клікабельні й НЕ входять у суму до оплати. */}
-      {!hideExtras && [
-        { label: "Евакуатор + медична допомога", price: 600 },
-        { label: "Страхування від нещасних випадків", price: 400 },
-      ].map((h) => (
-        <div
-          key={h.label}
-          aria-disabled="true"
-          className="relative flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-3.5 py-2.5"
-        >
-          <span className="absolute -top-2 right-3 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 shadow-sm ring-1 ring-white">скоро</span>
-          <span className="min-w-0 text-sm font-medium leading-snug text-zinc-500">{h.label}</span>
-          <span className="shrink-0 text-sm font-semibold text-zinc-400">{formatPrice(h.price)}</span>
-        </div>
-      ))}
+  // Заморожені («скоро») послуги — тепер показуємо у розгорнутому «Додатково».
+  const extrasBlock = !hideExtras && (
+    <div>
+      <p className="mb-2 text-xs font-semibold text-zinc-700">Скоро — додаткові послуги</p>
+      <div className="flex flex-col gap-2">
+        {[
+          { label: "Евакуатор + медична допомога", price: 600 },
+          { label: "Страхування від нещасних випадків", price: 400 },
+        ].map((h) => (
+          <div
+            key={h.label}
+            aria-disabled="true"
+            className="relative flex cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/60 px-3.5 py-2.5"
+          >
+            <span className="absolute -top-2 right-3 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 shadow-sm ring-1 ring-white">скоро</span>
+            <span className="min-w-0 text-sm font-medium leading-snug text-zinc-500">{h.label}</span>
+            <span className="shrink-0 text-sm font-semibold text-zinc-400">{formatPrice(h.price)}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
@@ -312,9 +321,10 @@ export function OfferCard({
         </div>
       </div>
 
-      {/* Розгорнута секція — лише реальні дані з API: опції, факти, документи */}
+      {/* Розгорнута секція — «скоро»-послуги, факти, документи */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
+          {extrasBlock}
           {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
           {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
             <div className="flex flex-wrap gap-2">
