@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { LoginProvider } from "@/components/auth/LoginProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/analytics/GoogleTagManager";
 import { ReferralCapture } from "@/components/referral/ReferralCapture";
 import { ContactWidget } from "@/components/layout/ContactWidget";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -96,6 +97,7 @@ export default async function RootLayout({
   return (
     <html lang="uk" className={`${inter.variable} ${roboto.variable} ${openSans.variable} ${jost.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans">
+        <GoogleTagManagerNoScript />
         <SessionProvider session={session}>
           <LoginProvider>{children}</LoginProvider>
         </SessionProvider>
@@ -103,6 +105,7 @@ export default async function RootLayout({
         <ReferralCapture />
         <JsonLd data={[organizationLd(), websiteLd()]} />
         <GoogleAnalytics />
+        <GoogleTagManager />
       </body>
     </html>
   );

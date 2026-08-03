@@ -27,6 +27,13 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Google Tag Manager container ID (публічне, GTM-XXXXXXX). Розкоментуй і встав
+  # реальний ID від маркетологів — контейнер підвантажиться автоматично.
+  # - variable: NEXT_PUBLIC_GTM_ID
+  #   value: GTM-XXXXXXX
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
   # Базовий URL для NextAuth callback-ів — той самий прод-домен.
   - variable: AUTH_URL
     value: https://volya.finance
