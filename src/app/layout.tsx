@@ -6,6 +6,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { LoginProvider } from "@/components/auth/LoginProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/analytics/GoogleTagManager";
+import { Clarity } from "@/components/analytics/Clarity";
 import { ReferralCapture } from "@/components/referral/ReferralCapture";
 import { ContactWidget } from "@/components/layout/ContactWidget";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -106,6 +107,7 @@ export default async function RootLayout({
         <JsonLd data={[organizationLd(), websiteLd()]} />
         <GoogleAnalytics />
         <GoogleTagManager />
+        <Clarity />
       </body>
     </html>
   );
