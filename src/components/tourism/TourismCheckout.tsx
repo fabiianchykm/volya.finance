@@ -11,6 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatCompanyName } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
+import { trackEvent } from "@/lib/analytics";
 
 // Анкета оформлення туристичного (аналог ЗК): дані страхувальника + туристів →
 // declare (order/create save) → OTP → оплата → confirm (nextFinal) → поліс.
@@ -184,6 +185,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       if (!json.success) throw new Error(json.error);
       if (!json.valid) throw new Error("Невірний код. Спробуйте ще раз.");
       setStep("payment");
+      trackEvent("begin_checkout", { product: "tourism", currency: "UAH", value: ctx.offer.price });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Помилка");
     } finally {
@@ -328,7 +330,11 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
           amount={o.price}
           confirmEndpoint="/api/tourism/order"
           confirmPayload={{ order: savedOrder }}
-          onPaid={(cId) => { setContractId(cId); setStep("success"); }}
+          onPaid={(cId) => {
+            trackEvent("purchase", { product: "tourism", currency: "UAH", value: ctx.offer.price, transaction_id: cId });
+            setContractId(cId);
+            setStep("success");
+          }}
         />
       )}
 

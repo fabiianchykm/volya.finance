@@ -10,6 +10,7 @@ import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
+import { trackEvent } from "@/lib/analytics";
 
 // Анкета оформлення «Зелена карта» (аналог CheckoutClient для ОСЦПВ):
 // дані страхувальника (ПІБ укр + латиниця, документ, адреса) → заявлення
@@ -185,6 +186,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       if (!json.success) throw new Error(json.error);
       if (!json.valid) throw new Error("Невірний код. Спробуйте ще раз.");
       setStep("payment");
+      trackEvent("begin_checkout", { product: "greencard", currency: "UAH", value: ctx.offer.price });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Помилка");
     } finally {
@@ -348,7 +350,11 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           orderId={orderId}
           amount={ctx.offer.price}
           confirmEndpoint="/api/greencard/order"
-          onPaid={(cId) => { setContractId(cId); setStep("success"); }}
+          onPaid={(cId) => {
+            trackEvent("purchase", { product: "greencard", currency: "UAH", value: ctx.offer.price, transaction_id: cId });
+            setContractId(cId);
+            setStep("success");
+          }}
         />
       )}
 
