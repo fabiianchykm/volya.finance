@@ -14,6 +14,7 @@ import { formatPlate } from "@/lib/utils";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
 import type { GreenCardOffer, InsuranceOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
+import { trackEvent } from "@/lib/analytics";
 
 // Зелена карта — потік і дизайн як в ОСЦПВ: темний герой для вводу номера/параметрів,
 // далі СВІТЛИЙ екран пропозицій (як OffersSection) з карткою-підсумком, сортуванням,
@@ -108,6 +109,7 @@ export function GreenCardFlow() {
     setOffers([]);
     setOffersLoading(true);
     setStep("offers");
+    trackEvent("calculate_cost", { product: "greencard" });
     try {
       const iso = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}-${String(startD.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/greencard", {

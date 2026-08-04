@@ -11,6 +11,7 @@ import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { PetsCheckout, type PetsCheckoutCtx } from "./PetsCheckout";
 import type { PetsOffer, InsuranceOffer } from "@/types/api";
+import { trackEvent } from "@/lib/analytics";
 
 // Страхування тварин — потік і дизайн як у туристичному/зеленій карті: темний
 // герой для форми (вид, дата, строк), далі світлий екран пропозицій.
@@ -66,6 +67,7 @@ export function PetsFlow() {
     setOffers([]);
     setLoading(true);
     setStep("offers");
+    trackEvent("calculate_cost", { product: "pets" });
     try {
       const res = await fetch("/api/pets", {
         method: "POST",

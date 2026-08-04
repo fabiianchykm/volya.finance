@@ -8,6 +8,7 @@ import { PhoneModal } from "./PhoneModal";
 import { KASKO_PRODUCTS, type KaskoProduct } from "./products";
 import { Button } from "@/components/ui/Button";
 import type { VehicleData } from "@/types/insurance";
+import { trackEvent } from "@/lib/analytics";
 
 const VehicleConfirmModal = dynamic(
   () => import("@/components/insurance/VehicleConfirmModal").then((m) => m.VehicleConfirmModal),
@@ -33,6 +34,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
   const handlePlateSearch = async (p: string) => {
     setLoading(true);
     setLookupError(null);
+    trackEvent("calculate_cost", { product });
     try {
       const res = await fetch(`/api/vehicle/${encodeURIComponent(p)}`);
       const json = await res.json();
@@ -100,6 +102,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? "Не вдалося надіслати заявку");
+      trackEvent("generate_lead", { form: "kasko", product });
       setShowPhoneModal(false);
       setStep("success");
     } catch (e) {

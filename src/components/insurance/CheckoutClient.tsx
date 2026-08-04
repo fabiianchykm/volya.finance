@@ -11,6 +11,7 @@ import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
+import { trackEvent } from "@/lib/analytics";
 
 // Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
 function formatUaPhone(digits: string): string {
@@ -242,6 +243,14 @@ export function CheckoutClient() {
 
       setStep("payment");
 
+      // Конверсія для GA4/Ads: клієнт дійшов до оплати.
+      trackEvent("begin_checkout", {
+        product: "osago",
+        currency: "UAH",
+        value: offer.price,
+        company: offer.companyNamePublic || offer.companyName,
+      });
+
       // Sales-бот: клієнт дійшов до оплати (fire-and-forget, не блокує UI).
       void fetch("/api/track", {
         method: "POST",
@@ -269,6 +278,15 @@ export function CheckoutClient() {
   const handlePaid = (cId: string) => {
     setContractId(cId);
     setStep("success");
+
+    // Головна конверсія для GA4/Google Ads: поліс оплачено й оформлено.
+    trackEvent("purchase", {
+      product: "osago",
+      currency: "UAH",
+      value: offer?.price,
+      company: offer?.companyNamePublic || offer?.companyName,
+      transaction_id: cId,
+    });
 
     // Зберігаємо поліс із ПОВНИМИ даними клієнта. Прив'язка до акаунта — і за email
     // (Google), і за телефоном (вхід за номером). Fire-and-forget — не блокуємо екран.

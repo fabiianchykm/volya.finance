@@ -9,6 +9,7 @@ import { OffersSection } from "./OffersSection";
 import { BuyerModal } from "./BuyerModal";
 import type { InsuranceOffer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
+import { trackEvent } from "@/lib/analytics";
 
 const VehicleConfirmModal = dynamic(() => import("./VehicleConfirmModal").then(mod => mod.VehicleConfirmModal), { ssr: false });
 
@@ -55,6 +56,7 @@ export function InsuranceFlow() {
     setLoading(true);
     setError(null);
     setLookupError(null);
+    trackEvent("calculate_cost", { product: "osago" });
 
     try {
       const res = await fetch(`/api/vehicle/${encodeURIComponent(plate)}`);

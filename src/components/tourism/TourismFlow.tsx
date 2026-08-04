@@ -11,6 +11,7 @@ import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { Navbar } from "@/components/layout/Navbar";
 import { TourismCheckout, type TourismCheckoutCtx } from "./TourismCheckout";
 import type { TourismOffer, InsuranceOffer } from "@/types/api";
+import { trackEvent } from "@/lib/analytics";
 
 const PROGRAM_LABELS: Record<string, string> = {
   econom: "Економ", economy: "Економ", standart: "Стандарт", standard: "Стандарт", elit: "Еліт", elite: "Еліт",
@@ -68,6 +69,7 @@ export function TourismFlow() {
     if (!valid || loading) return;
     setLoading(true);
     setError(null);
+    trackEvent("calculate_cost", { product: "tourism" });
     try {
       const zone = ZONES.find((z) => String(z.id) === zoneId)!;
       const res = await fetch("/api/tourism", {

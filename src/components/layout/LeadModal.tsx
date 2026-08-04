@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { trackEvent } from "@/lib/analytics";
 
 // Спільне віконце заявки на звʼязок (телефон/email). Використовують і футер, і
 // плаваюча кнопка. Керується через mode: "phone" | "email" | null (закрито).
@@ -23,6 +24,11 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Мікро-конверсія: користувач відкрив форму зворотного звʼязку (початок заповнення).
+  useEffect(() => {
+    if (mode) trackEvent("callback_start", { method: mode, source });
+  }, [mode, source]);
 
   // Скидаємо стан і закриваємо (усі шляхи закриття йдуть сюди), щоб наступне
   // відкриття було з чистою формою.
@@ -56,6 +62,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) throw new Error(json.error ?? "Не вдалося надіслати. Спробуйте ще раз.");
+      trackEvent("generate_lead", { form: "callback", method: mode ?? "phone", source });
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Сталася помилка. Спробуйте ще раз.");
