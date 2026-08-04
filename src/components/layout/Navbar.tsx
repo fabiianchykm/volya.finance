@@ -56,7 +56,6 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         <Link href="/" className="flex items-center gap-1">
           <VMark id="vmark-nav" className="h-9 w-9" />
           <span
-            style={{ fontFamily: "var(--font-logo)" }}
             className={cn(
               "text-2xl font-medium uppercase tracking-[0.2em] transition-colors duration-300",
               opaque ? "text-zinc-900" : "text-white"

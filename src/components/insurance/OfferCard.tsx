@@ -213,10 +213,7 @@ export function OfferCard({
           </div>
 
           <div className="flex shrink-0 flex-col items-end">
-            <span
-              className="text-lg font-bold text-zinc-900 tabular-nums"
-              style={{ fontFamily: 'var(--font-roboto)' }}
-            >
+            <span className="text-lg font-bold text-zinc-900 tabular-nums">
               {formatPrice(totalPrice)}
             </span>
             {bonus > 0 && (
@@ -301,7 +298,7 @@ export function OfferCard({
         {/* Блок 4: ціна + купити */}
         <div className="flex flex-col items-center justify-center gap-3 shrink-0" style={{ width: 200 }}>
           <div className="flex flex-col items-center gap-1">
-            <div className="text-2xl text-zinc-900" style={{ fontFamily: 'var(--font-roboto)' }}>
+            <div className="text-2xl text-zinc-900 tabular-nums">
               {formatPrice(totalPrice)}
             </div>
             {bonus > 0 && (
