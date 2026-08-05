@@ -8,7 +8,6 @@ import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { OtpModal } from "@/components/insurance/OtpModal";
 import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
-import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatCompanyName } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
@@ -137,7 +136,6 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
   const o = ctx.offer;
   const publicName = o.company?.publicName || o.company?.name || "";
-  const logo = companyLogo(publicName) || o.company?.logo || null;
 
   const buildOrder = (): Record<string, unknown> => {
     const cityName = selectedCity?.name_full_name_ua || selectedCity?.name_ua || "";
@@ -262,10 +260,6 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-3">
-          {logo && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt={publicName} className="h-9 w-9 shrink-0 object-contain" />
-          )}
           <div>
             <h2 className="text-lg font-bold leading-tight text-zinc-900">Оформлення туристичного</h2>
             <p className="text-sm text-zinc-500">
@@ -348,8 +342,8 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
             <div className="relative sm:col-span-2" ref={cityRef}>
               <label className="mb-1.5 block text-xs font-medium text-zinc-500">Місто</label>
               <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
-                onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }} className={inputCls} />
-              {selectedCity && <p className="mt-1 text-xs font-medium text-emerald-600">✓ {selectedCity.name_full_name_ua || selectedCity.name_ua}</p>}
+                onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
+                className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
                 <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                   {cityResults.map((ci) => (

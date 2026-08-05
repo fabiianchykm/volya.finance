@@ -320,8 +320,8 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
             <div className="relative sm:col-span-2" ref={cityRef}>
               <label className="mb-1.5 block text-xs font-medium text-zinc-500">Місто</label>
               <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
-                onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }} className={inputCls} />
-              {selectedCity && <p className="mt-1 text-xs font-medium text-emerald-600">{selectedCity.name_full_name_ua || selectedCity.name_ua}</p>}
+                onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
+                className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
                 <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                   {cityResults.map((ci) => (

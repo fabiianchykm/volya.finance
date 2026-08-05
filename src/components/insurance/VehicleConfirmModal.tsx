@@ -158,13 +158,9 @@ export function VehicleConfirmModal({
         onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
         placeholder="Введіть місто..."
         spellCheck={false}
-        className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400"
+        className={`h-10 w-full rounded-xl border bg-white px-3 text-sm text-zinc-900 outline-none transition-colors ${selectedCity ? "border-emerald-400 bg-emerald-50/40" : "border-zinc-200 focus:border-indigo-400"}`}
       />
-      {selectedCity ? (
-        <p className="mt-1 text-xs text-emerald-600 font-medium">
-          {(selectedCity.name_full_name_ua || selectedCity.name_ua).replace(/\s*\(зона\s*\d+\)\s*$/i, "")}
-        </p>
-      ) : (
+      {!selectedCity && (
         <p className="mt-1 text-xs text-amber-600 font-medium">
           Оберіть місто реєстрації зі списку
         </p>

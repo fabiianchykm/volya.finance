@@ -752,14 +752,11 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                 className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors ${
                   cityError
                     ? "border-red-400 focus:border-red-500 focus:ring-red-500"
-                    : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500"
+                    : selectedCity
+                      ? "border-emerald-400 bg-emerald-50/40 focus:border-emerald-500 focus:ring-emerald-500"
+                      : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500"
                 }`}
               />
-              {selectedCity && (
-                <p className="mt-1 text-xs font-medium text-emerald-600">
-                  {(selectedCity.name_full_name_ua || selectedCity.name_ua).replace(/\s*\(зона\s*\d+\)\s*$/i, "")}
-                </p>
-              )}
               {cityError && !selectedCity && (
                 <p className="mt-1 text-xs font-medium text-red-500">Оберіть місто зі списку</p>
               )}
