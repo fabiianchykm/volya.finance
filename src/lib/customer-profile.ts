@@ -17,6 +17,10 @@ export interface CustomerProfile {
   surname: string;
   name: string;
   patronymic: string;
+  /** Латиницею (як у закордонному паспорті) — для Зеленої карти / Тварин. Опційні,
+   *  бо ОСЦПВ їх не має. */
+  surnameLat?: string;
+  nameLat?: string;
   phone: string;            // 9 цифр без +380
   email: string;
   identificationCode: string;
@@ -60,7 +64,9 @@ export function saveProfile(p: Omit<CustomerProfile, "savedAt">): void {
   if (!email) return;
   try {
     const map = readMap();
-    map[email] = { ...p, email, savedAt: Date.now() };
+    // Мерджимо з наявним профілем, щоб продукт без якогось поля (напр. ОСЦПВ не має
+    // латинських ПІБ) не затирав раніше збережені значення.
+    map[email] = { ...map[email], ...p, email, savedAt: Date.now() };
 
     // Тримаємо не більше MAX найсвіжіших профілів.
     const entries = Object.entries(map).sort((a, b) => b[1].savedAt - a[1].savedAt);

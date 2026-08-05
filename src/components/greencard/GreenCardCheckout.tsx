@@ -102,6 +102,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     setF((s) => ({
       ...s,
       surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
+      surnameLat: p.surnameLat || s.surnameLat, nameLat: p.nameLat || s.nameLat,
       phone: p.phone, email: p.email,
       identificationCode: p.identificationCode,
       dateBirth: p.dateBirth,
@@ -196,6 +197,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     // дані вціліють, навіть якщо клієнт не завершить оформлення.
     saveProfile({
       surname: f.surnameUa, name: f.nameUa, patronymic: f.patronymicUa,
+      surnameLat: f.surnameLat, nameLat: f.nameLat,
       phone: f.phone, email: f.email,
       identificationCode: f.identificationCode,
       dateBirth: f.dateBirth,
