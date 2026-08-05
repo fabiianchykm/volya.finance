@@ -373,7 +373,7 @@ export function CheckoutClient() {
 
       <OtpModal
         open={step === "otp"}
-        onClose={() => {}} // Block closing
+        onClose={() => setStep("vehicle")}
         onConfirm={handleOtpConfirm}
         onResend={async () => {
           if (orderId) await fetch("/api/insurance/otp", {
@@ -390,7 +390,7 @@ export function CheckoutClient() {
       {orderId && (
         <PaymentModal
           open={step === "payment"}
-          onClose={() => {}} // Block closing
+          onClose={() => setStep("vehicle")}
           orderId={orderId}
           amount={
             offer.price +

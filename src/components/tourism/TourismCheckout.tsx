@@ -348,7 +348,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
       <OtpModal
         open={step === "otp"}
-        onClose={() => {}}
+        onClose={() => setStep("form")}
         onConfirm={handleOtpConfirm}
         onResend={async () => { if (orderId) await fetch("/api/insurance/otp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "send", orderId }) }); }}
         email={c.email}
@@ -359,7 +359,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       {orderId && savedOrder && (
         <PaymentModal
           open={step === "payment"}
-          onClose={() => {}}
+          onClose={() => setStep("form")}
           orderId={orderId}
           amount={o.price}
           confirmEndpoint="/api/tourism/order"

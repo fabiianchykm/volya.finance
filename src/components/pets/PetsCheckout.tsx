@@ -343,7 +343,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
 
       <OtpModal
         open={step === "otp"}
-        onClose={() => {}}
+        onClose={() => setStep("form")}
         onConfirm={handleOtpConfirm}
         onResend={async () => { if (orderId) await fetch("/api/insurance/otp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "send", orderId }) }); }}
         email={f.email}
@@ -354,7 +354,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       {orderId && savedOrder && (
         <PaymentModal
           open={step === "payment"}
-          onClose={() => {}}
+          onClose={() => setStep("form")}
           orderId={orderId}
           amount={ctx.offer.price}
           confirmEndpoint="/api/pets/order"
