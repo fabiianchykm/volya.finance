@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +28,10 @@ const navLinks = [...AUTO_LINKS, ...OTHER_LINKS];
 export function Navbar({ solid = false }: { solid?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Дропдаун «Автострахування» — керований (клік/тап + hover), бо на планшетах
+  // немає hover і суто CSS group-hover не спрацьовував.
+  const [autoOpen, setAutoOpen] = useState(false);
+  const autoRef = useRef<HTMLLIElement>(null);
   const { data: session, status } = useSession();
   const { open: openLogin } = useLogin();
 
@@ -37,6 +41,16 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Закриваємо дропдаун по кліку поза ним та по Escape.
+  useEffect(() => {
+    if (!autoOpen) return;
+    const onDown = (e: MouseEvent) => { if (autoRef.current && !autoRef.current.contains(e.target as Node)) setAutoOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setAutoOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [autoOpen]);
 
   const isLoading = status === "loading";
   // «Непрозорий» (світлий) стиль навбара: при скролі АБО коли під ним світлий фон
@@ -67,27 +81,40 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         </Link>
 
         <ul className="hidden items-center gap-0.5 md:flex">
-          {/* Дропдаун «Автострахування» */}
-          <li className="group relative">
+          {/* Дропдаун «Автострахування» — керований клік/тап + hover */}
+          <li
+            className="relative"
+            ref={autoRef}
+            onMouseEnter={() => setAutoOpen(true)}
+            onMouseLeave={() => setAutoOpen(false)}
+          >
             <button
               type="button"
+              onClick={() => setAutoOpen((o) => !o)}
+              aria-expanded={autoOpen}
               className={cn(
                 "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
                 opaque
-                  ? "text-zinc-700 group-hover:bg-indigo-50 group-hover:text-indigo-700"
-                  : "text-white/80 group-hover:bg-white/10 group-hover:text-white"
+                  ? cn("text-zinc-700", autoOpen && "bg-indigo-50 text-indigo-700", "hover:bg-indigo-50 hover:text-indigo-700")
+                  : cn("text-white/80", autoOpen && "bg-white/10 text-white", "hover:bg-white/10 hover:text-white")
               )}
             >
               Автострахування
-              <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
+              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", autoOpen && "rotate-180")} />
             </button>
             {/* pt-3 — місток, щоб курсор не «зривався» між кнопкою і панеллю */}
-            <div className="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 translate-y-1 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+            <div
+              className={cn(
+                "absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-200",
+                autoOpen ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"
+              )}
+            >
               <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03]">
                 {AUTO_LINKS.map(({ href, label, icon: Icon, desc }) => (
                   <Link
                     key={href}
                     href={href}
+                    onClick={() => setAutoOpen(false)}
                     className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover/item:bg-indigo-600 group-hover/item:text-white">
