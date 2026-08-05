@@ -17,10 +17,15 @@ export interface CustomerProfile {
   surname: string;
   name: string;
   patronymic: string;
-  /** Латиницею (як у закордонному паспорті) — для Зеленої карти / Тварин. Опційні,
-   *  бо ОСЦПВ їх не має. */
+  /** Латиницею (як у закордонному паспорті) — для Зеленої карти / Тварин / туристичного. */
   surnameLat?: string;
   nameLat?: string;
+  /** Закордонний паспорт (для туристичного). */
+  passportSerial?: string;
+  passportNumber?: string;
+  passportDate?: string;     // видачі, "дд.мм.рррр"
+  passportEndDate?: string;  // дійсний до
+  passportIssuedBy?: string;
   phone: string;            // 9 цифр без +380
   email: string;
   identificationCode: string;
@@ -58,15 +63,43 @@ function normEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/** Зберегти профіль під email. Обрізає найстаріші записи, якщо їх забагато. */
-export function saveProfile(p: Omit<CustomerProfile, "savedAt">): void {
+/** Зберегти профіль під email (частковий — кожен продукт пише лише свої поля).
+ *  Мерджимо з наявним записом, щоб продукт без якогось поля (напр. ОСЦПВ не має
+ *  латиниці/паспорта, туристичне — укр. ПІБ/ІПН) не затирав раніше збережене. */
+export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { email: string }): void {
   const email = normEmail(p.email);
   if (!email) return;
   try {
     const map = readMap();
-    // Мерджимо з наявним профілем, щоб продукт без якогось поля (напр. ОСЦПВ не має
-    // латинських ПІБ) не затирав раніше збережені значення.
-    map[email] = { ...map[email], ...p, email, savedAt: Date.now() };
+    const prev = map[email] ?? ({} as CustomerProfile);
+    // Явна нормалізація: обовʼязкові рядкові поля не мають бути undefined,
+    // інакше інпути стають uncontrolled. Опційні (латиниця/паспорт) лишаємо як є.
+    map[email] = {
+      surname: p.surname ?? prev.surname ?? "",
+      name: p.name ?? prev.name ?? "",
+      patronymic: p.patronymic ?? prev.patronymic ?? "",
+      surnameLat: p.surnameLat ?? prev.surnameLat,
+      nameLat: p.nameLat ?? prev.nameLat,
+      phone: p.phone ?? prev.phone ?? "",
+      email,
+      identificationCode: p.identificationCode ?? prev.identificationCode ?? "",
+      dateBirth: p.dateBirth ?? prev.dateBirth ?? "",
+      street: p.street ?? prev.street ?? "",
+      house: p.house ?? prev.house ?? "",
+      docType: p.docType ?? prev.docType ?? 3,
+      docSerial: p.docSerial ?? prev.docSerial ?? "",
+      docNumber: p.docNumber ?? prev.docNumber ?? "",
+      docIssuedBy: p.docIssuedBy ?? prev.docIssuedBy ?? "",
+      docDate: p.docDate ?? prev.docDate ?? "",
+      city: p.city ?? prev.city ?? null,
+      cityQuery: p.cityQuery ?? prev.cityQuery ?? "",
+      passportSerial: p.passportSerial ?? prev.passportSerial,
+      passportNumber: p.passportNumber ?? prev.passportNumber,
+      passportDate: p.passportDate ?? prev.passportDate,
+      passportEndDate: p.passportEndDate ?? prev.passportEndDate,
+      passportIssuedBy: p.passportIssuedBy ?? prev.passportIssuedBy,
+      savedAt: Date.now(),
+    };
 
     // Тримаємо не більше MAX найсвіжіших профілів.
     const entries = Object.entries(map).sort((a, b) => b[1].savedAt - a[1].savedAt);

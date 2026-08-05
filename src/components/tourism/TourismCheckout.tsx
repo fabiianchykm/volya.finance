@@ -12,7 +12,7 @@ import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatCompanyName } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
-import { loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
 
 // Анкета оформлення туристичного (аналог ЗК): дані страхувальника + туристів →
 // declare (order/create save) → OTP → оплата → confirm (nextFinal) → поліс.
@@ -90,9 +90,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     return () => clearTimeout(t);
   }, [cityQuery, selectedCity]);
 
-  // Автопідстановка збереженого профілю (контакт/документ/адреса/місто). Імена туристів
-  // тут лише латиницею й індивідуальні — їх не чіпаємо. Профіль звідси НЕ зберігаємо,
-  // щоб не засмічувати спільний профіль латинськими даними. docType звужуємо до 1|3.
+  // Автопідстановка збереженого профілю: контакт/документ/адреса/місто + латинські ПІБ
+  // і закордонний паспорт туриста №1 (страхувальника). Зберігаємо частково (без укр. ПІБ),
+  // тож спільний профіль не засмічується. docType звужуємо до 1|3.
   const applyProfile = (p: CustomerProfile) => {
     setC((s) => ({
       ...s,
@@ -101,6 +101,17 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       docSerial: p.docSerial, docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
       street: p.street, house: p.house,
     }));
+    // Турист №1 (страхувальник) — латинські ПІБ і закордонний паспорт зі збереженого профілю.
+    setTourists((arr) => arr.map((t, idx) => idx === 0 ? {
+      ...t,
+      surnameLat: p.surnameLat || t.surnameLat,
+      nameLat: p.nameLat || t.nameLat,
+      passportSerial: p.passportSerial || t.passportSerial,
+      passportNumber: p.passportNumber || t.passportNumber,
+      passportDate: p.passportDate || t.passportDate,
+      passportEndDate: p.passportEndDate || t.passportEndDate,
+      passportIssuedBy: p.passportIssuedBy || t.passportIssuedBy,
+    } : t));
     if (p.city) {
       setSelectedCity(p.city);
       setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
@@ -182,6 +193,18 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     if (!parseUaDate(c.docDate)) { setError("Вкажіть дату видачі документа"); return; }
     setLoading(true);
     setError(null);
+    // Зберігаємо профіль (контакт/документ/адреса/місто + латиниця й закордонний паспорт
+    // страхувальника) для автозаповнення наступного разу. Укр. ПІБ тут немає — мердж їх збереже.
+    const main = tourists[0];
+    saveProfile({
+      email: c.email, phone: c.phone,
+      docType: c.docType, docSerial: c.docSerial, docNumber: c.docNumber, docIssuedBy: c.docIssuedBy, docDate: c.docDate,
+      street: c.street, house: c.house,
+      city: selectedCity, cityQuery,
+      surnameLat: main.surnameLat, nameLat: main.nameLat,
+      passportSerial: main.passportSerial, passportNumber: main.passportNumber,
+      passportDate: main.passportDate, passportEndDate: main.passportEndDate, passportIssuedBy: main.passportIssuedBy,
+    });
     try {
       const order = buildOrder();
       setSavedOrder(order);

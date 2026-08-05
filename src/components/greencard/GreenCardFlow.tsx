@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, ArrowRight, Search, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
@@ -217,8 +217,11 @@ export function GreenCardFlow() {
                   </div>
                 </div>
                 {error && <p className="text-sm font-medium text-rose-200">{error}</p>}
-                <Button type="submit" size="xl" loading={loading} className="rounded-2xl bg-white px-10 font-bold text-indigo-700 hover:bg-indigo-50">
-                  <span className="flex items-center gap-2"><Search className="h-5 w-5" /> Розрахувати вартість</span>
+                <Button type="submit" size="xl" loading={loading} className="group rounded-2xl bg-white px-10 font-bold text-indigo-700 hover:bg-indigo-50">
+                  <span className="flex items-center gap-2.5">
+                    Розрахувати вартість
+                    <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
+                  </span>
                 </Button>
               </form>
             )}
