@@ -32,8 +32,10 @@ const ZONES = [
   { id: 199, name: "Чехія", label: "Чехія" },
 ];
 
+// Той самий вигляд, що й тригер DateRangeInput (щоб «Куди прямуєте?» і «Дати поїздки»
+// виглядали стандартно: однакові рамка, паддінги й фокус із ring).
 const selectClass =
-  "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
+  "h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
 
 export function TourismFlow() {
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
