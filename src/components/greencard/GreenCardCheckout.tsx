@@ -40,10 +40,17 @@ function formatUaPhone(digits: string): string {
 }
 
 // "ДД.ММ.РРРР" → "Д-М-РРРР" (формат startDate для order/create).
+// startDate для order/create — формат d-m-Y із нулями ("10-07-2026"), як у схемі.
 function toDMY(ua: string): string {
   const d = parseUaDate(ua);
   if (!d) return "";
-  return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+}
+
+// dateBirth / dateOfIssue — дати-рядки "YYYY-MM-DD" (за OpenAPI-схемою, НЕ unix).
+function toISODate(d: Date | null): string | null {
+  if (!d) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBack: () => void }) {
@@ -92,19 +99,19 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     const dob = parseUaDate(f.dateBirth);
     const docDate = parseUaDate(f.docDate);
     const cityName = selectedCity?.name_full_name_ua || selectedCity?.name_ua || "";
+    // Місто реєстрації — за схемою carInfo.city це ОБ'ЄКТ {id,name,name_full_name_ua},
+    // а не рядок (інакше Laravel обнуляє поле і падає "array offset on value of type null").
+    const cityObj = {
+      id: selectedCity?.id ?? 1,
+      name: selectedCity?.name_ua ?? cityName,
+      name_full_name_ua: cityName || (selectedCity?.name_ua ?? ""),
+    };
     return {
       action: "declare",
-      // Повертаємо ПОВНИЙ офер із калькулятора (як у туристичному): їхній
-      // OrderGreenCardRequest читає вкладені поля офера (company/moduleId/…),
-      // а на неповному offerInfo падає "array offset on value of type null".
-      offerInfo: {
-        ...ctx.offer,
-        offerId: ctx.offer.offerId,
-        price: ctx.offer.price,
-        company: { ...(ctx.offer.company ?? {}), Id: ctx.offer.company?.ex_id ?? ctx.offer.company?.id ?? ctx.offer.companyId },
-      },
+      // За схемою достатньо offerId — решту (тариф/компанія/модуль) бекенд бере з бази.
+      offerInfo: { offerId: ctx.offer.offerId },
       price: ctx.offer.price,
-      startDate: toDMY(ctx.startDate),
+      startDate: toDMY(ctx.startDate),          // d-m-Y
       periodOptionId: ctx.periodOption,
       userTypeId: 1,
       carTypeExternalId: ctx.carType,
@@ -112,27 +119,27 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       info: {
         surname: f.surnameLat, name: f.nameLat,
         surname_ua: f.surnameUa, name_ua: f.nameUa, patronymic_ua: f.patronymicUa,
-        dateBirth: dob ? Math.floor(dob.getTime() / 1000) : null,
+        dateBirth: toISODate(dob),              // YYYY-MM-DD
         phone: `+380${f.phone.replace(/\D/g, "")}`,
         mail: f.email,
         identificationCode: f.identificationCode,
-        withoutIdentificationCode: f.identificationCode ? 0 : 1,
-        region: cityName, city: cityName, cityId: selectedCity?.id ?? null,
+        withoutIdentificationCode: !f.identificationCode,   // boolean
+        region: cityName, city: cityName, cityId: selectedCity?.id ?? 1,
         street: f.street, house: f.house, apartment: f.apartment,
         documentation: {
           type: f.docType, serial: f.docSerial, number: f.docNumber,
           issuedBy: f.docIssuedBy,
-          dateOfIssue: docDate ? Math.floor(docDate.getTime() / 1000) : null,
+          dateOfIssue: toISODate(docDate),      // YYYY-MM-DD
           endDateOfIssue: null,
         },
       },
       carInfo: {
         brand: f.brand, model: f.model, number: f.number.replace(/\s/g, ""),
-        vin: f.vin || "0", withoutVin: f.vin ? 0 : 1, year: Number(f.year) || null,
+        vin: f.vin || "0", withoutVin: !f.vin, year: f.year || null,   // year — рядок
         autoCategory: ctx.carType,
         ownWeight: Number(f.ownWeight) || null, totalWeight: Number(f.totalWeight) || null,
         nSeating: Number(f.nSeating) || null, engineSize: Number(f.engineSize) || null,
-        city: cityName,
+        city: cityObj,                          // об'єкт, НЕ рядок
       },
     };
   };
