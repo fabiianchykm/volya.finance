@@ -5,6 +5,25 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Mail } from "lucide-react";
 
+// Код приходить латиницею, але клієнт із кириличною розкладкою може ввести
+// візуально ІДЕНТИЧНІ кириличні літери (с, а, о, р, х, е…). Конвертуємо такі
+// гомогліфи в латиницю, тоді лишаємо лише [A-Z0-9]. Так «С» (кир.) стане «C» (лат.).
+const CYR_TO_LAT: Record<string, string> = {
+  А: "A", а: "A", В: "B", в: "B", Е: "E", е: "E", Ѕ: "S", ѕ: "S",
+  К: "K", к: "K", М: "M", м: "M", Н: "H", н: "H", О: "O", о: "O",
+  Р: "P", р: "P", С: "C", с: "C", Т: "T", т: "T", У: "Y", у: "Y",
+  Х: "X", х: "X", І: "I", і: "I", Ї: "I", ї: "I", Ј: "J", ј: "J",
+};
+
+function normalizeOtp(raw: string): string {
+  return raw
+    .split("")
+    .map((ch) => CYR_TO_LAT[ch] ?? ch)
+    .join("")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
 interface OtpModalProps {
   open: boolean;
   onClose: () => void;
@@ -28,7 +47,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
   }, [open]);
 
   const handleChange = (i: number, val: string) => {
-    const digit = val.replace(/[^a-zA-Z0-9а-яА-ЯіІєЄїЇ]/g, "").slice(-1).toUpperCase();
+    const digit = normalizeOtp(val).slice(-1);
     const next = [...digits];
     next[i] = digit;
     setDigits(next);
@@ -52,7 +71,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    const text = e.clipboardData.getData("text").replace(/[^a-zA-Z0-9а-яА-ЯіІєЄїЇ]/g, "").slice(0, 6).toUpperCase();
+    const text = normalizeOtp(e.clipboardData.getData("text")).slice(0, 6);
     if (text.length === 6) {
       const next = text.split("");
       setDigits(next);
