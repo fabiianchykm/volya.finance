@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, ArrowDownWideNarrow, ArrowUpWideNarrow, Home, ChevronRight } from "lucide-react";
+import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, ArrowDownWideNarrow, ArrowUpWideNarrow, Home, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -165,9 +165,12 @@ export function TourismFlow() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
-                  <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={selectClass}>
-                    {ZONES.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
-                  </select>
+                  <div className="relative">
+                    <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={`${selectClass} cursor-pointer appearance-none pr-10`}>
+                      {ZONES.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки{days > 0 && <span className="text-zinc-400">· {days} дн.</span>}</label>
@@ -191,13 +194,14 @@ export function TourismFlow() {
                       )}
                     </div>
                   ))}
+                  {/* Кнопка «Додати туриста» — збоку в сітці, як окрема комірка, а не знизу */}
+                  {birthDates.length < 6 && (
+                    <button type="button" onClick={addTourist}
+                      className="flex h-11 items-center justify-center gap-1.5 self-end rounded-xl border border-dashed border-zinc-300 px-4 text-sm font-medium text-indigo-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50">
+                      <Plus className="h-4 w-4" /> Додати туриста
+                    </button>
+                  )}
                 </div>
-                {birthDates.length < 6 && (
-                  <button type="button" onClick={addTourist}
-                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-300 py-2.5 text-sm font-medium text-indigo-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50 sm:w-auto sm:px-5">
-                    <Plus className="h-4 w-4" /> Додати туриста
-                  </button>
-                )}
               </div>
 
               <label className="mt-5 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-indigo-200">
