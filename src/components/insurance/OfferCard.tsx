@@ -44,9 +44,10 @@ function transliterate(text: string) {
     .replace(/^-|-$/g, '');
 }
 
-function CompanyLogo({ cleanName }: { company: InsuranceCompany; cleanName: string }) {
+function CompanyLogo({ company, cleanName }: { company: InsuranceCompany; cleanName: string }) {
   const [failed, setFailed] = useState(false);
-  const src = logoSrc(transliterate(cleanName));
+  // Локальний SVG за назвою → фолбек на лого з API (company.logo) → ініціали.
+  const src = logoSrc(transliterate(cleanName)) || company.logo || null;
 
   if (!src || failed) {
     return <span className="text-sm font-bold text-zinc-400">{cleanName.slice(0, 2).toUpperCase()}</span>;

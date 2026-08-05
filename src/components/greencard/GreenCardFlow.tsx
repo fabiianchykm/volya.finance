@@ -380,7 +380,7 @@ function toInsuranceOffer(o: GreenCardOffer): InsuranceOffer {
   return {
     offerId: o.offerId,
     price: o.price,
-    company: { publicName: o.companyNamePublic || o.companyName },
+    company: { publicName: o.companyNamePublic || o.companyName, logo: o.company?.logo ?? null },
     listDgo: [],
     listAutolawyer: [],
   } as unknown as InsuranceOffer;
