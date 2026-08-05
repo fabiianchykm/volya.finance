@@ -132,6 +132,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
                     placeholder="AA 1234 BB"
                     maxLength={11}
                     autoComplete="off"
+                    spellCheck={false}
                     className="w-[215px] sm:w-[255px] bg-transparent text-2xl sm:text-3xl font-bold uppercase tracking-[0.2em] sm:tracking-[0.25em] text-zinc-900 placeholder:text-zinc-300 outline-none"
                     style={{ fontFamily: "monospace" }}
                     required

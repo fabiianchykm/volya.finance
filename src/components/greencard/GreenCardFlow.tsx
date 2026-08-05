@@ -210,7 +210,7 @@ export function GreenCardFlow() {
                         if (raw.length > 6) ff = raw.slice(0, 2) + " " + raw.slice(2, 6) + " " + raw.slice(6);
                         setPlate(ff);
                       }}
-                      placeholder="AA 1234 BB" maxLength={11} autoComplete="off"
+                      placeholder="AA 1234 BB" maxLength={11} autoComplete="off" spellCheck={false}
                       className="w-[210px] bg-transparent text-2xl font-bold uppercase tracking-[0.2em] text-zinc-900 placeholder:text-zinc-300 outline-none sm:w-[250px] sm:text-3xl"
                       style={{ fontFamily: "monospace" }} required
                     />

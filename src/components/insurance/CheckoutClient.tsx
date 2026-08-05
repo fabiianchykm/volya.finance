@@ -740,6 +740,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
               <label className="mb-1.5 block text-sm font-medium text-zinc-700">Місто</label>
               <input
                 type="text"
+                spellCheck={false}
                 value={cityQuery}
                 onChange={(e) => {
                   setCityQuery(e.target.value);

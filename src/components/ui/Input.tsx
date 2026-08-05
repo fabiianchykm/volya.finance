@@ -39,6 +39,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
+            // Форми (номери, VIN, коди, ПІБ) не потребують перевірки орфографії —
+            // прибираємо червоне підкреслення. За потреби перекривається через props.
+            spellCheck={false}
             className={cn(
               "h-11 w-full bg-transparent px-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none",
               prefix && "pl-2",

@@ -157,6 +157,7 @@ export function VehicleConfirmModal({
         value={cityQuery}
         onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
         placeholder="Введіть місто..."
+        spellCheck={false}
         className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400"
       />
       {selectedCity ? (
