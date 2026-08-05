@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Users, ArrowRight, Minus, Plus, ArrowDownWideNarrow, ArrowUpWideNarrow, Home, ChevronRight } from "lucide-react";
+import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, ArrowDownWideNarrow, ArrowUpWideNarrow, Home, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -55,11 +55,8 @@ export function TourismFlow() {
   maxStart.setFullYear(maxStart.getFullYear() + 1);
 
   const setBirth = (i: number, v: string) => setBirthDates((arr) => arr.map((b, idx) => (idx === i ? v : b)));
-  const setTourists = (n: number) => setBirthDates((arr) => {
-    const next = arr.slice(0, n);
-    while (next.length < n) next.push("");
-    return next;
-  });
+  const addTourist = () => setBirthDates((arr) => (arr.length < 6 ? [...arr, ""] : arr));
+  const removeTourist = (i: number) => setBirthDates((arr) => (arr.length > 1 ? arr.filter((_, idx) => idx !== i) : arr));
 
   const startD = parseUaDate(startDate);
   const endD = parseUaDate(endDate);
@@ -179,27 +176,28 @@ export function TourismFlow() {
               </div>
 
               <div className="mt-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Users className="h-3.5 w-3.5" /> Туристи</label>
-                  <div className="flex items-center gap-2">
-                    <button type="button" aria-label="Менше туристів" disabled={birthDates.length <= 1}
-                      onClick={() => setTourists(Math.max(1, birthDates.length - 1))}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40">
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-6 text-center text-sm font-semibold text-zinc-900">{birthDates.length}</span>
-                    <button type="button" aria-label="Більше туристів" disabled={birthDates.length >= 6}
-                      onClick={() => setTourists(Math.min(6, birthDates.length + 1))}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-40">
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Users className="h-3.5 w-3.5" /> Туристи</label>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {birthDates.map((b, i) => (
-                    <DateInput key={i} label={birthDates.length > 1 ? `Дата народження · турист ${i + 1}` : "Дата народження"} value={b} onChange={(v) => setBirth(i, v)} defaultYear={1990} required />
+                    <div key={i} className="flex items-end gap-2">
+                      <div className="min-w-0 flex-1">
+                        <DateInput label={birthDates.length > 1 ? `Дата народження · турист ${i + 1}` : "Дата народження"} value={b} onChange={(v) => setBirth(i, v)} defaultYear={1990} required />
+                      </div>
+                      {birthDates.length > 1 && (
+                        <button type="button" aria-label={`Прибрати туриста ${i + 1}`} onClick={() => removeTourist(i)}
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-zinc-400 transition-colors hover:border-rose-300 hover:text-rose-500">
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
+                {birthDates.length < 6 && (
+                  <button type="button" onClick={addTourist}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-300 py-2.5 text-sm font-medium text-indigo-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50 sm:w-auto sm:px-5">
+                    <Plus className="h-4 w-4" /> Додати туриста
+                  </button>
+                )}
               </div>
 
               <label className="mt-5 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-indigo-200">
