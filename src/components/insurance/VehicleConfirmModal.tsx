@@ -43,6 +43,12 @@ const categoryLabels: Record<string, string> = {
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 40 }, (_, i) => currentYear - i);
 
+// Авто «знайдене» лише коли реєстр повернув ключові поля для розрахунку ОСЦПВ.
+// Без них (порожня марка, year=0, порожня категорія) показувати «підтвердження» не можна.
+function isVehicleComplete(v: VehicleData | null): boolean {
+  return !!(v && v.mark && v.year && v.autoCategory);
+}
+
 export function VehicleConfirmModal({
   open,
   onClose,
@@ -86,13 +92,16 @@ export function VehicleConfirmModal({
   if (open && !wasOpen) {
     setWasOpen(true);
     setPeriod(periodId ?? 12);
-    // editMode → одразу форма редагування; інакше форма лише якщо авто не знайдено.
-    setManualMode(!vehicle || !!lookupError || !!editMode);
+    // Авто вважаємо «знайденим» лише якщо реєстр повернув КЛЮЧОВІ поля (марка, рік,
+    // категорія). Порожні/нульові дані (year=0, категорія «») → одразу форма ручного
+    // вводу, а не екран підтвердження з "‚ 0".
+    const complete = isVehicleComplete(vehicle);
+    setManualMode(!complete || !!lookupError || !!editMode);
     setForm({
       mark: vehicle?.mark ?? "",
       model: vehicle?.model ?? "",
       year: vehicle?.year ? String(vehicle.year) : String(currentYear - 5),
-      autoCategory: vehicle?.autoCategory ?? "B1",
+      autoCategory: vehicle?.autoCategory || "B1",
       vin: vehicle?.vin ?? "",
     });
     if (vehicle?.cityId) {
@@ -131,7 +140,10 @@ export function VehicleConfirmModal({
     onConfirm(manualVehicle, period);
   };
 
-  const isFound = vehicle && !manualMode;
+  const vehicleComplete = isVehicleComplete(vehicle);
+  const isFound = vehicleComplete && !manualMode;
+  // Ручний ввід через невдалий/неповний авто-пошук (а не через кнопку «Дані невірні?»).
+  const manualDueToLookup = manualMode && !editMode && !vehicleComplete;
 
   // Єдине поле вибору міста реєстрації — використовується і в авто-, і в ручному
   // режимі. Засіяне з реєстру, якщо той повернув місто; інакше користувач обирає сам.
@@ -177,22 +189,22 @@ export function VehicleConfirmModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={manualMode ? (vehicle ? "Змінити дані авто" : "Введіть дані авто вручну") : undefined}
+      title={manualMode ? (vehicleComplete ? "Змінити дані авто" : "Введіть дані авто вручну") : undefined}
       size="md"
       className={isFound ? "bg-emerald-50 border border-emerald-100" : ""}
     >
       <div className="space-y-4">
 
-        {/* Auto-lookup failed notice */}
-        {(lookupError || (!vehicle && !manualMode)) && (
+        {/* Авто не знайдено / реєстр повернув неповні дані → підказка ручного вводу */}
+        {manualDueToLookup && (
           <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <div>
               <p className="text-sm font-medium text-amber-800">
-                Авто не знайдено автоматично
+                Авто не знайдено в реєстрі
               </p>
               <p className="mt-0.5 text-xs text-amber-700">
-                Введіть дані вручну — це займе 30 секунд
+                Перевірте номер або введіть дані вручну — це займе 30 секунд
               </p>
             </div>
           </div>
@@ -333,7 +345,7 @@ export function VehicleConfirmModal({
             {/* Пошук міста реєстрації */}
             {cityField}
 
-            {vehicle && !editMode && (
+            {vehicleComplete && !editMode && (
               <button
                 onClick={() => setManualMode(false)}
                 className="text-xs text-indigo-600 hover:underline"
