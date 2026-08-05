@@ -42,11 +42,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: hit.data, cached: true });
     }
 
-    const data = await ukaskoService.getOffers(params);
-    offersCache.set(cacheKey, { data, expires: now + OFFERS_CACHE_TTL_MS });
-    // Періодичне прибирання протухлих записів, щоб мапа не росла безмежно.
-    if (offersCache.size > 200) {
-      for (const [k, v] of offersCache) if (v.expires <= now) offersCache.delete(k);
+    const offerCount = (d: unknown) => {
+      const arr = (d as { data?: unknown })?.data;
+      return Array.isArray(arr) ? arr.length : 0;
+    };
+
+    let data = await ukaskoService.getOffers(params);
+    // Порожній 200 — зазвичай інтермітентний збій Ukasko (один страховик валить
+    // усю видачу). Одна повторна спроба перед тим, як показати «нічого не знайдено».
+    if (offerCount(data) === 0) {
+      const retry = await ukaskoService.getOffers(params);
+      if (offerCount(retry) > 0) data = retry;
+    }
+
+    // Кешуємо ЛИШЕ непорожній результат — щоб порожня видача під час збою не
+    // «застрягала» в кеші на 3 хв і не блокувала повторні спроби.
+    if (offerCount(data) > 0) {
+      offersCache.set(cacheKey, { data, expires: now + OFFERS_CACHE_TTL_MS });
+      if (offersCache.size > 200) {
+        for (const [k, v] of offersCache) if (v.expires <= now) offersCache.delete(k);
+      }
     }
 
     return NextResponse.json({ success: true, data });
