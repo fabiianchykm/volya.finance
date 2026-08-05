@@ -445,7 +445,9 @@ export class UkaskoService {
     // statusId:-1 = крок 1, ЧЕРНЕТКА (за схемою). statusId:1 (повне заявлення) тут
     // передчасно намагався видати й "забрати" договір до оплати → "Undefined index:
     // contractFile". Реальна видача — пізніше через contract/confirm після оплати.
-    const payload = { ...orderData, params: { type: "save", statusId: -1 } };
+    // Кожен модуль страховика має свої обовʼязкові поля поза базовою схемою.
+    // isDP — прапорець, який читає модуль ТАС (modules/Tas); без нього "Undefined index: isDP".
+    const payload = { ...orderData, isDP: false, params: { type: "save", statusId: -1 } };
     const raw = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/greencard/order/create`,
       payload,
