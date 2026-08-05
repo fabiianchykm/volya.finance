@@ -440,9 +440,13 @@ export class UkaskoService {
   // Заявлення «Зелена карта» (POST greencard/order/create) → orderId. Далі —
   // спільні OTP та оплата по orderId (як в ОСЦПВ), потім contract/confirm.
   async createGreenCardOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string; mtsbuLink?: string }> {
+    // params ОБОВʼЯЗКОВИЙ (як у туристичному): без нього бекенд читає params['statusId']
+    // з null і падає 500 "array offset on null" (OrderGreenCardRequest.php:283).
+    // statusId:1 = заявлення повними даними (за OpenAPI-схемою ЗК).
+    const payload = { ...orderData, params: { type: "save", statusId: 1 } };
     const raw = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/greencard/order/create`,
-      orderData,
+      payload,
       token
     )) as Record<string, unknown>;
     const msg = raw.message as string | undefined;
