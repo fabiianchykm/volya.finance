@@ -4,6 +4,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { PhoneCall, CheckCircle2, ShieldCheck, Clock, BadgePercent } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { trackEvent } from "@/lib/analytics";
 
 // Форматує введені цифри у вигляд "67 123 45 67" (без коду країни)
 function formatPhone(digits: string): string {
@@ -38,6 +39,7 @@ export function CTASection() {
       if (!res.ok || !json.success) {
         throw new Error(json.error ?? "Не вдалося надіслати заявку. Спробуйте ще раз.");
       }
+      trackEvent("generate_lead", { form: "cta", source: "home-consultant" });
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Сталася помилка. Спробуйте ще раз.");
