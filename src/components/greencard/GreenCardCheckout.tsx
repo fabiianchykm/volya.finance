@@ -94,7 +94,15 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     const cityName = selectedCity?.name_full_name_ua || selectedCity?.name_ua || "";
     return {
       action: "declare",
-      offerInfo: { offerId: ctx.offer.offerId },
+      // Повертаємо ПОВНИЙ офер із калькулятора (як у туристичному): їхній
+      // OrderGreenCardRequest читає вкладені поля офера (company/moduleId/…),
+      // а на неповному offerInfo падає "array offset on value of type null".
+      offerInfo: {
+        ...ctx.offer,
+        offerId: ctx.offer.offerId,
+        price: ctx.offer.price,
+        company: { ...(ctx.offer.company ?? {}), Id: ctx.offer.company?.ex_id ?? ctx.offer.company?.id ?? ctx.offer.companyId },
+      },
       price: ctx.offer.price,
       startDate: toDMY(ctx.startDate),
       periodOptionId: ctx.periodOption,
