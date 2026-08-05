@@ -45,6 +45,9 @@ export function TourismFlow() {
   const [endDate, setEndDate] = useState("");
   const [birthDates, setBirthDates] = useState<string[]>([""]); // по туристу
   const [multiVisa, setMultiVisa] = useState(false);
+  // Ліміт днів на поїздку для річного поліса (мультивіза) — річний поліс не має дати
+  // завершення, натомість страховику передається макс. кількість днів на одну поїздку.
+  const [tripDays, setTripDays] = useState(30);
 
   const [offers, setOffers] = useState<TourismOffer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,8 +63,12 @@ export function TourismFlow() {
 
   const startD = parseUaDate(startDate);
   const endD = parseUaDate(endDate);
-  const days = startD && endD ? daysBetween(startD, endD) : 0;
-  const valid = !!startD && !!endD && days > 0 && birthDates.every((b) => parseUaDate(b));
+  // Мультивіза: days = обраний ліміт (без дати завершення). Звичайний: з діапазону дат.
+  const days = multiVisa ? tripDays : (startD && endD ? daysBetween(startD, endD) : 0);
+  const birthOk = birthDates.every((b) => parseUaDate(b));
+  const valid = multiVisa
+    ? !!startD && days > 0 && birthOk
+    : !!startD && !!endD && days > 0 && birthOk;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,10 +179,28 @@ export function TourismFlow() {
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                   </div>
                 </div>
-                <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки{days > 0 && <span className="text-zinc-400">· {days} дн.</span>}</label>
-                  <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
-                </div>
+                {multiVisa ? (
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
+                    <DateInput value={startDate} onChange={setStartDate} minDate={today} maxDate={maxStart} />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки{days > 0 && <span className="text-zinc-400">· {days} дн.</span>}</label>
+                    <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
+                  </div>
+                )}
+                {multiVisa && (
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Днів на поїздку</label>
+                    <div className="relative">
+                      <select value={tripDays} onChange={(e) => setTripDays(Number(e.target.value))} className={`${selectClass} cursor-pointer appearance-none pr-10`}>
+                        {[30, 60, 90, 180].map((d) => <option key={d} value={d}>до {d} днів на поїздку</option>)}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-5">
