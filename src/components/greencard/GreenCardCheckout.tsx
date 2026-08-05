@@ -12,6 +12,7 @@ import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { cityShort } from "@/lib/utils";
 
 // Анкета оформлення «Зелена карта» (аналог CheckoutClient для ОСЦПВ):
 // дані страхувальника (ПІБ укр + латиниця, документ, адреса) → заявлення
@@ -112,7 +113,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     }));
     if (p.city) {
       setSelectedCity(p.city);
-      setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
+      setCityQuery(cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua));
     }
   };
 
@@ -350,8 +351,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
                 <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                   {cityResults.map((c) => (
-                    <button key={c.id} type="button" onClick={() => { setSelectedCity(c); setCityQuery(c.name_full_name_ua || c.name_ua); setCityResults([]); }}
-                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{c.name_full_name_ua || c.name_ua}</button>
+                    <button key={c.id} type="button" onClick={() => { setSelectedCity(c); setCityQuery(cityShort(c.name_full_name_ua || c.name_ua)); setCityResults([]); }}
+                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityShort(c.name_full_name_ua || c.name_ua)}</button>
                   ))}
                 </div>
               )}

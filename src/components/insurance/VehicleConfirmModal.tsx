@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { VehicleData } from "@/types/insurance";
 import { AUTO_CATEGORIES } from "@/lib/constants";
+import { cityShort } from "@/lib/utils";
 
 interface VehicleConfirmModalProps {
   open: boolean;
@@ -171,10 +172,10 @@ export function VehicleConfirmModal({
             <button
               key={city.id}
               type="button"
-              onClick={() => { setSelectedCity(city); setCityQuery(city.name_full_name_ua ?? city.name_ua); setCityResults([]); }}
+              onClick={() => { setSelectedCity(city); setCityQuery(cityShort(city.name_full_name_ua ?? city.name_ua)); setCityResults([]); }}
               className="w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
-              {city.name_full_name_ua ?? city.name_ua}
+              {cityShort(city.name_full_name_ua ?? city.name_ua)}
             </button>
           ))}
         </div>

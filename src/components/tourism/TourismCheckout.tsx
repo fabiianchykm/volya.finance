@@ -8,7 +8,7 @@ import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { OtpModal } from "@/components/insurance/OtpModal";
 import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
-import { formatPrice, formatCompanyName } from "@/lib/utils";
+import { formatPrice, formatCompanyName, cityShort } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
@@ -114,7 +114,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     } : t));
     if (p.city) {
       setSelectedCity(p.city);
-      setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
+      setCityQuery(cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua));
     }
   };
 
@@ -347,8 +347,8 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
                 <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                   {cityResults.map((ci) => (
-                    <button key={ci.id} type="button" onClick={() => { setSelectedCity(ci); setCityQuery(ci.name_full_name_ua || ci.name_ua); setCityResults([]); }}
-                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{ci.name_full_name_ua || ci.name_ua}</button>
+                    <button key={ci.id} type="button" onClick={() => { setSelectedCity(ci); setCityQuery(cityShort(ci.name_full_name_ua || ci.name_ua)); setCityResults([]); }}
+                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityShort(ci.name_full_name_ua || ci.name_ua)}</button>
                   ))}
                 </div>
               )}

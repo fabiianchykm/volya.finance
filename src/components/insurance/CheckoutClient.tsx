@@ -12,6 +12,7 @@ import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from 
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
+import { cityShort } from "@/lib/utils";
 
 // Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
 function formatUaPhone(digits: string): string {
@@ -485,7 +486,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     setDocType(p.docType);
     if (p.city) {
       setSelectedCity(p.city);
-      setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
+      setCityQuery(cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua));
     }
     setCityError(false);
     setDobError(false);
@@ -768,12 +769,12 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                       type="button"
                       onClick={() => {
                         setSelectedCity(city);
-                        setCityQuery(city.name_full_name_ua || city.name_ua);
+                        setCityQuery(cityShort(city.name_full_name_ua || city.name_ua));
                         setCityResults([]);
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
                     >
-                      {city.name_full_name_ua || city.name_ua}
+                      {cityShort(city.name_full_name_ua || city.name_ua)}
                     </button>
                   ))}
                 </div>

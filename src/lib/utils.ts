@@ -37,6 +37,13 @@ export function addDays(date: Date, days: number): Date {
   return d;
 }
 
+// Коротка назва населеного пункту для показу: лише місто, без району/області/країни.
+// "м. Львів, Львівський р-н, Львівська обл., Україна" → "м. Львів". У API далі йде
+// повна назва (беремо з об'єкта міста), це суто відображення.
+export function cityShort(name: string): string {
+  return (name || "").split(",")[0].replace(/\s*\(зона\s*\d+\)\s*$/i, "").trim();
+}
+
 export function formatCompanyName(name: string): string {
   if (!name) return "";
   
