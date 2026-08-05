@@ -192,6 +192,18 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
     if (!f.street || !f.house) { setError("Вкажіть адресу проживання"); return; }
     setError(null);
+    // Зберігаємо профіль страхувальника вже на переході до кроку авто (як в ОСЦПВ) —
+    // дані вціліють, навіть якщо клієнт не завершить оформлення.
+    saveProfile({
+      surname: f.surnameUa, name: f.nameUa, patronymic: f.patronymicUa,
+      phone: f.phone, email: f.email,
+      identificationCode: f.identificationCode,
+      dateBirth: f.dateBirth,
+      street: f.street, house: f.house,
+      docType: f.docType,
+      docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
+      city: selectedCity, cityQuery,
+    });
     setFormStep("vehicle");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -203,17 +215,6 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
     setLoading(true);
     setError(null);
-    // Зберігаємо профіль на пристрої під email — для автозаповнення наступного разу.
-    saveProfile({
-      surname: f.surnameUa, name: f.nameUa, patronymic: f.patronymicUa,
-      phone: f.phone, email: f.email,
-      identificationCode: f.identificationCode,
-      dateBirth: f.dateBirth,
-      street: f.street, house: f.house,
-      docType: f.docType,
-      docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
-      city: selectedCity, cityQuery,
-    });
     try {
       const idem = crypto.randomUUID();
       const res = await fetch("/api/greencard/order", {
