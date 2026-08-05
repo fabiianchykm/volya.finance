@@ -11,6 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice } from "@/lib/utils";
 import type { PetsOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
+import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
 
 // Анкета оформлення страхування тварин: дані улюбленця + власника → order/create
 // (statusId:5) → OTP → оплата → confirm → поліс. Дати — Unix timestamp (сек).
@@ -70,6 +71,41 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
     return () => clearTimeout(t);
   }, [cityQuery, selectedCity]);
 
+  // Автопідстановка збереженого профілю власника (як в ОСЦПВ). Оновлюємо лише поля
+  // власника — латинські ПІБ і дані тварини не чіпаємо. docType звужуємо до 1|3.
+  const applyProfile = (p: CustomerProfile) => {
+    setF((s) => ({
+      ...s,
+      surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
+      phone: p.phone, email: p.email,
+      identificationCode: p.identificationCode,
+      dateBirth: p.dateBirth,
+      docType: p.docType === 1 ? 1 : 3,
+      docSerial: p.docSerial, docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
+      street: p.street, house: p.house,
+    }));
+    if (p.city) {
+      setSelectedCity(p.city);
+      setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
+    }
+  };
+
+  const didAutofill = useRef(false);
+  useEffect(() => {
+    if (didAutofill.current) return;
+    didAutofill.current = true;
+    const last = loadLastProfile();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (last) applyProfile(last);
+  }, []);
+
+  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    setF((s) => ({ ...s, email }));
+    const saved = loadProfile(email);
+    if (saved) applyProfile(saved);
+  };
+
   const buildOrder = (): Record<string, unknown> => {
     return {
       offerId: ctx.offer.offerId,
@@ -124,6 +160,17 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
     if (!parseUaDate(f.docDate)) { setError("Вкажіть дату видачі документа"); return; }
     setLoading(true);
     setError(null);
+    // Зберігаємо профіль власника на пристрої — для автозаповнення наступного разу.
+    saveProfile({
+      surname: f.surnameUa, name: f.nameUa, patronymic: f.patronymicUa,
+      phone: f.phone, email: f.email,
+      identificationCode: f.identificationCode,
+      dateBirth: f.dateBirth,
+      street: f.street, house: f.house,
+      docType: f.docType,
+      docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
+      city: selectedCity, cityQuery,
+    });
     try {
       const order = buildOrder();
       setSavedOrder(order);
@@ -241,7 +288,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
                   required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 outline-none" />
               </div>
             </div>
-            <Input label="Email" type="email" value={f.email} onChange={set("email")} placeholder="email@example.com" required />
+            <Input label="Email" type="email" value={f.email} onChange={handleEmail} placeholder="email@example.com" required />
           </div>
         </div>
 

@@ -11,6 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
+import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
 
 // Анкета оформлення «Зелена карта» (аналог CheckoutClient для ОСЦПВ):
 // дані страхувальника (ПІБ укр + латиниця, документ, адреса) → заявлення
@@ -95,6 +96,43 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     return () => clearTimeout(t);
   }, [cityQuery, selectedCity]);
 
+  // Автопідстановка збереженого профілю страхувальника (як в ОСЦПВ). Оновлюємо лише
+  // поля страхувальника — латинські ПІБ і дані авто (підтягнуті з реєстру) не чіпаємо.
+  const applyProfile = (p: CustomerProfile) => {
+    setF((s) => ({
+      ...s,
+      surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
+      phone: p.phone, email: p.email,
+      identificationCode: p.identificationCode,
+      dateBirth: p.dateBirth,
+      docType: p.docType,
+      docSerial: p.docSerial, docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
+      street: p.street, house: p.house,
+    }));
+    if (p.city) {
+      setSelectedCity(p.city);
+      setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
+    }
+  };
+
+  // При відкритті форми підставляємо останній збережений профіль (з пристрою).
+  const didAutofill = useRef(false);
+  useEffect(() => {
+    if (didAutofill.current) return;
+    didAutofill.current = true;
+    const last = loadLastProfile();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (last) applyProfile(last);
+  }, []);
+
+  // Якщо введений email збігається зі збереженим профілем — автозаповнюємо решту.
+  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    setF((s) => ({ ...s, email }));
+    const saved = loadProfile(email);
+    if (saved) applyProfile(saved);
+  };
+
   const buildPayload = () => {
     const dob = parseUaDate(f.dateBirth);
     const docDate = parseUaDate(f.docDate);
@@ -165,6 +203,17 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
     setLoading(true);
     setError(null);
+    // Зберігаємо профіль на пристрої під email — для автозаповнення наступного разу.
+    saveProfile({
+      surname: f.surnameUa, name: f.nameUa, patronymic: f.patronymicUa,
+      phone: f.phone, email: f.email,
+      identificationCode: f.identificationCode,
+      dateBirth: f.dateBirth,
+      street: f.street, house: f.house,
+      docType: f.docType,
+      docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
+      city: selectedCity, cityQuery,
+    });
     try {
       const idem = crypto.randomUUID();
       const res = await fetch("/api/greencard/order", {
@@ -261,7 +310,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
                   required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 outline-none" />
               </div>
             </div>
-            <Input label="Email" type="email" value={f.email} onChange={set("email")} placeholder="email@example.com" required />
+            <Input label="Email" type="email" value={f.email} onChange={handleEmail} placeholder="email@example.com" required />
           </div>
         </div>
 

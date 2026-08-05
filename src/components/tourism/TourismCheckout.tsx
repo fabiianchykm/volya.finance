@@ -12,6 +12,7 @@ import { companyLogo } from "@/lib/logos";
 import { formatPrice, formatCompanyName } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
+import { loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
 
 // Анкета оформлення туристичного (аналог ЗК): дані страхувальника + туристів →
 // declare (order/create save) → OTP → оплата → confirm (nextFinal) → поліс.
@@ -88,6 +89,39 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     }, 300);
     return () => clearTimeout(t);
   }, [cityQuery, selectedCity]);
+
+  // Автопідстановка збереженого профілю (контакт/документ/адреса/місто). Імена туристів
+  // тут лише латиницею й індивідуальні — їх не чіпаємо. Профіль звідси НЕ зберігаємо,
+  // щоб не засмічувати спільний профіль латинськими даними. docType звужуємо до 1|3.
+  const applyProfile = (p: CustomerProfile) => {
+    setC((s) => ({
+      ...s,
+      phone: p.phone, email: p.email,
+      docType: p.docType === 1 ? 1 : 3,
+      docSerial: p.docSerial, docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
+      street: p.street, house: p.house,
+    }));
+    if (p.city) {
+      setSelectedCity(p.city);
+      setCityQuery(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua);
+    }
+  };
+
+  const didAutofill = useRef(false);
+  useEffect(() => {
+    if (didAutofill.current) return;
+    didAutofill.current = true;
+    const last = loadLastProfile();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (last) applyProfile(last);
+  }, []);
+
+  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    setC((s) => ({ ...s, email }));
+    const saved = loadProfile(email);
+    if (saved) applyProfile(saved);
+  };
 
   const o = ctx.offer;
   const publicName = o.company?.publicName || o.company?.name || "";
@@ -257,7 +291,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
                   required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 outline-none" />
               </div>
             </div>
-            <Input label="Email" type="email" value={c.email} onChange={setCf("email")} placeholder="email@example.com" required />
+            <Input label="Email" type="email" value={c.email} onChange={handleEmail} placeholder="email@example.com" required />
           </div>
         </div>
 
