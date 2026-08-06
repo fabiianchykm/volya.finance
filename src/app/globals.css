@@ -38,6 +38,11 @@ body {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes marquee-vertical {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
 .animate-gradient {
   background-size: 300% 300%;
   animation: gradient-shift 20s ease infinite;
@@ -53,6 +58,16 @@ body {
   width: max-content;
 }
 .animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical 34s linear infinite;
+  display: flex;
+  flex-direction: column;
+  height: max-content;
+}
+.animate-marquee-vertical:hover {
   animation-play-state: paused;
 }
 
