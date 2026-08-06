@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint } from "lucide-react";
+import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home } from "lucide-react";
 import { VMark, BarlessA } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,9 @@ const AUTO_LINKS = [
   { label: "Зелена карта", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон" },
 ];
 const OTHER_LINKS = [
-  { label: "Туристичне", href: "/tourism", icon: Plane, badge: undefined as string | undefined },
-  { label: "Тварини", href: "/pets", icon: PawPrint, badge: undefined as string | undefined },
+  { label: "Туристичне", href: "/tourism", icon: Plane, badge: undefined as string | undefined, soon: false },
+  { label: "Тварини", href: "/pets", icon: PawPrint, badge: undefined as string | undefined, soon: false },
+  { label: "Житло", href: "#", icon: Home, badge: "скоро" as string | undefined, soon: true },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...AUTO_LINKS, ...OTHER_LINKS];
@@ -130,25 +131,34 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             </div>
           </li>
 
-          {OTHER_LINKS.map(({ href, label, icon: Icon, badge }) => (
-            <li key={href}>
-              <Link
-                href={href}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
-                  opaque
-                    ? "text-zinc-700 hover:bg-indigo-50 hover:text-indigo-700"
-                    : "text-white/80 hover:bg-white/10 hover:text-white"
-                )}
-              >
+          {OTHER_LINKS.map(({ href, label, icon: Icon, badge, soon }) => {
+            const cls = cn(
+              "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
+              soon
+                ? cn("cursor-default", opaque ? "text-zinc-400" : "text-white/50")
+                : opaque
+                  ? "text-zinc-700 hover:bg-indigo-50 hover:text-indigo-700"
+                  : "text-white/80 hover:bg-white/10 hover:text-white"
+            );
+            const body = (
+              <>
                 <Icon className="h-4 w-4 opacity-80" />
                 {label}
                 {badge && (
                   <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{badge}</span>
                 )}
-              </Link>
-            </li>
-          ))}
+              </>
+            );
+            return (
+              <li key={label}>
+                {soon ? (
+                  <span aria-disabled className={cls}>{body}</span>
+                ) : (
+                  <Link href={href} className={cls}>{body}</Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -196,19 +206,32 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             className="overflow-hidden border-t border-zinc-100 bg-white md:hidden"
           >
             <div className="flex flex-col gap-1 px-4 py-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                  {(link as { badge?: string }).badge && (
-                    <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{(link as { badge?: string }).badge}</span>
-                  )}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const badge = (link as { badge?: string }).badge;
+                const soon = (link as { soon?: boolean }).soon;
+                const label = (
+                  <>
+                    {link.label}
+                    {badge && (
+                      <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{badge}</span>
+                    )}
+                  </>
+                );
+                return soon ? (
+                  <span key={link.label} aria-disabled className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-400">
+                    {label}
+                  </span>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
               <div className="mt-3 border-t border-zinc-100 pt-3">
                 {session?.user ? (
                   <div className="flex flex-col gap-2">
