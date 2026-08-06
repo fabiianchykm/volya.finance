@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useScroll, useTransform, type MotionValue } from "framer-motion";
 import { useRef } from "react";
 import { Zap, Clock, FileCheck, HeadphonesIcon } from "lucide-react";
 
@@ -39,9 +39,56 @@ const features = [
   },
 ];
 
+// Кожна картка зʼявляється відповідно до прогресу прогортання секції — по черзі
+// зліва направо. Вікно появи картки i: [i·step, i·step + span] у 0..1 прогресу.
+function FeatureCard({
+  feature,
+  index,
+  count,
+  progress,
+}: {
+  feature: (typeof features)[number];
+  index: number;
+  count: number;
+  progress: MotionValue<number>;
+}) {
+  const { icon: Icon, title, description, iconBg, iconColor, glowColor } = feature;
+  const step = 0.62 / count;          // зсув старту між сусідніми картками
+  const span = 0.28;                  // тривалість появи однієї картки
+  const start = index * step;
+  const end = start + span;
+  const opacity = useTransform(progress, [start, end], [0, 1]);
+  const y = useTransform(progress, [start, end], [40, 0]);
+
+  return (
+    <motion.div
+      style={{ opacity, y }}
+      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/50 transition-all hover:shadow-lg hover:shadow-indigo-900/5 hover:-translate-y-1"
+    >
+      <div className="relative z-10 flex-1">
+        <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${iconBg} ${iconColor} transition-transform duration-300 group-hover:scale-110`}>
+          <Icon className="h-6 w-6" />
+        </div>
+        <h3 className="mb-2 text-base font-bold leading-snug text-zinc-900">{title}</h3>
+        <p className="text-sm leading-relaxed text-zinc-500">{description}</p>
+      </div>
+      <div
+        className={`absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-[0.03] transition-transform duration-500 group-hover:scale-150 ${glowColor}`}
+      />
+    </motion.div>
+  );
+}
+
 export function FeaturesSection() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  // Привʼязуємо появу карток до позиції скролу: 0 — коли верх секції на 80% вьюпорту,
+  // 1 — коли низ секції піднявся до 45%. Поки крутиш — картки виринають по одній.
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 0.8", "end 0.45"],
+  });
 
   return (
     <section id="about" className="py-20 sm:py-24 bg-[#FAFAFA]" ref={ref}>
@@ -58,25 +105,14 @@ export function FeaturesSection() {
         </motion.div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map(({ icon: Icon, title, description, iconBg, iconColor, glowColor }, i) => (
-            <motion.div
-              key={title}
-              initial={{ opacity: 0, y: 24 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.45, delay: i * 0.07 }}
-              className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/50 transition-all hover:shadow-lg hover:shadow-indigo-900/5 hover:-translate-y-1"
-            >
-              <div className="relative z-10 flex-1">
-                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${iconBg} ${iconColor} transition-transform duration-300 group-hover:scale-110`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h3 className="mb-2 text-base font-bold leading-snug text-zinc-900">{title}</h3>
-                <p className="text-sm leading-relaxed text-zinc-500">{description}</p>
-              </div>
-              <div
-                className={`absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-[0.03] transition-transform duration-500 group-hover:scale-150 ${glowColor}`}
-              />
-            </motion.div>
+          {features.map((feature, i) => (
+            <FeatureCard
+              key={feature.title}
+              feature={feature}
+              index={i}
+              count={features.length}
+              progress={scrollYProgress}
+            />
           ))}
         </div>
       </div>

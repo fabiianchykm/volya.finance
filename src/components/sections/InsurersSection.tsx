@@ -9,6 +9,9 @@ const insurers = [
   { name: "ІНГО",         slug: "inho" },
   { name: "PZU",          slug: "pzu" },
   { name: "ARX",          slug: "arx" },
+  // Брокбізнес = BBS Insurance (один логотип). Тримаємо далеко від "bbs-insurance"
+  // нижче, щоб два однакові лого не стояли поруч.
+  { name: "Брокбізнес",   slug: "brokbyzness" },
   { name: "Уніка",        slug: "unika" },
   { name: "Оранта",       slug: "oranta" },
   { name: "Княжа",        slug: "knyazha" },
