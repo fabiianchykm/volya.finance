@@ -2,17 +2,9 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Shield, Zap, Clock, Star, FileCheck, HeadphonesIcon } from "lucide-react";
+import { Zap, Clock, FileCheck, HeadphonesIcon } from "lucide-react";
 
 const features = [
-  {
-    icon: Shield,
-    title: "Офіційні поліси МТСБУ",
-    description: "Всі поліси зареєстровані в Моторному транспортному страховому бюро України.",
-    iconBg: "bg-indigo-100",
-    iconColor: "text-indigo-600",
-    glowColor: "bg-indigo-600",
-  },
   {
     icon: Zap,
     title: "Оформлення за 3 хвилини",
@@ -20,14 +12,6 @@ const features = [
     iconBg: "bg-amber-100",
     iconColor: "text-amber-600",
     glowColor: "bg-amber-600",
-  },
-  {
-    icon: Star,
-    title: "Найкращі ціни",
-    description: "Порівнюємо пропозиції від 18+ страхових компаній і показуємо найвигідніші.",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
-    glowColor: "bg-emerald-600",
   },
   {
     icon: FileCheck,
@@ -47,8 +31,8 @@ const features = [
   },
   {
     icon: HeadphonesIcon,
-    title: "Підтримка 24/7",
-    description: "Наша команда завжди на зв'язку, щоб допомогти з будь-яким питанням.",
+    title: "Підтримка",
+    description: "Наша команда допоможе з будь-яким питанням щодо оформлення поліса.",
     iconBg: "bg-rose-100",
     iconColor: "text-rose-600",
     glowColor: "bg-rose-600",
@@ -73,7 +57,7 @@ export function FeaturesSection() {
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map(({ icon: Icon, title, description, iconBg, iconColor, glowColor }, i) => (
             <motion.div
               key={title}
