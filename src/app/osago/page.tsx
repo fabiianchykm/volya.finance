@@ -2,6 +2,7 @@ import { Footer } from "@/components/layout/Footer";
 import { InsuranceFlow } from "@/components/insurance/InsuranceFlow";
 import { FeaturesSection } from "@/components/sections/FeaturesSection";
 import { InsurersSection } from "@/components/sections/InsurersSection";
+import { ReviewsSection } from "@/components/sections/ReviewsSection";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { CTAWrapper } from "@/components/sections/CTAWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -42,6 +43,7 @@ export default function OsagoPage() {
         <InsuranceFlow />
         <FeaturesSection />
         <InsurersSection />
+        <ReviewsSection />
         <FAQSection />
         <CTAWrapper />
       </main>
