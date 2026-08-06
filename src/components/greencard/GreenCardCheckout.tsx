@@ -226,6 +226,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         mail: f.email,
         identificationCode: f.identificationCode,
         withoutIdentificationCode: !f.identificationCode,   // boolean
+        // Тип особи (фізособа): держ.(комунальне) підприємство? / ФОП? — булеві.
+        // ARX без них падає "Undefined offset: 4" у OrderGreenCardRequest.
+        isDP: false,
+        isFop: false,
         region: cityName, city: cityName, cityId: selectedCity?.id ?? 1,
         street: f.street, house: f.house, apartment: f.apartment,
         documentation: {
