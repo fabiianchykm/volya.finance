@@ -82,12 +82,16 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
 
-  // Авто-підтягування даних авто за держ. номером (як на старому 1-му кроці, лише тут).
+  // Авто-підтягування даних авто за держ. номером — БЕЗ кнопки: щойно введено
+  // повний номер (дебаунс) або при виході з поля. lastPlate захищає від повторних
+  // запитів того самого номера (у т.ч. після setF нормалізованого номера).
   const [plateLoading, setPlateLoading] = useState(false);
   const [plateError, setPlateError] = useState<string | null>(null);
+  const lastPlate = useRef("");
   const lookupPlate = async () => {
     const raw = f.number.replace(/\s/g, "");
-    if (raw.length < 6 || plateLoading) return;
+    if (raw.length < 6 || plateLoading || raw === lastPlate.current) return;
+    lastPlate.current = raw;
     setPlateLoading(true);
     setPlateError(null);
     try {
@@ -96,6 +100,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       if (!json.success) { setPlateError(json.error ?? "Авто не знайдено — заповніть дані вручну"); return; }
       const car = json.data;
       const ap = car.additionalParameters ?? {};
+      if (car.number) lastPlate.current = String(car.number).replace(/\s/g, "");
       setF((s) => ({
         ...s,
         number: car.number ?? s.number,
@@ -114,6 +119,15 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       setPlateLoading(false);
     }
   };
+
+  // Автозапуск, щойно введено повний номер (≥8 символів) — дебаунс 600мс.
+  useEffect(() => {
+    const raw = f.number.replace(/\s/g, "");
+    if (raw.length < 8 || raw === lastPlate.current || plateLoading) return;
+    const t = setTimeout(() => { void lookupPlate(); }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.number]);
 
   // Поля документа памʼятаються ОКРЕМО по кожному типу: при зміні типу сташимо поточні
   // й відновлюємо збережені для нового типу (або порожні, якщо для нього ще нема даних).
@@ -422,23 +436,20 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           {/* Держ. номер — першим: підтягує решту даних авто з реєстру */}
           <div className="mb-4">
             <label className="mb-1.5 block text-xs font-medium text-zinc-500">Держ. номер</label>
-            <div className="flex gap-2">
-              <input
-                value={f.number}
-                onChange={(e) => setF((s) => ({ ...s, number: e.target.value.toUpperCase() }))}
-                onBlur={lookupPlate}
-                placeholder="AA 1234 BB"
-                spellCheck={false}
-                className="h-11 flex-1 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold uppercase tracking-wider text-zinc-900 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-              <Button type="button" variant="secondary" size="md" loading={plateLoading} onClick={lookupPlate}>
-                Підтягнути
-              </Button>
-            </div>
-            {plateError ? (
+            <input
+              value={f.number}
+              onChange={(e) => setF((s) => ({ ...s, number: e.target.value.toUpperCase() }))}
+              onBlur={lookupPlate}
+              placeholder="AA 1234 BB"
+              spellCheck={false}
+              className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold uppercase tracking-wider text-zinc-900 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            />
+            {plateLoading ? (
+              <p className="mt-1.5 text-xs font-medium text-indigo-500">Підтягуємо дані авто…</p>
+            ) : plateError ? (
               <p className="mt-1.5 text-xs font-medium text-amber-600">{plateError}</p>
             ) : (
-              <p className="mt-1.5 text-xs text-zinc-400">Введіть номер — марка, модель і решта підтягнуться автоматично.</p>
+              <p className="mt-1.5 text-xs text-zinc-400">Введіть номер — дані авто підтягнуться автоматично.</p>
             )}
           </div>
 
