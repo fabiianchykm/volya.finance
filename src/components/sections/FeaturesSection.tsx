@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import { useRef } from "react";
 import { Zap, Clock, FileCheck, HeadphonesIcon } from "lucide-react";
 
@@ -53,8 +53,8 @@ function FeatureCard({
   progress: MotionValue<number>;
 }) {
   const { icon: Icon, title, description, iconBg, iconColor, glowColor } = feature;
-  const step = 0.62 / count;          // зсув старту між сусідніми картками
-  const span = 0.28;                  // тривалість появи однієї картки
+  const step = 0.72 / count;          // зсув старту між сусідніми картками
+  const span = 0.24;                  // тривалість появи однієї картки
   const start = index * step;
   const end = start + span;
   const opacity = useTransform(progress, [start, end], [0, 1]);
@@ -80,40 +80,42 @@ function FeatureCard({
 }
 
 export function FeaturesSection() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const trackRef = useRef(null);
 
-  // Привʼязуємо появу карток до позиції скролу: 0 — коли верх секції на 80% вьюпорту,
-  // 1 — коли низ секції піднявся до 45%. Поки крутиш — картки виринають по одній.
+  // Секція «пінується»: зовнішній трек вищий за екран, а контент усередині —
+  // sticky на весь екран. Поки крутиш у межах треку, секція стоїть на місці й
+  // картки виринають по одній; далі сторінка гортається лише коли всі показані.
+  // progress 0 — трек торкнувся верху вьюпорту (пін увімкнувся), 1 — трек
+  // відпустив пін (усі картки вже зʼявились).
   const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start 0.8", "end 0.45"],
+    target: trackRef,
+    offset: ["start start", "end end"],
   });
 
   return (
-    <section id="about" className="py-20 sm:py-24 bg-[#FAFAFA]" ref={ref}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          className="mb-12 text-center max-w-2xl mx-auto"
-        >
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Наші переваги
-          </h2>
-        </motion.div>
+    <section id="about" className="bg-[#FAFAFA]">
+      {/* Трек прокрутки: його висота = скільки треба прогорнути для показу всіх карток */}
+      <div ref={trackRef} className="relative h-[240vh]">
+        <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+            <div className="mb-12 text-center max-w-2xl mx-auto">
+              <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+                Наші переваги
+              </h2>
+            </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature, i) => (
-            <FeatureCard
-              key={feature.title}
-              feature={feature}
-              index={i}
-              count={features.length}
-              progress={scrollYProgress}
-            />
-          ))}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {features.map((feature, i) => (
+                <FeatureCard
+                  key={feature.title}
+                  feature={feature}
+                  index={i}
+                  count={features.length}
+                  progress={scrollYProgress}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -477,6 +477,15 @@ export class UkaskoService {
     if (raw.status === "error" || raw.status === "validation" || (msg && msg.includes('"result":false'))) {
       const errText = JSON.stringify(raw.data ?? raw).slice(0, 300);
       console.error("[greencard order] rejected. raw:", JSON.stringify(raw).slice(0, 800));
+      // Інфраструктурні збої модуля страховика на боці Ukasko (не валідація наших
+      // даних): парсер відповіді падає PHP-нотісом. Напр. модуль UTICO у
+      // TakeGreenCardContractResponse читає відсутній contractFile. Клієнту немає
+      // сенсу показувати трейс — просимо обрати іншу пропозицію.
+      const blob = `${msg ?? ""} ${errText}`;
+      const insurerInfraError = /contractFile|discount_price|Undefined (index|offset)|ErrorException/i.test(blob);
+      if (insurerInfraError) {
+        throw new Error("На жаль, ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
+      }
       throw new Error(`Страхова відхилила заявку: ${errText}`);
     }
     const data = raw as { data?: Array<{ id: string; status?: string; mtsbuLink?: string }> };
