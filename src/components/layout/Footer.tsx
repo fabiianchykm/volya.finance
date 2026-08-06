@@ -1,5 +1,13 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
+
+function AppleLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+    </svg>
+  );
+}
 import { FooterContact } from "./FooterContact";
 
 const footerLinks = {
@@ -49,6 +57,19 @@ export function Footer() {
           {/* Бренд + контакти + соцмережі */}
           <div className="lg:col-span-5">
             <FooterContact />
+
+            {/* Застосунок для iPhone — скоро */}
+            <div className="mt-7">
+              <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Застосунок</p>
+              <div className="inline-flex cursor-default items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-2.5">
+                <AppleLogo className="h-6 w-6 text-zinc-900" />
+                <span className="flex flex-col leading-tight">
+                  <span className="text-[10px] text-zinc-500">Завантажити в</span>
+                  <span className="text-sm font-semibold text-zinc-900">App Store</span>
+                </span>
+                <span className="ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600">Скоро</span>
+              </div>
+            </div>
           </div>
 
           {/* Колонки посилань */}

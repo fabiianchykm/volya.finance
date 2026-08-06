@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
-import { PhoneCall, CheckCircle2, ShieldCheck, Clock, BadgePercent } from "lucide-react";
+import { PhoneCall, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { trackEvent } from "@/lib/analytics";
 
@@ -96,21 +96,6 @@ export function CTASection() {
                     Залиште номер — менеджер передзвонить протягом 5 хвилин,
                     підбере найкращий поліс і допоможе оформити.
                   </p>
-
-                  <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-indigo-100 lg:justify-start">
-                    <span className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-indigo-300" />
-                      Офіційні поліси
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-indigo-300" />
-                      Дзвінок за 5 хв
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <BadgePercent className="h-4 w-4 text-indigo-300" />
-                      Найкращі ціни
-                    </span>
-                  </div>
                 </div>
 
                 {/* Права частина — скляна форма */}
