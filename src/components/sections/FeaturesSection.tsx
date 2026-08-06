@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
-import { useRef } from "react";
+import { motion, useScroll, useMotionValueEvent, type MotionValue } from "framer-motion";
+import { useRef, useState } from "react";
 import { Zap, Clock, FileCheck, HeadphonesIcon } from "lucide-react";
 
 const features = [
@@ -39,30 +39,30 @@ const features = [
   },
 ];
 
-// Кожна картка зʼявляється відповідно до прогресу прогортання секції — по черзі
-// зліва направо. Вікно появи картки i: [i·step, i·step + span] у 0..1 прогресу.
+// Картки зʼявляються по черзі зліва направо в міру прогортання секції. Поява
+// «залатчена»: щойно картка досягла свого порогу за скролом — лишається видимою
+// назавжди (скрол назад чи далі її вже не ховає).
 function FeatureCard({
   feature,
   index,
-  count,
   progress,
 }: {
   feature: (typeof features)[number];
   index: number;
-  count: number;
   progress: MotionValue<number>;
 }) {
   const { icon: Icon, title, description, iconBg, iconColor, glowColor } = feature;
-  const step = 0.72 / count;          // зсув старту між сусідніми картками
-  const span = 0.24;                  // тривалість появи однієї картки
-  const start = index * step;
-  const end = start + span;
-  const opacity = useTransform(progress, [start, end], [0, 1]);
-  const y = useTransform(progress, [start, end], [40, 0]);
+  const threshold = index * 0.2;      // картка i виринає, коли прогрес секції ≥ i·0.2
+  const [revealed, setRevealed] = useState(false);
+  useMotionValueEvent(progress, "change", (v) => {
+    if (!revealed && v >= threshold) setRevealed(true);
+  });
 
   return (
     <motion.div
-      style={{ opacity, y }}
+      initial={false}
+      animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/50 transition-all hover:shadow-lg hover:shadow-indigo-900/5 hover:-translate-y-1"
     >
       <div className="relative z-10 flex-1">
@@ -95,7 +95,7 @@ export function FeaturesSection() {
   return (
     <section id="about" className="bg-[#FAFAFA]">
       {/* Трек прокрутки: його висота = скільки треба прогорнути для показу всіх карток */}
-      <div ref={trackRef} className="relative h-[240vh]">
+      <div ref={trackRef} className="relative h-[200vh]">
         <div className="sticky top-0 flex h-screen items-center overflow-hidden">
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
             <div className="mb-12 text-center max-w-2xl mx-auto">
@@ -110,7 +110,6 @@ export function FeaturesSection() {
                   key={feature.title}
                   feature={feature}
                   index={i}
-                  count={features.length}
                   progress={scrollYProgress}
                 />
               ))}
