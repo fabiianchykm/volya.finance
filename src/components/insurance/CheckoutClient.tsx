@@ -450,6 +450,16 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
   const [dobError, setDobError] = useState(false);
   const [docDateError, setDocDateError] = useState(false);
   const [docType, setDocType] = useState<1 | 3 | 4>(3); // 3 = ID-карта, 1 = паспорт, 4 = водійське посвідчення
+  // Поля документа памʼятаються окремо по типу: при зміні типу сташимо поточні й
+  // відновлюємо збережені для нового (або порожні, якщо для нього ще нема даних).
+  const docStash = useRef<Record<number, { serial: string; number: string; issuedBy: string; date: string }>>({});
+  const changeDocType = (t: 1 | 3 | 4) => {
+    if (t === docType) return;
+    docStash.current[docType] = { serial: form.docSerial, number: form.docNumber, issuedBy: form.docIssuedBy, date: form.docDate };
+    const saved = docStash.current[t];
+    setForm((f) => ({ ...f, docSerial: saved?.serial ?? "", docNumber: saved?.number ?? "", docIssuedBy: saved?.issuedBy ?? "", docDate: saved?.date ?? "" }));
+    setDocType(t);
+  };
   const cityRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -685,7 +695,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
               <button
                 key={t}
                 type="button"
-                onClick={() => setDocType(t)}
+                onClick={() => changeDocType(t)}
                 className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium leading-tight transition-colors ${
                   docType === t
                     ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200"

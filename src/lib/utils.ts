@@ -46,9 +46,14 @@ export function cityShort(name: string): string {
 
 export function formatCompanyName(name: string): string {
   if (!name) return "";
-  
+
+  // Маркери програм/каналів продажу (напр. «Tas Програма2», «ТАС офлайн/онлайн») —
+  // прибираємо, щоб показувати лише бренд, а не «Програма2».
   // Прибираємо всі види лапок (прямі, кутові, типографські «„""''‚`») та коми.
-  let formatted = name.replace(/["«»„“”‘’‚'`,]/g, ' ');
+  let formatted = name
+    .replace(/\b(програма|program)\s*№?\s*\d*/gi, ' ')
+    .replace(/\b(офлайн|онлайн|offline|online)\b/gi, ' ')
+    .replace(/["«»„“”‘’‚'`,]/g, ' ');
   
   // Юридичні форми та «шум» — прибираємо, щоб показувати бренд. Довші фрази ПЕРЕД
   // коротшими (порядок важливий для коректного видалення).

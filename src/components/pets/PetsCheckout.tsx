@@ -57,6 +57,15 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
 
+  // Поля документа памʼятаються окремо по типу (див. коментар в інших чекаутах).
+  const docStash = useRef<Record<number, { serial: string; number: string; issuedBy: string; date: string }>>({});
+  const changeDocType = (t: 1 | 3) => setF((s) => {
+    if (s.docType === t) return s;
+    docStash.current[s.docType] = { serial: s.docSerial, number: s.docNumber, issuedBy: s.docIssuedBy, date: s.docDate };
+    const saved = docStash.current[t];
+    return { ...s, docType: t, docSerial: saved?.serial ?? "", docNumber: saved?.number ?? "", docIssuedBy: saved?.issuedBy ?? "", docDate: saved?.date ?? "" };
+  });
+
   const [cityQuery, setCityQuery] = useState("");
   const [cityResults, setCityResults] = useState<CityOption[]>([]);
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
@@ -299,7 +308,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Документ власника</p>
           <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
             {DOC_TYPES.map(({ t, label }) => (
-              <button key={t} type="button" onClick={() => setF((s) => ({ ...s, docType: t }))}
+              <button key={t} type="button" onClick={() => changeDocType(t)}
                 className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${f.docType === t ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"}`}>{label}</button>
             ))}
           </div>
