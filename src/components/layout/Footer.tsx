@@ -43,7 +43,7 @@ function LinkColumn({ title, links }: { title: string; links: { label: string; h
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200 bg-[#FAFAFA] text-zinc-600">
+    <footer className="border-t border-zinc-200 bg-[#F5F5F7] text-zinc-600">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
         <div className="grid gap-12 py-16 lg:grid-cols-12 lg:py-20">
           {/* Бренд + контакти + соцмережі */}
