@@ -1,4 +1,4 @@
-import { Star, Quote } from "lucide-react";
+import { Quote } from "lucide-react";
 
 // ⚠️ ЗАГОТОВКИ-ПРИКЛАДИ. Заміни на РЕАЛЬНІ відгуки клієнтів (або підтягуй з Google-
 // відгуків). Вигадані відгуки на фінансовому сайті — ризик довіри й законодавства.
@@ -19,7 +19,6 @@ export function ReviewsSection() {
     <section className="bg-white py-20 sm:py-24">
       <div className="mx-auto mb-12 max-w-2xl px-4 text-center sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Відгуки клієнтів</h2>
-        <p className="mt-3 text-zinc-500">Що кажуть люди, які оформили поліс через volya.finance</p>
       </div>
 
       {/* Один горизонтальний ряд, що плавно рухається (пауза на наведення) */}
@@ -33,11 +32,6 @@ export function ReviewsSection() {
               className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-[#FAFAFA] p-6 ring-1 ring-zinc-200/50"
             >
               <Quote className="mb-3 h-6 w-6 text-zinc-200" />
-              <div className="mb-3 flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, s) => (
-                  <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
               <p className="flex-1 text-sm leading-relaxed text-zinc-700">{text}</p>
               <div className="mt-5 flex items-center gap-3">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
