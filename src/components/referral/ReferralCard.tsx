@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Wallet, Copy, Check, ShoppingBag, Users } from "lucide-react";
+import { Wallet, Copy, Check } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import type { ReferralSummary } from "@/lib/referral";
 
@@ -33,21 +33,6 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
           <div>
             <p className="text-xs font-medium text-indigo-100">Бонусний рахунок</p>
             <p className="text-2xl font-bold leading-tight">{formatPrice(balance.total)}</p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-white/10 px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[11px] text-indigo-100">
-              <ShoppingBag className="h-3.5 w-3.5" /> З покупок · 1%
-            </div>
-            <div className="mt-0.5 text-base font-bold">{formatPrice(balance.purchase)}</div>
-          </div>
-          <div className="rounded-xl bg-white/10 px-3 py-2.5">
-            <div className="flex items-center gap-1.5 text-[11px] text-indigo-100">
-              <Users className="h-3.5 w-3.5" /> Реферальні · 5%
-            </div>
-            <div className="mt-0.5 text-base font-bold">{formatPrice(balance.referral)}</div>
           </div>
         </div>
       </div>
