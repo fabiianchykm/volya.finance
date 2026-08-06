@@ -15,7 +15,7 @@ function TelegramIcon({ className }: { className?: string }) {
 function ThreadsIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-      <path d="M12.19 21.5h-.04c-2.7-.02-4.77-.9-6.16-2.63C4.75 17.34 4.11 15.13 4.08 12.51v-.02-.02c.03-2.62.67-4.83 1.91-6.36C7.38 4.4 9.45 3.52 12.15 3.5h.04c2.07.01 3.8.55 5.14 1.6 1.26.98 2.15 2.38 2.64 4.15l-1.83.51c-.83-2.98-2.94-4.5-5.96-4.52-1.99.02-3.5.65-4.48 1.87-.92 1.14-1.39 2.79-1.42 4.9.03 2.11.5 3.76 1.42 4.9.98 1.22 2.49 1.85 4.48 1.87 1.79-.01 2.98-.43 3.97-1.42.72-.72 1.19-1.68 1.4-2.86-.79-.42-1.75-.66-2.83-.66-.9 0-1.62.19-2.13.55-.42.3-.62.7-.6 1.19.02.6.53.98 1.32.98.31 0 .62-.07.9-.21l.68 1.69c-.5.28-1.07.42-1.66.42-1.75 0-3.03-1.13-3.11-2.75-.05-1.06.37-2.02 1.19-2.7.79-.66 1.9-1.02 3.21-1.03 1.09 0 2.1.19 3 .55.02-.28.03-.56.03-.85 0-.53-.14-.92-.42-1.18-.3-.29-.79-.44-1.44-.44-.87 0-1.51.35-1.86.75l-1.5-1.02c.71-.99 1.9-1.55 3.35-1.55 1.15 0 2.11.34 2.78.98.68.65 1.02 1.58 1.02 2.74v.06c1.13.68 1.79 1.72 1.79 3.02 0 1.87-.87 3.42-2.34 4.4-1.15.77-2.62 1.14-4.28 1.15z" />
+      <path fillRule="evenodd" clipRule="evenodd" d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.9 13.9 0 013.02.142c-.126-.742-.375-1.332-.744-1.757-.505-.58-1.288-.875-2.328-.882h-.032c-.836 0-1.972.23-2.697 1.316l-1.799-1.216c.973-1.457 2.554-2.259 4.489-2.259h.048c3.235.02 5.163 2.01 5.353 5.472.108.046.216.094.32.145 1.472.692 2.548 1.74 3.11 3.03.783 1.795.856 4.721-1.523 7.05-1.816 1.781-4.017 2.581-7.146 2.604Zm1.03-13.492c-.324 0-.66.01-.985.03-1.83.103-2.968.94-2.903 2.13.07 1.242 1.437 1.82 2.755 1.75 1.213-.065 2.72-.539 2.973-3.294a10.5 10.5 0 00-1.84-.11Z" />
     </svg>
   );
 }
@@ -81,12 +81,14 @@ export function FooterContact() {
 
   const btn =
     "flex h-11 w-11 items-center justify-center rounded-xl bg-white text-indigo-600 ring-1 ring-zinc-200 shadow-sm transition-colors hover:bg-indigo-600 hover:text-white hover:ring-indigo-500";
+  // Соцмережі поки «заморожені» (профілів ще немає) — показуємо іконки, але нікуди
+  // не ведемо: статичні span-и, курсор default, без hover-стану.
   const social =
-    "flex h-11 w-11 items-center justify-center rounded-xl bg-white text-zinc-500 ring-1 ring-zinc-200 shadow-sm transition-colors hover:bg-zinc-900 hover:text-white hover:ring-zinc-900";
+    "flex h-11 w-11 cursor-default items-center justify-center rounded-xl bg-white text-zinc-400 ring-1 ring-zinc-200 shadow-sm";
 
   return (
     <>
-      <div className="flex flex-wrap gap-x-14 gap-y-8">
+      <div className="flex max-w-xl flex-wrap items-start justify-between gap-x-14 gap-y-8">
         {/* Підтримка — способи звʼязку */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
@@ -111,10 +113,10 @@ export function FooterContact() {
             Соцмережі
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            {SOCIALS.map(({ label, href, Icon }) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className={social}>
+            {SOCIALS.map(({ label, Icon }) => (
+              <span key={label} aria-label={label} title={label} role="img" className={social}>
                 <Icon className="h-5 w-5" />
-              </a>
+              </span>
             ))}
           </div>
         </div>
