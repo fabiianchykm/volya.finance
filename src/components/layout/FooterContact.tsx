@@ -14,7 +14,7 @@ export function FooterContact() {
   const [mode, setMode] = useState<LeadMode>(null);
 
   const btn =
-    "flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.04] text-indigo-400 ring-1 ring-white/10 transition-colors hover:bg-indigo-600 hover:text-white hover:ring-indigo-500";
+    "flex h-11 w-11 items-center justify-center rounded-xl bg-white text-indigo-600 ring-1 ring-zinc-200 shadow-sm transition-colors hover:bg-indigo-600 hover:text-white hover:ring-indigo-500";
 
   return (
     <>

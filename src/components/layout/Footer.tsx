@@ -33,7 +33,7 @@ function LinkColumn({ title, links }: { title: string; links: { label: string; h
           <li key={link.label}>
             <Link
               href={link.href}
-              className="text-[15px] text-zinc-400 transition-colors hover:text-white"
+              className="text-[15px] text-zinc-600 transition-colors hover:text-indigo-600"
             >
               {link.label}
             </Link>
@@ -46,12 +46,8 @@ function LinkColumn({ title, links }: { title: string; links: { label: string; h
 
 export function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-zinc-950 text-zinc-300">
-      {/* Тонка градієнтна лінія + світний акцент угорі */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent" />
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[44rem] -translate-x-1/2 rounded-full bg-indigo-600/20 blur-3xl" />
-
-      <div className="relative mx-auto max-w-7xl px-6 sm:px-10">
+    <footer className="border-t border-zinc-200 bg-[#FAFAFA] text-zinc-600">
+      <div className="mx-auto max-w-7xl px-6 sm:px-10">
         <div className="grid gap-12 py-16 lg:grid-cols-12 lg:py-20">
           {/* Бренд + контакти + соцмережі */}
           <div className="lg:col-span-5">
@@ -67,7 +63,7 @@ export function Footer() {
         </div>
 
         {/* Рядок довіри — офіційне лого МТСБУ (лінк на реєстр) + галочка */}
-        <div className="flex items-center border-t border-white/10 py-6">
+        <div className="flex items-center border-t border-zinc-200 py-6">
           <a
             href="https://policy.mtsbu.ua"
             target="_blank"
@@ -87,9 +83,9 @@ export function Footer() {
 
         {/* Довідковий SEO-текст дрібним шрифтом — ПРИРОДНА проза з ключовими фразами,
             вплетеними органічно (без keyword-stuffing, щоб не отримати штраф Google). */}
-        <div className="border-t border-white/10 py-6">
-          <p className="text-[11px] leading-relaxed text-zinc-600">
-            <span className="text-zinc-500">Воля Фінанс (volya.finance)</span> — сервіс онлайн-страхування в Україні.
+        <div className="border-t border-zinc-200 py-6">
+          <p className="text-[11px] leading-relaxed text-zinc-500">
+            <span className="font-medium text-zinc-700">Воля Фінанс (volya.finance)</span> — сервіс онлайн-страхування в Україні.
             У нас можна оформити автоцивілку (ОСЦПВ / ОСАГО), КАСКО та міні-КАСКО, Зелену карту для виїзду за кордон,
             туристичне страхування для подорожей і страхування домашніх тварин. Ми порівнюємо ціни від 18+ провідних
             страхових компаній і показуємо найвигідніші пропозиції, а всі поліси електронні та офіційно зареєстровані
@@ -100,7 +96,7 @@ export function Footer() {
         </div>
 
         {/* Нижня смуга */}
-        <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 py-7 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-zinc-200 py-7 sm:flex-row">
           <p className="text-sm text-zinc-500">
             © {new Date().getFullYear()} volya.finance. Усі права захищені.
           </p>
