@@ -112,10 +112,9 @@ export function FooterContact() {
             <a href="mailto:volya.finance.team@gmail.com" aria-label="Написати на email" title="Написати на email" className={btn}>
               <Mail className="h-5 w-5" />
             </a>
-            {/* Viber — заморожено: бот ще не готовий (некликабельно, з позначкою «скоро») */}
-            <span role="img" aria-label="Viber (скоро)" title="Viber — скоро" className={`relative ${social}`}>
+            {/* Viber — заморожено (некликабельно): бот ще не готовий */}
+            <span role="img" aria-label="Viber" title="Viber" className={social}>
               <ViberIcon className="h-5 w-5" />
-              <span className="absolute -right-1.5 -top-1.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[8px] font-semibold uppercase leading-none tracking-wide text-white shadow-sm">скоро</span>
             </span>
           </div>
         </div>
