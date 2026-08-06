@@ -18,7 +18,7 @@ export function FooterContact() {
 
   return (
     <>
-      <div className="mt-7">
+      <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
           Звʼяжіться з нами
         </p>
