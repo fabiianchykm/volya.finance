@@ -4,35 +4,113 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home } from "lucide-react";
+import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, type LucideIcon } from "lucide-react";
 import { VMark, BarlessA } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
 import { useLogin } from "@/components/auth/LoginProvider";
 
-// Авто-продукти згруповані в дропдаун «Автострахування», щоб меню не розтягувалось.
-const AUTO_LINKS = [
-  { label: "Автоцивілка", href: "/osago", icon: ShieldCheck, desc: "ОСЦПВ" },
+type NavItem = { label: string; href: string; icon: LucideIcon; desc: string; badge?: string; soon?: boolean };
+
+// Продукти згруповані у два дропдауни, щоб меню не розтягувалось і було зрозуміло,
+// що це саме страхування (кожен підпункт має опис).
+const AUTO_LINKS: NavItem[] = [
+  { label: "Автоцивілка", href: "/osago", icon: ShieldCheck, desc: "ОСЦПВ онлайн" },
   { label: "КАСКО", href: "/kasko", icon: Car, desc: "Повний захист авто" },
   { label: "Міні-КАСКО", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше" },
   { label: "Зелена карта", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон" },
 ];
-const OTHER_LINKS = [
-  { label: "Туристичне", href: "/tourism", icon: Plane, badge: undefined as string | undefined, soon: false },
-  { label: "Тварини", href: "/pets", icon: PawPrint, badge: undefined as string | undefined, soon: false },
-  { label: "Житло", href: "#", icon: Home, badge: "скоро" as string | undefined, soon: true },
+const PERSONAL_LINKS: NavItem[] = [
+  { label: "Туристичне", href: "/tourism", icon: Plane, desc: "Медичне для подорожей за кордон" },
+  { label: "Тварини", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак" },
+  { label: "Житло", href: "#", icon: Home, desc: "Захист квартири чи будинку", badge: "скоро", soon: true },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
-const navLinks = [...AUTO_LINKS, ...OTHER_LINKS];
+const navLinks = [...AUTO_LINKS, ...PERSONAL_LINKS];
+
+// Дропдаун меню з підпунктами-описами. Керований клік/тап + hover (на планшетах
+// hover нема, тож потрібен клік), закривається по кліку поза ним і по Escape.
+function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]; opaque: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+
+  return (
+    <li className="relative" ref={ref} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={cn(
+          "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
+          opaque
+            ? cn("text-zinc-700", open && "bg-indigo-50 text-indigo-700", "hover:bg-indigo-50 hover:text-indigo-700")
+            : cn("text-white/80", open && "bg-white/10 text-white", "hover:bg-white/10 hover:text-white")
+        )}
+      >
+        {title}
+        <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+      {/* pt-3 — місток, щоб курсор не «зривався» між кнопкою і панеллю */}
+      <div
+        className={cn(
+          "absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-200",
+          open ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"
+        )}
+      >
+        <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03]">
+          {links.map(({ href, label, icon: Icon, desc, badge, soon }) => {
+            const row = (
+              <>
+                <span className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+                  soon ? "bg-zinc-100 text-zinc-400" : "bg-indigo-50 text-indigo-600 group-hover/item:bg-indigo-600 group-hover/item:text-white"
+                )}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900">
+                    {label}
+                    {badge && (
+                      <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{badge}</span>
+                    )}
+                  </span>
+                  <span className="block truncate text-xs text-zinc-400">{desc}</span>
+                </span>
+              </>
+            );
+            return soon ? (
+              <div key={label} aria-disabled className="flex cursor-default items-center gap-3 rounded-xl p-2.5 opacity-80">
+                {row}
+              </div>
+            ) : (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70"
+              >
+                {row}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </li>
+  );
+}
 
 export function Navbar({ solid = false }: { solid?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  // Дропдаун «Автострахування» — керований (клік/тап + hover), бо на планшетах
-  // немає hover і суто CSS group-hover не спрацьовував.
-  const [autoOpen, setAutoOpen] = useState(false);
-  const autoRef = useRef<HTMLLIElement>(null);
   const { data: session, status } = useSession();
   const { open: openLogin } = useLogin();
 
@@ -42,16 +120,6 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  // Закриваємо дропдаун по кліку поза ним та по Escape.
-  useEffect(() => {
-    if (!autoOpen) return;
-    const onDown = (e: MouseEvent) => { if (autoRef.current && !autoRef.current.contains(e.target as Node)) setAutoOpen(false); };
-    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setAutoOpen(false); };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onEsc);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
-  }, [autoOpen]);
 
   const isLoading = status === "loading";
   // «Непрозорий» (світлий) стиль навбара: при скролі АБО коли під ним світлий фон
@@ -82,83 +150,8 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         </Link>
 
         <ul className="hidden items-center gap-0.5 md:flex">
-          {/* Дропдаун «Автострахування» — керований клік/тап + hover */}
-          <li
-            className="relative"
-            ref={autoRef}
-            onMouseEnter={() => setAutoOpen(true)}
-            onMouseLeave={() => setAutoOpen(false)}
-          >
-            <button
-              type="button"
-              onClick={() => setAutoOpen((o) => !o)}
-              aria-expanded={autoOpen}
-              className={cn(
-                "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
-                opaque
-                  ? cn("text-zinc-700", autoOpen && "bg-indigo-50 text-indigo-700", "hover:bg-indigo-50 hover:text-indigo-700")
-                  : cn("text-white/80", autoOpen && "bg-white/10 text-white", "hover:bg-white/10 hover:text-white")
-              )}
-            >
-              Автострахування
-              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", autoOpen && "rotate-180")} />
-            </button>
-            {/* pt-3 — місток, щоб курсор не «зривався» між кнопкою і панеллю */}
-            <div
-              className={cn(
-                "absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-200",
-                autoOpen ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"
-              )}
-            >
-              <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03]">
-                {AUTO_LINKS.map(({ href, label, icon: Icon, desc }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => setAutoOpen(false)}
-                    className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70"
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover/item:bg-indigo-600 group-hover/item:text-white">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-zinc-900">{label}</span>
-                      <span className="block truncate text-xs text-zinc-400">{desc}</span>
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </li>
-
-          {OTHER_LINKS.map(({ href, label, icon: Icon, badge, soon }) => {
-            const cls = cn(
-              "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
-              soon
-                ? cn("cursor-default", opaque ? "text-zinc-400" : "text-white/50")
-                : opaque
-                  ? "text-zinc-700 hover:bg-indigo-50 hover:text-indigo-700"
-                  : "text-white/80 hover:bg-white/10 hover:text-white"
-            );
-            const body = (
-              <>
-                <Icon className="h-4 w-4 opacity-80" />
-                {label}
-                {badge && (
-                  <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{badge}</span>
-                )}
-              </>
-            );
-            return (
-              <li key={label}>
-                {soon ? (
-                  <span aria-disabled className={cls}>{body}</span>
-                ) : (
-                  <Link href={href} className={cls}>{body}</Link>
-                )}
-              </li>
-            );
-          })}
+          <NavDropdown title="Автострахування" links={AUTO_LINKS} opaque={opaque} />
+          <NavDropdown title="Особисте страхування" links={PERSONAL_LINKS} opaque={opaque} />
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
