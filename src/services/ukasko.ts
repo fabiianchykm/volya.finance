@@ -294,15 +294,11 @@ export class UkaskoService {
   // (moduleId обмежує розрахунок однією СК) і зливаємо ті, що відповіли.
   async getGreenCardOffers(params: GreenCardParams): Promise<GreenCardOffer[]> {
     const url = `${BASE_URL}/insurance/greencard/calculator`;
-    try {
-      const raw = await withRetry(
-        () => this.withAuth((token) => postJson(url, params, token)),
-        3, 700, true
-      ) as Record<string, unknown>;
-      const data = raw.data;
-      return Array.isArray(data) ? (data as GreenCardOffer[]) : [];
-    } catch (e) {
-      console.error("[greencard] full batch failed → per-module fallback:", e instanceof Error ? e.message.slice(0, 160) : e);
+    // Per-module fallback: коли повний батч падає 500 (регулярно INGO) АБО віддає
+    // 200-порожньо (один страховик валить видачу тихо) — рахуємо кожну СК окремо
+    // (moduleId) і зливаємо ті, що відповіли.
+    const perModule = async (reason: string): Promise<GreenCardOffer[]> => {
+      console.error(`[greencard] full batch ${reason} → per-module fallback`);
       const results = await Promise.allSettled(
         GC_MODULE_IDS.map((moduleId) =>
           withRetry(() => this.withAuth((token) => postJson(url, { ...params, moduleId }, token)), 2, 500)
@@ -316,8 +312,23 @@ export class UkaskoService {
       }
       const offers = [...byId.values()];
       const ok = results.filter((r) => r.status === "fulfilled").length;
-      if (offers.length === 0) throw e; // геть усе впало — віддаємо оригінальну помилку
       console.error(`[greencard] fallback recovered ${offers.length} offers from ${ok}/${GC_MODULE_IDS.length} insurers`);
+      return offers;
+    };
+
+    try {
+      const raw = await withRetry(
+        () => this.withAuth((token) => postJson(url, params, token)),
+        3, 700, true
+      ) as Record<string, unknown>;
+      const data = raw.data;
+      const offers = Array.isArray(data) ? (data as GreenCardOffer[]) : [];
+      if (offers.length > 0) return offers;
+      // 200, але порожньо — теж пробуємо по-модульно.
+      return await perModule("empty");
+    } catch (e) {
+      const offers = await perModule("failed");
+      if (offers.length === 0) throw e; // геть усе впало — віддаємо оригінальну помилку
       return offers;
     }
   }
@@ -377,11 +388,20 @@ export class UkaskoService {
 
   // Калькулятор туристичного страхування → масив пропозицій.
   async getTourismOffers(params: TourismParams): Promise<TourismOffer[]> {
-    const raw = await withRetry(() =>
-      this.withAuth((token) => postJson(`${BASE_URL}/insurance/calculator/tourism`, params, token))
-    ) as Record<string, unknown>;
-    const data = raw.data;
-    return Array.isArray(data) ? (data as TourismOffer[]) : [];
+    const url = `${BASE_URL}/insurance/calculator/tourism`;
+    const once = async (): Promise<TourismOffer[]> => {
+      const raw = await withRetry(() => this.withAuth((token) => postJson(url, params, token))) as Record<string, unknown>;
+      const data = raw.data;
+      return Array.isArray(data) ? (data as TourismOffer[]) : [];
+    };
+    // Туристичне не має per-module fallback; при 200-порожньо (транзієнтний флап
+    // страховика) — одна повторна спроба, перш ніж показати «нічого не знайдено».
+    let offers = await once();
+    if (offers.length === 0) {
+      console.error("[tourism] empty result → one retry");
+      offers = await once();
+    }
+    return offers;
   }
 
   // ── Туристичне: заявлення (save) → orderId; фіналізація (nextFinal) → contractId;
