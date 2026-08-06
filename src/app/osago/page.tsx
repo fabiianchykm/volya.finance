@@ -1,10 +1,6 @@
 import { Footer } from "@/components/layout/Footer";
 import { InsuranceFlow } from "@/components/insurance/InsuranceFlow";
-import { FeaturesSection } from "@/components/sections/FeaturesSection";
-import { InsurersSection } from "@/components/sections/InsurersSection";
-import { ReviewsSection } from "@/components/sections/ReviewsSection";
-import { FAQSection } from "@/components/sections/FAQSection";
-import { CTAWrapper } from "@/components/sections/CTAWrapper";
+import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
 import { FAQ_ITEMS } from "@/lib/faq";
@@ -41,11 +37,7 @@ export default function OsagoPage() {
       />
       <main className="flex-1">
         <InsuranceFlow />
-        <FeaturesSection />
-        <InsurersSection />
-        <ReviewsSection />
-        <FAQSection />
-        <CTAWrapper />
+        <MarketingSections showFaq />
       </main>
       <Footer />
     </>
