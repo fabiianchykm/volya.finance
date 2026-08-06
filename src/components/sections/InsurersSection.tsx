@@ -17,7 +17,6 @@ const insurers = [
   { name: "ТАС",          slug: "tas" },
   { name: "Євроінс",      slug: "euroins" },
   { name: "Арсенал",      slug: "arsenal" },
-  { name: "Брокбізнес",   slug: "brokbyzness" },
   { name: "Експрес",      slug: "express" },
   { name: "Гардіан",      slug: "guardian" },
   { name: "Інтер-Поліс",  slug: "inter-polis" },
