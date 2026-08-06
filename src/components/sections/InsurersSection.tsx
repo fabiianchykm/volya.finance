@@ -57,7 +57,7 @@ export function InsurersSection() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-zinc-50 via-white to-zinc-50 py-16 sm:py-24" ref={ref}>
+    <section className="relative overflow-hidden bg-[#FAFAFA] py-16 sm:py-24" ref={ref}>
       {/* М'які світні акценти для «дорогого» відчуття */}
       <div className="pointer-events-none absolute -top-24 left-1/4 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-indigo-200/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 right-1/4 h-72 w-[40rem] translate-x-1/2 rounded-full bg-violet-200/25 blur-3xl" />

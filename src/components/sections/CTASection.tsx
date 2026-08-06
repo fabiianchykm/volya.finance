@@ -49,7 +49,7 @@ export function CTASection() {
   };
 
   return (
-    <section className="py-20" ref={ref}>
+    <section className="bg-[#FAFAFA] py-20" ref={ref}>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

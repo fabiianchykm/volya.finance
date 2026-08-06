@@ -16,20 +16,20 @@ export function ReviewsSection() {
   const row = [...reviews, ...reviews];
 
   return (
-    <section className="bg-white py-20 sm:py-24">
+    <section className="bg-[#FAFAFA] py-20 sm:py-24">
       <div className="mx-auto mb-12 max-w-2xl px-4 text-center sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Відгуки клієнтів</h2>
       </div>
 
       {/* Один горизонтальний ряд, що плавно рухається (пауза на наведення) */}
       <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-white to-transparent sm:w-24" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-white to-transparent sm:w-24" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#FAFAFA] to-transparent sm:w-24" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#FAFAFA] to-transparent sm:w-24" />
         <div className="animate-marquee">
           {row.map(({ name, city, text, color }, i) => (
             <div
               key={i}
-              className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-[#FAFAFA] p-6 ring-1 ring-zinc-200/50"
+              className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/50"
             >
               <Quote className="mb-3 h-6 w-6 text-zinc-200" />
               <p className="flex-1 text-sm leading-relaxed text-zinc-700">{text}</p>

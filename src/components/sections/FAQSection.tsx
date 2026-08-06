@@ -61,7 +61,7 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
 
 export function FAQSection() {
   return (
-    <section className="bg-white py-20 sm:py-28">
+    <section className="bg-[#FAFAFA] py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
         <div className="mb-14 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
