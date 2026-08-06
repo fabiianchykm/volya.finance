@@ -28,10 +28,11 @@ export interface GreenCardContext {
   vehicle: VehicleData;   // з пошуку за номером
 }
 
+// Для Зеленої карти документ страхувальника — лише паспорт/ID-картка. Водійське (4)
+// прибрано: це не документ, що посвідчує особу, і ARX на ньому падає (offset 4).
 const DOC_TYPES = [
   { t: 3 as const, label: "ID-карта" },
   { t: 1 as const, label: "Паспорт (старого зразка)" },
-  { t: 4 as const, label: "Водійське посвідчення" },
 ];
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number }
@@ -160,7 +161,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     // Засіваємо памʼять по типах документа з профілю, а активні поля беремо саме
     // для збереженого типу — щоб дані одного документа не «протікали» під інший.
     if (p.docByType) docStash.current = { ...p.docByType } as typeof docStash.current;
-    const active = p.docByType?.[p.docType];
+    // Водійське (4) у ЗК не підтримується — приводимо старі профілі до ID-картки.
+    const dt: 1 | 3 = p.docType === 1 ? 1 : 3;
+    const active = p.docByType?.[dt];
+    const sameType = dt === p.docType;
     setF((s) => ({
       ...s,
       surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
@@ -168,9 +172,11 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       phone: p.phone, email: p.email,
       identificationCode: p.identificationCode,
       dateBirth: p.dateBirth,
-      docType: p.docType,
-      docSerial: active?.serial ?? p.docSerial, docNumber: active?.number ?? p.docNumber,
-      docIssuedBy: active?.issuedBy ?? p.docIssuedBy, docDate: active?.date ?? p.docDate,
+      docType: dt,
+      docSerial: active?.serial ?? (sameType ? p.docSerial : ""),
+      docNumber: active?.number ?? (sameType ? p.docNumber : ""),
+      docIssuedBy: active?.issuedBy ?? (sameType ? p.docIssuedBy : ""),
+      docDate: active?.date ?? (sameType ? p.docDate : ""),
       street: p.street, house: p.house,
     }));
     if (p.city) {

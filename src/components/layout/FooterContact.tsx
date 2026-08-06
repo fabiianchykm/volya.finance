@@ -88,7 +88,7 @@ export function FooterContact() {
 
   return (
     <>
-      <div className="flex max-w-xl flex-wrap items-start justify-between gap-x-14 gap-y-8">
+      <div className="flex flex-wrap items-start justify-between gap-x-14 gap-y-8">
         {/* Підтримка — способи звʼязку */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
