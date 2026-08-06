@@ -433,16 +433,15 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         <div className="border-t border-zinc-100 pt-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Транспортний засіб</p>
 
-          {/* Держ. номер — першим: підтягує решту даних авто з реєстру */}
+          {/* Держ. номер — першим: підтягує решту даних авто з реєстру. Стиль — як решта. */}
           <div className="mb-4">
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500">Держ. номер</label>
-            <input
+            <Input
+              label="Держ. номер"
               value={f.number}
               onChange={(e) => setF((s) => ({ ...s, number: e.target.value.toUpperCase() }))}
               onBlur={lookupPlate}
               placeholder="AA 1234 BB"
-              spellCheck={false}
-              className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold uppercase tracking-wider text-zinc-900 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              required
             />
             {plateLoading ? (
               <p className="mt-1.5 text-xs font-medium text-indigo-500">Підтягуємо дані авто…</p>
