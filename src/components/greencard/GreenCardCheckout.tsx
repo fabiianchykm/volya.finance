@@ -433,8 +433,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         <div className="border-t border-zinc-100 pt-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Транспортний засіб</p>
 
-          {/* Держ. номер — першим: підтягує решту даних авто з реєстру. Стиль — як решта. */}
-          <div className="mb-4">
+          {/* Держ. номер — така сама комірка в сітці, як решта; підтягує дані авто. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input
               label="Держ. номер"
               value={f.number}
@@ -443,29 +443,22 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
               placeholder="AA 1234 BB"
               required
             />
-            {plateLoading ? (
-              <p className="mt-1.5 text-xs font-medium text-indigo-500">Підтягуємо дані авто…</p>
-            ) : plateError ? (
-              <p className="mt-1.5 text-xs font-medium text-amber-600">{plateError}</p>
-            ) : (
-              <p className="mt-1.5 text-xs text-zinc-400">Введіть номер — дані авто підтягнуться автоматично.</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Марка" value={f.brand} onChange={set("brand")} placeholder="AUDI" required />
             <Input label="Модель" value={f.model} onChange={set("model")} placeholder="A4" required />
             <Input label="VIN" value={f.vin} onChange={set("vin")} placeholder="необовʼязково" />
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Рік випуску" value={f.year} onChange={set("year")} placeholder="2015" required />
             <Input label="Обʼєм двигуна (см³)" value={f.engineSize} onChange={set("engineSize")} placeholder="1600" />
             <Input label="Кількість місць" value={f.nSeating} onChange={set("nSeating")} placeholder="5" />
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input label="Маса без навантаження (кг)" value={f.ownWeight} onChange={set("ownWeight")} placeholder="1200" />
             <Input label="Повна маса (кг)" value={f.totalWeight} onChange={set("totalWeight")} placeholder="1600" />
           </div>
+          {plateLoading ? (
+            <p className="mt-2 text-xs font-medium text-indigo-500">Підтягуємо дані авто за номером…</p>
+          ) : plateError ? (
+            <p className="mt-2 text-xs font-medium text-amber-600">{plateError}</p>
+          ) : (
+            <p className="mt-2 text-xs text-zinc-400">Введіть держ. номер — марка, модель і решта підтягнуться автоматично.</p>
+          )}
         </div>
 
         <div className="flex justify-end border-t border-zinc-100 pt-4">
