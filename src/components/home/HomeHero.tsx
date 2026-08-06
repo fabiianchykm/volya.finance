@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, ArrowRight, Clock, BadgePercent, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, ArrowRight, type LucideIcon } from "lucide-react";
 
 interface Product {
   href: string;
@@ -36,12 +36,6 @@ export function HomeHero() {
           <p className="mx-auto mt-5 max-w-xl text-base text-zinc-300 sm:text-lg">
             Авто, подорожі та улюбленці — усі поліси в одному місці. Оберіть продукт і оформіть за кілька хвилин.
           </p>
-
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-zinc-200">
-            <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-indigo-300" /> Офіційні поліси МТСБУ</span>
-            <span className="flex items-center gap-2"><Clock className="h-4 w-4 text-indigo-300" /> Оформлення за 3 хвилини</span>
-            <span className="flex items-center gap-2"><BadgePercent className="h-4 w-4 text-indigo-300" /> Найкращі ціни</span>
-          </div>
         </div>
 
         {/* Продукти — прямо в героєві */}
