@@ -13,8 +13,8 @@ export function MarketingSections({ showFaq = false }: { showFaq?: boolean }) {
     <>
       <FeaturesSection />
       <InsurersSection />
-      <ReviewsSection />
       <ReferralBanner />
+      <ReviewsSection />
       {showFaq && <FAQSection />}
       <CTAWrapper />
     </>
