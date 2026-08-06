@@ -10,7 +10,6 @@ import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
 import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
-import { formatPlate } from "@/lib/utils";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
 import type { GreenCardOffer, InsuranceOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
@@ -37,19 +36,23 @@ function periodFromDays(days: number): { value: number; label: string } {
   return { value: m, label: `${m} ${m === 1 ? "місяць" : m < 5 ? "місяці" : "місяців"}` };
 }
 
-function toGcCarType(autoCategory?: string): string {
-  const c = (autoCategory ?? "B")[0]?.toUpperCase();
-  return ["A", "B", "C", "D", "E"].includes(c) ? c : "B";
-}
+// Для зеленої карти достатньо КАТЕГОРІЇ авто (ціна залежить від неї), а не номера.
+const CAR_TYPES = [
+  { value: "B", label: "Легковий автомобіль" },
+  { value: "C", label: "Вантажний автомобіль" },
+  { value: "D", label: "Автобус" },
+  { value: "A", label: "Мотоцикл / мопед" },
+  { value: "E", label: "Причіп" },
+];
 
 const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
 
 export function GreenCardFlow() {
-  const [step, setStep] = useState<"plate" | "params" | "offers" | "checkout">("plate");
+  const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
 
-  const [plate, setPlate] = useState("");
-  const [vehicle, setVehicle] = useState<VehicleData | null>(null);
+  // Для ЦІНИ достатньо типу авто; номер/марку/модель збираємо на кроці оформлення.
+  const [carType, setCarType] = useState("B");
 
   const [territory, setTerritory] = useState("60");
   const [startDate, setStartDate] = useState("");
@@ -57,7 +60,6 @@ export function GreenCardFlow() {
 
   const [offers, setOffers] = useState<GreenCardOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<GreenCardOffer | null>(null);
-  const [loading, setLoading] = useState(false);
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,42 +71,12 @@ export function GreenCardFlow() {
   const endD = parseUaDate(endDate);
   const period = startD && endD ? periodFromDays(daysBetween(startD, endD)) : null;
   const territoryLabel = TERRITORIES.find((t) => t.value === territory)?.label ?? "";
-
-  // Крок 1 — пошук авто за номером.
-  const findCar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (plate.trim().replace(/\s/g, "").length < 6 || loading) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/vehicle/${encodeURIComponent(formatPlate(plate))}`);
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Авто не знайдено. Перевірте номер.");
-      const car = json.data;
-      setVehicle({
-        number: car.number ?? formatPlate(plate),
-        vin: car.vin ?? "",
-        year: Number(car.year),
-        model: car.model ?? "",
-        mark: car.mark ?? "",
-        autoCategory: car.autoCategory ?? "B1",
-        capacity: car.additionalParameters?.capacity ? Number(car.additionalParameters.capacity) : undefined,
-        numberOfSeats: car.additionalParameters?.numberOfSeats ? Number(car.additionalParameters.numberOfSeats) : undefined,
-        ownWeight: car.additionalParameters?.ownWeight ? Number(car.additionalParameters.ownWeight) : undefined,
-        totalWeight: car.additionalParameters?.totalWeight ? Number(car.additionalParameters.totalWeight) : undefined,
-      });
-      setStep("params");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Авто не знайдено. Перевірте номер.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const carTypeLabel = CAR_TYPES.find((c) => c.value === carType)?.label ?? "";
 
   // Крок 2 — розрахунок: одразу переходимо на світлий екран пропозицій із лоадером.
   const calc = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vehicle || !startD || !period || loading) return;
+    if (!startD || !period) return;
     setError(null);
     setOffers([]);
     setOffersLoading(true);
@@ -120,8 +92,7 @@ export function GreenCardFlow() {
           userType: 1,
           startDate: iso,
           periodOption: period.value,
-          carType: toGcCarType(vehicle.autoCategory),
-          carNumber: vehicle.number,
+          carType,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -138,7 +109,9 @@ export function GreenCardFlow() {
 
   const checkoutCtx = (offer: GreenCardOffer): GreenCardContext => ({
     offer, country: Number(territory), periodOption: period?.value ?? 15,
-    carType: toGcCarType(vehicle!.autoCategory), startDate, vehicle: vehicle!,
+    carType, startDate,
+    // Дані авто (номер/марка/модель) користувач заповнить на кроці оформлення.
+    vehicle: { number: "", vin: "", year: 0, model: "", mark: "", autoCategory: carType, cityId: 1, cityName: "", zone: 1 } as VehicleData,
   });
 
   // ── Світлий екран: пропозиції / оформлення (як OSAGO OffersSection) ──
@@ -153,12 +126,12 @@ export function GreenCardFlow() {
                 offers={offers}
                 loading={offersLoading}
                 error={error}
-                vehicle={vehicle}
-                summary={[territoryLabel, period?.label].filter(Boolean).join(" · ")}
+                vehicle={null}
+                summary={[carTypeLabel, territoryLabel, period?.label].filter(Boolean).join(" · ")}
                 onBack={() => { setError(null); setStep("params"); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
-            ) : selectedOffer && vehicle ? (
+            ) : selectedOffer ? (
               <GreenCardCheckout ctx={checkoutCtx(selectedOffer)} onBack={() => setStep("offers")} />
             ) : null}
           </div>
@@ -186,58 +159,18 @@ export function GreenCardFlow() {
                   страховка для виїзду за кордон
                 </span>
               </h1>
-              {step === "plate" && (
-                <p className="mx-auto max-w-xl text-base text-zinc-300">Введіть номер авто — і побачите пропозиції страхових із цінами.</p>
-              )}
+              <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть тип авто, напрямок і дати — і побачите ціни страхових.</p>
             </div>
 
-            {step === "plate" && (
-              <form onSubmit={findCar} className="mx-auto flex max-w-md flex-col items-center gap-5">
-                <div className="flex overflow-hidden rounded-xl border-4 border-zinc-300" style={{ height: 68 }}>
-                  <div className="flex flex-col items-center justify-center gap-1 bg-blue-700" style={{ width: 42 }}>
-                    <div className="grid grid-cols-3 gap-[3px]">
-                      {Array.from({ length: 12 }).map((_, i) => <div key={i} className="h-[3px] w-[3px] rounded-full bg-yellow-300 opacity-90" />)}
-                    </div>
-                    <span className="font-bold text-white" style={{ fontSize: 9, letterSpacing: 1 }}>UA</span>
-                  </div>
-                  <div className="flex items-center bg-white px-3 sm:px-5">
-                    <input
-                      type="text" value={plate}
-                      onChange={(e) => {
-                        const raw = e.target.value.toUpperCase().replace(/\s/g, "");
-                        let ff = raw;
-                        if (raw.length > 2) ff = raw.slice(0, 2) + " " + raw.slice(2);
-                        if (raw.length > 6) ff = raw.slice(0, 2) + " " + raw.slice(2, 6) + " " + raw.slice(6);
-                        setPlate(ff);
-                      }}
-                      placeholder="AA 1234 BB" maxLength={11} autoComplete="off" spellCheck={false}
-                      className="w-[210px] bg-transparent text-2xl font-bold uppercase tracking-[0.2em] text-zinc-900 placeholder:text-zinc-300 outline-none sm:w-[250px] sm:text-3xl"
-                      style={{ fontFamily: "monospace" }} required
-                    />
-                  </div>
-                </div>
-                {error && <p className="text-sm font-medium text-rose-200">{error}</p>}
-                <Button type="submit" size="xl" loading={loading} className="group rounded-2xl bg-white px-10 font-bold text-indigo-700 hover:bg-indigo-50">
-                  <span className="flex items-center gap-2.5">
-                    Розрахувати вартість
-                    <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
-                  </span>
-                </Button>
-              </form>
-            )}
-
-            {step === "params" && vehicle && (
+            {step === "params" && (
               <form onSubmit={calc} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
-                <div className="mb-5 flex items-center gap-3 rounded-xl bg-zinc-50 p-3 ring-1 ring-zinc-100">
-                  <Car className="h-5 w-5 shrink-0 text-indigo-500" />
-                  <p className="text-sm text-zinc-700">
-                    <span className="font-semibold text-zinc-900">{[vehicle.mark, vehicle.model].filter(Boolean).join(" ") || "Авто"}</span>
-                    {vehicle.year ? `, ${vehicle.year}` : ""} · {vehicle.number}
-                  </p>
-                  <button type="button" onClick={() => { setVehicle(null); setStep("plate"); }} className="ml-auto text-xs font-medium text-indigo-600 hover:underline">Змінити</button>
-                </div>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Car className="h-3.5 w-3.5" /> Тип авто</label>
+                    <select value={carType} onChange={(e) => setCarType(e.target.value)} className={selectClass}>
+                      {CAR_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
                     <select value={territory} onChange={(e) => setTerritory(e.target.value)} className={selectClass}>
@@ -256,7 +189,7 @@ export function GreenCardFlow() {
 
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-                <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!period || loading} className="mt-5 w-full">
+                <Button type="submit" variant="primary" size="lg" disabled={!period} className="mt-5 w-full">
                   <span className="flex items-center gap-2">
                     Розрахувати вартість <ArrowRight className="h-5 w-5" />
                   </span>
