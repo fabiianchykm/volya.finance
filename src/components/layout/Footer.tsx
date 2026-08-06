@@ -11,7 +11,6 @@ const footerLinks = {
   ],
   company: [
     { label: "Поширені запитання", href: "/osago#faq" },
-    { label: "Про нас", href: "#" },
   ],
   legal: [
     { label: "Інформація про Субагента", href: "/subagent" },
