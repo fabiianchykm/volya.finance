@@ -1,7 +1,3 @@
-"use client";
-
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
 import { Star, Quote } from "lucide-react";
 
 // ⚠️ ЗАГОТОВКИ-ПРИКЛАДИ. Заміни на РЕАЛЬНІ відгуки клієнтів (або підтягуй з Google-
@@ -16,32 +12,27 @@ const reviews = [
 ];
 
 export function ReviewsSection() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  // Дублюємо список — для безшовного «бігучого» ряду (translateX -50%).
+  const row = [...reviews, ...reviews];
 
   return (
-    <section className="bg-white py-20 sm:py-24" ref={ref}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          className="mx-auto mb-12 max-w-2xl text-center"
-        >
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Відгуки клієнтів</h2>
-          <p className="mt-3 text-zinc-500">Що кажуть люди, які оформили поліс через volya.finance</p>
-        </motion.div>
+    <section className="bg-white py-20 sm:py-24">
+      <div className="mx-auto mb-12 max-w-2xl px-4 text-center sm:px-6">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Відгуки клієнтів</h2>
+        <p className="mt-3 text-zinc-500">Що кажуть люди, які оформили поліс через volya.finance</p>
+      </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {reviews.map(({ name, city, text, color }, i) => (
-            <motion.div
-              key={name + city}
-              initial={{ opacity: 0, y: 24 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.45, delay: i * 0.07 }}
-              className="relative flex flex-col rounded-2xl bg-[#FAFAFA] p-6 ring-1 ring-zinc-200/50 transition-all hover:shadow-lg hover:shadow-indigo-900/5 hover:-translate-y-1"
+      {/* Один горизонтальний ряд, що плавно рухається (пауза на наведення) */}
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-white to-transparent sm:w-24" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-white to-transparent sm:w-24" />
+        <div className="animate-marquee">
+          {row.map(({ name, city, text, color }, i) => (
+            <div
+              key={i}
+              className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-[#FAFAFA] p-6 ring-1 ring-zinc-200/50"
             >
-              <Quote className="absolute right-5 top-5 h-6 w-6 text-zinc-200" />
+              <Quote className="mb-3 h-6 w-6 text-zinc-200" />
               <div className="mb-3 flex gap-0.5">
                 {Array.from({ length: 5 }).map((_, s) => (
                   <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />
@@ -57,7 +48,7 @@ export function ReviewsSection() {
                   <p className="text-xs text-zinc-400">{city}</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
