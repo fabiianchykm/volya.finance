@@ -10,7 +10,6 @@ const footerLinks = {
     { label: "Зелена карта", href: "/green-card" },
   ],
   company: [
-    { label: "Мої поліси", href: "/policies" },
     { label: "Поширені запитання", href: "/osago#faq" },
     { label: "Про нас", href: "#" },
   ],
