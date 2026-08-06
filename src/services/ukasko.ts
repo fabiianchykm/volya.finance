@@ -462,12 +462,14 @@ export class UkaskoService {
   async createGreenCardOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string; mtsbuLink?: string }> {
     // params ОБОВʼЯЗКОВИЙ (як у туристичному): без нього бекенд читає params['statusId']
     // з null і падає 500 "array offset on null" (OrderGreenCardRequest.php:283).
-    // statusId:-1 = крок 1, ЧЕРНЕТКА (за схемою). statusId:1 (повне заявлення) тут
-    // передчасно намагався видати й "забрати" договір до оплати → "Undefined index:
-    // contractFile". Реальна видача — пізніше через contract/confirm після оплати.
-    // Кожен модуль страховика має свої обовʼязкові поля поза базовою схемою.
-    // isDP — прапорець, який читає модуль ТАС (modules/Tas); без нього "Undefined index: isDP".
-    const payload = { ...orderData, isDP: false, params: { type: "save", statusId: -1 } };
+    // type:"declare" — ЛИШЕ заявити замовлення й отримати orderId (реальна видача —
+    // пізніше через contract/confirm після оплати). type:"save" ТУТ помилковий: він
+    // одразу запускає лістенер збереження транзакції договору (SaveTransactionContract),
+    // а обʼєкта договору ще нема → 500 "Trying to get property 'discount_price' of
+    // non-object" (перевірено на dev: save падає, declare/draft повертають id).
+    // statusId:-1 = крок 1, чернетка (за схемою). type — обовʼязковий (без нього
+    // "Undefined index: type"). isDP — прапорець модуля ТАС (без нього "Undefined index: isDP").
+    const payload = { ...orderData, isDP: false, params: { type: "declare", statusId: -1 } };
     const raw = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/greencard/order/create`,
       payload,
