@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
-import { VMark, BarlessA } from "./VMark";
 import { FooterContact } from "./FooterContact";
 
 const footerLinks = {
@@ -56,17 +55,7 @@ export function Footer() {
         <div className="grid gap-12 py-16 lg:grid-cols-12 lg:py-20">
           {/* Бренд + контакти + соцмережі */}
           <div className="lg:col-span-5">
-            <Link href="/" className="inline-flex items-center gap-1">
-              <VMark id="vmark-footer" className="h-11 w-11" />
-              <span
-                className="text-3xl font-medium uppercase tracking-[0.2em] text-white"
-              >
-                OLY<BarlessA className="inline-block h-[0.72em] w-auto align-baseline" />
-                <span className="text-[0.7em] font-semibold normal-case tracking-normal text-indigo-400">.finance</span>
-              </span>
-            </Link>
-
-            <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-zinc-400">
+            <p className="max-w-sm text-[15px] leading-relaxed text-zinc-400">
               <span className="text-zinc-300">Воля Фінанс</span> (volya.finance) — автострахування
               онлайн, швидко, офіційно та вигідно. Порівнюйте пропозиції провідних страхових і
               оформлюйте поліси за кілька хвилин.
