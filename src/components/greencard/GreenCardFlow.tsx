@@ -93,6 +93,9 @@ export function GreenCardFlow() {
           startDate: iso,
           periodOption: period.value,
           carType,
+          // Прод-калькулятор ЗК потребує номер, хоча ціна залежить лише від категорії.
+          // Передаємо плейсхолдер — реальний номер клієнт вводить на кроці оформлення.
+          carNumber: "AA1234BB",
         }),
       });
       const data = await res.json().catch(() => ({}));
