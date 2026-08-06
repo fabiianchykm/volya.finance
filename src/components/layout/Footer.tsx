@@ -12,7 +12,6 @@ const footerLinks = {
   company: [
     { label: "Мої поліси", href: "/policies" },
     { label: "Поширені запитання", href: "/osago#faq" },
-    { label: "Підтримка", href: "mailto:volya.finance.team@gmail.com" },
     { label: "Про нас", href: "#" },
   ],
   legal: [

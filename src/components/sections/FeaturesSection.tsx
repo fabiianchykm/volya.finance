@@ -8,7 +8,7 @@ const features = [
   {
     icon: Zap,
     title: "Оформлення за 3 хвилини",
-    description: "Від введення номера авто до отримання готового поліса — всього 3 хвилини.",
+    description: "Від введення номера авто до готового поліса — всього 3 хвилини, без зайвої бюрократії.",
     iconBg: "bg-amber-100",
     iconColor: "text-amber-600",
     glowColor: "bg-amber-600",
