@@ -157,6 +157,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   // Автопідстановка збереженого профілю страхувальника (як в ОСЦПВ). Оновлюємо лише
   // поля страхувальника — латинські ПІБ і дані авто (підтягнуті з реєстру) не чіпаємо.
   const applyProfile = (p: CustomerProfile) => {
+    // Засіваємо памʼять по типах документа з профілю, а активні поля беремо саме
+    // для збереженого типу — щоб дані одного документа не «протікали» під інший.
+    if (p.docByType) docStash.current = { ...p.docByType } as typeof docStash.current;
+    const active = p.docByType?.[p.docType];
     setF((s) => ({
       ...s,
       surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
@@ -165,7 +169,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       identificationCode: p.identificationCode,
       dateBirth: p.dateBirth,
       docType: p.docType,
-      docSerial: p.docSerial, docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
+      docSerial: active?.serial ?? p.docSerial, docNumber: active?.number ?? p.docNumber,
+      docIssuedBy: active?.issuedBy ?? p.docIssuedBy, docDate: active?.date ?? p.docDate,
       street: p.street, house: p.house,
     }));
     if (p.city) {

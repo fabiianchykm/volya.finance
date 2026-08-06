@@ -30,15 +30,15 @@ const footerLinks = {
 function LinkColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
     <div>
-      <h3 className="mb-5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+      <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
         {title}
       </h3>
-      <ul className="space-y-3">
+      <ul className="space-y-1.5">
         {links.map((link) => (
           <li key={link.label}>
             <Link
               href={link.href}
-              className="text-[15px] text-zinc-600 transition-colors hover:text-indigo-600"
+              className="text-[13px] text-zinc-600 transition-colors hover:text-indigo-600"
             >
               {link.label}
             </Link>
@@ -53,27 +53,25 @@ export function Footer() {
   return (
     <footer className="border-t border-zinc-200 bg-[#F5F5F7] text-zinc-600">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
-        <div className="grid gap-12 py-16 lg:grid-cols-12 lg:py-20">
-          {/* Бренд + контакти + соцмережі */}
-          <div className="lg:col-span-5">
-            <FooterContact />
+        {/* Бренд + контакти + застосунок, а під ними — компактні колонки посилань */}
+        <div className="py-16 lg:py-20">
+          <FooterContact />
 
-            {/* Застосунок для iPhone — «Скоро» у правому верхньому куті рамки кнопки */}
-            <div className="mt-7">
-              <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Застосунок</p>
-              <div className="relative inline-flex cursor-default items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-2.5">
-                <AppleLogo className="h-6 w-6 text-zinc-900" />
-                <span className="flex flex-col leading-tight">
-                  <span className="text-[10px] text-zinc-500">Завантажити в</span>
-                  <span className="text-sm font-semibold text-zinc-900">App Store</span>
-                </span>
-                <span className="absolute -right-2 -top-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm">Скоро</span>
-              </div>
+          {/* Застосунок для iPhone — «Скоро» у правому верхньому куті рамки кнопки */}
+          <div className="mt-7">
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Застосунок</p>
+            <div className="relative inline-flex cursor-default items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-2.5">
+              <AppleLogo className="h-6 w-6 text-zinc-900" />
+              <span className="flex flex-col leading-tight">
+                <span className="text-[10px] text-zinc-500">Завантажити в</span>
+                <span className="text-sm font-semibold text-zinc-900">App Store</span>
+              </span>
+              <span className="absolute -right-2 -top-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm">Скоро</span>
             </div>
           </div>
 
-          {/* Колонки посилань */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7 lg:gap-8">
+          {/* Колонки посилань — компактні, під підтримкою й застосунком */}
+          <div className="mt-10 grid max-w-2xl grid-cols-3 gap-6">
             <LinkColumn title="Продукти" links={footerLinks.products} />
             <LinkColumn title="Компанія" links={footerLinks.company} />
             <LinkColumn title="Документи" links={footerLinks.legal} />
@@ -93,7 +91,7 @@ export function Footer() {
             <img
               src="/mtsbu-logo.svg"
               alt="МТСБУ — Моторне (транспортне) страхове бюро України"
-              className="h-5 w-auto"
+              className="h-5 w-auto opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0"
             />
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </a>

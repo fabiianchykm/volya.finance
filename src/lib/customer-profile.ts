@@ -37,9 +37,19 @@ export interface CustomerProfile {
   docNumber: string;
   docIssuedBy: string;
   docDate: string;          // "дд.мм.рррр"
+  // Дані документа памʼятаються ОКРЕМО по кожному типу — щоб дані ID-картки ніколи
+  // не показувались під «водійським» тощо. docType вгорі — лише «останній обраний».
+  docByType?: Partial<Record<1 | 3 | 4, DocFields>>;
   city: SavedCity | null;
   cityQuery: string;
   savedAt: number;
+}
+
+export interface DocFields {
+  serial: string;
+  number: string;
+  issuedBy: string;
+  date: string;
 }
 
 const KEY = "volya_profiles";       // map: email(lower) → CustomerProfile
@@ -72,6 +82,18 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
   try {
     const map = readMap();
     const prev = map[email] ?? ({} as CustomerProfile);
+    // Оновлюємо памʼять документа для АКТИВНОГО типу, зберігаючи дані інших типів.
+    const activeType = p.docType ?? prev.docType ?? 3;
+    const prevByType = prev.docByType ?? {};
+    const docByType = { ...prevByType };
+    if (p.docSerial !== undefined || p.docNumber !== undefined || p.docIssuedBy !== undefined || p.docDate !== undefined) {
+      docByType[activeType] = {
+        serial: p.docSerial ?? prevByType[activeType]?.serial ?? "",
+        number: p.docNumber ?? prevByType[activeType]?.number ?? "",
+        issuedBy: p.docIssuedBy ?? prevByType[activeType]?.issuedBy ?? "",
+        date: p.docDate ?? prevByType[activeType]?.date ?? "",
+      };
+    }
     // Явна нормалізація: обовʼязкові рядкові поля не мають бути undefined,
     // інакше інпути стають uncontrolled. Опційні (латиниця/паспорт) лишаємо як є.
     map[email] = {
@@ -86,11 +108,12 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
       dateBirth: p.dateBirth ?? prev.dateBirth ?? "",
       street: p.street ?? prev.street ?? "",
       house: p.house ?? prev.house ?? "",
-      docType: p.docType ?? prev.docType ?? 3,
+      docType: activeType,
       docSerial: p.docSerial ?? prev.docSerial ?? "",
       docNumber: p.docNumber ?? prev.docNumber ?? "",
       docIssuedBy: p.docIssuedBy ?? prev.docIssuedBy ?? "",
       docDate: p.docDate ?? prev.docDate ?? "",
+      docByType,
       city: p.city ?? prev.city ?? null,
       cityQuery: p.cityQuery ?? prev.cityQuery ?? "",
       passportSerial: p.passportSerial ?? prev.passportSerial,
