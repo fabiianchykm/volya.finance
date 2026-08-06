@@ -20,7 +20,7 @@ const AUTO_LINKS = [
 ];
 const OTHER_LINKS = [
   { label: "Туристичне", href: "/tourism", icon: Plane, badge: undefined as string | undefined },
-  { label: "Тварини", href: "/pets", icon: PawPrint, badge: "скоро" },
+  { label: "Тварини", href: "/pets", icon: PawPrint, badge: undefined as string | undefined },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...AUTO_LINKS, ...OTHER_LINKS];
