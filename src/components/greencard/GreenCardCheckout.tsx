@@ -12,7 +12,7 @@ import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
-import { cityShort } from "@/lib/utils";
+import { cityShort, formatPlate } from "@/lib/utils";
 
 // Анкета оформлення «Зелена карта» (аналог CheckoutClient для ОСЦПВ):
 // дані страхувальника (ПІБ укр + латиниця, документ, адреса) → заявлення
@@ -81,6 +81,39 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     engineSize: v.capacity ? String(v.capacity) : "",
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
+
+  // Авто-підтягування даних авто за держ. номером (як на старому 1-му кроці, лише тут).
+  const [plateLoading, setPlateLoading] = useState(false);
+  const [plateError, setPlateError] = useState<string | null>(null);
+  const lookupPlate = async () => {
+    const raw = f.number.replace(/\s/g, "");
+    if (raw.length < 6 || plateLoading) return;
+    setPlateLoading(true);
+    setPlateError(null);
+    try {
+      const res = await fetch(`/api/vehicle/${encodeURIComponent(formatPlate(f.number))}`);
+      const json = await res.json();
+      if (!json.success) { setPlateError(json.error ?? "Авто не знайдено — заповніть дані вручну"); return; }
+      const car = json.data;
+      const ap = car.additionalParameters ?? {};
+      setF((s) => ({
+        ...s,
+        number: car.number ?? s.number,
+        brand: car.mark ?? s.brand,
+        model: car.model ?? s.model,
+        year: car.year ? String(car.year) : s.year,
+        vin: car.vin ?? s.vin,
+        engineSize: ap.capacity ? String(ap.capacity) : s.engineSize,
+        nSeating: ap.numberOfSeats ? String(ap.numberOfSeats) : s.nSeating,
+        ownWeight: ap.ownWeight ? String(ap.ownWeight) : s.ownWeight,
+        totalWeight: ap.totalWeight ? String(ap.totalWeight) : s.totalWeight,
+      }));
+    } catch {
+      setPlateError("Помилка звʼязку з реєстром — заповніть дані вручну");
+    } finally {
+      setPlateLoading(false);
+    }
+  };
 
   // Поля документа памʼятаються ОКРЕМО по кожному типу: при зміні типу сташимо поточні
   // й відновлюємо збережені для нового типу (або порожні, якщо для нього ще нема даних).
@@ -385,18 +418,41 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         {/* Авто */}
         <div className="border-t border-zinc-100 pt-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Транспортний засіб</p>
+
+          {/* Держ. номер — першим: підтягує решту даних авто з реєстру */}
+          <div className="mb-4">
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500">Держ. номер</label>
+            <div className="flex gap-2">
+              <input
+                value={f.number}
+                onChange={(e) => setF((s) => ({ ...s, number: e.target.value.toUpperCase() }))}
+                onBlur={lookupPlate}
+                placeholder="AA 1234 BB"
+                spellCheck={false}
+                className="h-11 flex-1 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold uppercase tracking-wider text-zinc-900 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              />
+              <Button type="button" variant="secondary" size="md" loading={plateLoading} onClick={lookupPlate}>
+                Підтягнути
+              </Button>
+            </div>
+            {plateError ? (
+              <p className="mt-1.5 text-xs font-medium text-amber-600">{plateError}</p>
+            ) : (
+              <p className="mt-1.5 text-xs text-zinc-400">Введіть номер — марка, модель і решта підтягнуться автоматично.</p>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Марка" value={f.brand} onChange={set("brand")} placeholder="AUDI" required />
             <Input label="Модель" value={f.model} onChange={set("model")} placeholder="A4" required />
-            <Input label="Держ. номер" value={f.number} onChange={set("number")} placeholder="AA1234BB" required />
+            <Input label="VIN" value={f.vin} onChange={set("vin")} placeholder="необовʼязково" />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="VIN" value={f.vin} onChange={set("vin")} placeholder="необовʼязково" />
             <Input label="Рік випуску" value={f.year} onChange={set("year")} placeholder="2015" required />
             <Input label="Обʼєм двигуна (см³)" value={f.engineSize} onChange={set("engineSize")} placeholder="1600" />
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Кількість місць" value={f.nSeating} onChange={set("nSeating")} placeholder="5" />
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input label="Маса без навантаження (кг)" value={f.ownWeight} onChange={set("ownWeight")} placeholder="1200" />
             <Input label="Повна маса (кг)" value={f.totalWeight} onChange={set("totalWeight")} placeholder="1600" />
           </div>
