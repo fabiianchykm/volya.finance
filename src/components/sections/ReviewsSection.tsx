@@ -47,59 +47,49 @@ const reviews: { name: string; city: string; text: string; color: string; source
   { name: "Наталія", city: "Вінниця", text: "Туристичне для всієї родини оформила за кілька хвилин. Ціни приємно здивували.", color: "bg-violet-500", source: "google" },
 ];
 
-function ReviewCard({ name, city, text, color, source }: (typeof reviews)[number]) {
-  const SourceIcon = SOURCE_ICON[source];
-  return (
-    <div className="mb-4 flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/50">
-      <div className="mb-3 flex items-center justify-between">
-        <Quote className="h-6 w-6 text-zinc-200" />
-        <SourceIcon className="h-5 w-5 text-zinc-400" />
-      </div>
-      <p className="text-sm leading-relaxed text-zinc-700">{text}</p>
-      <div className="mt-5 flex items-center gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
-          {name[0]}
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">{name}</p>
-          <p className="text-xs text-zinc-400">{city}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function ReviewsSection() {
-  const col = [...reviews, ...reviews];
+  const row = [...reviews, ...reviews];
 
   return (
     <section className="bg-[#FAFAFA] py-20 sm:py-24">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-12 lg:gap-14">
-        {/* Заголовок збоку */}
-        <div className="lg:col-span-5">
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Відгуки клієнтів</h2>
-          <p className="mt-4 max-w-md text-base leading-relaxed text-zinc-500">
-            Тисячі українців щодня оформлюють поліси онлайн у нас. Ось що вони кажуть про сервіс.
-          </p>
-          <div className="mt-6 flex items-center gap-2.5">
+      {/* Заголовок — ліворуч, трохи більший */}
+      <div className="mx-auto mb-12 max-w-7xl px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <h2 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">Відгуки клієнтів</h2>
+          <div className="flex items-center gap-1.5">
             <GoogleIcon className="h-6 w-6 text-zinc-400" />
             <FacebookIcon className="h-6 w-6 text-zinc-400" />
             <ThreadsIcon className="h-6 w-6 text-zinc-400" />
             <XIcon className="h-6 w-6 text-zinc-400" />
           </div>
         </div>
+      </div>
 
-        {/* Стрічка карток праворуч — вертикальний маркі з градієнтним затуханням */}
-        <div className="lg:col-span-7">
-          <div className="relative mx-auto h-[440px] max-w-md overflow-hidden sm:h-[520px]">
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-[#FAFAFA] to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-[#FAFAFA] to-transparent" />
-            <div className="animate-marquee-vertical">
-              {col.map((r, i) => (
-                <ReviewCard key={i} {...r} />
-              ))}
-            </div>
-          </div>
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#FAFAFA] to-transparent sm:w-24" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#FAFAFA] to-transparent sm:w-24" />
+        <div className="animate-marquee">
+          {row.map(({ name, city, text, color, source }, i) => {
+            const SourceIcon = SOURCE_ICON[source];
+            return (
+              <div key={i} className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/50">
+                <div className="mb-3 flex items-center justify-between">
+                  <Quote className="h-6 w-6 text-zinc-200" />
+                  <SourceIcon className="h-5 w-5 text-zinc-400" />
+                </div>
+                <p className="flex-1 text-sm leading-relaxed text-zinc-700">{text}</p>
+                <div className="mt-5 flex items-center gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
+                    {name[0]}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900">{name}</p>
+                    <p className="text-xs text-zinc-400">{city}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
