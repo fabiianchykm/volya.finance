@@ -28,12 +28,22 @@ export interface GreenCardContext {
   vehicle: VehicleData;   // з пошуку за номером
 }
 
-// Для Зеленої карти документ страхувальника — лише паспорт/ID-картка. Водійське (4)
-// прибрано: це не документ, що посвідчує особу, і ARX на ньому падає (offset 4).
-const DOC_TYPES = [
-  { t: 3 as const, label: "ID-карта" },
-  { t: 1 as const, label: "Паспорт (старого зразка)" },
+// Каталог документів страхувальника: константа Ukasko → код (для API) + підписи.
+// Кожен страховик приймає СВІЙ набір (offer.available_documents), тож у checkout
+// показуємо лише перетин із цим каталогом. Порядок = пріоритет за замовчуванням.
+type DocCode = 1 | 2 | 3;
+const DOC_CATALOG: { key: string; t: DocCode; label: string; serialLabel: string }[] = [
+  { key: "DOCUMENT_ID_CARD",          t: 3, label: "ID-картка",           serialLabel: "Запис № (УНЗР)" },
+  { key: "DOCUMENT_EXTERNAL_PASSPORT", t: 2, label: "Закордонний паспорт", serialLabel: "Серія" },
+  { key: "DOCUMENT_PASSPORT",         t: 1, label: "Паспорт (книжечка)",  serialLabel: "Серія" },
 ];
+const DOC_FALLBACK = DOC_CATALOG.filter((d) => d.t === 3 || d.t === 1);
+// Дозволені типи для конкретного офера (перетин каталогу з available_documents).
+function allowedDocsFor(available?: string[]) {
+  if (!available || available.length === 0) return DOC_FALLBACK;
+  const hit = DOC_CATALOG.filter((d) => available.includes(d.key));
+  return hit.length ? hit : DOC_FALLBACK;
+}
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number }
 
@@ -66,12 +76,15 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   const [error, setError] = useState<string | null>(null);
 
   const v = ctx.vehicle;
+  // Типи документів, дозволені обраним страховиком (напр. ARX/INGO — лише закордонний).
+  const allowedDocs = allowedDocsFor(ctx.offer.available_documents);
+  const isAllowedDoc = (t: number): t is DocCode => allowedDocs.some((d) => d.t === t);
   const [f, setF] = useState({
     surnameUa: "", nameUa: "", patronymicUa: "",
     surnameLat: "", nameLat: "",
     dateBirth: "", identificationCode: "",
     phone: "", email: "",
-    docType: 3 as 1 | 3 | 4, docSerial: "", docNumber: "", docIssuedBy: "", docDate: "",
+    docType: allowedDocs[0].t as DocCode, docSerial: "", docNumber: "", docIssuedBy: "", docDate: "",
     street: "", house: "", apartment: "",
     // Авто — попередньо заповнене з пошуку за номером.
     brand: v.mark ?? "", model: v.model ?? "", number: v.number ?? "", vin: v.vin ?? "",
@@ -133,7 +146,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   // Поля документа памʼятаються ОКРЕМО по кожному типу: при зміні типу сташимо поточні
   // й відновлюємо збережені для нового типу (або порожні, якщо для нього ще нема даних).
   const docStash = useRef<Record<number, { serial: string; number: string; issuedBy: string; date: string }>>({});
-  const changeDocType = (t: 1 | 3 | 4) => setF((s) => {
+  const changeDocType = (t: DocCode) => setF((s) => {
     if (s.docType === t) return s;
     docStash.current[s.docType] = { serial: s.docSerial, number: s.docNumber, issuedBy: s.docIssuedBy, date: s.docDate };
     const saved = docStash.current[t];
@@ -161,8 +174,9 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     // Засіваємо памʼять по типах документа з профілю, а активні поля беремо саме
     // для збереженого типу — щоб дані одного документа не «протікали» під інший.
     if (p.docByType) docStash.current = { ...p.docByType } as typeof docStash.current;
-    // Водійське (4) у ЗК не підтримується — приводимо старі профілі до ID-картки.
-    const dt: 1 | 3 = p.docType === 1 ? 1 : 3;
+    // Беремо збережений тип, лише якщо цей страховик його приймає; інакше — перший
+    // дозволений (напр. закордонний паспорт для ARX/INGO), з чистими полями документа.
+    const dt: DocCode = isAllowedDoc(p.docType) ? p.docType : allowedDocs[0].t;
     const active = p.docByType?.[dt];
     const sameType = dt === p.docType;
     setF((s) => ({
@@ -193,6 +207,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     const last = loadLastProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (last) applyProfile(last);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Якщо введений email збігається зі збереженим профілем — автозаповнюємо решту.
@@ -394,7 +409,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         <div className="border-t border-zinc-100 pt-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Документ, що посвідчує особу</p>
           <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {DOC_TYPES.map(({ t, label }) => (
+            {allowedDocs.map(({ t, label }) => (
               <button key={t} type="button" onClick={() => changeDocType(t)}
                 className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
                   f.docType === t ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
@@ -402,7 +417,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
             ))}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label={f.docType === 3 ? "Запис № (УНЗР)" : "Серія"} value={f.docSerial} onChange={set("docSerial")} required />
+            <Input label={DOC_CATALOG.find((d) => d.t === f.docType)?.serialLabel ?? "Серія"} value={f.docSerial} onChange={set("docSerial")} required />
             <Input label="Номер документа" value={f.docNumber} onChange={set("docNumber")} required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">

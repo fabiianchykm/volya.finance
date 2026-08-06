@@ -236,6 +236,10 @@ export interface GreenCardOffer {
   companyNamePublic: string;
   company?: { logo?: string | null; [k: string]: unknown };
   dateFromMax?: number;
+  // Типи документів страхувальника, які приймає ЦЕЙ страховик (константи Ukasko,
+  // напр. "DOCUMENT_ID_CARD"). Різні СК приймають різні набори — ARX/INGO лише
+  // закордонний паспорт, тож checkout показує тільки дозволені типи.
+  available_documents?: string[];
 }
 
 export interface GreenCardParams {

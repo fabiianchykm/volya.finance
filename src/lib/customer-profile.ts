@@ -32,14 +32,14 @@ export interface CustomerProfile {
   dateBirth: string;        // "дд.мм.рррр"
   street: string;
   house: string;
-  docType: 1 | 3 | 4;
+  docType: 1 | 2 | 3 | 4;  // 1 паспорт, 2 закордонний паспорт, 3 ID-картка, 4 водійське
   docSerial: string;
   docNumber: string;
   docIssuedBy: string;
   docDate: string;          // "дд.мм.рррр"
   // Дані документа памʼятаються ОКРЕМО по кожному типу — щоб дані ID-картки ніколи
   // не показувались під «водійським» тощо. docType вгорі — лише «останній обраний».
-  docByType?: Partial<Record<1 | 3 | 4, DocFields>>;
+  docByType?: Partial<Record<1 | 2 | 3 | 4, DocFields>>;
   city: SavedCity | null;
   cityQuery: string;
   savedAt: number;

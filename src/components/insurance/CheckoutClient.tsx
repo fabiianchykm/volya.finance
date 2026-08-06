@@ -493,7 +493,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
       docIssuedBy: p.docIssuedBy,
       docDate: p.docDate,
     });
-    setDocType(p.docType);
+    setDocType(p.docType === 2 ? 3 : p.docType); // 2 (закордонний) лише для ЗК
     if (p.city) {
       setSelectedCity(p.city);
       setCityQuery(cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua));
