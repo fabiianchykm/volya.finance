@@ -66,7 +66,9 @@ export function DateInput({ label, value, onChange, required, className, error, 
   const [open, setOpen] = useState(false);
   // Місяць/рік, що зараз показані в календарі. За замовчуванням — 1990 (зручно для ДН).
   const [view, setView] = useState(() => {
-    const base = parsed ?? new Date(defaultYear ?? today.getFullYear(), 0, 1);
+    // Порожнє значення: якщо задано minDate (дата в майбутньому, напр. дата початку
+    // поїздки) — відкриваємо на тому місяці, а не в січні. Інакше — defaultYear (для ДН).
+    const base = parsed ?? (minDate ? startOfDay(minDate) : new Date(defaultYear ?? today.getFullYear(), 0, 1));
     return { y: base.getFullYear(), m: base.getMonth() };
   });
   const ref = useRef<HTMLDivElement>(null);
