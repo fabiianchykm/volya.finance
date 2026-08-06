@@ -164,7 +164,7 @@ export function GreenCardFlow() {
 
             {step === "params" && (
               <form onSubmit={calc} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Car className="h-3.5 w-3.5" /> Тип авто</label>
                     <select value={carType} onChange={(e) => setCarType(e.target.value)} className={selectClass}>
