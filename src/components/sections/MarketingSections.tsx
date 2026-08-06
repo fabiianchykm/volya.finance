@@ -1,6 +1,7 @@
 import { FeaturesSection } from "./FeaturesSection";
 import { InsurersSection } from "./InsurersSection";
 import { ReviewsSection } from "./ReviewsSection";
+import { ReferralBanner } from "./ReferralBanner";
 import { FAQSection } from "./FAQSection";
 import { CTAWrapper } from "./CTAWrapper";
 
@@ -13,6 +14,7 @@ export function MarketingSections({ showFaq = false }: { showFaq?: boolean }) {
       <FeaturesSection />
       <InsurersSection />
       <ReviewsSection />
+      <ReferralBanner />
       {showFaq && <FAQSection />}
       <CTAWrapper />
     </>
