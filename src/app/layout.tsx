@@ -3,6 +3,7 @@ import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { ProfileSync } from "@/components/profile/ProfileSync";
 import { LoginProvider } from "@/components/auth/LoginProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/analytics/GoogleTagManager";
@@ -79,6 +80,7 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col bg-white font-sans">
         <GoogleTagManagerNoScript />
         <SessionProvider session={session}>
+          <ProfileSync />
           <LoginProvider>{children}</LoginProvider>
         </SessionProvider>
         <ContactWidget />

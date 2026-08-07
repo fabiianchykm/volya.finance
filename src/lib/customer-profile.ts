@@ -131,6 +131,14 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
 
     localStorage.setItem(KEY, JSON.stringify(trimmed));
     localStorage.setItem(LAST_KEY, email);
+
+    // Синхронізація в БД під акаунтом (fire-and-forget). Сервер бере email із сесії:
+    // для гостей поверне 401 і просто нічого не збереже — це нормально.
+    void fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(map[email]),
+    }).catch(() => { /* офлайн/гість — ігноруємо */ });
   } catch {
     // localStorage може бути недоступний (приватний режим, квота) — просто пропускаємо.
   }
@@ -155,5 +163,39 @@ export function loadLastProfile(): CustomerProfile | null {
     return entries[0] ?? null;
   } catch {
     return null;
+  }
+}
+
+// ── Серверна синхронізація (для залогінених) ────────────────────────────────
+// Профіль зберігається в БД під АКАУНТОМ (email сесії) через /api/profile.
+// saveProfile() додатково пушить у БД (fire-and-forget); на логіні ProfileSync
+// тягне профіль акаунта в localStorage.
+
+/** Записати профіль із сервера в локальний кеш і зробити його активним. */
+export function importServerProfile(p: CustomerProfile): void {
+  try {
+    const email = normEmail(p.email);
+    if (!email) return;
+    const map = readMap();
+    map[email] = { ...p, email, savedAt: Date.now() };
+    localStorage.setItem(KEY, JSON.stringify(map));
+    localStorage.setItem(LAST_KEY, email);
+  } catch {
+    // ignore
+  }
+}
+
+/** Прибрати «останній» вказівник — форми не автозаповнюються (але кеш лишається). */
+export function clearLastProfile(): void {
+  try { localStorage.removeItem(LAST_KEY); } catch { /* ignore */ }
+}
+
+/** Повністю очистити локальний кеш профілів (напр. при виході з акаунта). */
+export function clearLocalProfiles(): void {
+  try {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(LAST_KEY);
+  } catch {
+    // ignore
   }
 }

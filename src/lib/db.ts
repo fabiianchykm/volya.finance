@@ -57,6 +57,15 @@ export function ensureSchema(): Promise<void> {
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'issued'`;
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS product text`;
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS policy_number text`;
+      // Профіль страхувальника, привʼязаний до АКАУНТА (email сесії). Один запис на
+      // акаунт; синхронізується між пристроями. data — весь CustomerProfile як jsonb.
+      await sql`
+        CREATE TABLE IF NOT EXISTS customer_profiles (
+          email      text PRIMARY KEY,
+          data       jsonb NOT NULL DEFAULT '{}'::jsonb,
+          updated_at timestamptz NOT NULL DEFAULT now()
+        )
+      `;
     })().catch((e) => {
       schemaPromise = null;
       throw e;
