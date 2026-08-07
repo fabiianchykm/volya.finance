@@ -54,7 +54,7 @@ export function HomeHero() {
                 </div>
                 <h3 className="text-lg font-bold text-zinc-900">{title}</h3>
                 <p className="mt-1 flex-1 text-sm leading-relaxed text-zinc-500">{desc}</p>
-                <span className={`mt-4 flex items-center gap-1.5 text-sm font-semibold ${soon ? "text-zinc-400" : "text-indigo-600"}`}>
+                <span className={`mt-4 flex items-center justify-end gap-1.5 text-sm font-semibold ${soon ? "text-zinc-400" : "text-indigo-600"}`}>
                   {soon ? "Незабаром" : "Оформити"}
                   {!soon && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
                 </span>
