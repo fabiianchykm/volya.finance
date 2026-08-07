@@ -6,7 +6,7 @@ import { MarketingSections } from "@/components/sections/MarketingSections";
 export default function HomePage() {
   return (
     <>
-      <Navbar solid />
+      <Navbar />
       <main className="flex-1">
         <HomeHero />
         <MarketingSections />
