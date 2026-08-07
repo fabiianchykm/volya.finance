@@ -52,8 +52,9 @@ export interface DocFields {
   date: string;
 }
 
-const KEY = "volya_profiles";       // map: email(lower) → CustomerProfile
+const KEY = "volya_profiles";        // map: email(lower) → CustomerProfile
 const LAST_KEY = "volya_last_email"; // останній використаний email
+const OWNER_KEY = "volya_profile_owner"; // чий це локальний кеш: email акаунта або порожньо (гість)
 const MAX = 10;                      // не даємо мапі рости безмежно
 
 type ProfileMap = Record<string, CustomerProfile>;
@@ -195,7 +196,18 @@ export function clearLocalProfiles(): void {
   try {
     localStorage.removeItem(KEY);
     localStorage.removeItem(LAST_KEY);
+    localStorage.removeItem(OWNER_KEY);
   } catch {
     // ignore
   }
+}
+
+/** Чий зараз локальний кеш: email акаунта, або null для гостя. */
+export function getProfileOwner(): string | null {
+  try { return localStorage.getItem(OWNER_KEY); } catch { return null; }
+}
+
+/** Позначити, що локальний кеш належить цьому акаунту. */
+export function setProfileOwner(accountEmail: string): void {
+  try { localStorage.setItem(OWNER_KEY, normEmail(accountEmail)); } catch { /* ignore */ }
 }
