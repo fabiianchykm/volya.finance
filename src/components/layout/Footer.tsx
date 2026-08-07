@@ -21,8 +21,8 @@ function GooglePlayLogo({ className }: { className?: string }) {
 // Бейдж застосунку з кутовою позначкою «Скоро» (магазини ще не активні).
 function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: string }) {
   return (
-    <div className="relative inline-flex cursor-default items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white px-6 py-3.5">
-      {logo}
+    <div className="relative flex w-full cursor-default items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white px-6 py-3.5">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-zinc-900">{logo}</span>
       <span className="flex flex-col leading-tight">
         <span className="text-xs text-zinc-500">{top}</span>
         <span className="text-lg font-semibold text-zinc-900">{name}</span>
@@ -83,9 +83,9 @@ export function Footer() {
           {/* Застосунки (iOS + Android) — «Скоро» у правому верхньому куті рамок */}
           <div className="mt-7">
             <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Застосунок</p>
-            <div className="flex flex-wrap gap-4">
-              <StoreBadge logo={<AppleLogo className="h-8 w-8 text-zinc-900" />} top="Завантажити в" name="App Store" />
-              <StoreBadge logo={<GooglePlayLogo className="h-7 w-7 text-zinc-900" />} top="Завантажити в" name="Google Play" />
+            <div className="grid max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
+              <StoreBadge logo={<AppleLogo className="h-6 w-6" />} top="Завантажити в" name="App Store" />
+              <StoreBadge logo={<GooglePlayLogo className="h-6 w-6" />} top="Завантажити в" name="Google Play" />
             </div>
           </div>
 

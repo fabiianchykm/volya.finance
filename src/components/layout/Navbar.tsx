@@ -13,22 +13,23 @@ import { useLogin } from "@/components/auth/LoginProvider";
 
 type NavItem = { label: string; href: string; icon: LucideIcon; desc: string; badge?: string; soon?: boolean };
 
-// Продукти згруповані у два дропдауни, щоб меню не розтягувалось і було зрозуміло,
-// що це саме страхування (кожен підпункт має опис).
-const AUTO_LINKS: NavItem[] = [
+// Продукти згруповані у два дропдауни за типом страхування (майнове / особисте),
+// щоб меню не розтягувалось і кожен підпункт мав зрозумілий опис.
+// «Матеріальне» — авто + житло (майно).
+const MATERIAL_LINKS: NavItem[] = [
   { label: "Автоцивілка", href: "/osago", icon: ShieldCheck, desc: "ОСЦПВ онлайн" },
   { label: "КАСКО", href: "/kasko", icon: Car, desc: "Повний захист авто" },
   { label: "Міні-КАСКО", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше" },
   { label: "Зелена карта", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон" },
+  { label: "Житло", href: "#", icon: Home, desc: "Захист квартири чи будинку", badge: "скоро", soon: true },
 ];
+// «Особисте» — здоровʼя/подорожі/улюбленці.
 const PERSONAL_LINKS: NavItem[] = [
   { label: "Туристичне", href: "/tourism", icon: Plane, desc: "Медичне для подорожей за кордон" },
   { label: "Тварини", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак" },
 ];
-// Житло — окремий пункт (майнове, не в дропдауні), поки «скоро» й некликабельне.
-const HOUSING: NavItem = { label: "Житло", href: "#", icon: Home, desc: "Захист квартири чи будинку", badge: "скоро", soon: true };
 // Плаский список для мобільного меню (там ширини вистачає).
-const navLinks = [...AUTO_LINKS, ...PERSONAL_LINKS, HOUSING];
+const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];
 
 // Дропдаун меню з підпунктами-описами. Керований клік/тап + hover (на планшетах
 // hover нема, тож потрібен клік), закривається по кліку поза ним і по Escape.
@@ -151,24 +152,8 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         </Link>
 
         <ul className="hidden items-center gap-0.5 md:flex">
-          <NavDropdown title="Автострахування" links={AUTO_LINKS} opaque={opaque} />
+          <NavDropdown title="Матеріальне" links={MATERIAL_LINKS} opaque={opaque} />
           <NavDropdown title="Особисте страхування" links={PERSONAL_LINKS} opaque={opaque} />
-          {/* Житло — окремий пункт, поки «скоро» (некликабельне) */}
-          <li>
-            <span
-              aria-disabled
-              className={cn(
-                "flex cursor-default items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium",
-                opaque ? "text-zinc-400" : "text-white/50"
-              )}
-            >
-              <HOUSING.icon className="h-4 w-4 opacity-80" />
-              {HOUSING.label}
-              {HOUSING.badge && (
-                <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{HOUSING.badge}</span>
-              )}
-            </span>
-          </li>
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">

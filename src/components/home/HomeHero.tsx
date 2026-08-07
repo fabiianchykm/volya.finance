@@ -20,22 +20,21 @@ const products: Product[] = [
   { href: "#", icon: Home, title: "Житло", desc: "Захист квартири чи будинку — від пожежі, затоплення та інших ризиків.", badge: "Скоро", soon: true },
 ];
 
-// Герой-хаб: широкий меседж (не лише авто) + продукти прямо тут (скляні картки).
+// Герой-хаб: широкий меседж (не лише авто) + продукти прямо тут. Світла тема.
 export function HomeHero() {
   return (
-    <section
-      className="relative overflow-x-hidden pb-20 pt-32 sm:pb-24 sm:pt-40 animate-gradient"
-      style={{ backgroundImage: "linear-gradient(135deg, #06040f, #0f0c29, #1e1060, #4f46e5, #7c3aed, #1e1060, #06040f)" }}
-    >
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 42%, transparent 0%, rgba(0,0,0,0.12) 100%)" }} />
+    <section className="relative overflow-hidden bg-[#FAFAFA] pb-20 pt-32 sm:pb-24 sm:pt-40">
+      {/* Мʼякі світні акценти для «дорогого» відчуття на світлому фоні */}
+      <div className="pointer-events-none absolute -top-32 left-1/3 h-80 w-[46rem] -translate-x-1/2 rounded-full bg-indigo-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute top-10 right-0 h-72 w-[40rem] translate-x-1/3 rounded-full bg-violet-200/40 blur-3xl" />
 
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-5xl md:text-6xl">
             Страхування{" "}
-            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">онлайн</span>
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">онлайн</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-zinc-300 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-xl text-base text-zinc-500 sm:text-lg">
             Авто, подорожі та улюбленці — усі поліси в одному місці. Оберіть продукт і оформіть за кілька хвилин.
           </p>
         </div>
@@ -46,16 +45,16 @@ export function HomeHero() {
             const inner = (
               <>
                 <div className="mb-4 flex items-center justify-between">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-indigo-300 transition-colors ${soon ? "" : "group-hover:bg-indigo-500 group-hover:text-white"}`}>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${soon ? "bg-zinc-100 text-zinc-400" : "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"}`}>
                     <Icon className="h-6 w-6" />
                   </div>
                   {badge && (
-                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-indigo-200">{badge}</span>
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">{badge}</span>
                   )}
                 </div>
-                <h3 className="text-lg font-bold text-white">{title}</h3>
-                <p className="mt-1 flex-1 text-sm leading-relaxed text-zinc-300">{desc}</p>
-                <span className={`mt-4 flex items-center gap-1.5 text-sm font-semibold ${soon ? "text-zinc-400" : "text-indigo-300"}`}>
+                <h3 className="text-lg font-bold text-zinc-900">{title}</h3>
+                <p className="mt-1 flex-1 text-sm leading-relaxed text-zinc-500">{desc}</p>
+                <span className={`mt-4 flex items-center gap-1.5 text-sm font-semibold ${soon ? "text-zinc-400" : "text-indigo-600"}`}>
                   {soon ? "Незабаром" : "Оформити"}
                   {!soon && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
                 </span>
@@ -65,7 +64,7 @@ export function HomeHero() {
               <div
                 key={title}
                 aria-disabled="true"
-                className="group flex cursor-default flex-col rounded-2xl bg-white/[0.04] p-6 text-left ring-1 ring-white/10 backdrop-blur-sm"
+                className="group flex cursor-default flex-col rounded-2xl bg-white p-6 text-left shadow-sm ring-1 ring-zinc-200/60"
               >
                 {inner}
               </div>
@@ -73,7 +72,7 @@ export function HomeHero() {
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col rounded-2xl bg-white/[0.06] p-6 text-left ring-1 ring-white/10 backdrop-blur-sm transition-all duration-200 hover:-translate-y-1 hover:bg-white/[0.1] hover:ring-white/20"
+                className="group flex flex-col rounded-2xl bg-white p-6 text-left shadow-sm ring-1 ring-zinc-200/60 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-100"
               >
                 {inner}
               </Link>
