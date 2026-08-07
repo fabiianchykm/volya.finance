@@ -152,7 +152,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         </Link>
 
         <ul className="hidden items-center gap-0.5 md:flex">
-          <NavDropdown title="Матеріальне" links={MATERIAL_LINKS} opaque={opaque} />
+          <NavDropdown title="Матеріальне страхування" links={MATERIAL_LINKS} opaque={opaque} />
           <NavDropdown title="Особисте страхування" links={PERSONAL_LINKS} opaque={opaque} />
         </ul>
 
