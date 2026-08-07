@@ -2,12 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { importServerProfile, clearLastProfile, clearLocalProfiles } from "@/lib/customer-profile";
+import { importServerProfile, clearLocalProfiles } from "@/lib/customer-profile";
 
 // Синхронізація профілю страхувальника з БД під акаунтом:
-// • увійшли (або змінили акаунт) → тягнемо профіль ЦЬОГО акаунта з сервера в
-//   локальний кеш; якщо на акаунті ще нема профілю — прибираємо автозаповнення,
-//   щоб чужі (попереднього акаунта) дані не спливали;
+// • увійшли (або змінили акаунт) → ПОВНІСТЮ чистимо локальний кеш (щоб дані
+//   попереднього акаунта не спливали навіть через фолбек loadLastProfile), потім
+//   тягнемо профіль ЦЬОГО акаунта з сервера; нема профілю → форми лишаються порожні;
 // • вийшли → чистимо локальний кеш (щоб на спільному пристрої нічого не лишалось).
 export function ProfileSync() {
   const { data: session, status } = useSession();
@@ -21,19 +21,21 @@ export function ProfileSync() {
     prevEmail.current = email;
 
     if (email) {
+      // Вхід або зміна акаунта: стираємо будь-який чужий локальний кеш (прибирає й
+      // «фолбек за часом» loadLastProfile), потім тягнемо профіль цього акаунта.
+      clearLocalProfiles();
       let cancelled = false;
       fetch("/api/profile")
         .then((r) => (r.ok ? r.json() : null))
         .then((j) => {
-          if (cancelled) return;
-          if (j?.profile) importServerProfile(j.profile);
-          else clearLastProfile();
+          if (!cancelled && j?.profile) importServerProfile(j.profile);
         })
         .catch(() => { /* ignore */ });
       return () => { cancelled = true; };
     }
 
-    // Перехід «залогінений → гість» = вихід: чистимо кеш пристрою.
+    // email === null. Чистимо ЛИШЕ якщо це вихід (раніше був залогінений);
+    // «гість із самого початку» лишаємо з його локальним автозаповненням.
     if (wasLoggedIn) clearLocalProfiles();
   }, [session?.user?.email, status]);
 
