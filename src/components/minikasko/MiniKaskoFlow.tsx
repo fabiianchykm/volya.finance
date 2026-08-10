@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, ArrowRight, Home, ChevronRight, ShieldCheck } from "lucide-react";
+import { MapPin, ArrowRight, Home, ChevronRight, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
-import { DateInput, parseUaDate } from "@/components/ui/DateInput";
+import { parseUaDate } from "@/components/ui/DateInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
 import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
@@ -48,11 +48,7 @@ export function MiniKaskoFlow() {
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Дата — строго пізніше сьогодні; ставимо мінімум «завтра».
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const maxStart = new Date();
-  maxStart.setFullYear(maxStart.getFullYear() + 1);
+  // Дата авто = найближча можлива (завтра); поля на екрані нема.
   const startD = parseUaDate(startDate);
 
   useEffect(() => {
@@ -145,26 +141,20 @@ export function MiniKaskoFlow() {
             </div>
 
             <form onSubmit={calc} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="relative" ref={cityRef}>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Місто</label>
-                  <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" spellCheck={false}
-                    onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
-                    className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
-                  {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
-                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
-                      {cityResults.map((c) => (
-                        <button key={c.id} type="button"
-                          onClick={() => { setSelectedCity(c); setCityQuery(cityShort(c.name_full_name_ua || c.name_ua)); setCityResults([]); }}
-                          className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
-                  <DateInput label="" value={startDate} onChange={setStartDate} minDate={tomorrow} maxDate={maxStart} required />
-                </div>
+              <div className="relative" ref={cityRef}>
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Місто реєстрації авто</label>
+                <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" spellCheck={false}
+                  onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
+                  className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
+                {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
+                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                    {cityResults.map((c) => (
+                      <button key={c.id} type="button"
+                        onClick={() => { setSelectedCity(c); setCityQuery(cityShort(c.name_full_name_ua || c.name_ua)); setCityResults([]); }}
+                        className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
