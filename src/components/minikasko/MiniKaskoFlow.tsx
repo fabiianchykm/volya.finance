@@ -163,7 +163,7 @@ export function MiniKaskoFlow() {
                 </div>
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
-                  <DateInput label="" value={startDate} onChange={setStartDate} minDate={tomorrow} maxDate={maxStart} quickAction={{ label: "Якнайшвидше", date: tomorrow }} required />
+                  <DateInput label="" value={startDate} onChange={setStartDate} minDate={tomorrow} maxDate={maxStart} required />
                 </div>
               </div>
 
