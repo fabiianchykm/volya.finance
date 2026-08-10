@@ -36,8 +36,8 @@ export function MiniKaskoFlow() {
   const [cityResults, setCityResults] = useState<CityOption[]>([]);
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const cityRef = useRef<HTMLDivElement>(null);
-  // Дата за замовчуванням — найближча можлива (завтра); користувач може змінити.
-  const [startDate, setStartDate] = useState(() => {
+  // Дата — найближча можлива (завтра); поля на екрані нема, встановлюється автоматично.
+  const [startDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
