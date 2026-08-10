@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2 } from "lucide-react";
+import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
 import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
+import { LeadModal, type LeadMode } from "@/components/layout/LeadModal";
 import { MiniKaskoCheckout, type MiniKaskoContext } from "./MiniKaskoCheckout";
 import { cityShort, cityLong } from "@/lib/utils";
 import type { MiniKaskoOffer, InsuranceOffer } from "@/types/api";
@@ -199,6 +200,7 @@ function MiniKaskoOffers({
   const coverages = Array.from(new Set(offers.map((o) => o.coverage))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number | null>(null);
   const [cvOpen, setCvOpen] = useState(false);
+  const [leadMode, setLeadMode] = useState<LeadMode>(null);
   const activeCoverage = coverage ?? coverages[0] ?? null;
   const list = offers.filter((o) => o.coverage === activeCoverage).sort((a, b) => a.price - b.price);
 
@@ -286,10 +288,30 @@ function MiniKaskoOffers({
               ))}
             </div>
           )}
+
+          {/* Прорахунок консультантом — додаткова можливість поруч із пропозиціями */}
+          {!loading && (
+            <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
+                  <Phone className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Потрібен індивідуальний прорахунок?</p>
+                  <p className="text-xs text-zinc-500">Залиште номер — консультант прорахує найкращий варіант і передзвонить.</p>
+                </div>
+              </div>
+              <Button type="button" variant="secondary" size="md" onClick={() => setLeadMode("phone")} className="shrink-0">
+                Замовити прорахунок
+              </Button>
+            </div>
+          )}
         </div>
 
         <InviteFriendCard />
       </div>
+
+      <LeadModal mode={leadMode} source="Міні-КАСКО — прорахунок консультанта" onClose={() => setLeadMode(null)} />
     </div>
   );
 }
