@@ -261,6 +261,29 @@ export interface MiniKaskoParams {
   city_id: number;
 }
 
+// ── Страхування житла (Home) ────────────────────────────────────────────────
+export interface HomeOffer {
+  offerId: string;
+  moduleId: number;
+  companyId: string;
+  companyName: string;
+  companyNamePublic: string;
+  price: number;
+  home_type: "flat" | "house";
+  insurance_amount: number;
+  insurance_period: string;   // "12m"
+  available_documents?: string[];
+  company?: { logo?: string | null; publicName?: string; ex_id?: string; [k: string]: unknown };
+}
+
+export interface HomeParams {
+  homeType: "flat" | "house";
+  insuranceAmount: number;
+  insurancePeriod: string;    // "5m".."12m"
+  earnings: number;           // відсоток комісії агента
+  startFrom: string;          // YYYY-MM-DD
+}
+
 export interface GreenCardParams {
   country: number;       // 60 = Європа, 117 = Молдова
   userType: number;      // 1 = фізособа, 2 = юрособа

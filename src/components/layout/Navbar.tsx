@@ -21,7 +21,7 @@ const MATERIAL_LINKS: NavItem[] = [
   { label: "КАСКО", href: "/kasko", icon: Car, desc: "Повний захист авто" },
   { label: "Міні-КАСКО", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше" },
   { label: "Зелена карта", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон" },
-  { label: "Житло", href: "#", icon: Home, desc: "Захист квартири чи будинку", badge: "скоро", soon: true },
+  { label: "Житло", href: "/housing", icon: Home, desc: "Захист квартири чи будинку" },
 ];
 // «Особисте» — здоровʼя/подорожі/улюбленці.
 const PERSONAL_LINKS: NavItem[] = [

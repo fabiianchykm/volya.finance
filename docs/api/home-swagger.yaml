@@ -1,0 +1,1655 @@
+openapi: 3.0.3
+info:
+  title: Home Insurance API — UConnect
+  version: 1.0.0
+  description: |
+    API для страхування нерухомості (квартира / будинок).
+
+    ## Загальний потік
+
+    ```
+    1.  GET  /insurance/home/tariffs               → вибір комісії агента
+    2.  POST /insurance/home/calculator            → розрахунок вартості
+    3.  POST /insurance/home/order/create          → створення чернетки (statusId = 1)
+    4.  POST /insurance/home/order/create          → створення замовлення (statusId = 5)
+    5.  GET  /payment-systems/list?companyId=...   → список платіжних систем (commissionPaidBy)
+    6.  POST /orders/send-otp/{orderId}            → надсилання OTP (type: 1 або 2)
+    7.  POST /orders/check-otp/{orderId}           → перевірка OTP
+    8.  POST /orders/get-invoice                   → генерація платіжного посилання
+    *** Redirect клієнта на invoiceLink ***
+    9.  GET  /payments/check-invoice               → очікування оплати (опитувати до status_id = 2)
+    10. POST /insurance/home/contract/confirm      → підтвердження договору
+    11. POST /insurance/home/contract/take         → отримання посилань на файли поліса
+    ```
+
+    **Увага:** на відміну від деяких інших продуктів, ендпоінти Home Insurance
+    **не містять** сегмент `{mode}` у шляху (немає `test`/`prod` перемикача).
+
+servers:
+  - url: /api
+    description: Ukasko Connect API
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Home
+    description: Страхування нерухомості (квартира / будинок)
+  - name: Orders (shared)
+    description: Спільні ендпоінти замовлень (OTP, оплата)
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Bearer токен авторизації. Передавати у заголовку:
+        `Authorization: Bearer <token>`
+
+  responses:
+    Unauthorized:
+      description: Не авторизовано — Bearer токен відсутній або недійсний
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            status: auth
+            message: Authentication failed
+
+    ValidationError:
+      description: |
+        Помилка валідації вхідних даних.
+        Поле `data` містить об'єкт з назвами полів та текстами помилок.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            status: validation
+            message: The given data was invalid.
+            data:
+              homeType: "The home type field is required."
+
+  schemas:
+
+    HomeType:
+      type: string
+      description: |
+        Тип нерухомості:
+        - `flat` — квартира
+        - `house` — будинок
+      enum: [flat, house]
+      example: flat
+
+    InsuranceAmount:
+      type: integer
+      description: Страхова сума (UAH). Фіксований набір значень
+      enum: [500000, 700000, 1000000, 1500000, 2000000, 2500000, 3000000, 4000000, 5000000]
+      example: 1000000
+
+    InsurancePeriod:
+      type: string
+      description: Строк страхування, у місяцях
+      enum: ["5m", "6m", "7m", "8m", "9m", "10m", "11m", "12m"]
+      example: "12m"
+
+    InvoiceStatus:
+      type: integer
+      description: |
+        Статус платіжного інвойсу:
+        - `0` **CREATED** — інвойс створено, оплата не надійшла
+        - `1` **RECEIVED** — платіж отримано системою, очікує підтвердження
+        - `2` **PAID** — оплата підтверджена, поліс активний
+        - `3` **ERROR** — помилка обробки платежу
+        - `4` **OVERDUE** — термін оплати минув
+      enum: [0, 1, 2, 3, 4]
+      example: 2
+
+    ApiSuccessResponse:
+      type: object
+      description: Стандартна обгортка успішної відповіді
+      required: [status, data]
+      properties:
+        status:
+          type: string
+          description: Завжди `success` при успішному виконанні запиту
+          enum: [success]
+          example: success
+        message:
+          type: string
+          description: Додаткове текстове повідомлення. `null` або `"OK"` при успіху
+          nullable: true
+          example: "OK"
+        data:
+          type: array
+          description: |
+            Масив результатів. Тип елементів залежить від конкретного ендпоінту.
+            Більшість відповідей повертають масив з одним об'єктом.
+          items: {}
+
+    ApiErrorResponse:
+      type: object
+      description: Стандартна обгортка відповіді з помилкою
+      properties:
+        status:
+          type: string
+          description: |
+            Категорія помилки:
+            - `error` — загальна серверна помилка (HTTP 500)
+            - `validation` — помилки валідації вхідних даних (HTTP 422). Деталі в полі `data`
+            - `notFound` — запитаний ресурс не знайдено (HTTP 404)
+            - `auth` — помилка автентифікації або авторизації (HTTP 401)
+          enum: [error, validation, notFound, auth]
+          example: error
+        message:
+          type: string
+          description: Текстовий опис помилки
+          example: Something went wrong
+        data:
+          type: object
+          description: |
+            При `status=validation` — об'єкт, де ключі це назви полів із помилками,
+            значення — текст помилки валідації. При інших статусах — `null`.
+          nullable: true
+
+    Tariff:
+      type: object
+      description: Доступна тарифна ставка — розмір комісії агента
+      properties:
+        name:
+          type: string
+          description: Відображувана назва для інтерфейсу (напр. "10%", "15%")
+          example: "10%"
+        value:
+          type: number
+          description: |
+            Числове значення відсотка комісії. Передавати як `earnings` у запитах
+            `/calculator` та `/order/create`.
+          example: 15
+
+    MtsbuRating:
+      type: object
+      description: Рейтингові показники страховика
+      properties:
+        quarter:
+          type: string
+          nullable: true
+        paramAssessment:
+          type: number
+          nullable: true
+        paramQuality:
+          type: number
+          nullable: true
+        paramClaims:
+          type: number
+          nullable: true
+
+    InsuranceCompany:
+      type: object
+      description: Розширена інформація про компанію-страховика
+      properties:
+        id:
+          type: string
+          description: Унікальний ID компанії
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        picture:
+          type: string
+          format: uri
+          nullable: true
+        publicName:
+          type: string
+          example: "Страхова компанія"
+        website:
+          type: string
+          format: uri
+          nullable: true
+        rating:
+          type: number
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        ratingAdmins:
+          type: string
+          example: "0.00"
+        companyLink:
+          type: string
+          nullable: true
+        docProduct:
+          type: string
+          nullable: true
+        docCompany:
+          type: string
+          nullable: true
+        docAgent:
+          type: string
+          nullable: true
+        docZusp:
+          type: string
+          nullable: true
+        reviewsAmount:
+          type: integer
+          example: 0
+        compensationDays:
+          type: integer
+          example: 0
+        marketLeader:
+          type: integer
+          description: Лідер ринку. `1` — так, `0` — ні
+          example: 0
+        orderPosition:
+          type: integer
+          example: 0
+        isHidden:
+          type: integer
+          description: Прихована компанія. `1` — прихована, `0` — активна
+          example: 0
+        innStatus:
+          type: integer
+          example: 0
+        customOptions:
+          type: object
+          nullable: true
+        mtsbuRating:
+          $ref: '#/components/schemas/MtsbuRating'
+        ex_id:
+          type: string
+          nullable: true
+          description: Зовнішній ID компанії (рядок)
+          example: "1025"
+
+    HomeOffer:
+      type: object
+      description: |
+        Пропозиція страховика — результат розрахунку `/calculator`.
+        Поля `offerId`, `moduleId`, `companyId`, `price`, `home_type`, `insurance_amount`,
+        `insurance_period` необхідно передати у `offerInfo` при створенні замовлення.
+      properties:
+        offerId:
+          type: string
+          description: |
+            Унікальний ID пропозиції. Передавати як `offerInfo.offerId` у `/order/create`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        moduleId:
+          type: integer
+          description: ID модуля страховика. Передавати як `offerInfo.moduleId`
+          example: 31
+        companyId:
+          type: string
+          description: Унікальний ID компанії-страховика. Передавати як `offerInfo.companyId`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        companyName:
+          type: string
+          example: "Страхова компанія"
+        companyNamePublic:
+          type: string
+          description: Публічна назва страховика для відображення клієнту
+          example: "Страхова компанія"
+        price:
+          type: number
+          description: Повна вартість поліса (UAH). Передавати як `offerInfo.price`
+          example: 2400.00
+        home_type:
+          $ref: '#/components/schemas/HomeType'
+        insurance_amount:
+          $ref: '#/components/schemas/InsuranceAmount'
+        insurance_period:
+          $ref: '#/components/schemas/InsurancePeriod'
+        earnings:
+          type: number
+          description: Сума комісії агента (UAH)
+          example: 360
+        earnings_param:
+          type: number
+          description: Відсоток комісії агента, переданий у запиті `/calculator`
+          example: 15
+        allowed_documents:
+          type: array
+          description: |
+            Список ID типів документів, явно дозволених для цього страховика.
+            Порожній масив/`null` — обмежень немає, використовуються типи з `available_documents`
+          items:
+            type: string
+          example: []
+        available_documents:
+          type: array
+          description: |
+            Список типів документів, підтримуваних для цієї пропозиції:
+            - `DOCUMENT_PASSPORT` — паспорт громадянина України
+            - `DOCUMENT_EXTERNAL_PASSPORT` — закордонний паспорт
+            - `DOCUMENT_ID_CARD` — ID-картка
+          items:
+            type: string
+            enum:
+              - DOCUMENT_PASSPORT
+              - DOCUMENT_EXTERNAL_PASSPORT
+              - DOCUMENT_ID_CARD
+          example: ["DOCUMENT_PASSPORT", "DOCUMENT_EXTERNAL_PASSPORT", "DOCUMENT_ID_CARD"]
+        company:
+          $ref: '#/components/schemas/InsuranceCompany'
+          description: Розширені дані про компанію страховика
+
+    DocumentationInfo:
+      type: object
+      description: Документ, що посвідчує особу страхувальника
+      properties:
+        type:
+          type: integer
+          description: |
+            Ідентифікатор типу документу (integer):
+            - `1` — паспорт громадянина України (`DOCUMENT_PASSPORT`)
+            - `3` — ID-картка (`DOCUMENT_ID_CARD`)
+            - `4` — закордонний паспорт (`DOCUMENT_EXTERNAL_PASSPORT`)
+          example: 1
+        serial:
+          type: string
+          nullable: true
+          description: Серія документу. Обов'язкова для паспорта (`type = 1`)
+          example: "ММ"
+        number:
+          type: string
+          nullable: true
+          description: Номер документу
+          example: "123456"
+        dateOfIssue:
+          type: integer
+          format: int64
+          nullable: true
+          description: Дата видачі — Unix timestamp UTC (секунди)
+          example: 1577836800
+        endDateOfIssue:
+          type: integer
+          format: int64
+          nullable: true
+          description: Дата закінчення дії — Unix timestamp UTC (секунди). `null` для безстрокових
+          example: null
+        issuedBy:
+          type: string
+          nullable: true
+          description: Назва органу, що видав документ
+          example: "Орган видачі"
+
+    City:
+      type: object
+      description: Місто. Отримується через `/api/directories/cities/find`
+      required: [id]
+      properties:
+        id:
+          type: integer
+          description: Унікальний ID міста
+          example: 14
+        name:
+          type: string
+          description: Назва міста
+          example: "Харків"
+        name_full_name_ua:
+          type: string
+          nullable: true
+          description: Повна назва з областю
+          example: "м. Харків, Харківська обл., Україна"
+
+    PolicyholderInfo:
+      type: object
+      description: Персональні дані страхувальника
+      required: [name_ua, surname_ua, patronymic_ua, dateBirth, phone, mail, city]
+      properties:
+        name_ua:
+          type: string
+          description: Ім'я українською
+          example: "Іван"
+        surname_ua:
+          type: string
+          description: Прізвище українською
+          example: "Іваненко"
+        patronymic_ua:
+          type: string
+          description: По-батькові українською
+          example: "Іванович"
+        dateBirth:
+          type: integer
+          format: int64
+          description: Дата народження — Unix timestamp UTC (секунди)
+          example: 631152000
+        phone:
+          type: string
+          description: Номер телефону страхувальника
+          example: "+38 (099) 751-79-91"
+        mail:
+          type: string
+          format: email
+          description: Email для отримання підтверджень
+          example: "user@example.com"
+        city:
+          $ref: '#/components/schemas/City'
+        street:
+          type: string
+          nullable: true
+          description: Вулиця проживання. Необов'язкове
+          example: "Хрещатик"
+        house:
+          type: string
+          nullable: true
+          description: Номер будинку проживання. Необов'язкове
+          example: "1"
+        apartment:
+          type: string
+          nullable: true
+          description: Номер квартири проживання. `null` для приватних будинків
+          example: "5"
+        identificationCode:
+          type: string
+          nullable: true
+          description: ІПН (РНОКПП), 10 цифр. `null` якщо `withoutIdentificationCode = true`
+          example: "1234567890"
+        withoutIdentificationCode:
+          type: boolean
+          description: |
+            `true` — страхувальник відмовився від ІПН за законом.
+            При `true` поле `identificationCode` ігнорується
+          default: false
+        erdpyCode:
+          type: string
+          nullable: true
+          description: |
+            Код ЄДРПОУ. За наявності — документ (`documentation`) стає необов'язковим
+          example: null
+        documentation:
+          description: Документ, що посвідчує особу
+          $ref: '#/components/schemas/DocumentationInfo'
+
+    HouseInfo:
+      type: object
+      description: Адреса об'єкта страхування (нерухомості). Може відрізнятись від адреси проживання страхувальника
+      required: [city, street, house, apartment]
+      properties:
+        city:
+          $ref: '#/components/schemas/City'
+        street:
+          type: string
+          example: "Хрещатик"
+        house:
+          type: string
+          example: "1"
+        apartment:
+          type: string
+          description: Номер квартири. Порожній рядок для приватного будинку
+          example: "5"
+
+    OfferInfo:
+      type: object
+      description: |
+        Дані пропозиції, що передаються у `/order/create`. Достатньо продублювати
+        відповідні поля з `HomeOffer`, отриманого у відповіді `/calculator`.
+      required: [offerId, moduleId, price, companyId, ex_id, ex_tariff_id, externalIdTariff]
+      properties:
+        offerId:
+          type: string
+          description: "`HomeOffer.offerId`"
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        moduleId:
+          type: integer
+          description: "`HomeOffer.moduleId`"
+          example: 31
+        companyId:
+          type: string
+          description: "`HomeOffer.companyId`"
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        price:
+          type: number
+          description: "`HomeOffer.price`"
+          example: 2400.00
+        ex_id:
+          type: string
+          description: Зовнішній ID компанії. Береться з `HomeOffer.company.ex_id`
+          example: "1025"
+        ex_tariff_id:
+          type: string
+          description: Зовнішній ID тарифу страховика
+          example: "1025-flat-1000000"
+        externalIdTariff:
+          type: string
+          description: Зовнішній ID тарифу (дублює `ex_tariff_id` для сумісності)
+          example: "1025-flat-1000000"
+
+    Invoice:
+      type: object
+      description: Платіжний інвойс для оплати поліса
+      properties:
+        id:
+          type: string
+          description: ID інвойсу. Передавати як `invoice` у `/payments/check-invoice`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        user_id:
+          type: integer
+          example: 23
+        amount:
+          type: string
+          description: Сума платежу (UAH)
+          example: "2400.00"
+        discount:
+          type: string
+          description: Знижка (UAH)
+          example: "0.00"
+        status_id:
+          $ref: '#/components/schemas/InvoiceStatus'
+        invoice_url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL платіжної сторінки (дублює `invoiceLink` з `/orders/get-invoice`)
+          example: "https://sandbox-checkout.ipay.ua/..."
+        payment_system_code:
+          type: string
+          nullable: true
+          description: Код платіжної системи (`code` з `/payment-systems/list`)
+          example: "ipay"
+        payment_system_commission:
+          type: string
+          nullable: true
+          description: Комісія платіжної системи (UAH)
+          example: "31.68"
+        external_id:
+          type: string
+          nullable: true
+          description: Зовнішній ID транзакції у платіжній системі
+          example: "1126330621"
+        payed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Дата та час оплати (ISO 8601). `null` якщо не оплачено
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-06-09T15:05:38.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-06-09T15:05:40.000000Z"
+
+    Payment:
+      type: object
+      description: Платіжний запис замовлення
+      properties:
+        id:
+          type: integer
+          example: 13891
+        invoice_id:
+          type: string
+          description: ID інвойсу. Передавати як `invoice` у `/payments/check-invoice`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        order_id:
+          type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        status_id:
+          $ref: '#/components/schemas/InvoiceStatus'
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-06-09T15:05:40.000000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-06-09T15:05:40.000000Z"
+        invoice:
+          $ref: '#/components/schemas/Invoice'
+
+    CalculatorRequest:
+      type: object
+      description: Параметри для розрахунку вартості страхування
+      required: [homeType, insuranceAmount, insurancePeriod, earnings, startFrom]
+      properties:
+        homeType:
+          $ref: '#/components/schemas/HomeType'
+        insuranceAmount:
+          $ref: '#/components/schemas/InsuranceAmount'
+        insurancePeriod:
+          $ref: '#/components/schemas/InsurancePeriod'
+        earnings:
+          type: integer
+          description: |
+            Відсоток комісії агента — значення `value` з відповіді `/tariffs`
+          example: 15
+        startFrom:
+          type: string
+          description: |
+            Дата початку дії поліса. **Обмеження:** дата має бути сьогодні або пізніше
+            (`after_or_equal:today`)
+          example: "2026-08-15"
+
+    OrderCreateRequest:
+      type: object
+      description: |
+        Дані для створення замовлення або чернетки.
+
+        **Двохкроковий процес (рекомендовано):**
+        1. Зберегти чернетку (`params.statusId: -1`) з частковими даними. Зберегти `orderId` з відповіді.
+        2. Повторний виклик з повними даними та `orderId` з кроку 1.
+
+        **Поля дат** в `info.documentation` і `houseInfo` — Unix timestamp UTC (секунди).
+      required:
+        - homeType
+        - insuranceAmount
+        - insurancePeriod
+        - earnings
+        - startDate
+        - info
+        - houseInfo
+        - offerInfo
+      properties:
+        params:
+          type: object
+          description: |
+            Керуючі поля запиту.
+            `statusId: -1` — зберегти чернетку (документ страхувальника необов'язковий).
+            Будь-яке інше значення (або відсутнє поле) — повне замовлення.
+          properties:
+            statusId:
+              type: integer
+              nullable: true
+              example: null
+            type:
+              type: string
+              nullable: true
+              description: |
+                `"save"` — одразу після створення замовлення сформувати чернетку
+                договору (виклик `contract/create` під капотом) і повернути `contractId`
+              example: null
+        orderId:
+          type: string
+          nullable: true
+          description: |
+            ID існуючого замовлення (чернетки) для оновлення. `orderId` з відповіді
+            попереднього `/order/create`. `null` при першому збереженні
+          example: null
+        prolongOrderId:
+          type: string
+          nullable: true
+          description: ID замовлення для пролонгації. `null` для нових замовлень
+        price:
+          type: number
+          nullable: true
+          description: Вартість поліса (UAH). Необов'язкове — використовується ціна з пропозиції
+          example: 2400.00
+        startDate:
+          type: string
+          description: |
+            Дата початку дії поліса у форматі `"DD-MM-YYYY"`
+          example: "15-08-2026"
+        homeType:
+          $ref: '#/components/schemas/HomeType'
+        insuranceAmount:
+          $ref: '#/components/schemas/InsuranceAmount'
+        insurancePeriod:
+          $ref: '#/components/schemas/InsurancePeriod'
+        earnings:
+          type: number
+          description: Відсоток комісії. Має збігатися зі значенням з `/calculator`
+          example: 15
+        allowedDocuments:
+          type: array
+          nullable: true
+          description: Список дозволених типів документів. `null` — без обмежень
+          items:
+            type: string
+        countryId:
+          type: integer
+          nullable: true
+          description: ID країни страхувальника
+          example: null
+        info:
+          $ref: '#/components/schemas/PolicyholderInfo'
+        houseInfo:
+          $ref: '#/components/schemas/HouseInfo'
+        offerInfo:
+          $ref: '#/components/schemas/OfferInfo'
+        usedPaymentSystem:
+          type: boolean
+          description: |
+            `true` — для замовлень через зовнішню платіжну систему.
+            `false` — стандартний платіж (за замовчуванням)
+          default: false
+        isSendPhoneMessage:
+          type: boolean
+          description: "`true` — надіслати SMS страхувальнику при створенні замовлення"
+          default: false
+
+    ConfirmContractRequest:
+      type: object
+      required: [orderId]
+      properties:
+        orderId:
+          type: string
+          description: "`id` з відповіді `/order/create`"
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        usedPaymentSystem:
+          type: boolean
+          nullable: true
+          description: Має збігатися зі значенням з `/order/create`
+          default: false
+        isSendPhoneMessage:
+          type: boolean
+          nullable: true
+          description: Надіслати SMS при підтвердженні
+          default: false
+        prolongOrderId:
+          type: string
+          nullable: true
+          description: ID замовлення для пролонгації. `null` для нових замовлень
+
+    SendOtpRequest:
+      type: object
+      properties:
+        type:
+          type: integer
+          description: |
+            Спосіб доставки OTP:
+            - `1` — тільки email (на `info.mail`)
+            - `2` — email + Viber/SMS (на `info.phone`)
+          enum: [1, 2]
+          example: 1
+        commissionPaidBy:
+          type: string
+          nullable: true
+          description: |
+            Хто оплачує комісію платіжної системи:
+            - `"client"` — клієнт оплачує комісію
+            - `"agent"` — агент оплачує комісію
+            - `null` — без платіжної системи (стандартне замовлення)
+          enum: [client, agent]
+
+    CheckOtpRequest:
+      type: object
+      required: [otp]
+      properties:
+        otp:
+          type: string
+          description: OTP код введений страхувальником. Буквено-цифровий рядок (зазвичай 6 символів)
+          example: "Z67763"
+        additional_otps:
+          type: object
+          description: Додаткові OTP при кількох підписантах. Для стандартних — порожній об'єкт `{}`
+          default: {}
+
+    OrderCreateResponseData:
+      type: object
+      description: |
+        **Чернетка** (`params.statusId: -1`): `{id, statusId, status: "draft"}`.
+        **Повне замовлення**: `{id, status: "declared", mtsbuLink}`.
+
+        `id` у обох випадках — основний ID замовлення для всіх наступних запитів.
+      properties:
+        id:
+          type: string
+          description: |
+            ID замовлення. Використовувати у всіх наступних запитах:
+            `/send-otp`, `/check-otp`, `/contract/confirm`, оновлення чернетки
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        status:
+          type: string
+          description: |
+            Текстовий статус замовлення:
+            - `"draft"` — чернетка збережена
+            - `"declared"` — повне замовлення створено у страховика
+          enum: [draft, declared]
+          example: "declared"
+        statusId:
+          type: integer
+          nullable: true
+          description: Числовий статус. Присутній у відповіді чернетки
+          example: 1
+        mtsbuLink:
+          type: string
+          nullable: true
+          description: Посилання на договір у реєстрі МТСБУ. `null` якщо недоступне
+          example: null
+
+    ConfirmContractResponseData:
+      type: object
+      properties:
+        contractId:
+          type: string
+          description: ID контракту. Передавати як `contractId` у запиті `/contract/take`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        mtsbu_code:
+          type: string
+          nullable: true
+          description: Номер договору від страховика. `null` якщо не повернуто
+          example: null
+        status:
+          type: string
+          nullable: true
+          description: Статус контракту. `"signed"` — підписано
+          example: "signed"
+
+    TakeContractResponseData:
+      type: object
+      description: |
+        На відміну від деяких інших продуктів, файли поліса **не повертаються у base64**
+        — відповідь містить прямі URL на файли, розміщені на сервері UConnect.
+      properties:
+        contract:
+          type: string
+          format: uri
+          nullable: true
+          description: |
+            URL підписаного PDF поліса. `null` якщо файл ще не готовий —
+            у такому разі повторити запит пізніше
+          example: "https://api.ukasko.com/storage/insurance/01J.../home.pdf?v=1750291200"
+        contractDraft_path:
+          type: string
+          format: uri
+          nullable: true
+          description: URL PDF чернетки договору (сформованої на кроці створення замовлення)
+          example: null
+
+    TariffsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          description: Список доступних тарифних ставок
+          items:
+            $ref: '#/components/schemas/Tariff'
+
+    CalculatorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              description: Список пропозицій від страховиків
+              items:
+                $ref: '#/components/schemas/HomeOffer'
+            errorInfo:
+              type: array
+              description: Помилки від окремих страховиків. Порожній `[]` якщо всі запити успішні
+              items:
+                type: object
+              example: []
+
+    OrderCreateResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderCreateResponseData'
+
+    ConfirmContractResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ConfirmContractResponseData'
+
+    TakeContractResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiSuccessResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TakeContractResponseData'
+
+    OrderResponse:
+      type: object
+      description: Деталі замовлення з платіжною інформацією
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              description: ID замовлення
+              example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+            statusId:
+              type: integer
+              description: Числовий статус замовлення
+              example: 5
+            isPaid:
+              type: boolean
+              description: |
+                `true` — замовлення оплачено. При `true` можна викликати `/contract/take`.
+                Перевіряти через `payments` → `invoice.status_id = 2` (PAID) для точного статусу
+              example: true
+            mtsbuCode:
+              type: string
+              nullable: true
+              description: Номер договору страховика
+              example: "313404279.26"
+            payments:
+              type: array
+              description: |
+                Платіжні записи. Може бути кілька (різні платіжні системи).
+
+                Перевіряти через `/payments/check-invoice`:
+                - `status_id = 2` (PAID) — оплачено → переходити до `/contract/take`
+                - `status_id = 0`, `1` — очікування оплати
+                - `status_id = 3` (ERROR) — помилка
+                - `status_id = 4` (OVERDUE) — термін минув
+              items:
+                $ref: '#/components/schemas/Payment'
+
+paths:
+
+  /insurance/home/tariffs:
+    get:
+      tags: [Home]
+      summary: Отримати доступні тарифи комісії
+      description: |
+        Повертає список доступних значень earnings (комісії агента).
+      operationId: getHomeTariffs
+      responses:
+        '200':
+          description: Список тарифів
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TariffsResponse'
+              example:
+                data:
+                  - name: "10%"
+                    value: 10
+                  - name: "15%"
+                    value: 15
+                  - name: "20%"
+                    value: 20
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/home/calculator:
+    post:
+      tags: [Home]
+      summary: Розрахувати вартість страхування
+      description: |
+        Розраховує вартість поліса та повертає список пропозицій від страховиків.
+      operationId: calculateHome
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculatorRequest'
+            example:
+              homeType: "flat"
+              insuranceAmount: 1000000
+              insurancePeriod: "12m"
+              earnings: 15
+              startFrom: "2026-08-15"
+      responses:
+        '200':
+          description: Список пропозицій страховиків
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculatorResponse'
+              example:
+                status: success
+                message: "OK"
+                data:
+                  - offerId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                    moduleId: 31
+                    companyId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                    companyName: "Страхова компанія"
+                    companyNamePublic: "Страхова компанія"
+                    price: 2400.00
+                    home_type: "flat"
+                    insurance_amount: 1000000
+                    insurance_period: "12m"
+                    earnings: 360
+                    earnings_param: 15
+                    allowed_documents: []
+                    available_documents:
+                      - DOCUMENT_PASSPORT
+                      - DOCUMENT_EXTERNAL_PASSPORT
+                      - DOCUMENT_ID_CARD
+                    company:
+                      id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                      logo: null
+                      picture: null
+                      publicName: "Страхова компанія"
+                      website: null
+                      rating: null
+                      email: null
+                      ratingAdmins: "0.00"
+                      companyLink: null
+                      docProduct: null
+                      docCompany: null
+                      docAgent: null
+                      docZusp: null
+                      reviewsAmount: 0
+                      compensationDays: 0
+                      marketLeader: 0
+                      orderPosition: 0
+                      isHidden: 0
+                      innStatus: 0
+                      customOptions: null
+                      mtsbuRating:
+                        quarter: null
+                        paramAssessment: null
+                        paramQuality: null
+                        paramClaims: null
+                      ex_id: "1025"
+                errorInfo: []
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/home/order/create:
+    post:
+      tags: [Home]
+      summary: Створити замовлення (чернетку або повне)
+      description: |
+        Зберігає замовлення та відправляє запит до страховика.
+
+        **Двохкрокове збереження (рекомендовано):**
+        1. `params.statusId: -1` — чернетка з частковими даними (документ необов'язковий).
+           Зберегти `id` з відповіді.
+        2. Повторний виклик з повними даними + `orderId` з кроку 1 — повне замовлення.
+      operationId: createHomeOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+            example:
+              params:
+                statusId: null
+                type: null
+              orderId: null
+              homeType: "flat"
+              insuranceAmount: 1000000
+              insurancePeriod: "12m"
+              earnings: 15
+              startDate: "15-08-2026"
+              countryId: null
+              info:
+                name_ua: "Іван"
+                surname_ua: "Іваненко"
+                patronymic_ua: "Іванович"
+                dateBirth: 631152000
+                phone: "+380671234567"
+                mail: "user@example.com"
+                city:
+                  id: 14
+                  name: "Харків"
+                street: "Хрещатик"
+                house: "1"
+                apartment: "5"
+                identificationCode: "1234567890"
+                withoutIdentificationCode: false
+                documentation:
+                  type: 1
+                  serial: "ММ"
+                  number: "473991"
+                  dateOfIssue: 959644800
+                  endDateOfIssue: null
+                  issuedBy: "Орган видачі"
+              houseInfo:
+                city:
+                  id: 14
+                  name: "Харків"
+                street: "Хрещатик"
+                house: "1"
+                apartment: "5"
+              offerInfo:
+                offerId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                moduleId: 31
+                companyId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                price: 2400.00
+                ex_id: "1025"
+                ex_tariff_id: "1025-flat-1000000"
+                externalIdTariff: "1025-flat-1000000"
+              usedPaymentSystem: false
+              isSendPhoneMessage: false
+      responses:
+        '200':
+          description: Замовлення створено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreateResponse'
+              examples:
+                draft:
+                  summary: Чернетка (params.statusId=-1)
+                  value:
+                    status: success
+                    message: "OK"
+                    data:
+                      - id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                        statusId: 1
+                        status: "draft"
+                full:
+                  summary: Повне замовлення
+                  value:
+                    status: success
+                    message: "OK"
+                    data:
+                      - id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                        status: "declared"
+                        mtsbuLink: null
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/send-otp/{orderId}:
+    post:
+      tags: [Orders (shared)]
+      summary: Надіслати OTP код страхувальнику
+      description: |
+        Надсилає OTP код для підтвердження договору.
+        `type`: integer — `1` (email) або `2` (email+SMS).
+      operationId: sendOtp
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: "`orderId` з відповіді `/order/create`"
+          schema:
+            type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendOtpRequest'
+            example:
+              type: 1
+              commissionPaidBy: "client"
+      responses:
+        '200':
+          description: OTP надіслано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "OK"
+                  data:
+                    type: object
+                    properties:
+                      additional_otps:
+                        type: array
+                        description: Масив додаткових OTP для кількох підписантів. Порожній `[]` для стандартних замовлень
+                        items: {}
+              example:
+                status: success
+                message: "OK"
+                data:
+                  additional_otps: []
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/check-otp/{orderId}:
+    post:
+      tags: [Orders (shared)]
+      summary: Перевірити OTP код
+      description: |
+        Перевіряє OTP введений страхувальником.
+        При успіху (`data: "OK"`) — переходити до `/contract/confirm`.
+      operationId: checkOtp
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: "`orderId` з відповіді `/order/create`"
+          schema:
+            type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckOtpRequest'
+            example:
+              otp: "Z67763"
+              additional_otps: {}
+      responses:
+        '200':
+          description: OTP вірний
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "OK"
+                  data:
+                    type: string
+                    enum: [OK]
+                    description: Рядок `"OK"` при успішній перевірці
+              example:
+                status: success
+                message: "OK"
+                data: "OK"
+        '422':
+          description: Невірний або прострочений OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/home/contract/confirm:
+    post:
+      tags: [Home]
+      summary: Підтвердити договір у страховика
+      description: |
+        Підтверджує договір після успішного `/check-otp`.
+        `contractId` з відповіді передавати як `contractId` у `/contract/take`.
+      operationId: confirmHomeContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmContractRequest'
+            example:
+              orderId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      responses:
+        '200':
+          description: Договір підтверджено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmContractResponse'
+              example:
+                status: success
+                message: "OK"
+                data:
+                  - contractId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                    mtsbu_code: null
+                    status: "signed"
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/{orderId}/0:
+    get:
+      tags: [Orders (shared)]
+      summary: Отримати інвойс для оплати
+      description: |
+        Повертає платіжні дані замовлення включно з інвойсом для оплати.
+        Після отримання — redirect клієнта на payment URL.
+        Статус оплати відстежувати через `/payments/check-invoice`.
+      operationId: fetchOrder
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: "`orderId` з відповіді `/order/create`"
+          schema:
+            type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      responses:
+        '200':
+          description: Дані замовлення з інвойсом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /payments/check-invoice:
+    get:
+      tags: [Orders (shared)]
+      summary: Перевірити статус оплати
+      description: |
+        Опитувати до `data.invoice.status_id = 2` (PAID) перед викликом `/contract/take`.
+
+        ID інвойсу (`invoice` query param) — `payments[N].invoice_id` з `GET /orders/{orderId}/0`.
+      operationId: checkInvoice
+      parameters:
+        - name: invoice
+          in: query
+          required: true
+          schema:
+            type: string
+          description: |
+            ID інвойсу. Береться з `GET /orders/{orderId}/0` → `data.payments[0].invoice.id`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      responses:
+        '200':
+          description: Статус інвойсу
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "OK"
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        description: |
+                          Текстовий статус оплати:
+                          - `"waiting"` — очікуємо підтвердження від платіжної системи (`status_id: 1`)
+                          - `"paid"` — оплату підтверджено (`status_id: 2`)
+                        example: "waiting"
+                      message:
+                        type: string
+                        description: Опис поточного статусу українською
+                        example: "Очікуємо підтвердження оплати від платіжної системи."
+                      final_url:
+                        type: string
+                        format: uri
+                        nullable: true
+                        example: null
+                      invoice:
+                        $ref: '#/components/schemas/Invoice'
+              example:
+                status: success
+                message: "OK"
+                data:
+                  status: "waiting"
+                  message: "Очікуємо підтвердження оплати від платіжної системи."
+                  final_url: null
+                  invoice:
+                    id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                    user_id: 23
+                    amount: "2400.00"
+                    discount: "0.00"
+                    status_id: 1
+                    invoice_url: "https://sandbox-checkout.ipay.ua/..."
+                    payment_system_code: "ipay"
+                    payment_system_commission: "31.68"
+                    external_id: "1126330621"
+                    payed_at: null
+                    created_at: "2026-06-09T15:05:38.000000Z"
+                    updated_at: "2026-06-09T15:05:40.000000Z"
+
+  /insurance/home/contract/take:
+    post:
+      tags: [Home]
+      summary: Отримати посилання на файли поліса
+      description: |
+        Викликати після `status_id = 2` (PAID).
+
+        **Увага:** на відміну від деяких інших продуктів, файли **не повертаються у base64** —
+        відповідь містить прямі URL на PDF, розміщені на сервері UConnect.
+        Якщо `contract` — `null`, файл ще генерується; повторити запит через кілька секунд.
+      operationId: takeHomeContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contractId]
+              properties:
+                contractId:
+                  type: string
+                  description: "`contractId` з відповіді `/contract/confirm`"
+                  example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+            example:
+              contractId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      responses:
+        '200':
+          description: Посилання на файли поліса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TakeContractResponse'
+              example:
+                status: success
+                message: null
+                data:
+                  contract: "https://api.ukasko.com/storage/insurance/01J.../home.pdf?v=1750291200"
+                  contractDraft_path: null
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/get-invoice:
+    post:
+      tags: [Orders (shared)]
+      summary: Згенерувати платіжний інвойс
+      description: |
+        Генерує посилання для оплати замовлення (`invoiceLink`) та QR-код.
+
+        Викликати після `/contract/confirm`. Redirect клієнта на `invoiceLink`.
+        Після оплати — опитувати `/payments/check-invoice` до `status_id = 2`.
+      operationId: getInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId:
+                  type: string
+                  description: "`id` з відповіді `/order/create`"
+                  example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                amount:
+                  type: number
+                  nullable: true
+                  description: Сума оплати (UAH). `null` — використовується ціна замовлення
+                  example: 2400
+                provider:
+                  type: string
+                  nullable: true
+                  description: Код платіжного провайдера з `/payment-systems/list`. `null` — автовибір
+                  example: null
+                paidBy:
+                  type: string
+                  nullable: true
+                  description: Хто оплачує (`"client"` або `"agent"`). `null` — стандартний платіж
+                  enum: [client, agent]
+                  example: null
+            example:
+              orderId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+              amount: 2400
+              provider: "ipay"
+              paidBy: "agent"
+      responses:
+        '200':
+          description: Платіжний інвойс згенеровано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    nullable: true
+                    example: "OK"
+                  data:
+                    type: object
+                    properties:
+                      invoiceLink:
+                        type: string
+                        description: |
+                          URL для редиректу клієнта на оплату.
+                          Порожній рядок `""` якщо посилання не згенеровано
+                        example: "https://www.liqpay.ua/..."
+                      qrCode:
+                        type: string
+                        nullable: true
+                        description: QR-код у форматі PNG data URI (`data:image/png;base64,...`). `null` якщо `invoiceLink` порожній
+                        example: "data:image/png;base64,iVBORw0KGgo..."
+              example:
+                status: success
+                message: "OK"
+                data:
+                  invoiceLink: "https://sandbox-checkout.ipay.ua/292aaaacd390b0f2b54d0d1dd7a49fdf2525b2a1"
+                  qrCode: "data:image/png;base64,iVBORw0KGgo..."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /payment-systems/list:
+    get:
+      tags: [Orders (shared)]
+      summary: Список доступних платіжних систем
+      description: |
+        Повертає платіжні системи, доступні для вказаної компанії.
+
+        Викликати перед `/orders/send-otp` щоб визначити доступні `commissionPaidBy` опції.
+
+        **Увага:** відповідь — голий масив, без стандартної `{status, data}` обгортки.
+      operationId: listPaymentSystems
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          description: "`HomeOffer.companyId` — ID компанії-страховика"
+          schema:
+            type: string
+          example: "01kspyfta2fwn4da8wjk7h0cyn"
+      responses:
+        '200':
+          description: Список платіжних систем
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Внутрішній ID платіжної системи
+                      example: 1
+                    code:
+                      type: string
+                      description: Код платіжної системи
+                      example: "liqpay"
+                    title:
+                      type: string
+                      description: Відображувана назва
+                      example: "LiqPay"
+                    percentage_acquiring:
+                      type: string
+                      description: Відсоток еквайрингу (рядок з десятковим числом)
+                      example: "1.25"
+                    available_options:
+                      type: array
+                      description: |
+                        Хто може оплачувати комісію за цю платіжну систему.
+                        Передавати значення як `commissionPaidBy` у `/orders/send-otp`
+                      items:
+                        type: string
+                        enum: [client, agent]
+                      example: ["client"]
+                    is_enabled:
+                      type: boolean
+                      description: Чи активна платіжна система
+                      example: true
+              example:
+                - id: 1
+                  code: "liqpay"
+                  title: "LiqPay"
+                  percentage_acquiring: "1.25"
+                  available_options: ["client"]
+                  is_enabled: true
+                - id: 2
+                  code: "ipay"
+                  title: "iPay"
+                  percentage_acquiring: "1.30"
+                  available_options: ["agent"]
+                  is_enabled: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /directories/home/cities/find:
+    get:
+      tags: [Home]
+      summary: Пошук міста для полів info.city / houseInfo.city
+      description: |
+        Шукає міста за назвою у довіднику, специфічному для продукту Home
+        (окремий від загального `/directories/cities/find`).
+        Передавати обраний об'єкт `{id, name}` у `info.city` та/або `houseInfo.city`.
+      operationId: findHomeCity
+      parameters:
+        - name: city
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Частина назви міста
+          example: "Київ"
+      responses:
+        '200':
+          description: Список міст
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/City'
+              example:
+                status: success
+                data:
+                  - id: 1
+                    name: "Київ"
+                    name_full_name_ua: "м. Київ, Україна"
+
+  /directories/home/cities/all:
+    get:
+      tags: [Home]
+      summary: Повний список міст довідника Home
+      operationId: allHomeCities
+      responses:
+        '200':
+          description: Повний список міст
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/City'

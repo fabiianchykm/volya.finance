@@ -8,6 +8,8 @@ import type {
   GreenCardParams,
   MiniKaskoOffer,
   MiniKaskoParams,
+  HomeOffer,
+  HomeParams,
   TourismOffer,
   TourismParams,
   PetsOffer,
@@ -31,6 +33,8 @@ const AUTH_URL = isDev
 
 // Міні-КАСКО НЕ має {test/prod}-префікса — ендпоінти живуть просто під /api.
 const MINI_BASE = `${AUTH_URL}/insurance/mini-kasko`;
+// Страхування житла — теж без {mode}, під /api.
+const HOME_BASE = `${AUTH_URL}/insurance/home`;
 
 // Модулі страхових Зеленої карти (прод): 9 УСГ, 10 ВУСО, 11 ТАС, 17 УТІКО,
 // 18 ОРАНТА, 29 ІНГО, 31 АРКС. Використовуються лише для деградованого fallback
@@ -598,6 +602,51 @@ export class UkaskoService {
     if (!res.ok) throw new HttpError(res.status, `[GET ${url}] ${res.status}`);
     const contentType = res.headers.get("content-type") || "application/pdf";
     return { buffer: await res.arrayBuffer(), contentType };
+  }
+
+  // ── Страхування житла (Home) ──────────────────────────────────────────────
+  async getHomeOffers(params: HomeParams): Promise<HomeOffer[]> {
+    const raw = await withRetry(
+      () => this.withAuth((t) => postJson(`${HOME_BASE}/calculator`, params, t)),
+      3, 700, true
+    ) as { data?: HomeOffer[] };
+    const list = Array.isArray(raw?.data) ? raw.data : [];
+    return list.filter((o) => o?.offerId && o.price > 0);
+  }
+
+  // Створення замовлення (повне) → orderId. Далі спільні OTP/оплата, потім confirm.
+  async createHomeOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
+    const raw = await this.withAuth((t) => postJson(`${HOME_BASE}/order/create`, orderData, t)) as Record<string, unknown>;
+    const status = raw.status as string | undefined;
+    const msg = raw.message as string | undefined;
+    if (status === "error" || status === "validation" || (msg && msg.includes('"result":false'))) {
+      const errText = JSON.stringify(raw.data ?? raw).slice(0, 300);
+      console.error("[home order] rejected. raw:", JSON.stringify(raw).slice(0, 800));
+      if (/ECONNRESET|Unable to connect|timeout|Undefined (index|offset)|ErrorException|discount_price|contractFile/i.test(`${msg ?? ""} ${errText}`)) {
+        throw new Error("Страхова тимчасово недоступна. Спробуйте ще раз за хвилину або оберіть іншу пропозицію.");
+      }
+      throw new Error(`Страхова відхилила заявку: ${errText}`);
+    }
+    const first = (raw as { data?: Array<{ id: string; status?: string }> }).data?.[0];
+    if (!first?.id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    return first;
+  }
+
+  async confirmHome(orderId: string): Promise<{ contractId: string; status?: string }> {
+    const data = await this.withAuth((t) => postJson(`${HOME_BASE}/contract/confirm`, { orderId }, t)) as { data: [{ contractId: string; status?: string }] };
+    return data.data[0];
+  }
+
+  // Файли поліса — прямі URL (не base64). Якщо contract === null — ще генерується.
+  async takeHomeContract(contractId: string): Promise<{ contract?: string | null; contractDraft_path?: string | null }> {
+    const data = await this.withAuth((t) => postJson(`${HOME_BASE}/contract/take`, { contractId }, t)) as { data: { contract?: string | null; contractDraft_path?: string | null } };
+    return data.data;
+  }
+
+  // Довідник міст ЖИТЛА (окремий від загального).
+  async findHomeCities(q: string): Promise<Array<{ id: number; name: string; name_full_name_ua?: string }>> {
+    const raw = await this.withAuth((t) => getJson(`${AUTH_URL}/directories/home/cities/find?city=${encodeURIComponent(q)}`, t)) as { data?: Array<{ id: number; name: string; name_full_name_ua?: string }> };
+    return Array.isArray(raw?.data) ? raw.data : [];
   }
 
   async createDraft(orderData: Record<string, unknown>): Promise<{ id: string; status: string }> {
