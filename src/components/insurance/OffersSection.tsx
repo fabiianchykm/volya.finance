@@ -173,6 +173,7 @@ export function OffersSection({
                 offer={offer}
                 index={i}
                 selected={selectedOfferId === offer.offerId}
+                discountEligible
                 selectedDgoId={dgoMap[offer.offerId] ?? null}
                 selectedAutolawyerId={autolawyerMap[offer.offerId] ?? null}
                 onSelect={() => setSelectedOfferId(offer.offerId)}

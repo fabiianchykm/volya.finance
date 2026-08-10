@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
+import { osagoStrikePrice } from "@/lib/osago-discounts";
 import { BONUS_RATE } from "@/lib/constants";
 import { logoSrc } from "@/lib/logos";
 import type { InsuranceCompany, InsuranceOffer } from "@/types/api";
@@ -25,6 +26,8 @@ interface OfferCardProps {
   subtitle?: string;
   /** Бейдж у верхньому лівому куті рамки картки (напр. програма «Економ»). */
   cornerBadge?: string;
+  /** Показати «стару» ціну закресленою (знижки ОСЦПВ уже враховані в price). */
+  discountEligible?: boolean;
 }
 
 function transliterate(text: string) {
@@ -76,6 +79,7 @@ export function OfferCard({
   hideExtras,
   subtitle,
   cornerBadge,
+  discountEligible,
 }: OfferCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -93,6 +97,14 @@ export function OfferCard({
 
   // Бонус 1% від вартості полісу — нараховується на бонусний рахунок клієнта.
   const bonus = Math.round(totalPrice * BONUS_RATE);
+
+  // «Стара» ціна (до знижки) для показу закресленою — лише для ОСЦПВ (discountEligible).
+  const strikePrice = discountEligible
+    ? osagoStrikePrice(
+        [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" "),
+        totalPrice,
+      )
+    : null;
 
   const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
   // Блок опцій (у картці) показуємо лише за наявності реальних опцій.
@@ -214,6 +226,9 @@ export function OfferCard({
           </div>
 
           <div className="flex shrink-0 flex-col items-end">
+            {strikePrice && (
+              <span className="text-xs text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
+            )}
             <span className="text-lg font-bold text-zinc-900 tabular-nums">
               {formatPrice(totalPrice)}
             </span>
@@ -299,6 +314,9 @@ export function OfferCard({
         {/* Блок 4: ціна + купити */}
         <div className="flex flex-col items-center justify-center gap-3 shrink-0" style={{ width: 200 }}>
           <div className="flex flex-col items-center gap-1">
+            {strikePrice && (
+              <div className="text-sm text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</div>
+            )}
             <div className="text-2xl text-zinc-900 tabular-nums">
               {formatPrice(totalPrice)}
             </div>
