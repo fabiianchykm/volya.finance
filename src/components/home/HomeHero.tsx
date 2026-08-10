@@ -24,22 +24,14 @@ const products: Product[] = [
 // «переливом» кольору (анімований градієнт індиго/віолет) — не надто темний.
 export function HomeHero() {
   return (
-    <section
-      className="relative overflow-hidden pb-20 pt-32 sm:pb-24 sm:pt-40 animate-gradient"
-      style={{ backgroundImage: "linear-gradient(135deg, #1e1b4b, #312e81, #4f46e5, #7c3aed, #6d28d9, #312e81, #1e1b4b)" }}
-    >
-      {/* Легка глибина по краях, щоб текст/навбар читались */}
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 75% 60% at 50% 30%, transparent 0%, rgba(0,0,0,0.18) 100%)" }} />
-      {/* Перелив у біле відбувається ВИЩЕ — щоб картки продуктів були на суцільно білому */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%]" style={{ background: "linear-gradient(to bottom, transparent 0%, #ffffff 30%, #ffffff 100%)" }} />
-
+    <section className="relative overflow-hidden bg-white pb-20 pt-32 sm:pb-24 sm:pt-40">
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-5xl md:text-6xl">
             Страхування{" "}
-            <span className="bg-gradient-to-r from-indigo-200 to-violet-200 bg-clip-text text-transparent">онлайн</span>
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">онлайн</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-indigo-100/80 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-xl text-base text-zinc-500 sm:text-lg">
             Авто, подорожі та улюбленці — усі поліси в одному місці. Оберіть продукт і оформіть за кілька хвилин.
           </p>
         </div>
