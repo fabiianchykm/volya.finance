@@ -21,7 +21,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Заповніть усі поля" }, { status: 400 });
     }
 
-    const offers = await ukaskoService.getHomeOffers({ homeType, insuranceAmount, insurancePeriod, earnings: HOME_EARNINGS, startFrom });
+    // earnings має бути валідним значенням із довідника тарифів. Беремо 15, якщо
+    // воно доступне; інакше — перше доступне; якщо тарифів нема — дефолт 15.
+    const tariffs = await ukaskoService.getHomeTariffs();
+    const earnings = tariffs.includes(HOME_EARNINGS) ? HOME_EARNINGS : (tariffs[0] ?? HOME_EARNINGS);
+
+    const offers = await ukaskoService.getHomeOffers({ homeType, insuranceAmount, insurancePeriod, earnings, startFrom });
+    if (offers.length === 0) {
+      console.error("[home] 0 offers.", { homeType, insuranceAmount, insurancePeriod, startFrom, earnings, tariffsCount: tariffs.length });
+    }
     return NextResponse.json({ success: true, offers });
   } catch (e) {
     console.error("[home] error →", e instanceof Error ? e.message : e);

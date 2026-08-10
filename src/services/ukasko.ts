@@ -605,6 +605,16 @@ export class UkaskoService {
   }
 
   // ── Страхування житла (Home) ──────────────────────────────────────────────
+  // Доступні значення комісії агента (earnings). Порожньо, якщо продукт не активний.
+  async getHomeTariffs(): Promise<number[]> {
+    try {
+      const raw = await this.withAuth((t) => getJson(`${HOME_BASE}/tariffs`, t)) as { data?: Array<{ value: number }> };
+      return Array.isArray(raw?.data) ? raw.data.map((x) => Number(x.value)).filter((n) => Number.isFinite(n)) : [];
+    } catch {
+      return [];
+    }
+  }
+
   async getHomeOffers(params: HomeParams): Promise<HomeOffer[]> {
     const raw = await withRetry(
       () => this.withAuth((t) => postJson(`${HOME_BASE}/calculator`, params, t)),
