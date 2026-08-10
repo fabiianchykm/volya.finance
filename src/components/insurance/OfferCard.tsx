@@ -219,13 +219,13 @@ export function OfferCard({
             <p className="text-sm font-semibold uppercase text-zinc-900 leading-snug">
               {cleanCompanyName}
             </p>
-            {discountPct != null && (
-              <span className="mt-1 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600">−{Math.round(discountPct)}% знижка</span>
-            )}
             {subtitle && <p className="mt-0.5 text-xs text-zinc-400">{subtitle}</p>}
           </div>
 
           <div className="flex shrink-0 flex-col items-end">
+            {discountPct != null && (
+              <span className="mb-0.5 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600">−{Math.round(discountPct)}%</span>
+            )}
             {strikePrice && (
               <span className="text-xs text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
             )}
@@ -280,9 +280,6 @@ export function OfferCard({
           <span className="text-sm uppercase text-zinc-900 leading-tight text-center">
             {cleanCompanyName}
           </span>
-          {discountPct != null && (
-            <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-600">−{Math.round(discountPct)}% знижка</span>
-          )}
           {subtitle && <span className="text-xs text-zinc-400 text-center">{subtitle}</span>}
         </div>
 
@@ -317,6 +314,9 @@ export function OfferCard({
         {/* Блок 4: ціна + купити */}
         <div className="flex flex-col items-center justify-center gap-3 shrink-0" style={{ width: 200 }}>
           <div className="flex flex-col items-center gap-1">
+            {discountPct != null && (
+              <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-600">−{Math.round(discountPct)}% знижка</span>
+            )}
             {strikePrice && (
               <div className="text-sm text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</div>
             )}
