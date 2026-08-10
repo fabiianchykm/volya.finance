@@ -374,7 +374,9 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         {formStep === "vehicle" && (
         <>
         <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Транспортний засіб</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">Транспортний засіб</p>
+          {/* Підказка — зверху, над полями */}
+          <p className="mb-3 text-xs text-zinc-400">Введіть держ. номер — марка, модель і рік підтягнуться автоматично.</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Держ. номер" value={f.number}
               onChange={(e) => setF((s) => ({ ...s, number: e.target.value.toUpperCase() }))}
@@ -383,21 +385,18 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
             <Input label="Модель" value={f.model} onChange={set("model")} placeholder="OCTAVIA" required />
             <Input label="Рік випуску" value={f.year} onChange={set("year")} placeholder="2018" required />
             <Input label="VIN" value={f.vin} onChange={set("vin")} placeholder="необовʼязково" />
-            <div className="flex items-end pb-1">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700">
-                <input type="checkbox" checked={f.isTaxi} onChange={(e) => setF((s) => ({ ...s, isTaxi: e.target.checked }))}
-                  className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" />
-                Використовується як таксі
-              </label>
-            </div>
           </div>
           {plateLoading ? (
             <p className="mt-2 text-xs font-medium text-indigo-500">Підтягуємо дані авто за номером…</p>
           ) : plateError ? (
             <p className="mt-2 text-xs font-medium text-amber-600">{plateError}</p>
-          ) : (
-            <p className="mt-2 text-xs text-zinc-400">Введіть держ. номер — марка, модель і рік підтягнуться автоматично.</p>
-          )}
+          ) : null}
+          {/* Таксі — окремим рядком знизу, не збоку */}
+          <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm text-zinc-700">
+            <input type="checkbox" checked={f.isTaxi} onChange={(e) => setF((s) => ({ ...s, isTaxi: e.target.checked }))}
+              className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" />
+            Використовується як таксі
+          </label>
         </div>
 
         <div className="flex justify-end border-t border-zinc-100 pt-4">
