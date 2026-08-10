@@ -9,6 +9,7 @@ import { InviteFriendCard } from "./InviteFriendCard";
 import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
 import type { InsuranceOffer } from "@/types/api";
+import { osagoStrikePrice } from "@/lib/osago-discounts";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
 
 interface OffersSectionProps {
@@ -24,7 +25,14 @@ interface OffersSectionProps {
   periodId: number;
 }
 
-type SortKey = "price_asc" | "price_desc";
+type SortKey = "price_asc" | "price_desc" | "discount_desc";
+
+// Сума знижки в грн для офера (0, якщо для цієї страхової знижки нема).
+function discountAmount(o: InsuranceOffer): number {
+  const name = [o.company?.publicName, (o.company as { companyName?: string })?.companyName].filter(Boolean).join(" ");
+  const strike = osagoStrikePrice(name, o.price);
+  return strike ? strike - o.price : 0;
+}
 
 export function OffersSection({
   offers,
@@ -48,6 +56,10 @@ export function OffersSection({
 
   const sorted = [...offers].sort((a, b) => {
     if (sortBy === "price_desc") return b.price - a.price;
+    if (sortBy === "discount_desc") {
+      const d = discountAmount(b) - discountAmount(a);
+      return d !== 0 ? d : a.price - b.price; // за рівної знижки — дешевші вище
+    }
     return a.price - b.price; // price_asc
   });
 
@@ -122,6 +134,7 @@ export function OffersSection({
               {([
                 { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
                 { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
+                { k: "discount_desc", label: "Найбільша знижка", Icon: Percent },
               ] as const).map(({ k, label, Icon }) => {
                 const active = sortBy === k;
                 return (

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
-import { osagoStrikePrice } from "@/lib/osago-discounts";
+import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
 import { BONUS_RATE } from "@/lib/constants";
 import { logoSrc } from "@/lib/logos";
 import type { InsuranceCompany, InsuranceOffer } from "@/types/api";
@@ -98,13 +98,10 @@ export function OfferCard({
   // Бонус 1% від вартості полісу — нараховується на бонусний рахунок клієнта.
   const bonus = Math.round(totalPrice * BONUS_RATE);
 
-  // «Стара» ціна (до знижки) для показу закресленою — лише для ОСЦПВ (discountEligible).
-  const strikePrice = discountEligible
-    ? osagoStrikePrice(
-        [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" "),
-        totalPrice,
-      )
-    : null;
+  // «Стара» ціна (до знижки) + відсоток — лише для ОСЦПВ (discountEligible).
+  const companyMatchName = [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" ");
+  const strikePrice = discountEligible ? osagoStrikePrice(companyMatchName, totalPrice) : null;
+  const discountPct = discountEligible ? osagoDiscountPct(companyMatchName) : null;
 
   const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
   // Блок опцій (у картці) показуємо лише за наявності реальних опцій.
@@ -222,6 +219,9 @@ export function OfferCard({
             <p className="text-sm font-semibold uppercase text-zinc-900 leading-snug">
               {cleanCompanyName}
             </p>
+            {discountPct != null && (
+              <span className="mt-1 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600">−{Math.round(discountPct)}% знижка</span>
+            )}
             {subtitle && <p className="mt-0.5 text-xs text-zinc-400">{subtitle}</p>}
           </div>
 
@@ -280,6 +280,9 @@ export function OfferCard({
           <span className="text-sm uppercase text-zinc-900 leading-tight text-center">
             {cleanCompanyName}
           </span>
+          {discountPct != null && (
+            <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-600">−{Math.round(discountPct)}% знижка</span>
+          )}
           {subtitle && <span className="text-xs text-zinc-400 text-center">{subtitle}</span>}
         </div>
 

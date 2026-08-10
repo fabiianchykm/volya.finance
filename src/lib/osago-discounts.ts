@@ -14,14 +14,19 @@ const OSAGO_DISCOUNTS: { match: RegExp; pct: number }[] = [
   { match: /експрес|express/i,          pct: 7.14 },
 ];
 
+/** Відсоток знижки для страхової (0..100) або null, якщо знижки нема. */
+export function osagoDiscountPct(companyName: string | undefined): number | null {
+  if (!companyName) return null;
+  return OSAGO_DISCOUNTS.find((d) => d.match.test(companyName))?.pct ?? null;
+}
+
 /**
  * «Стара» ціна (до знижки) для показу закресленою, або null якщо для цієї страхової
  * знижки нема. price — актуальна ціна з API (уже зі знижкою).
  */
 export function osagoStrikePrice(companyName: string | undefined, price: number): number | null {
-  if (!companyName || !(price > 0)) return null;
-  const hit = OSAGO_DISCOUNTS.find((d) => d.match.test(companyName));
-  if (!hit) return null;
-  const original = Math.round(price / (1 - hit.pct / 100));
+  const pct = osagoDiscountPct(companyName);
+  if (pct == null || !(price > 0)) return null;
+  const original = Math.round(price / (1 - pct / 100));
   return original > price ? original : null;
 }
