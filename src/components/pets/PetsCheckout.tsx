@@ -12,6 +12,7 @@ import { formatPrice, cityShort, cityLong } from "@/lib/utils";
 import type { PetsOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { useSession } from "next-auth/react";
 
 // Анкета оформлення страхування тварин: дані улюбленця + власника → order/create
 // (statusId:5) → OTP → оплата → confirm → поліс. Дати — Unix timestamp (сек).
@@ -100,20 +101,25 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
     }
   };
 
+  const { status: authStatus } = useSession();
   const didAutofill = useRef(false);
   useEffect(() => {
-    if (didAutofill.current) return;
+    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
+    if (authStatus !== "authenticated" || didAutofill.current) return;
     didAutofill.current = true;
     const last = loadLastProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (last) applyProfile(last);
-  }, []);
+     
+  }, [authStatus]);
 
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setF((s) => ({ ...s, email }));
-    const saved = loadProfile(email);
-    if (saved) applyProfile(saved);
+    if (authStatus === "authenticated") {
+      const saved = loadProfile(email);
+      if (saved) applyProfile(saved);
+    }
   };
 
   const buildOrder = (): Record<string, unknown> => {

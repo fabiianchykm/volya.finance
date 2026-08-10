@@ -11,6 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { HomeOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { useSession } from "next-auth/react";
 import { cityShort, cityLong } from "@/lib/utils";
 
 // Оформлення страхування житла: страхувальник (паспорт/ID, ІПН) + адреса обʼєкта →
@@ -142,21 +143,25 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     const cityText = p.cityQuery || p.city?.name_full_name_ua || p.city?.name_ua;
     if (cityText) setCityQuery(cityShort(cityText));
   };
+  const { status: authStatus } = useSession();
   const didAutofill = useRef(false);
   useEffect(() => {
-    if (didAutofill.current) return;
+    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
+    if (authStatus !== "authenticated" || didAutofill.current) return;
     didAutofill.current = true;
     const last = loadLastProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (last) applyProfile(last);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authStatus]);
 
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setF((s) => ({ ...s, email }));
-    const saved = loadProfile(email);
-    if (saved) applyProfile(saved);
+    if (authStatus === "authenticated") {
+      const saved = loadProfile(email);
+      if (saved) applyProfile(saved);
+    }
   };
 
   const buildPayload = () => {

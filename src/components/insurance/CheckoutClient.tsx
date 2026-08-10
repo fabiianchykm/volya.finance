@@ -9,6 +9,7 @@ import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { useSession } from "next-auth/react";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
@@ -505,22 +506,27 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   // При відкритті форми — підставляємо останній збережений профіль (свій пристрій),
   // щоб повторним клієнтам не вводити все заново. Порожній email → нічого не робимо.
+  const { status: authStatus } = useSession();
   const didAutofill = useRef(false);
   useEffect(() => {
-    if (didAutofill.current) return;
+    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
+    if (authStatus !== "authenticated" || didAutofill.current) return;
     didAutofill.current = true;
     const last = loadLastProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (last) applyProfile(last);
-  }, []);
+     
+  }, [authStatus]);
 
   // Email — окремий обробник: якщо введений email збігається зі збереженим профілем,
   // автозаповнюємо решту полів. Так «прив'язка під email» працює й при зміні пошти.
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setForm((f) => ({ ...f, email }));
-    const saved = loadProfile(email);
-    if (saved) applyProfile(saved);
+    if (authStatus === "authenticated") {
+      const saved = loadProfile(email);
+      if (saved) applyProfile(saved);
+    }
   };
 
   // Тестове автозаповнення: ввести "007" у поле «Прізвище» → форма заповнюється

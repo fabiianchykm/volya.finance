@@ -12,6 +12,7 @@ import { formatPrice, formatCompanyName, cityShort, cityLong } from "@/lib/utils
 import type { TourismOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { useSession } from "next-auth/react";
 
 // Анкета оформлення туристичного (аналог ЗК): дані страхувальника + туристів →
 // declare (order/create save) → OTP → оплата → confirm (nextFinal) → поліс.
@@ -127,20 +128,25 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     }
   };
 
+  const { status: authStatus } = useSession();
   const didAutofill = useRef(false);
   useEffect(() => {
-    if (didAutofill.current) return;
+    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
+    if (authStatus !== "authenticated" || didAutofill.current) return;
     didAutofill.current = true;
     const last = loadLastProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (last) applyProfile(last);
-  }, []);
+     
+  }, [authStatus]);
 
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setC((s) => ({ ...s, email }));
-    const saved = loadProfile(email);
-    if (saved) applyProfile(saved);
+    if (authStatus === "authenticated") {
+      const saved = loadProfile(email);
+      if (saved) applyProfile(saved);
+    }
   };
 
   const o = ctx.offer;
