@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -102,6 +102,8 @@ export function OfferCard({
   const companyMatchName = [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" ");
   const strikePrice = discountEligible ? osagoStrikePrice(companyMatchName, totalPrice) : null;
   const discountPct = discountEligible ? osagoDiscountPct(companyMatchName) : null;
+  // Спецпропозиція VOLYA.FINANCE — коли знижка перевищує 25%.
+  const specialOffer = discountPct != null && discountPct > 25;
 
   const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
   // Блок опцій (у картці) показуємо лише за наявності реальних опцій.
@@ -201,14 +203,19 @@ export function OfferCard({
           : "border-zinc-100 hover:border-zinc-200 hover:shadow-md"
       }`}
     >
-      {cornerBadge && (
+      {specialOffer && (
+        <span className="absolute left-0 top-0 z-10 inline-flex items-center gap-1 rounded-br-xl rounded-tl-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+          <Sparkles className="h-3 w-3" /> Спеціальна пропозиція від VOLYA.FINANCE
+        </span>
+      )}
+      {cornerBadge && !specialOffer && (
         <span className="absolute left-0 top-0 z-10 rounded-br-xl rounded-tl-2xl bg-indigo-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
           {cornerBadge}
         </span>
       )}
 
       {/* ── MOBILE layout (< lg) ── */}
-      <div className="p-4 lg:hidden">
+      <div className={`p-4 lg:hidden ${specialOffer ? "pt-8" : ""}`}>
         {/* Ряд 1: лого + назва + ціна */}
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5">
@@ -270,7 +277,7 @@ export function OfferCard({
       </div>
 
       {/* ── DESKTOP layout (≥ lg) ── */}
-      <div className="hidden lg:flex items-stretch gap-6 p-5">
+      <div className={`hidden lg:flex items-stretch gap-6 p-5 ${specialOffer ? "pt-8" : ""}`}>
 
         {/* Блок 1: лого + назва */}
         <div className="flex flex-col items-center justify-center gap-3 w-48 shrink-0">
