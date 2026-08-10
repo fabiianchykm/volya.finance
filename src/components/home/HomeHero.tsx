@@ -30,8 +30,8 @@ export function HomeHero() {
     >
       {/* Легка глибина по краях, щоб текст/навбар читались */}
       <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 75% 60% at 50% 30%, transparent 0%, rgba(0,0,0,0.18) 100%)" }} />
-      {/* Нижня частина переливається у білий — під нею картки продуктів */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%]" style={{ background: "linear-gradient(to bottom, transparent 0%, #ffffff 55%, #ffffff 100%)" }} />
+      {/* Перелив у біле відбувається ВИЩЕ — щоб картки продуктів були на суцільно білому */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%]" style={{ background: "linear-gradient(to bottom, transparent 0%, #ffffff 30%, #ffffff 100%)" }} />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
