@@ -57,18 +57,19 @@ export function MiniKaskoFlow() {
   const startD = parseUaDate(startDate);
 
   useEffect(() => {
-    if (!cityQuery || cityQuery.length < 2 || selectedCity) { setCityLoading(false); return; }
-    setCityLoading(true);
+    if (!cityQuery || cityQuery.length < 2 || selectedCity) return;
+    let active = true;
     const t = setTimeout(async () => {
+      setCityLoading(true);
       try {
         const res = await fetch(`/api/vehicle/cities?q=${encodeURIComponent(cityQuery)}`);
         const json = await res.json();
-        if (json.success) setCityResults(json.data);
+        if (active && json.success) setCityResults(json.data);
       } finally {
-        setCityLoading(false);
+        if (active) setCityLoading(false);
       }
     }, 200);
-    return () => clearTimeout(t);
+    return () => { active = false; clearTimeout(t); };
   }, [cityQuery, selectedCity]);
 
   const calc = async (e: React.FormEvent) => {
@@ -156,7 +157,7 @@ export function MiniKaskoFlow() {
                 <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" spellCheck={false}
                   onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
                   className={`${inputCls} pr-10${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
-                {cityLoading && !selectedCity && (
+                {cityLoading && !selectedCity && cityQuery.length >= 2 && (
                   <Loader2 className="pointer-events-none absolute right-3 top-[2.15rem] h-4 w-4 animate-spin text-indigo-500" />
                 )}
                 {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
