@@ -28,11 +28,6 @@ function fmtCoverage(v: number): string {
   return `${(v / 1000).toLocaleString("uk-UA")} тис. грн`;
 }
 
-// Date → "ДД.ММ.РРРР"
-function fmtUa(d: Date): string {
-  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
-}
-
 export function MiniKaskoFlow() {
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
 
@@ -162,21 +157,8 @@ export function MiniKaskoFlow() {
                   )}
                 </div>
                 <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
-                    <button
-                      type="button"
-                      onClick={() => setStartDate(fmtUa(tomorrow))}
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${
-                        startDate === fmtUa(tomorrow)
-                          ? "bg-indigo-600 text-white"
-                          : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-                      }`}
-                    >
-                      Якнайшвидше
-                    </button>
-                  </div>
-                  <DateInput label="" value={startDate} onChange={setStartDate} minDate={tomorrow} maxDate={maxStart} required />
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
+                  <DateInput label="" value={startDate} onChange={setStartDate} minDate={tomorrow} maxDate={maxStart} quickAction={{ label: "Якнайшвидше", date: tomorrow }} required />
                 </div>
               </div>
 

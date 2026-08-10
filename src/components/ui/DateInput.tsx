@@ -52,9 +52,11 @@ interface DateInputProps {
   minDate?: Date;
   /** Максимальна доступна дата (за замовч. — сьогодні, тобто майбутнє заблоковане). */
   maxDate?: Date;
+  /** Швидка дія зверху попапа (між полем і календарем), напр. «Якнайшвидше». */
+  quickAction?: { label: string; date: Date };
 }
 
-export function DateInput({ label, value, onChange, required, className, error, defaultYear, minDate, maxDate }: DateInputProps) {
+export function DateInput({ label, value, onChange, required, className, error, defaultYear, minDate, maxDate, quickAction }: DateInputProps) {
   const parsed = parseUaDate(value);
   const errText = error || (value.replace(/\D/g, "").length === 8 && !parsed ? "Невірна дата" : "");
 
@@ -154,6 +156,21 @@ export function DateInput({ label, value, onChange, required, className, error, 
 
       {open && (
         <div className="absolute top-full left-0 z-30 mt-2 w-[288px] rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl">
+          {/* Швидка дія (напр. «Якнайшвидше») — між полем вводу і сіткою календаря */}
+          {quickAction && (
+            <button
+              type="button"
+              onClick={() => {
+                const d = quickAction.date;
+                onChange(`${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`);
+                setView({ y: d.getFullYear(), m: d.getMonth() });
+                setOpen(false);
+              }}
+              className="mb-2 w-full rounded-lg bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-600 transition-colors hover:bg-indigo-100"
+            >
+              {quickAction.label}
+            </button>
+          )}
           {/* Хедер: ‹ місяць рік › — місяць і рік як швидкі спадні списки */}
           <div className="mb-2 flex items-center gap-1.5">
             <button
