@@ -36,7 +36,12 @@ export function MiniKaskoFlow() {
   const [cityResults, setCityResults] = useState<CityOption[]>([]);
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const cityRef = useRef<HTMLDivElement>(null);
-  const [startDate, setStartDate] = useState("");
+  // Дата за замовчуванням — найближча можлива (завтра); користувач може змінити.
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  });
 
   const [offers, setOffers] = useState<MiniKaskoOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<MiniKaskoOffer | null>(null);
