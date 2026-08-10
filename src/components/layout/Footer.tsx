@@ -33,24 +33,26 @@ function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: s
 }
 import { FooterContact } from "./FooterContact";
 
-const footerLinks = {
+type FooterLink = { label: string; href: string; frozen?: boolean };
+
+const footerLinks: { products: FooterLink[]; legal: FooterLink[] } = {
   products: [
     { label: "Автоцивілка", href: "/osago" },
     { label: "КАСКО", href: "/kasko" },
     { label: "Міні-КАСКО", href: "/mini-kasko" },
     { label: "Зелена карта", href: "/green-card" },
-  ],
-  company: [
-    { label: "Поширені запитання", href: "/osago#faq" },
+    { label: "Туристичне", href: "/tourism" },
+    { label: "Тварини", href: "/pets" },
   ],
   legal: [
     { label: "Інформація про Субагента", href: "/subagent" },
-    { label: "Публічна оферта", href: "#" },
-    { label: "Політика конфіденційності", href: "#" },
+    // Заморожені (документи ще не опубліковані) — некликабельні.
+    { label: "Публічна оферта", href: "#", frozen: true },
+    { label: "Політика конфіденційності", href: "#", frozen: true },
   ],
 };
 
-function LinkColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
+function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
   return (
     <div>
       <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
@@ -59,12 +61,16 @@ function LinkColumn({ title, links }: { title: string; links: { label: string; h
       <ul className="space-y-1.5">
         {links.map((link) => (
           <li key={link.label}>
-            <Link
-              href={link.href}
-              className="text-[13px] text-zinc-600 transition-colors hover:text-indigo-600"
-            >
-              {link.label}
-            </Link>
+            {link.frozen ? (
+              <span className="cursor-default text-[13px] text-zinc-400">{link.label}</span>
+            ) : (
+              <Link
+                href={link.href}
+                className="text-[13px] text-zinc-600 transition-colors hover:text-indigo-600"
+              >
+                {link.label}
+              </Link>
+            )}
           </li>
         ))}
       </ul>
@@ -90,9 +96,8 @@ export function Footer() {
           </div>
 
           {/* Колонки посилань — компактні, під підтримкою й застосунком */}
-          <div className="mt-10 grid max-w-2xl grid-cols-3 gap-6">
+          <div className="mt-10 grid max-w-lg grid-cols-2 gap-6">
             <LinkColumn title="Продукти" links={footerLinks.products} />
-            <LinkColumn title="Компанія" links={footerLinks.company} />
             <LinkColumn title="Документи" links={footerLinks.legal} />
           </div>
         </div>
