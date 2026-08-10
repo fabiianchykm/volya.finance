@@ -8,7 +8,16 @@ import { Gift, ChevronRight, Copy, Check, Loader2 } from "lucide-react";
 // зеленої карти). За кліком тягне реферальне посилання залогіненого користувача;
 // гостю пропонує вхід через Google (без нього нема кому нараховувати бонус).
 
+// ЗАМОРОЖЕНО: тимчасово прибрали картку збоку. Код лишаємо — щоб повернути,
+// постав ENABLED = true.
+const ENABLED = false;
+
 export function InviteFriendCard() {
+  if (!ENABLED) return null;
+  return <InviteFriendCardInner />;
+}
+
+function InviteFriendCardInner() {
   const [refLink, setRefLink] = useState<string | null>(null);
   const [refLoading, setRefLoading] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
