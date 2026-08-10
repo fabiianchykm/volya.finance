@@ -201,12 +201,6 @@ function MiniKaskoOffers({
   const [cvOpen, setCvOpen] = useState(false);
   const activeCoverage = coverage ?? coverages[0] ?? null;
   const list = offers.filter((o) => o.coverage === activeCoverage).sort((a, b) => a.price - b.price);
-  // Найдешевша ціна на кожен рівень покриття — підказка «від N грн» у дропдауні.
-  const minByCoverage = new Map<number, number>();
-  for (const o of offers) {
-    const cur = minByCoverage.get(o.coverage);
-    if (cur === undefined || o.price < cur) minByCoverage.set(o.coverage, o.price);
-  }
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -254,7 +248,6 @@ function MiniKaskoOffers({
                           <span className="text-sm font-semibold text-zinc-900">{fmtCoverage(cv)}</span>
                           <span className="text-xs text-zinc-400">максимальна виплата</span>
                         </span>
-                        <span className="shrink-0 text-sm font-bold text-indigo-600">від {minByCoverage.get(cv)} грн</span>
                       </button>
                     ))}
                   </div>
