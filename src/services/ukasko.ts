@@ -66,7 +66,11 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 70
       // (retry500): деякі модулі страхових, напр. INGO у Зеленій карті, час від
       // часу падають 500-кою й зносять УВесь список пропозицій — повтор рятує.
       const status = e instanceof HttpError ? e.status : 0;
-      const transient = status === 502 || status === 503 || status === 504 || (retry500 && status === 500);
+      // Мережеві скиди зʼєднання з апстрімом (ECONNRESET, socket hang up, fetch
+      // failed, таймаути) — теж тимчасові: fetch кидає TypeError без HttpError.
+      const netMsg = e instanceof Error ? e.message : String(e);
+      const networkTransient = status === 0 && /ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|socket hang up|fetch failed|network|timeout/i.test(netMsg);
+      const transient = status === 502 || status === 503 || status === 504 || (retry500 && status === 500) || networkTransient;
       if (!transient || i === attempts - 1) throw e;
       await new Promise((r) => setTimeout(r, baseDelayMs * (i + 1)));
     }
@@ -554,8 +558,10 @@ export class UkaskoService {
     if (raw.status === "error") {
       const msg = (raw.message as string) || JSON.stringify(raw).slice(0, 300);
       console.error("[minikasko order] rejected. raw:", JSON.stringify(raw).slice(0, 800));
-      if (/Undefined (index|offset)|ErrorException|discount_price|contractFile/i.test(msg)) {
-        throw new Error("На жаль, ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
+      // Транзієнт на боці Ukasko/страховика: не достукались до API страховика
+      // (ECONNRESET / Unable to connect) або PHP-нотіс парсера — дружнє повідомлення.
+      if (/ECONNRESET|ECONNREFUSED|ETIMEDOUT|Unable to connect|socket hang up|timeout|Undefined (index|offset)|ErrorException|discount_price|contractFile/i.test(msg)) {
+        throw new Error("Страхова тимчасово недоступна. Спробуйте ще раз за хвилину або оберіть іншу пропозицію.");
       }
       throw new Error(msg);
     }
