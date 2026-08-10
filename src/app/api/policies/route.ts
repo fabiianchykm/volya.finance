@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, email, phone, customerName, customer, contractId, orderId, company, vehicle, price, startDate, endDate } = body ?? {};
+    const { id, email, phone, customerName, customer, contractId, orderId, company, vehicle, price, startDate, endDate, product } = body ?? {};
     if (!id || !email) {
       return NextResponse.json({ success: false, error: "Бракує id або email" }, { status: 400 });
     }
@@ -33,12 +33,13 @@ export async function POST(req: NextRequest) {
       price: typeof price === "number" ? price : null,
       startDate: startDate ?? null,
       endDate: endDate ?? null,
+      product: product ? String(product) : null,
     });
 
     // Sales-бот: успішний онлайн-продаж ОСЦПВ. Не має ламати відповідь клієнту.
     const car = [vehicle?.mark, vehicle?.model].filter(Boolean).join(" ") || "—";
     const saleLines = [
-      "✅ <b>Оформлено ОСЦПВ</b>",
+      `✅ <b>Оформлено ${escapeHtml(String(product ?? "ОСЦПВ"))}</b>`,
       "",
       `🏢 Компанія: ${escapeHtml(String(company ?? "—"))}`,
       `🚙 Авто: ${escapeHtml(car)}${vehicle?.year ? `, ${vehicle.year}` : ""}`,

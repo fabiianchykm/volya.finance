@@ -1,0 +1,1528 @@
+openapi: 3.0.3
+info:
+  title: MiniKasko Insurance API — UConnect
+  version: 1.0.0
+  description: |
+    API для страхування MiniKasko (спрощене автокаско на суму покриття
+    400 000 / 800 000 / 1 200 000 грн).
+
+    ## Ключові відмінності від інших продуктів (Pets/Osago)
+
+    - Немає `{mode}` (`test`/`prod`) у шляху — усі ендпоінти MiniKasko працюють
+      без цього префіксу.
+    - Двокроковий процес створення чернетки (`orders/init`) і заявлення
+      страховику (`orders/{orderId}/declare`). Є також комбінований
+      `POST /orders`, що виконує обидва кроки за один виклик.
+    - Власний OTP-флоу (`send-otp` / `verify-otp` на замовленні) для підпису
+      поліса — **не** спільний платіжний OTP.
+    - Оплата, чек інвойсу та список платіжних систем — спільні ендпоінти,
+      однакові з іншими продуктами (`/orders/get-invoice`,
+      `/payments/check-invoice`, `/payment-systems/list`).
+    - Завантаження документів — окремі **неавторизовані** GET-ендпоінти, що
+      віддають бінарний файл напряму (не base64 у JSON, як у Pets).
+
+    ## Загальний потік
+
+    ```
+    1.  POST /insurance/mini-kasko/calculate                 → розрахунок вартості, список пропозицій по СК
+    2.  POST /insurance/mini-kasko/orders/init                → створення чернетки (statusId = 1)
+        (декілька PUT /insurance/mini-kasko/orders/{orderId} для редагування чернетки)
+    3.  POST /insurance/mini-kasko/orders/{orderId}/declare   → заявлення договору страховику (statusId = 5)
+        *** або одним викликом: POST /insurance/mini-kasko/orders (крок 2 + 3) ***
+    4.  GET  /payment-systems/list?companyId=...              → список платіжних систем
+    5.  POST /orders/get-invoice                              → генерація платіжного посилання
+    *** Redirect клієнта на invoiceLink ***
+    6.  GET  /payments/check-invoice                          → очікування оплати (опитувати до status_id = 2)
+    7.  POST /insurance/mini-kasko/orders/{orderId}/send-otp   → надсилання OTP для підпису поліса (email або viber_sms)
+    8.  POST /insurance/mini-kasko/orders/{orderId}/verify-otp → перевірка OTP
+    9.  POST /insurance/mini-kasko/orders/{orderId}/confirm    → підтвердження договору у страховика
+    10. GET  /insurance/mini-kasko/orders/{orderId}/download   → завантаження PDF поліса (бінарний файл)
+    ```
+
+    Чернетку без валідної пропозиції можна реплікувати через
+    `POST /insurance/mini-kasko/orders/{orderId}/replicate` (наприклад, коли
+    попередня пропозиція вже прострочена — пропозиції дійсні лише в межах
+    доби, коли їх було розраховано).
+
+servers:
+  - url: /api
+    description: Ukasko Connect API
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: MiniKasko
+    description: Страхування MiniKasko (спрощене автокаско)
+  - name: Orders (shared)
+    description: Спільні ендпоінти замовлень (оплата, платіжні системи)
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Bearer токен авторизації. Передавати у заголовку:
+        `Authorization: Bearer <token>`
+
+        **Увага:** ендпоінти завантаження документів
+        (`GET .../download`, `GET .../download-draft`) працюють **без токена** —
+        доступ обмежується лише знанням `orderId`.
+
+  responses:
+    Unauthorized:
+      description: Не авторизовано — Bearer токен відсутній або недійсний
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            status: auth
+            message: Authentication failed
+
+    ValidationError:
+      description: |
+        Помилка валідації вхідних даних.
+        Поле `data` містить об'єкт з назвами полів та масивами текстів помилок.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+          example:
+            status: validation
+            message: The given data was invalid.
+            data:
+              city_id: ["The city id field is required."]
+
+    ActionError:
+      description: |
+        Помилка виконання дії. На відміну від `ValidationError`, це не
+        помилка вхідних даних, а неможливість виконати дію: пропозиція
+        прострочена, замовлення не в тому статусі, оплата відсутня, OTP не
+        підтверджено тощо. `message` містить контекст конкретної дії.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [error]
+                example: error
+              message:
+                type: string
+                example: "MiniKasko declare failed: MiniKasko offer has expired."
+
+  parameters:
+    orderId:
+      name: orderId
+      in: path
+      required: true
+      description: ID замовлення. `id` з відповіді `/orders/init` або `/orders`
+      schema:
+        type: string
+      example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+  schemas:
+
+    ApiErrorResponse:
+      type: object
+      description: Стандартна обгортка відповіді з помилкою
+      properties:
+        status:
+          type: string
+          description: |
+            Категорія помилки:
+            - `error` — загальна серверна помилка (HTTP 500) або помилка дії (HTTP 422)
+            - `validation` — помилки валідації вхідних даних (HTTP 422). Деталі в полі `data`
+            - `notFound` — запитаний ресурс не знайдено (HTTP 404)
+            - `auth` — помилка автентифікації або авторизації (HTTP 401)
+          enum: [error, validation, notFound, auth]
+          example: error
+        message:
+          type: string
+          description: Текстовий опис помилки
+        data:
+          type: object
+          nullable: true
+          description: |
+            При `status=validation` — об'єкт, де ключі це назви полів із помилками,
+            значення — масив текстів помилок валідації. При інших статусах — відсутнє.
+
+    Car:
+      type: object
+      description: Дані транспортного засобу, що страхується
+      required: [vin, year, is_taxi, reg_num, mark_name, model_name, category, registration_city_id]
+      properties:
+        vin:
+          type: string
+          description: VIN-код авто
+          example: "WVWZZZ1KZAW123456"
+        year:
+          type: integer
+          description: Рік випуску авто
+          minimum: 1900
+          maximum: 2100
+          example: 2020
+        is_taxi:
+          type: integer
+          description: Ознака використання як таксі. `1` — так, `0` — ні
+          enum: [0, 1]
+          example: 0
+        reg_num:
+          type: string
+          description: Державний реєстраційний номер
+          example: "AA1234BB"
+        mark_name:
+          type: string
+          description: Марка авто
+          example: "Skoda"
+        model_name:
+          type: string
+          description: Модель авто
+          example: "Octavia"
+        category:
+          type: string
+          description: Категорія транспортного засобу
+          example: "B"
+        registration_city_id:
+          type: integer
+          description: ID міста реєстрації авто
+          example: 14
+        registration_city_name:
+          type: string
+          nullable: true
+          description: Назва міста реєстрації для відображення. Необов'язкове
+          example: "Харків"
+
+    Customer:
+      type: object
+      description: Персональні дані страхувальника
+      required:
+        - code
+        - surname
+        - name
+        - middle_name
+        - phone
+        - email
+        - document_number
+        - document_issued_by
+        - document_issued_date
+        - city_id
+        - street
+        - house
+        - born_date
+      properties:
+        code:
+          type: string
+          description: |
+            ІПН (10 цифр). Перевіряється контрольною сумою і має відповідати
+            даті народження в `born_date` (дата народження зашифрована у
+            перших 5 цифрах ІПН).
+          example: "1234567890"
+        surname:
+          type: string
+          example: "Петренко"
+        name:
+          type: string
+          example: "Іван"
+        middle_name:
+          type: string
+          example: "Іванович"
+        phone:
+          type: string
+          example: "+380501112233"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        document_number:
+          type: string
+          description: Номер паспорта
+          example: "123456"
+        document_issued_by:
+          type: string
+          description: Орган, що видав паспорт
+          example: "Орган видачі"
+        document_issued_date:
+          type: string
+          format: date
+          example: "2015-06-01"
+        city_id:
+          type: integer
+          description: ID міста страхувальника
+          example: 14
+        city_name:
+          type: string
+          nullable: true
+          example: "Харків"
+        street:
+          type: string
+          example: "Хрещатик"
+        house:
+          type: string
+          example: "1"
+        apartment:
+          type: string
+          nullable: true
+          example: "5"
+        born_date:
+          type: string
+          format: date
+          description: Дата народження. Має збігатися з датою, зашифрованою в `code` (ІПН)
+          example: "1990-01-01"
+
+    OfferSummary:
+      type: object
+      description: Пропозиція страховика в межах групи по компанії/програмі
+      properties:
+        offerId:
+          type: integer
+          description: |
+            ID пропозиції. Передавати як `offerId` у `POST /orders/init` та
+            `POST /orders`. Дійсний лише в межах доби, коли було виконано
+            `/calculate` — для наступного дня потрібен новий розрахунок.
+          example: 501
+        title:
+          type: string
+          nullable: true
+          description: Назва пропозиції для відображення
+          example: "MiniKasko Стандарт"
+        price:
+          type: number
+          description: Вартість поліса (UAH)
+          example: 1200.00
+        coverage:
+          type: number
+          description: Сума страхового покриття (UAH). Одне з `400000`, `800000`, `1200000`
+          example: 400000
+        earnings:
+          type: number
+          nullable: true
+          description: |
+            Сума комісії агента (UAH). `null` якщо користувач неавторизований
+            або тариф комісії не визначено
+          example: 180.00
+        earningsPercent:
+          type: number
+          nullable: true
+          description: Відсоток комісії = `earnings / price * 100`, округлений до 2 знаків
+          example: 15.0
+
+    CompanyOffersGroup:
+      type: object
+      description: Група пропозицій однієї СК/програми — елемент відповіді `/calculate`
+      properties:
+        programName:
+          type: string
+          nullable: true
+          description: Назва/код програми страховика. `null` для СК без кількох програм
+          example: null
+        company:
+          type: object
+          properties:
+            id:
+              type: string
+              description: ID компанії-страховика. Передавати як `companyId` у `/payment-systems/list`
+              example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+            companyName:
+              type: string
+              nullable: true
+              example: "Vuso"
+            publicName:
+              type: string
+              nullable: true
+              description: Публічна назва для відображення клієнту
+              example: "ВУСО"
+            title:
+              type: string
+              nullable: true
+            logo:
+              type: string
+              nullable: true
+              format: uri
+            website:
+              type: string
+              nullable: true
+              format: uri
+            companyLink:
+              type: string
+              nullable: true
+            telephone:
+              type: string
+              nullable: true
+            address:
+              type: string
+              nullable: true
+            docAgent:
+              type: string
+              nullable: true
+            docCompany:
+              type: string
+              nullable: true
+            docProduct:
+              type: string
+              nullable: true
+            descriptionLink:
+              type: string
+              nullable: true
+            docZusp:
+              type: string
+              nullable: true
+        offers:
+          type: array
+          description: Пропозиції компанії, відсортовані за зростанням `coverage`
+          items:
+            $ref: '#/components/schemas/OfferSummary'
+
+    OrderActionResult:
+      type: object
+      description: |
+        Загальна форма успішної відповіді дій над замовленням
+        (`init`, `orders`, `update`, `declare`, `replicate`). Точний набір
+        полів залежить від конкретного ендпоінту — див. приклади відповідей
+        для кожного шляху.
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: success
+        id:
+          type: string
+          description: ID замовлення. Використовувати у всіх наступних запитах
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        statusId:
+          type: integer
+          description: |
+            Числовий статус замовлення:
+            - `1` — draft (чернетка)
+            - `2` — overdue (прострочене)
+            - `5` — declared (заявлене страховику)
+            - `6` — terminated (достроково розірване)
+            - `10` — concluded (укладене/підтверджене)
+            - `-10` — canceled
+          enum: [1, 2, 5, 6, 10, -10]
+          example: 5
+        isEditable:
+          type: boolean
+          description: "`true` лише для `statusId = 1` (draft)"
+          example: false
+        isDeclared:
+          type: boolean
+          description: "`true` для будь-якого статусу окрім draft"
+          example: true
+        externalId:
+          type: string
+          nullable: true
+          description: Зовнішній ID договору від страховика. Присутнє після `declare`
+          example: "external-draft-1"
+        policyNumber:
+          type: string
+          nullable: true
+          description: Номер поліса від страховика. Присутнє після `declare`
+          example: "PN-0001"
+        isOfferValid:
+          type: boolean
+          description: "`false` якщо пропозиція, на якій базується чернетка, вже не дійсна"
+          example: true
+        isOfferExpired:
+          type: boolean
+          description: "`true` якщо пропозиція прострочена (дійсна лише в межах доби розрахунку)"
+          example: false
+        offerValidationMessage:
+          type: string
+          nullable: true
+          description: Пояснення причини невалідності пропозиції, якщо `isOfferValid = false`
+        clonedFromOrderId:
+          type: string
+          nullable: true
+          description: ID замовлення-джерела. Присутнє лише у відповіді `/replicate`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+    OrderDetails:
+      type: object
+      description: Повні дані замовлення — відповідь `GET /orders/{orderId}`
+      properties:
+        id:
+          type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        user_id:
+          type: integer
+          example: 23
+        client_id:
+          type: integer
+          nullable: true
+        price:
+          type: number
+          example: 1200.00
+        externalId:
+          type: string
+          nullable: true
+        isMainUser:
+          type: boolean
+        isPartnerOrder:
+          type: boolean
+          description: "`true` якщо замовлення належить іншому користувачу (партнерське)"
+        moduleId:
+          type: integer
+          example: 33
+        moduleName:
+          type: string
+          nullable: true
+          example: "vuso-mini-kasko"
+        typeId:
+          type: integer
+          description: "Завжди `9` для MiniKasko"
+          example: 9
+        typeName:
+          type: string
+          example: "Міні Каско"
+        productType:
+          type: string
+          nullable: true
+        statusId:
+          type: integer
+          example: 5
+        isEditable:
+          type: boolean
+        isDeclared:
+          type: boolean
+        createdAt:
+          type: string
+          nullable: true
+          description: "Формат `d.m.Y`"
+          example: "19.06.2026"
+        earlyTermination:
+          type: array
+          items: {}
+        earlyTerminationbyNew:
+          nullable: true
+        act:
+          type: array
+          items: {}
+        startedAt:
+          type: string
+          nullable: true
+          example: "19.06.2026"
+        finishedAt:
+          type: string
+          nullable: true
+          example: "19.06.2027"
+        companyInfo:
+          type: object
+          properties:
+            publicName:
+              type: string
+              nullable: true
+            name:
+              type: string
+              nullable: true
+            companyId:
+              type: string
+              nullable: true
+            logo:
+              type: string
+              nullable: true
+              format: uri
+            website:
+              type: string
+              nullable: true
+            telephone:
+              type: string
+              nullable: true
+            address:
+              type: string
+              nullable: true
+        insurant:
+          allOf:
+            - $ref: '#/components/schemas/Customer'
+          description: Дані страхувальника, доповнені `address` (склеєні `city_name`/`street`/`house`/`apartment`)
+        insuranceObject:
+          allOf:
+            - $ref: '#/components/schemas/Car'
+          nullable: true
+          description: Дані авто
+        contract:
+          type: object
+          properties:
+            startedAt:
+              type: string
+              nullable: true
+            createdAt:
+              type: string
+              nullable: true
+            finishedAt:
+              type: string
+              nullable: true
+            mtsbuCode:
+              type: string
+              nullable: true
+            mtsbuCodeLink:
+              type: string
+              nullable: true
+        offer:
+          type: object
+          properties:
+            allowed_documents:
+              nullable: true
+            id:
+              type: integer
+              nullable: true
+            price:
+              type: number
+              nullable: true
+            coverage:
+              type: number
+              nullable: true
+            earnings:
+              type: number
+              nullable: true
+            earningsPercent:
+              type: number
+              nullable: true
+            startDate:
+              type: string
+              nullable: true
+              example: "19.06.2026"
+            startedAt:
+              type: string
+              nullable: true
+            endDate:
+              type: string
+              nullable: true
+            otkDate:
+              nullable: true
+        draft:
+          type: object
+          nullable: true
+          description: Дані заявленого страховику договору, збережені при `declare`
+          properties:
+            isSuccess:
+              type: boolean
+            externalId:
+              type: string
+              nullable: true
+            policyNumber:
+              type: string
+              nullable: true
+            documentUrl:
+              type: string
+              nullable: true
+            otp:
+              type: string
+              nullable: true
+              description: OTP для підпису поліса, повернутий страховиком
+            payments:
+              type: array
+              items: {}
+            rawResponse:
+              type: object
+        clonedFromOrderId:
+          type: string
+          nullable: true
+        isOfferValid:
+          type: boolean
+        isOfferExpired:
+          type: boolean
+        offerValidationMessage:
+          type: string
+          nullable: true
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        isPaid:
+          type: boolean
+          description: "`true` якщо є платіж зі `status_id = 2` (PAID)"
+        hasUploadedLegalReceipt:
+          type: boolean
+        canConfirmByPayment:
+          type: boolean
+          description: "`isPaid || hasUploadedLegalReceipt`"
+        acceptedPaymentType:
+          type: string
+          nullable: true
+          example: "liqpay"
+        otpHistory:
+          type: object
+          properties:
+            date_otp_sent:
+              type: string
+              nullable: true
+              format: date-time
+            date_otp_entered:
+              type: string
+              nullable: true
+              format: date-time
+            isOtpVerified:
+              type: boolean
+        contractId:
+          type: integer
+          nullable: true
+        contractUrl:
+          type: string
+          nullable: true
+          format: uri
+        warningCancelMessage:
+          type: string
+          nullable: true
+        myEarnings:
+          type: number
+          example: 180.00
+        myMiniKaskoEarning:
+          type: number
+          example: 180.00
+        allPrice:
+          type: number
+          example: 1200.00
+        partnerEarnings:
+          type: number
+          description: Присутнє лише для партнерських замовлень (`isPartnerOrder = true`)
+        partnerMiniKaskoEarning:
+          type: number
+          description: Присутнє лише для партнерських замовлень
+        allEarnings:
+          type: number
+          description: Присутнє лише для партнерських замовлень
+        allMiniKaskoEarning:
+          type: number
+          description: Присутнє лише для партнерських замовлень
+
+    Payment:
+      type: object
+      description: Платіжний запис замовлення (спільна модель з іншими продуктами)
+      properties:
+        id:
+          type: integer
+          example: 13891
+        invoice_id:
+          type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        order_id:
+          type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+        status_id:
+          type: integer
+          description: "`0` CREATED, `1` RECEIVED, `2` PAID, `3` ERROR, `4` OVERDUE"
+          enum: [0, 1, 2, 3, 4]
+          example: 2
+        invoice:
+          type: object
+          nullable: true
+          description: Пов'язаний інвойс (структура ідентична іншим продуктам)
+
+    CalculateRequest:
+      type: object
+      required: [start_date, city_id]
+      properties:
+        start_date:
+          type: string
+          format: date
+          description: "Дата початку дії поліса. **Обмеження:** строго пізніше сьогоднішньої дати"
+          example: "2026-06-20"
+        city_id:
+          type: integer
+          description: ID міста. Впливає на тариф
+          example: 14
+
+    CreateOrderRequest:
+      type: object
+      description: |
+        Тіло для `POST /insurance/mini-kasko/orders/init` та
+        `POST /insurance/mini-kasko/orders` (ідентична схема, різниця лише в
+        тому, чи одразу виконується заявлення страховику).
+      required: [offerId, car, dates, customer]
+      properties:
+        offerId:
+          type: integer
+          description: "`OfferSummary.offerId` з відповіді `/calculate`"
+          example: 501
+        car:
+          $ref: '#/components/schemas/Car'
+        dates:
+          type: object
+          required: [startDate]
+          properties:
+            startDate:
+              type: string
+              format: date
+              description: Дата початку дії поліса
+              example: "2026-06-20"
+        customer:
+          $ref: '#/components/schemas/Customer'
+
+    UpdateOrderRequest:
+      type: object
+      description: |
+        Тіло для `PUT /insurance/mini-kasko/orders/{orderId}`. Усі поля
+        необов'язкові (частковий апдейт чернетки) — можна передавати лише те,
+        що змінилося.
+      properties:
+        offerId:
+          type: integer
+          nullable: true
+          description: Новий `offerId`, якщо потрібно змінити пропозицію
+          example: 502
+        car:
+          allOf:
+            - $ref: '#/components/schemas/Car'
+          description: Часткові дані авто
+        dates:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date
+        customer:
+          allOf:
+            - $ref: '#/components/schemas/Customer'
+          description: Часткові дані страхувальника
+
+    ConfirmOrderRequest:
+      type: object
+      properties:
+        otp:
+          type: string
+          nullable: true
+          description: |
+            OTP код. Необов'язковий у тілі запиту — якщо не передано,
+            використовується OTP, вже підтверджений через `/verify-otp`.
+            Якщо жодного джерела немає — `422 MiniKasko OTP must be verified before confirm.`
+          example: "Z67763"
+
+    SendOtpRequest:
+      type: object
+      required: [channel]
+      properties:
+        channel:
+          type: string
+          description: |
+            Канал доставки OTP для підпису поліса:
+            - `email` — лише email
+            - `viber_sms` — email + Viber/SMS
+          enum: [email, viber_sms]
+          example: email
+
+    VerifyOtpRequest:
+      type: object
+      required: [otp]
+      properties:
+        otp:
+          type: string
+          description: OTP, вбудований страховиком у відповідь заявлення договору
+          example: "482913"
+
+paths:
+
+  /insurance/mini-kasko/calculate:
+    post:
+      tags: [MiniKasko]
+      summary: Розрахувати вартість MiniKasko
+      description: |
+        Розраховує вартість поліса та повертає пропозиції, згруповані по
+        компанії/програмі СК. Повторний виклик з тими самими параметрами
+        протягом дня може повернути ті самі раніше розраховані пропозиції.
+
+        Помилки окремих СК не переривають відповідь — пропозиції інших СК
+        все одно повертаються.
+
+        **Увага:** відповідь — голий масив груп по компаніях, без стандартної
+        `{status, data}` обгортки.
+      operationId: calculateMiniKasko
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculateRequest'
+            example:
+              start_date: "2026-06-20"
+              city_id: 14
+      responses:
+        '200':
+          description: Пропозиції страховиків, згруповані по компанії/програмі
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompanyOffersGroup'
+              example:
+                - programName: null
+                  company:
+                    id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                    companyName: "Vuso"
+                    publicName: "ВУСО"
+                    title: "MiniKasko"
+                    logo: null
+                    website: null
+                    companyLink: null
+                    telephone: null
+                    address: null
+                    docAgent: null
+                    docCompany: null
+                    docProduct: null
+                    descriptionLink: null
+                    docZusp: null
+                  offers:
+                    - offerId: 501
+                      title: "MiniKasko"
+                      price: 1200.00
+                      coverage: 400000
+                      earnings: 180.00
+                      earningsPercent: 15.0
+                    - offerId: 502
+                      title: "MiniKasko"
+                      price: 1800.00
+                      coverage: 800000
+                      earnings: 270.00
+                      earningsPercent: 15.0
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/init:
+    post:
+      tags: [MiniKasko]
+      summary: Створити чернетку замовлення
+      description: |
+        Створює замовлення в статусі draft (`statusId = 1`), без відправлення
+        до страховика. Дані ще можна редагувати через `PUT /orders/{orderId}`.
+
+        Повертає `422`, якщо пропозиція прострочена (дійсна лише в межах
+        доби, коли її було розраховано) або недоступна для тарифу поточного
+        користувача.
+      operationId: initMiniKaskoOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              offerId: 501
+              car:
+                vin: "WVWZZZ1KZAW123456"
+                year: 2020
+                is_taxi: 0
+                reg_num: "AA1234BB"
+                mark_name: "Skoda"
+                model_name: "Octavia"
+                category: "B"
+                registration_city_id: 14
+                registration_city_name: "Харків"
+              dates:
+                startDate: "2026-06-20"
+              customer:
+                code: "1234567890"
+                surname: "Петренко"
+                name: "Іван"
+                middle_name: "Іванович"
+                phone: "+380501112233"
+                email: "user@example.com"
+                document_number: "123456"
+                document_issued_by: "Орган видачі"
+                document_issued_date: "2015-06-01"
+                city_id: 14
+                city_name: "Харків"
+                street: "Хрещатик"
+                house: "1"
+                apartment: "5"
+                born_date: "1990-01-01"
+      responses:
+        '200':
+          description: Чернетку створено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderActionResult'
+              example:
+                status: success
+                id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                statusId: 1
+                isEditable: true
+                isDeclared: false
+        '422':
+          description: Помилка валідації або помилка дії (прострочена пропозиція, недоступний тариф)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders:
+    post:
+      tags: [MiniKasko]
+      summary: Створити замовлення (чернетка + заявлення за один виклик)
+      description: |
+        Комбінований ендпоінт: створює чернетку і одразу заявляє її
+        страховику. Результат — заявлене страховику замовлення
+        (`statusId = 5`), без проміжного кроку редагування чернетки.
+
+        Використовувати, коли всі дані клієнта вже відомі і немає потреби
+        показувати проміжний крок чернетки.
+      operationId: createMiniKaskoOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '200':
+          description: Замовлення створено та заявлено страховику
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderActionResult'
+              example:
+                status: success
+                id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                statusId: 5
+                isEditable: false
+                isDeclared: true
+                externalId: "external-draft-1"
+                policyNumber: "PN-0001"
+        '422':
+          description: Помилка валідації або помилка дії
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/{orderId}:
+    get:
+      tags: [MiniKasko]
+      summary: Отримати деталі замовлення
+      operationId: getMiniKaskoOrder
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Деталі замовлення
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  data:
+                    $ref: '#/components/schemas/OrderDetails'
+        '404':
+          description: Замовлення не знайдено, не належить користувачу або не є MiniKasko
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: "MiniKasko order not found."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [MiniKasko]
+      summary: Оновити чернетку замовлення
+      description: |
+        Частковий апдейт даних чернетки (`car`/`dates`/`customer`, опційно
+        новий `offerId`). Дозволено лише для замовлень у статусі draft —
+        `422 Order already declared. Create a new draft to change data.`
+        для будь-якого іншого статусу.
+
+        Якщо передано новий `offerId`, пропозиція переперевіряється
+        (валідність/тариф) і `isOfferValid`/`isOfferExpired` перераховуються.
+      operationId: updateMiniKaskoOrder
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+            example:
+              customer:
+                phone: "+380671112233"
+      responses:
+        '200':
+          description: Чернетку оновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderActionResult'
+              example:
+                status: success
+                id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                statusId: 1
+                isEditable: true
+                isDeclared: false
+                isOfferValid: true
+                isOfferExpired: false
+                offerValidationMessage: null
+        '422':
+          description: Помилка валідації або помилка дії (наприклад, замовлення вже заявлене)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/{orderId}/declare:
+    post:
+      tags: [MiniKasko]
+      summary: Заявити чернетку страховику
+      description: |
+        Переводить замовлення зі статусу draft у declared (`statusId = 5`) —
+        відправляє дані до страховика і зберігає номер поліса та зовнішній ID
+        договору.
+
+        Ідемпотентний no-op, якщо замовлення вже заявлене/укладене.
+
+        Можливі помилки дії: пропозиція прострочена, тариф недоступний,
+        замовлення вже не в статусі draft.
+      operationId: declareMiniKaskoOrder
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Замовлення заявлено страховику
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderActionResult'
+              example:
+                status: success
+                id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                statusId: 5
+                isEditable: false
+                isDeclared: true
+                externalId: "external-draft-1"
+                policyNumber: "PN-0001"
+        '422':
+          $ref: '#/components/responses/ActionError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/{orderId}/send-otp:
+    post:
+      tags: [MiniKasko]
+      summary: Надіслати OTP для підпису поліса
+      description: |
+        Надсилає клієнту OTP код, необхідний для підпису поліса.
+
+        Доступно лише для заявлених (declared) замовлень —
+        `422 MiniKasko OTP can be sent only for declared orders.` інакше.
+
+        `channel: email` — лист з прикріпленим PDF чернетки поліса.
+        `channel: viber_sms` — email + Viber/SMS з текстом і посиланням на
+        завантаження чернетки поліса.
+      operationId: sendMiniKaskoOtp
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendOtpRequest'
+      responses:
+        '200':
+          description: OTP надіслано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: "OTP sent."
+        '422':
+          description: |
+            Помилка валідації (`channel`) або помилка дії — замовлення не
+            заявлене, OTP недоступний, немає email/телефону клієнта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/{orderId}/verify-otp:
+    post:
+      tags: [MiniKasko]
+      summary: Перевірити OTP для підпису поліса
+      description: |
+        Перевіряє введений клієнтом OTP код. При успіху OTP вважається
+        підтвердженим — це джерело OTP для `/confirm`, якщо `otp` не
+        передано напряму в тілі confirm-запиту.
+      operationId: verifyMiniKaskoOtp
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+      responses:
+        '200':
+          description: OTP вірний
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: "OTP verified."
+        '422':
+          description: "Невірний OTP (`MiniKasko OTP is invalid.`) або замовлення не заявлене"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/{orderId}/confirm:
+    post:
+      tags: [MiniKasko]
+      summary: Підтвердити договір у страховика
+      description: |
+        Фінальне підтвердження договору. Вимагає:
+        - замовлення заявлене страховику (пройдено `/declare`);
+        - тариф користувача досі дозволяє підтвердження;
+        - прийняту оплату замовлення;
+        - підтверджений OTP — з тіла запиту (`otp`) або з `/verify-otp`.
+      operationId: confirmMiniKaskoOrder
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmOrderRequest'
+            example:
+              otp: "Z67763"
+      responses:
+        '200':
+          description: Договір підтверджено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderActionResult'
+              example:
+                status: success
+                id: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                statusId: 10
+        '422':
+          description: |
+            Помилка валідації або помилка дії — замовлення не заявлене, оплата
+            відсутня, OTP не підтверджено, тариф недоступний
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/{orderId}/replicate:
+    post:
+      tags: [MiniKasko]
+      summary: Реплікувати замовлення в нову чернетку
+      description: |
+        Створює нову draft-чернетку на основі даних існуючого замовлення.
+
+        Якщо вихідна пропозиція ще валідна — створює повноцінну чернетку з
+        тією самою пропозицією і проставляє `clonedFromOrderId`. Якщо
+        пропозиція більше не валідна — створює порожню чернетку без
+        пропозиції (`offerId = null`, `price = 0`) з поясненням у
+        `offerValidationMessage`, яку потрібно доопрацювати через
+        `PUT /orders/{orderId}` з новим `offerId`.
+      operationId: replicateMiniKaskoOrder
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Нову чернетку створено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderActionResult'
+              example:
+                status: success
+                id: "01JYYYYYYYYYYYYYYYYYYYYYYYYY"
+                statusId: 1
+                isEditable: true
+                isDeclared: false
+                clonedFromOrderId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                isOfferValid: true
+                isOfferExpired: false
+                offerValidationMessage: null
+        '422':
+          $ref: '#/components/responses/ActionError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /insurance/mini-kasko/orders/{orderId}/download:
+    get:
+      tags: [MiniKasko]
+      summary: Завантажити PDF поліса
+      description: |
+        Віддає фінальний документ (поліс) як бінарний файл (`Content-Type`
+        визначається за розширенням файлу — `application/pdf`,
+        `application/zip`, інакше `application/octet-stream`).
+
+        **Ендпоінт неавторизований** — доступ визначається лише знанням `orderId`.
+      operationId: downloadMiniKaskoPolicy
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Бінарний вміст файлу поліса
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '422':
+          description: "Документ ще недоступний (`MiniKasko final document is not available.`) або інша помилка дії"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: error
+                message: "MiniKasko download failed: MiniKasko final document is not available."
+
+  /insurance/mini-kasko/orders/{orderId}/download-draft:
+    get:
+      tags: [MiniKasko]
+      summary: Завантажити PDF чернетки (проєкт поліса до підписання)
+      description: |
+        Аналогічно `/download`, але для проєкту документа до підтвердження
+        договору (`/confirm`). Неавторизований, як і `/download`. Це
+        посилання надсилається клієнту в SMS/Viber-повідомленні з OTP
+        (`send-otp`, `channel: viber_sms`).
+      operationId: downloadMiniKaskoDraft
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Бінарний вміст файлу чернетки
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '422':
+          description: "Документ ще недоступний (`MiniKasko draft document is not available.`) або інша помилка дії"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: error
+                message: "MiniKasko draft download failed: MiniKasko draft document is not available."
+
+  /payment-systems/list:
+    get:
+      tags: [Orders (shared)]
+      summary: Список доступних платіжних систем
+      description: |
+        Спільний з іншими продуктами ендпоінт. `companyId` — з
+        `CompanyOffersGroup.company.id` у відповіді `/calculate`.
+      operationId: listPaymentSystemsMiniKasko
+      parameters:
+        - name: companyId
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      responses:
+        '200':
+          description: Список платіжних систем (голий масив, без `{status,data}` обгортки)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    code:
+                      type: string
+                      example: "liqpay"
+                    title:
+                      type: string
+                      example: "LiqPay"
+                    percentage_acquiring:
+                      type: string
+                      example: "1.25"
+                    available_options:
+                      type: array
+                      items:
+                        type: string
+                        enum: [client, agent]
+                      example: ["client"]
+                    is_enabled:
+                      type: boolean
+                      example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/get-invoice:
+    post:
+      tags: [Orders (shared)]
+      summary: Згенерувати платіжний інвойс
+      description: |
+        Спільний з іншими продуктами ендпоінт — генерує `invoiceLink` для
+        оплати замовлення. Викликати перед `/confirm`. Redirect клієнта на
+        `invoiceLink`.
+      operationId: getInvoiceMiniKasko
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId:
+                  type: string
+                  example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+                amount:
+                  type: number
+                  nullable: true
+                  description: Сума оплати (UAH). `null` — використовується ціна замовлення
+                  example: 1200
+                provider:
+                  type: string
+                  nullable: true
+                  description: Код платіжного провайдера з `/payment-systems/list`
+                  example: "liqpay"
+                paidBy:
+                  type: string
+                  nullable: true
+                  enum: [client, agent]
+            example:
+              orderId: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+              amount: 1200
+              provider: "liqpay"
+              paidBy: "client"
+      responses:
+        '200':
+          description: Платіжний інвойс згенеровано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    nullable: true
+                    example: "OK"
+                  data:
+                    type: object
+                    properties:
+                      invoiceLink:
+                        type: string
+                        example: "https://www.liqpay.ua/..."
+                      qrCode:
+                        type: string
+                        nullable: true
+                        example: "data:image/png;base64,iVBORw0KGgo..."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /payments/check-invoice:
+    get:
+      tags: [Orders (shared)]
+      summary: Перевірити статус оплати
+      description: |
+        Спільний з іншими продуктами ендпоінт. Опитувати до
+        `data.invoice.status_id = 2` (PAID) перед викликом `/confirm`.
+      operationId: checkInvoiceMiniKasko
+      parameters:
+        - name: invoice
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID інвойсу з `GET /insurance/mini-kasko/orders/{orderId}` → `data.payments[0].invoice.id`
+          example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
+      responses:
+        '200':
+          description: Статус інвойсу
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        description: "`waiting` (`status_id: 0,1`) або `paid` (`status_id: 2`)"
+                        example: "waiting"
+                      message:
+                        type: string
+                        example: "Очікуємо підтвердження оплати від платіжної системи."
+                      final_url:
+                        type: string
+                        nullable: true
+                      invoice:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          status_id:
+                            type: integer
+                            enum: [0, 1, 2, 3, 4]
+                          amount:
+                            type: string
+                          invoice_url:
+                            type: string
+                            nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'

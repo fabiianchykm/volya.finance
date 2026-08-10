@@ -242,6 +242,25 @@ export interface GreenCardOffer {
   available_documents?: string[];
 }
 
+// ── Міні-КАСКО ──────────────────────────────────────────────────────────────
+// Калькулятор повертає масив груп по СК; ми сплющуємо у список офферів із даними
+// компанії. coverage — сума покриття (400000 / 800000 / 1200000 грн).
+export interface MiniKaskoOffer {
+  offerId: number;
+  price: number;
+  coverage: number;
+  title?: string | null;
+  companyId: string;
+  companyName: string;
+  companyNamePublic: string;
+  logo?: string | null;
+}
+
+export interface MiniKaskoParams {
+  start_date: string; // YYYY-MM-DD, строго пізніше сьогодні
+  city_id: number;
+}
+
 export interface GreenCardParams {
   country: number;       // 60 = Європа, 117 = Молдова
   userType: number;      // 1 = фізособа, 2 = юрособа

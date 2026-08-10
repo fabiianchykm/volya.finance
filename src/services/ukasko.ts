@@ -6,6 +6,8 @@ import type {
   CalculatorParams,
   GreenCardOffer,
   GreenCardParams,
+  MiniKaskoOffer,
+  MiniKaskoParams,
   TourismOffer,
   TourismParams,
   PetsOffer,
@@ -26,6 +28,9 @@ const BASE_URL = isDev
 const AUTH_URL = isDev
   ? "https://devconnect.ukasko.ua/api"
   : "https://uconnect.com.ua/api";
+
+// Міні-КАСКО НЕ має {test/prod}-префікса — ендпоінти живуть просто під /api.
+const MINI_BASE = `${AUTH_URL}/insurance/mini-kasko`;
 
 // Модулі страхових Зеленої карти (прод): 9 УСГ, 10 ВУСО, 11 ТАС, 17 УТІКО,
 // 18 ОРАНТА, 29 ІНГО, 31 АРКС. Використовуються лише для деградованого fallback
@@ -514,6 +519,79 @@ export class UkaskoService {
       token
     )) as { data: { mtsbuLink?: string; contract?: string } };
     return data.data;
+  }
+
+  // ── Міні-КАСКО ────────────────────────────────────────────────────────────
+  // Калькулятор: {start_date, city_id} → ГОЛИЙ масив груп по СК. Сплющуємо у
+  // список офферів, додаючи дані компанії до кожного.
+  async getMiniKaskoOffers(params: MiniKaskoParams): Promise<MiniKaskoOffer[]> {
+    const raw = await withRetry(
+      () => this.withAuth((t) => postJson(`${MINI_BASE}/calculate`, params, t)),
+      3, 700, true
+    ) as unknown;
+    const groups = (Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? []) as Array<{
+      company?: { id?: string; companyName?: string; publicName?: string; logo?: string | null };
+      offers?: Array<{ offerId: number; title?: string | null; price: number; coverage: number }>;
+    }>;
+    const offers: MiniKaskoOffer[] = [];
+    for (const g of groups) {
+      const c = g.company ?? {};
+      for (const o of g.offers ?? []) {
+        if (!o?.offerId || !(o.price > 0)) continue;
+        offers.push({
+          offerId: o.offerId, price: o.price, coverage: o.coverage, title: o.title ?? null,
+          companyId: String(c.id ?? ""), companyName: c.companyName ?? "",
+          companyNamePublic: c.publicName ?? c.companyName ?? "", logo: c.logo ?? null,
+        });
+      }
+    }
+    return offers;
+  }
+
+  // Комбіноване замовлення (чернетка + заявлення страховику) → orderId (statusId 5).
+  async createMiniKaskoOrder(orderData: Record<string, unknown>): Promise<{ id: string; statusId?: number; policyNumber?: string }> {
+    const raw = await this.withAuth((t) => postJson(`${MINI_BASE}/orders`, orderData, t)) as Record<string, unknown>;
+    if (raw.status === "error") {
+      const msg = (raw.message as string) || JSON.stringify(raw).slice(0, 300);
+      console.error("[minikasko order] rejected. raw:", JSON.stringify(raw).slice(0, 800));
+      if (/Undefined (index|offset)|ErrorException|discount_price|contractFile/i.test(msg)) {
+        throw new Error("На жаль, ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
+      }
+      throw new Error(msg);
+    }
+    const id = raw.id as string | undefined;
+    if (!id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    return { id, statusId: raw.statusId as number | undefined, policyNumber: raw.policyNumber as string | undefined };
+  }
+
+  // OTP підпису поліса (власний флоу міні-КАСКО, не спільний платіжний).
+  async sendMiniKaskoOtp(orderId: string, channel: "email" | "viber_sms" = "email"): Promise<void> {
+    await this.withAuth((t) => postJson(`${MINI_BASE}/orders/${orderId}/send-otp`, { channel }, t));
+  }
+
+  async verifyMiniKaskoOtp(orderId: string, otp: string): Promise<boolean> {
+    try {
+      const raw = await this.withAuth((t) => postJson(`${MINI_BASE}/orders/${orderId}/verify-otp`, { otp }, t)) as Record<string, unknown>;
+      return raw.status === "success";
+    } catch {
+      return false; // невірний OTP → 422
+    }
+  }
+
+  // Фінальне підтвердження договору (потребує заявлення + оплату + підтверджений OTP).
+  async confirmMiniKasko(orderId: string, otp?: string): Promise<{ contractId: string; statusId?: number }> {
+    const raw = await this.withAuth((t) => postJson(`${MINI_BASE}/orders/${orderId}/confirm`, otp ? { otp } : {}, t)) as Record<string, unknown>;
+    if (raw.status === "error") throw new Error((raw.message as string) || "Не вдалося підтвердити договір");
+    return { contractId: (raw.id as string) ?? orderId, statusId: raw.statusId as number | undefined };
+  }
+
+  // Бінарний PDF поліса (неавторизований ендпоінт — за orderId). Повертаємо байти.
+  async downloadMiniKaskoPdf(orderId: string, draft = false): Promise<{ buffer: ArrayBuffer; contentType: string }> {
+    const url = `${MINI_BASE}/orders/${orderId}/${draft ? "download-draft" : "download"}`;
+    const res = await fetch(url, { headers: { "user-agent": UA }, redirect: "follow", cache: "no-store" });
+    if (!res.ok) throw new HttpError(res.status, `[GET ${url}] ${res.status}`);
+    const contentType = res.headers.get("content-type") || "application/pdf";
+    return { buffer: await res.arrayBuffer(), contentType };
   }
 
   async createDraft(orderData: Record<string, unknown>): Promise<{ id: string; status: string }> {
