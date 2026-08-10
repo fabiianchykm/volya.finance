@@ -12,7 +12,7 @@ import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from 
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
-import { cityShort } from "@/lib/utils";
+import { cityShort, cityLong } from "@/lib/utils";
 
 // Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
 function formatUaPhone(digits: string): string {
@@ -784,7 +784,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
                     >
-                      {cityShort(city.name_full_name_ua || city.name_ua)}
+                      {cityLong(city.name_full_name_ua || city.name_ua)}
                     </button>
                   ))}
                 </div>

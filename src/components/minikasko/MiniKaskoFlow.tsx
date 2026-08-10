@@ -10,7 +10,7 @@ import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
 import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { MiniKaskoCheckout, type MiniKaskoContext } from "./MiniKaskoCheckout";
-import { cityShort } from "@/lib/utils";
+import { cityShort, cityLong } from "@/lib/utils";
 import type { MiniKaskoOffer, InsuranceOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
 
@@ -151,7 +151,7 @@ export function MiniKaskoFlow() {
                       {cityResults.map((c) => (
                         <button key={c.id} type="button"
                           onClick={() => { setSelectedCity(c); setCityQuery(cityShort(c.name_full_name_ua || c.name_ua)); setCityResults([]); }}
-                          className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityShort(c.name_full_name_ua || c.name_ua)}</button>
+                          className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
                       ))}
                     </div>
                   )}

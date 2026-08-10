@@ -11,7 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { MiniKaskoOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
-import { cityShort, formatPlate } from "@/lib/utils";
+import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 
 // Оформлення міні-КАСКО: дані страхувальника (паспорт, ІПН, адреса) + авто за
 // номером → declare → OTP підпису → оплата → confirm → готовий поліс (PDF).
@@ -353,7 +353,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
                 <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                   {cityResults.map((c) => (
                     <button key={c.id} type="button" onClick={() => { setSelectedCity(c); setCityQuery(cityShort(c.name_full_name_ua || c.name_ua)); setCityResults([]); }}
-                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityShort(c.name_full_name_ua || c.name_ua)}</button>
+                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
                   ))}
                 </div>
               )}

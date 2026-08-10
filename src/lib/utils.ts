@@ -44,6 +44,19 @@ export function cityShort(name: string): string {
   return (name || "").split(",")[0].replace(/\s*\(зона\s*\d+\)\s*$/i, "").trim();
 }
 
+// Повна назва з районом/областю — для СПИСКУ автокомпліту, щоб розрізняти однойменні
+// (напр. с. Бережани в різних районах і м. Бережани). Прибираємо лише країну й
+// технічну зону: "м. Львів, Львівський р-н, Львівська обл., Україна" →
+// "м. Львів, Львівський р-н, Львівська обл."
+export function cityLong(name: string): string {
+  return (name || "")
+    .replace(/\s*\(зона\s*\d+\)\s*/i, " ")
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p && !/^україна$/i.test(p))
+    .join(", ");
+}
+
 export function formatCompanyName(name: string): string {
   if (!name) return "";
 
