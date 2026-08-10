@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, ArrowRight, Home, ChevronRight, ShieldCheck } from "lucide-react";
+import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
@@ -34,8 +34,13 @@ export function MiniKaskoFlow() {
   // Місто (автопідбір) + дата початку.
   const [cityQuery, setCityQuery] = useState("");
   const [cityResults, setCityResults] = useState<CityOption[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const cityRef = useRef<HTMLDivElement>(null);
+
+  // Прогрів кешу міст на сервері: перший запит будує повний довідник (кілька сек),
+  // тож робимо його заздалегідь — поки користувач читає, кеш уже готовий.
+  useEffect(() => { fetch("/api/vehicle/cities?q=ки").catch(() => {}); }, []);
   // Дата — найближча можлива (завтра); поля на екрані нема, встановлюється автоматично.
   const [startDate] = useState(() => {
     const d = new Date();
@@ -52,12 +57,17 @@ export function MiniKaskoFlow() {
   const startD = parseUaDate(startDate);
 
   useEffect(() => {
-    if (!cityQuery || cityQuery.length < 2 || selectedCity) return;
+    if (!cityQuery || cityQuery.length < 2 || selectedCity) { setCityLoading(false); return; }
+    setCityLoading(true);
     const t = setTimeout(async () => {
-      const res = await fetch(`/api/vehicle/cities?q=${encodeURIComponent(cityQuery)}`);
-      const json = await res.json();
-      if (json.success) setCityResults(json.data);
-    }, 300);
+      try {
+        const res = await fetch(`/api/vehicle/cities?q=${encodeURIComponent(cityQuery)}`);
+        const json = await res.json();
+        if (json.success) setCityResults(json.data);
+      } finally {
+        setCityLoading(false);
+      }
+    }, 200);
     return () => clearTimeout(t);
   }, [cityQuery, selectedCity]);
 
@@ -137,15 +147,18 @@ export function MiniKaskoFlow() {
                   бюджетний захист авто
                 </span>
               </h1>
-              <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть місто й дату початку — і побачите ціни страхових із покриттям до 1,2 млн грн.</p>
+              <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть місто — і побачите ціни страхових із покриттям до 1,2 млн грн.</p>
             </div>
 
-            <form onSubmit={calc} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+            <form onSubmit={calc} className="mx-auto max-w-md rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
               <div className="relative" ref={cityRef}>
                 <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Місто реєстрації авто</label>
                 <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" spellCheck={false}
                   onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
-                  className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
+                  className={`${inputCls} pr-10${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
+                {cityLoading && !selectedCity && (
+                  <Loader2 className="pointer-events-none absolute right-3 top-[2.15rem] h-4 w-4 animate-spin text-indigo-500" />
+                )}
                 {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
                   <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                     {cityResults.map((c) => (
@@ -184,8 +197,15 @@ function MiniKaskoOffers({
   // Доступні рівні покриття (за зростанням) з відповіді калькулятора.
   const coverages = Array.from(new Set(offers.map((o) => o.coverage))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number | null>(null);
+  const [cvOpen, setCvOpen] = useState(false);
   const activeCoverage = coverage ?? coverages[0] ?? null;
   const list = offers.filter((o) => o.coverage === activeCoverage).sort((a, b) => a.price - b.price);
+  // Найдешевша ціна на кожен рівень покриття — підказка «від N грн» у дропдауні.
+  const minByCoverage = new Map<number, number>();
+  for (const o of offers) {
+    const cur = minByCoverage.get(o.coverage);
+    if (cur === undefined || o.price < cur) minByCoverage.set(o.coverage, o.price);
+  }
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -203,16 +223,42 @@ function MiniKaskoOffers({
             <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary || "Ваше авто"}</p>
           </div>
 
-          {/* Вкладки покриття */}
-          {!loading && coverages.length > 0 && (
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> Покриття:</span>
-              {coverages.map((cv) => (
-                <button key={cv} type="button" onClick={() => setCoverage(cv)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                    activeCoverage === cv ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm" : "bg-white text-zinc-600 ring-1 ring-zinc-200 hover:text-zinc-900"
-                  }`}>{fmtCoverage(cv)}</button>
-              ))}
+          {/* Покриття — дропдаун із підказкою «від N грн» на кожен рівень */}
+          {!loading && coverages.length > 0 && activeCoverage != null && (
+            <div className="relative mb-5 inline-block">
+              <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</span>
+              <button
+                type="button"
+                onClick={() => setCvOpen((o) => !o)}
+                aria-expanded={cvOpen}
+                className="flex min-w-[240px] items-center justify-between gap-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200 transition-colors hover:ring-indigo-300"
+              >
+                <span>{fmtCoverage(activeCoverage)}</span>
+                <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${cvOpen ? "rotate-180" : ""}`} />
+              </button>
+              {cvOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setCvOpen(false)} />
+                  <div className="absolute left-0 top-full z-20 mt-2 w-[280px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl">
+                    {coverages.map((cv) => (
+                      <button
+                        key={cv}
+                        type="button"
+                        onClick={() => { setCoverage(cv); setCvOpen(false); }}
+                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                          activeCoverage === cv ? "bg-indigo-50" : "hover:bg-zinc-50"
+                        }`}
+                      >
+                        <span className="flex flex-col">
+                          <span className="text-sm font-semibold text-zinc-900">{fmtCoverage(cv)}</span>
+                          <span className="text-xs text-zinc-400">максимальна виплата</span>
+                        </span>
+                        <span className="shrink-0 text-sm font-bold text-indigo-600">від {minByCoverage.get(cv)} грн</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
