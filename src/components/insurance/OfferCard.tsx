@@ -223,11 +223,11 @@ export function OfferCard({
           </div>
 
           <div className="flex shrink-0 flex-col items-end">
-            {discountPct != null && (
-              <span className="mb-0.5 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600">−{Math.round(discountPct)}%</span>
-            )}
             {strikePrice && (
-              <span className="text-xs text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-xs text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
+                {discountPct != null && <span className="text-[11px] font-bold text-rose-600">−{Math.round(discountPct)}%</span>}
+              </span>
             )}
             <span className="text-lg font-bold text-zinc-900 tabular-nums">
               {formatPrice(totalPrice)}
@@ -314,11 +314,11 @@ export function OfferCard({
         {/* Блок 4: ціна + купити */}
         <div className="flex flex-col items-center justify-center gap-3 shrink-0" style={{ width: 200 }}>
           <div className="flex flex-col items-center gap-1">
-            {discountPct != null && (
-              <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-600">−{Math.round(discountPct)}% знижка</span>
-            )}
             {strikePrice && (
-              <div className="text-sm text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
+                {discountPct != null && <span className="text-xs font-bold text-rose-600">−{Math.round(discountPct)}%</span>}
+              </div>
             )}
             <div className="text-2xl text-zinc-900 tabular-nums">
               {formatPrice(totalPrice)}
