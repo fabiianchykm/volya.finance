@@ -233,7 +233,7 @@ export function OfferCard({
             {strikePrice && (
               <span className="flex items-center gap-1.5">
                 <span className="text-xs text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
-                {discountPct != null && <span className="text-[11px] font-bold text-rose-600">−{Math.round(discountPct)}%</span>}
+                {discountPct != null && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">−{Math.round(discountPct)}%</span>}
               </span>
             )}
             <span className="text-lg font-bold text-zinc-900 tabular-nums">
@@ -324,7 +324,7 @@ export function OfferCard({
             {strikePrice && (
               <div className="flex items-center gap-1.5">
                 <span className="text-sm text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
-                {discountPct != null && <span className="text-xs font-bold text-rose-600">−{Math.round(discountPct)}%</span>}
+                {discountPct != null && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-xs font-bold text-white">−{Math.round(discountPct)}%</span>}
               </div>
             )}
             <div className="text-2xl text-zinc-900 tabular-nums">
