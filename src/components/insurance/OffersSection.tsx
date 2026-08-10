@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { ChevronRight, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { InviteFriendCard } from "./InviteFriendCard";
@@ -53,6 +52,13 @@ export function OffersSection({
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
   const [sortBy, setSortBy] = useState<SortKey>("price_asc");
+  const [sortOpen, setSortOpen] = useState(false);
+  const SORT_OPTIONS = [
+    { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
+    { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
+    { k: "discount_desc", label: "Найбільша знижка", Icon: Percent },
+  ] as const;
+  const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
 
   const sorted = [...offers].sort((a, b) => {
     if (sortBy === "price_desc") return b.price - a.price;
@@ -130,34 +136,36 @@ export function OffersSection({
         {!loading && offers.length > 0 && (
           <div className="mb-5 flex items-center justify-end gap-3">
             <span className="text-xs font-medium text-zinc-400">Сортувати</span>
-            <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-              {([
-                { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
-                { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
-                { k: "discount_desc", label: "Найбільша знижка", Icon: Percent },
-              ] as const).map(({ k, label, Icon }) => {
-                const active = sortBy === k;
-                return (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setSortBy(k)}
-                    className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors duration-200 ${
-                      active ? "text-white" : "text-zinc-500 hover:text-zinc-800"
-                    }`}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="sortPill"
-                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                        className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30"
-                      />
-                    )}
-                    <Icon className="relative z-10 h-3.5 w-3.5" />
-                    <span className="relative z-10">{label}</span>
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSortOpen((o) => !o)}
+                aria-expanded={sortOpen}
+                className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition-colors hover:border-indigo-300"
+              >
+                <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600" />{activeSort.label}</span>
+                <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+              </button>
+              {sortOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+                  <div className="absolute right-0 top-full z-20 mt-2 w-[220px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl">
+                    {SORT_OPTIONS.map(({ k, label, Icon }) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => { setSortBy(k); setSortOpen(false); }}
+                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                          sortBy === k ? "bg-indigo-50 font-semibold text-indigo-700" : "text-zinc-700 hover:bg-zinc-50"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0 text-indigo-600" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

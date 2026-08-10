@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -204,8 +204,8 @@ export function OfferCard({
       }`}
     >
       {specialOffer && (
-        <span className="absolute left-0 top-0 z-10 inline-flex items-center gap-1 rounded-br-xl rounded-tl-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
-          <Sparkles className="h-3 w-3" /> Спеціальна пропозиція від VOLYA.FINANCE
+        <span className="absolute left-0 top-0 z-10 inline-flex items-center rounded-br-xl rounded-tl-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+          Спеціальна пропозиція від VOLYA.FINANCE
         </span>
       )}
       {cornerBadge && !specialOffer && (
