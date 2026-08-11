@@ -630,13 +630,14 @@ export class UkaskoService {
   private static readonly HOME_INSURER_BUG =
     /ECONNRESET|Unable to connect|timeout|Undefined (index|offset)|ErrorException|discount_price|contractFile|getCommission|must be of the type|Argument \d+ passed to|of non-object|Trying to get property|'module'/i;
 
-  // Створення замовлення (повне) → orderId. Далі спільні OTP/оплата, потім confirm.
-  async createHomeOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
+  // Один виклик order/create → розпарсений {id,status}. Класифікує серверні баги
+  // модуля страховика (HttpError 500 / status:error / 200-без-id) у дружнє повідомлення.
+  private async postHomeOrder(payload: Record<string, unknown>): Promise<{ id: string; status?: string }> {
     const FRIENDLY =
       "На жаль, оформлення поліса житла зараз тимчасово недоступне з боку страхової компанії. Ми вже розбираємось — спробуйте, будь ласка, трохи згодом.";
     let raw: Record<string, unknown>;
     try {
-      raw = await this.withAuth((t) => postJson(`${HOME_BASE}/order/create`, orderData, t)) as Record<string, unknown>;
+      raw = await this.withAuth((t) => postJson(`${HOME_BASE}/order/create`, payload, t)) as Record<string, unknown>;
     } catch (e) {
       // Ukasko віддає HTTP 500 з PHP-виключенням при внутрішніх багах модуля —
       // postJson кидає HttpError ще до парсингу. Ловимо й показуємо дружнє.
@@ -660,6 +661,17 @@ export class UkaskoService {
       throw new Error(FRIENDLY);
     }
     return first;
+  }
+
+  // Створення замовлення житла — ДВОКРОКОВЕ (ІНГО падає на одноетапному declare):
+  //   1) чернетка (params.statusId=-1, orderId=null) → orderId;
+  //   2) повне замовлення (params.statusId=null) з цим orderId → status "declared".
+  // Далі спільні OTP/оплата, потім confirm.
+  async createHomeOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
+    const params = (orderData.params as Record<string, unknown> | undefined) ?? {};
+    const draft = await this.postHomeOrder({ ...orderData, params: { ...params, statusId: -1 }, orderId: null });
+    const full = await this.postHomeOrder({ ...orderData, params: { ...params, statusId: null }, orderId: draft.id });
+    return full;
   }
 
   async confirmHome(orderId: string): Promise<{ contractId: string; status?: string }> {
