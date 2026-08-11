@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, ArrowDownWideNarrow, ArrowUpWideNarrow, Home, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -70,24 +70,29 @@ export function TourismFlow() {
     ? !!startD && days > 0 && birthOk
     : !!startD && !!endD && days > 0 && birthOk;
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!valid || loading) return;
+  const runCalc = async (zid: string, sUa: string, eUa: string, births: string[], multi: boolean, tDays: number) => {
+    const sD = parseUaDate(sUa);
+    const eD = parseUaDate(eUa);
+    const d = multi ? tDays : (sD && eD ? daysBetween(sD, eD) : 0);
+    if (!sD || d <= 0 || !births.every((b) => parseUaDate(b)) || (!multi && !eD)) return;
     setLoading(true);
     setError(null);
+    // Параметри в URL (у т.ч. дати народження туристів — на прохання).
+    const qs = `?step=offers&zone=${zid}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}&multi=${multi ? 1 : 0}&tripDays=${tDays}&births=${encodeURIComponent(births.join(","))}`;
+    window.history.replaceState(null, "", qs);
     trackEvent("calculate_cost", { product: "tourism" });
     try {
-      const zone = ZONES.find((z) => String(z.id) === zoneId)!;
+      const zone = ZONES.find((z) => String(z.id) === zid)!;
       const res = await fetch("/api/tourism", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          birthDates,                       // dd.mm.yyyy = d.m.Y
+          birthDates: births,               // dd.mm.yyyy = d.m.Y
           country: { id: zone.id, name: zone.name },
-          date: startDate,
-          days,
-          multiVisa,
-          tourists: birthDates.length,
+          date: sUa,
+          days: d,
+          multiVisa: multi,
+          tourists: births.length,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -102,6 +107,32 @@ export function TourismFlow() {
       setLoading(false);
     }
   };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!valid || loading) return;
+    void runCalc(zoneId, startDate, endDate, birthDates, multiVisa, tripDays);
+  };
+
+  // Відновлення з URL при перезавантаженні (крок оформлення не відновлюємо).
+  const didRestore = useRef(false);
+  useEffect(() => {
+    if (didRestore.current) return;
+    didRestore.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("step") !== "offers") return;
+    const zid = sp.get("zone") || "60";
+    const s = sp.get("start") || "";
+    const en = sp.get("end") || "";
+    const multi = sp.get("multi") === "1";
+    const tDays = Number(sp.get("tripDays")) || 30;
+    const births = (sp.get("births") || "").split(",").filter(Boolean);
+    if (!s || births.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setZoneId(zid); setStartDate(s); setEndDate(en); setMultiVisa(multi); setTripDays(tDays); setBirthDates(births);
+    void runCalc(zid, s, en, births, multi, tDays);
+     
+  }, []);
 
   // ── Світлий екран: пропозиції / оформлення (як в автоцивілці) ──
   if (step === "offers" || step === "checkout") {
@@ -119,7 +150,7 @@ export function TourismFlow() {
                     dates={startDate && endDate ? `${startDate} – ${endDate}` : ""}
                     days={days}
                     tourists={birthDates.length}
-                    onBack={() => setStep("form")}
+                    onBack={() => { setStep("form"); window.history.replaceState(null, "", window.location.pathname); }}
                     onSelect={(offer) => { setSelectedOffer(offer); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   />
                 </div>
