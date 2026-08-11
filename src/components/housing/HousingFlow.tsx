@@ -266,7 +266,7 @@ function toInsuranceOffer(o: HomeOffer): InsuranceOffer {
   return {
     offerId: o.offerId,
     price: o.price,
-    company: { publicName: o.companyNamePublic || o.companyName, logo: o.company?.logo ?? null },
+    company: { ...(o.company ?? {}), publicName: o.companyNamePublic || o.companyName, logo: o.company?.logo ?? null },
     listDgo: [],
     listAutolawyer: [],
   } as unknown as InsuranceOffer;

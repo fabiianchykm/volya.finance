@@ -289,7 +289,7 @@ function toTourismInsuranceOffer(o: TourismOffer): InsuranceOffer {
   return {
     offerId: o.offerId,
     price: o.price,
-    company: { publicName: o.company?.publicName || o.company?.name || "", logo: o.company?.logo ?? null },
+    company: { ...(o.company ?? {}), publicName: o.company?.publicName || o.company?.name || "", logo: o.company?.logo ?? null },
     listDgo: [],
     listAutolawyer: [],
   } as unknown as InsuranceOffer;
