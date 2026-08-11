@@ -3,7 +3,7 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { ShieldCheck, Star, ArrowRight } from "lucide-react";
+import { ShieldCheck, ArrowRight } from "lucide-react";
 import { logoSrc } from "@/lib/logos";
 
 const insurers = [
@@ -96,7 +96,6 @@ export function InsurersSection() {
             href="/insurers"
             className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm ring-1 ring-indigo-100 transition-all hover:-translate-y-0.5 hover:shadow-md"
           >
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
             Відгуки та контакти страхових
             <ArrowRight className="h-4 w-4" />
           </Link>
