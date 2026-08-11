@@ -8,10 +8,12 @@ export function SessionProvider({
   session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
+  // Не передаємо сесію з сервера (щоб сторінки не ставали динамічними) — провайдер
+  // підтягне її на клієнті. Пропс лишаємо опційним для сумісності.
+  session?: Session | null;
 }) {
   return (
-    <NextAuthSessionProvider session={session}>
+    <NextAuthSessionProvider session={session ?? undefined}>
       {children}
     </NextAuthSessionProvider>
   );

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
-import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { ProfileSync } from "@/components/profile/ProfileSync";
 import { LoginProvider } from "@/components/auth/LoginProvider";
@@ -64,22 +63,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // auth() кидає помилку, якщо NextAuth не сконфігуровано (напр. немає AUTH_SECRET).
-  // Не дамо цьому покласти весь сайт — рендеримо без сесії, логін просто не працюватиме.
-  let session = null;
-  try {
-    session = await auth();
-  } catch (e) {
-    // Службові помилки Next.js (динамічний рендер, redirect, notFound) мають digest —
-    // їх не можна ковтати, інакше зламається рендеринг. Перекидаємо далі.
-    if (e && typeof e === "object" && "digest" in e) throw e;
-    console.error("[auth] не вдалося отримати сесію (перевірте AUTH_SECRET):", e instanceof Error ? e.message : e);
-  }
+  // Сесію НЕ читаємо на сервері — інакше auth() (cookies) робить усі сторінки
+  // динамічними й вбиває кешування. SessionProvider підтягне сесію на клієнті.
   return (
     <html lang="uk" className={`${openSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white font-sans">
         <GoogleTagManagerNoScript />
-        <SessionProvider session={session}>
+        <SessionProvider>
           <ProfileSync />
           <LoginProvider>{children}</LoginProvider>
         </SessionProvider>
