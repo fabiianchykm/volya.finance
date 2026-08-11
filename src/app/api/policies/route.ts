@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { auth } from "@/auth";
-import { savePolicy, getPoliciesByEmail, getPoliciesByPhone } from "@/lib/policies";
+import { savePolicy, getPoliciesByIdentities } from "@/lib/policies";
+import { resolveIdentities } from "@/lib/identity";
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
 import { resolveReferrerByCode, recordReferralConversion } from "@/lib/referral";
 import { creditBonus } from "@/lib/bonus";
@@ -103,7 +104,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const policies = phone ? await getPoliciesByPhone(phone) : await getPoliciesByEmail(email!);
+    // Рівноправна звʼязка: збираємо всі повʼязані email-и та номери людини й
+    // повертаємо поліси по всьому набору (вхід за email чи номером — той самий кабінет).
+    const ids = await resolveIdentities({ email, phone });
+    const policies = await getPoliciesByIdentities(ids.emails, ids.phones);
     return NextResponse.json({ success: true, data: policies });
   } catch (e) {
     console.error("[policies] list error:", e instanceof Error ? e.message : e);

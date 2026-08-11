@@ -78,3 +78,24 @@ export async function getBonusBreakdown(email: string): Promise<BonusBreakdown> 
   out.total = out.purchase + out.referral;
   return out;
 }
+
+/** Баланс за НАБОРОМ email-ів (рівноправна звʼязка акаунтів). */
+export async function getBonusBreakdownMulti(emails: string[]): Promise<BonusBreakdown> {
+  const empty = { total: 0, purchase: 0, referral: 0 };
+  const list = [...new Set(emails.map((e) => norm(e)).filter(Boolean))];
+  if (!sql || !list.length) return empty;
+  await ensureBonusSchema();
+  const rows = await sql<{ kind: string; sum: string }[]>`
+    SELECT kind, COALESCE(SUM(amount), 0) AS sum
+    FROM bonus_entries WHERE lower(email) = ANY(${list})
+    GROUP BY kind
+  `;
+  const out = { ...empty };
+  for (const r of rows) {
+    const v = Number(r.sum) || 0;
+    if (r.kind === "purchase") out.purchase = v;
+    else if (r.kind === "referral") out.referral = v;
+  }
+  out.total = out.purchase + out.referral;
+  return out;
+}

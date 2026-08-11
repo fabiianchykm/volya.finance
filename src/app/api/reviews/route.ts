@@ -3,7 +3,8 @@ import { auth } from "@/auth";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { getReviews, saveReview, hasReviewed } from "@/lib/reviews";
 import { getInsurer } from "@/lib/insurers";
-import { getPoliciesByEmail, getPoliciesByPhone } from "@/lib/policies";
+import { getPoliciesByIdentities } from "@/lib/policies";
+import { resolveIdentities, primaryEmail } from "@/lib/identity";
 import { trySendTelegram, escapeHtml } from "@/lib/telegram";
 
 // GET ?insurer=slug — список відгуків + середня оцінка (публічно).
@@ -43,16 +44,21 @@ export async function POST(req: NextRequest) {
   if (text.length < 10) return NextResponse.json({ success: false, error: "Відгук замалий (мін. 10 символів)" }, { status: 400 });
 
   try {
-    // Перевірка покупки: серед полісів користувача має бути поліс цієї СК.
-    const policies = phone ? await getPoliciesByPhone(phone) : await getPoliciesByEmail(email!);
+    // Рівноправна звʼязка: перевіряємо покупку по ВСІХ повʼязаних ідентичностях.
+    const ids = await resolveIdentities({ email, phone });
+    const policies = await getPoliciesByIdentities(ids.emails, ids.phones);
     const bought = policies.find((p) => !!p.company && ins.match.test(p.company));
     if (!bought) {
       return NextResponse.json({ success: false, error: "Відгук можна лишити лише про страхову, поліс якої ви купили у нас." }, { status: 403 });
     }
 
-    const key = email ?? `phone:${phone}`;
-    if (await hasReviewed(slug, key)) {
-      return NextResponse.json({ success: false, error: "Ви вже залишили відгук про цю страхову." }, { status: 409 });
+    // Канонічний ключ відгуку + перевірка «вже лишав» по всіх ключах акаунта.
+    const key = primaryEmail(ids, email) ?? `phone:${ids.phones[0] ?? phone}`;
+    const candidateKeys = [...ids.emails, ...ids.phones.map((p) => `phone:${p}`)];
+    for (const k of candidateKeys) {
+      if (await hasReviewed(slug, k)) {
+        return NextResponse.json({ success: false, error: "Ви вже залишили відгук про цю страхову." }, { status: 409 });
+      }
     }
 
     const authorName = session?.user?.name ?? bought.customerName ?? null;

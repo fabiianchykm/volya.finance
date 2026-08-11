@@ -1,7 +1,8 @@
 import { ulid } from "ulid";
 import { sql } from "./db";
 import { SITE_URL } from "./seo";
-import { creditBonus, getBonusBreakdown } from "./bonus";
+import { creditBonus, getBonusBreakdown, getBonusBreakdownMulti } from "./bonus";
+import { resolveIdentities } from "./identity";
 
 // Реферальна програма. Кожен залогінений користувач (email) має унікальний код
 // і посилання ?ref=КОД. Коли друг за цим посиланням оформлює поліс, тому, хто
@@ -142,7 +143,9 @@ export async function getReferralSummary(email: string): Promise<ReferralSummary
     ORDER BY created_at DESC LIMIT 20
   `;
 
-  const balance = await getBonusBreakdown(e);
+  // Рівноправна звʼязка: бонусний баланс — сума по всіх повʼязаних email-ах людини.
+  const ids = await resolveIdentities({ email: e });
+  const balance = ids.emails.length > 1 ? await getBonusBreakdownMulti(ids.emails) : await getBonusBreakdown(e);
 
   return {
     code,

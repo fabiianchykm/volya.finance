@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
-import { getPoliciesByEmail, getPoliciesByPhone, type PolicyRecord } from "@/lib/policies";
+import { getPoliciesByIdentities, type PolicyRecord } from "@/lib/policies";
+import { resolveIdentities, primaryEmail } from "@/lib/identity";
 import { getReferralSummary, type ReferralSummary } from "@/lib/referral";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -31,15 +32,19 @@ export default async function PoliciesPage() {
   let policies: PolicyRecord[] = [];
   let referral: ReferralSummary | null = null;
   if (email || phone) {
+    // Рівноправна звʼязка: усі повʼязані email-и/номери → один кабінет.
+    const ids = await resolveIdentities({ email, phone });
     try {
-      policies = phone ? await getPoliciesByPhone(phone) : await getPoliciesByEmail(email!);
+      policies = await getPoliciesByIdentities(ids.emails, ids.phones);
     } catch (e) {
       console.error("[policies/page] load error:", e instanceof Error ? e.message : e);
     }
-    // Реферальна програма прив'язана до email — лише для Google-входу.
-    if (email) {
+    // Реферальна програма прив'язана до email — беремо повʼязаний email (вхід за
+    // номером теж бачить реферальну картку, якщо його акаунт має email).
+    const refEmail = primaryEmail(ids, email);
+    if (refEmail) {
       try {
-        referral = await getReferralSummary(email);
+        referral = await getReferralSummary(refEmail);
       } catch (e) {
         console.error("[policies/page] referral error:", e instanceof Error ? e.message : e);
       }

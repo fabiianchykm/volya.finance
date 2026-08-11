@@ -54,7 +54,7 @@ export interface SavePolicyInput {
 }
 
 // Приводить телефон до "+380XXXXXXXXX" (щоб збігалося зі входом за номером).
-function normPhone(p?: string | null): string | null {
+export function normPhone(p?: string | null): string | null {
   if (!p) return null;
   let d = p.replace(/\D/g, "");
   if (d.length === 12 && d.startsWith("380")) d = d.slice(3);
@@ -172,6 +172,22 @@ export async function getPoliciesByPhone(phone: string): Promise<PolicyRecord[]>
   if (!p) return [];
   const rows = await sql<PolicyRow[]>`
     SELECT ${sql.unsafe(SELECT_COLS)} FROM policies WHERE phone = ${p} ORDER BY created_at DESC
+  `;
+  return rows.map(mapRow);
+}
+
+// Поліси за НАБОРОМ ідентичностей (email-и + телефони) — для рівноправної звʼязки
+// акаунтів (вхід за email чи номером бачить одні й ті самі поліси).
+export async function getPoliciesByIdentities(emails: string[], phones: string[]): Promise<PolicyRecord[]> {
+  if (!sql) return [];
+  await ensureSchema();
+  const e = emails.map((x) => x.trim().toLowerCase()).filter(Boolean);
+  const p = phones.map((x) => normPhone(x)).filter((x): x is string => !!x);
+  if (!e.length && !p.length) return [];
+  const rows = await sql<PolicyRow[]>`
+    SELECT ${sql.unsafe(SELECT_COLS)} FROM policies
+    WHERE lower(email) = ANY(${e}) OR phone = ANY(${p})
+    ORDER BY created_at DESC
   `;
   return rows.map(mapRow);
 }
