@@ -272,6 +272,8 @@ export interface HomeOffer {
   home_type: "flat" | "house";
   insurance_amount: number;
   insurance_period: string;   // "12m"
+  earnings?: number;          // сума комісії агента (грн)
+  earnings_param?: number;    // відсоток комісії, переданий у /calculator — має збігатись у /order
   available_documents?: string[];
   company?: { logo?: string | null; publicName?: string; ex_id?: string; [k: string]: unknown };
 }

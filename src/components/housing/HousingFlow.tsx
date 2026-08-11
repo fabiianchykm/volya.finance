@@ -39,9 +39,12 @@ export function HousingFlow() {
   const [homeType, setHomeType] = useState<"flat" | "house">("flat");
   const [amount, setAmount] = useState(1000000);
   const [period, setPeriod] = useState("12m");
-  // Дата початку — сьогодні або пізніше; за замовчуванням найближча (сьогодні).
+  // Дата початку — за замовчуванням +9 днів: деякі страховики (напр. ІНГО) приймають
+  // замовлення лише з датою старту не раніше ніж через 9 календарних днів. Дефолт +9
+  // гарантує, що будь-яку пропозицію можна одразу оформити; раніше теж можна обрати.
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
+    d.setDate(d.getDate() + 9);
     return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
   });
 

@@ -42,6 +42,19 @@ function allowedDocsFor(available?: string[]) {
   return hit.length ? hit : DOC_FALLBACK;
 }
 
+// ІНГО приймає замовлення лише з датою старту не раніше ніж через 9 календарних днів.
+function isIngo(name?: string): boolean {
+  return /інго|ingo/i.test(name ?? "");
+}
+function daysUntil(ua: string): number | null {
+  const d = parseUaDate(ua);
+  if (!d) return null;
+  const today = new Date();
+  const a = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const b = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.round((a - b) / 86400000);
+}
+
 function formatUaPhone(digits: string): string {
   const d = digits.replace(/\D/g, "").slice(0, 9);
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(" ");
@@ -191,13 +204,16 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     const cityObj = { id: selectedCity?.id ?? 0, name: cityName };
     const exId = ctx.offer.company?.ex_id ?? "";
     const tariffId = `${exId}-${ctx.homeType}-${ctx.insuranceAmount}`;
+    // earnings у замовленні МАЄ збігатися з тим, що використав калькулятор (offer.earnings_param),
+    // інакше страховик відхиляє заявку. Хардкод 15 ламав ІНГО (на dev доступний лише тариф 30).
+    const earnings = ctx.offer.earnings_param ?? 15;
     return {
       params: { statusId: null, type: null },
       orderId: null,
       homeType: ctx.homeType,
       insuranceAmount: ctx.insuranceAmount,
       insurancePeriod: ctx.insurancePeriod,
-      earnings: 15,
+      earnings,
       startDate: toDMY(ctx.startDate),                 // DD-MM-YYYY
       countryId: null,
       info: {
@@ -234,6 +250,14 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     if (!f.docSerial || !f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError("Заповніть дані документа"); return; }
     if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
     if (!f.street || !f.house) { setError("Вкажіть адресу обʼєкта"); return; }
+    // ІНГО: дата старту має бути не раніше ніж через 9 днів (інакше страховик відхиляє).
+    if (isIngo(ctx.offer.companyNamePublic || ctx.offer.companyName)) {
+      const d = daysUntil(ctx.startDate);
+      if (d !== null && d < 9) {
+        setError("ІНГО оформлює поліс із датою початку не раніше ніж через 9 днів. Поверніться назад і оберіть пізнішу дату (або іншу страхову).");
+        return;
+      }
+    }
     setLoading(true);
     setError(null);
     // Зберігаємо профіль (без міста — інший довідник).
