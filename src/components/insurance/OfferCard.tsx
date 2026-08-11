@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins, Star } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -362,7 +362,8 @@ export function OfferCard({
               <div className="flex flex-wrap gap-2">
                 {ratingParams.map((p) => (
                   <span key={p.label} className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
-                    {p.label}: <span className="font-semibold text-zinc-800">{p.v}</span>
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    {p.label}: <span className="font-semibold text-zinc-800">{Number(p.v)} / 5</span>
                   </span>
                 ))}
               </div>
