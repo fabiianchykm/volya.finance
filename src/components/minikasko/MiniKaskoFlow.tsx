@@ -73,21 +73,23 @@ export function MiniKaskoFlow() {
     return () => { active = false; clearTimeout(t); };
   }, [cityQuery, selectedCity]);
 
-  const calc = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
-    if (!startD) { setError("Вкажіть дату початку"); return; }
+  // Розрахунок для конкретного міста. Пише параметри в URL (несенситивні: місто),
+  // щоб перезавантаження одразу показувало пропозиції. Персональні дані в URL НЕ йдуть.
+  const runCalc = async (city: CityOption) => {
     setError(null);
     setOffers([]);
     setOffersLoading(true);
     setStep("offers");
+    const cn = cityShort(city.name_full_name_ua || city.name_ua);
+    window.history.replaceState(null, "", `?step=offers&cityId=${city.id}&cityName=${encodeURIComponent(cn)}`);
     trackEvent("calculate_cost", { product: "mini-kasko" });
     try {
-      const iso = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}-${String(startD.getDate()).padStart(2, "0")}`;
+      const d = startD ?? new Date();
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/mini-kasko", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ start_date: iso, city_id: selectedCity.id }),
+        body: JSON.stringify({ start_date: iso, city_id: city.id }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.success) throw new Error(data?.error ?? "Не вдалося отримати пропозиції");
@@ -98,6 +100,32 @@ export function MiniKaskoFlow() {
       setOffersLoading(false);
     }
   };
+
+  const calc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
+    if (!startD) { setError("Вкажіть дату початку"); return; }
+    void runCalc(selectedCity);
+  };
+
+  // Відновлення з URL при перезавантаженні: якщо є місто й step=offers — одразу
+  // показуємо пропозиції (крок оформлення НЕ відновлюємо — персональні дані не в URL).
+  const didRestore = useRef(false);
+  useEffect(() => {
+    if (didRestore.current) return;
+    didRestore.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    const cityId = Number(sp.get("cityId"));
+    const cityName = sp.get("cityName");
+    if (sp.get("step") === "offers" && cityId && cityName) {
+      const c: CityOption = { id: cityId, name_ua: cityName, name_full_name_ua: cityName, zone: 0 };
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedCity(c);
+      setCityQuery(cityName);
+      void runCalc(c);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const checkoutCtx = (offer: MiniKaskoOffer): MiniKaskoContext => ({
     offer,
@@ -118,7 +146,7 @@ export function MiniKaskoFlow() {
                 loading={offersLoading}
                 error={error}
                 summary={[cityShort(selectedCity?.name_full_name_ua || selectedCity?.name_ua || ""), startDate].filter(Boolean).join(" · ")}
-                onBack={() => { setError(null); setStep("params"); }}
+                onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
             ) : selectedOffer ? (
