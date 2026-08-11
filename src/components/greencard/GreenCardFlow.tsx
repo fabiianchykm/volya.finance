@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -73,28 +73,30 @@ export function GreenCardFlow() {
   const territoryLabel = TERRITORIES.find((t) => t.value === territory)?.label ?? "";
   const carTypeLabel = CAR_TYPES.find((c) => c.value === carType)?.label ?? "";
 
-  // Крок 2 — розрахунок: одразу переходимо на світлий екран пропозицій із лоадером.
-  const calc = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!startD || !period) return;
+  // Розрахунок за явними параметрами (щоб можна було відновити з URL). Несенситивні
+  // параметри (тип авто, територія, дати) пишемо в URL — reload одразу дасть пропозиції.
+  const runCalc = async (ct: string, terr: string, sUa: string, eUa: string) => {
+    const sD = parseUaDate(sUa);
+    const eD = parseUaDate(eUa);
+    const per = sD && eD ? periodFromDays(daysBetween(sD, eD)) : null;
+    if (!sD || !per) return;
     setError(null);
     setOffers([]);
     setOffersLoading(true);
     setStep("offers");
+    window.history.replaceState(null, "", `?step=offers&carType=${ct}&territory=${terr}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}`);
     trackEvent("calculate_cost", { product: "greencard" });
     try {
-      const iso = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}-${String(startD.getDate()).padStart(2, "0")}`;
+      const iso = `${sD.getFullYear()}-${String(sD.getMonth() + 1).padStart(2, "0")}-${String(sD.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/greencard", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          country: Number(territory),
+          country: Number(terr),
           userType: 1,
           startDate: iso,
-          periodOption: period.value,
-          carType,
-          // Прод-калькулятор ЗК потребує номер, хоча ціна залежить лише від категорії.
-          // Передаємо плейсхолдер — реальний номер клієнт вводить на кроці оформлення.
+          periodOption: per.value,
+          carType: ct,
           carNumber: "AA1234BB",
         }),
       });
@@ -109,6 +111,28 @@ export function GreenCardFlow() {
       setOffersLoading(false);
     }
   };
+
+  const calc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!startD || !period) return;
+    void runCalc(carType, territory, startDate, endDate);
+  };
+
+  // Відновлення з URL при перезавантаженні (крок оформлення не відновлюємо).
+  const didRestore = useRef(false);
+  useEffect(() => {
+    if (didRestore.current) return;
+    didRestore.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    const ct = sp.get("carType"); const terr = sp.get("territory");
+    const s = sp.get("start"); const en = sp.get("end");
+    if (sp.get("step") === "offers" && ct && terr && s && en) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCarType(ct); setTerritory(terr); setStartDate(s); setEndDate(en);
+      void runCalc(ct, terr, s, en);
+    }
+     
+  }, []);
 
   const checkoutCtx = (offer: GreenCardOffer): GreenCardContext => ({
     offer, country: Number(territory), periodOption: period?.value ?? 15,
@@ -131,7 +155,7 @@ export function GreenCardFlow() {
                 error={error}
                 vehicle={null}
                 summary={[carTypeLabel, territoryLabel, period?.label].filter(Boolean).join(" · ")}
-                onBack={() => { setError(null); setStep("params"); }}
+                onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
             ) : selectedOffer ? (

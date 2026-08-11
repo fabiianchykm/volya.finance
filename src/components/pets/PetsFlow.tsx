@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -60,19 +60,18 @@ export function PetsFlow() {
 
   const valid = !!parseUaDate(startDate);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!valid || loading) return;
+  const runCalc = async (pt: string, per: "6m" | "9m" | "12m") => {
     setError(null);
     setOffers([]);
     setLoading(true);
     setStep("offers");
+    window.history.replaceState(null, "", `?step=offers&petType=${pt}&period=${per}`);
     trackEvent("calculate_cost", { product: "pets" });
     try {
       const res = await fetch("/api/pets", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ startFrom: startDate, insurancePeriod: period }),
+        body: JSON.stringify({ startFrom: startDate, insurancePeriod: per }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.success) throw new Error(data?.error ?? "Не вдалося отримати пропозиції");
@@ -86,6 +85,27 @@ export function PetsFlow() {
       setLoading(false);
     }
   };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!valid || loading) return;
+    void runCalc(petType, period);
+  };
+
+  // Відновлення з URL при перезавантаженні (крок оформлення не відновлюємо).
+  const didRestore = useRef(false);
+  useEffect(() => {
+    if (didRestore.current) return;
+    didRestore.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    const pt = sp.get("petType"); const per = sp.get("period");
+    if (sp.get("step") === "offers" && pt && (per === "6m" || per === "9m" || per === "12m")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPetType(pt); setPeriod(per);
+      void runCalc(pt, per);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Світлий екран: пропозиції / оформлення ──
   if (step === "offers" || step === "checkout") {
@@ -103,7 +123,7 @@ export function PetsFlow() {
                     error={error}
                     petLabel={PET_TYPES.find((p) => p.value === petType)?.label ?? ""}
                     periodLabel={PERIOD_LABEL[period]}
-                    onBack={() => { setError(null); setStep("form"); }}
+                    onBack={() => { setError(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); }}
                     onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   />
                 </div>

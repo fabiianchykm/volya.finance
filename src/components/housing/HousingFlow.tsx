@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Home as HomeIcon, Building2, ShieldCheck, CalendarDays, ArrowRight, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -56,20 +56,21 @@ export function HousingFlow() {
   maxStart.setFullYear(maxStart.getFullYear() + 1);
   const startD = parseUaDate(startDate);
 
-  const calc = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!startD) { setError("Вкажіть дату початку"); return; }
+  const runCalc = async (ht: "flat" | "house", amt: number, per: string, sUa: string) => {
+    const sD = parseUaDate(sUa);
+    if (!sD) return;
     setError(null);
     setOffers([]);
     setOffersLoading(true);
     setStep("offers");
+    window.history.replaceState(null, "", `?step=offers&homeType=${ht}&amount=${amt}&period=${per}&start=${encodeURIComponent(sUa)}`);
     trackEvent("calculate_cost", { product: "housing" });
     try {
-      const iso = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}-${String(startD.getDate()).padStart(2, "0")}`;
+      const iso = `${sD.getFullYear()}-${String(sD.getMonth() + 1).padStart(2, "0")}-${String(sD.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/home", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ homeType, insuranceAmount: amount, insurancePeriod: period, startFrom: iso }),
+        body: JSON.stringify({ homeType: ht, insuranceAmount: amt, insurancePeriod: per, startFrom: iso }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.success) throw new Error(data?.error ?? "Не вдалося отримати пропозиції");
@@ -81,6 +82,28 @@ export function HousingFlow() {
       setOffersLoading(false);
     }
   };
+
+  const calc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!startD) { setError("Вкажіть дату початку"); return; }
+    void runCalc(homeType, amount, period, startDate);
+  };
+
+  // Відновлення з URL при перезавантаженні (крок оформлення не відновлюємо).
+  const didRestore = useRef(false);
+  useEffect(() => {
+    if (didRestore.current) return;
+    didRestore.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    const ht = sp.get("homeType"); const amt = Number(sp.get("amount"));
+    const per = sp.get("period"); const s = sp.get("start");
+    if (sp.get("step") === "offers" && (ht === "flat" || ht === "house") && amt && per && s) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHomeType(ht); setAmount(amt); setPeriod(per); setStartDate(s);
+      void runCalc(ht, amt, per, s);
+    }
+     
+  }, []);
 
   const checkoutCtx = (offer: HomeOffer): HousingContext => ({
     offer, homeType, insuranceAmount: amount, insurancePeriod: period, startDate,
@@ -100,7 +123,7 @@ export function HousingFlow() {
                 loading={offersLoading}
                 error={error}
                 summary={summary}
-                onBack={() => { setError(null); setStep("params"); }}
+                onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
             ) : selectedOffer ? (
