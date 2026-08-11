@@ -167,15 +167,25 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     }
   };
 
-  // Знаходить місто в довіднику житла за назвою й авто-обирає точний (або єдиний) збіг.
+  // Знаходить місто в довіднику житла за назвою й авто-обирає збіг. Зіставлення стійке
+  // до префікса населеного пункту («м.»/«с.»/«смт»), бо профіль може зберегти «Київ»,
+  // а довідник повертає «м. Київ» — інакше точний збіг падав і місто не обиралось.
+  const normCity = (s: string) => cityShort(s).toLowerCase().replace(/^(м\.?|с\.?|смт\.?|селище|місто)\s+/i, "").trim();
   const resolveHomeCity = async (name: string) => {
+    const core = name.replace(/^(м\.?|с\.?|смт\.?|селище|місто)\s+/i, "").trim();
     try {
-      const res = await fetch(`/api/home/cities?q=${encodeURIComponent(name)}`);
+      const res = await fetch(`/api/home/cities?q=${encodeURIComponent(core || name)}`);
       const json = await res.json();
       if (!json.success) return;
       const list = (json.data ?? []) as HomeCity[];
-      const key = name.trim().toLowerCase();
-      const match = list.find((c) => cityShort(c.name_full_name_ua || c.name).toLowerCase() === key) ?? (list.length === 1 ? list[0] : null);
+      const key = normCity(name);
+      // Серед збігів (за нормалізованою назвою) віддаємо перевагу МІСТУ («м.») над
+      // селом/смт — коли однойменні населені пункти («Бережани» — і село, і місто).
+      const hits = list.filter((c) => normCity(c.name_full_name_ua || c.name) === key || normCity(c.name) === key);
+      const match =
+        hits.find((c) => /^м[.\s]/i.test((c.name || c.name_full_name_ua || "").trim())) ??
+        hits[0] ??
+        (list.length === 1 ? list[0] : null);
       if (match) {
         setSelectedCity(match);
         setCityQuery(cityShort(match.name_full_name_ua || match.name));
