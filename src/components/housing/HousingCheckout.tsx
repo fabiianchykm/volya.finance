@@ -227,6 +227,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     return {
       params: { statusId: null, type: null },
       orderId: null,
+      price: ctx.offer.price,                          // ОБОВʼЯЗКОВЕ топ-рівневе поле (getPrice) — має збігатися з offerInfo.price
       homeType: ctx.homeType,
       insuranceAmount: ctx.insuranceAmount,
       insurancePeriod: ctx.insurancePeriod,
