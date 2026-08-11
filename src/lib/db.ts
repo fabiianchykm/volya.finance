@@ -66,6 +66,20 @@ export function ensureSchema(): Promise<void> {
           updated_at timestamptz NOT NULL DEFAULT now()
         )
       `;
+      // Відгуки про страхові — лише від тих, хто купував поліс цієї СК у нас.
+      await sql`
+        CREATE TABLE IF NOT EXISTS insurer_reviews (
+          id          bigserial PRIMARY KEY,
+          insurer     text NOT NULL,
+          email       text NOT NULL,
+          author_name text,
+          rating      int NOT NULL,
+          text        text NOT NULL,
+          product     text,
+          created_at  timestamptz NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS insurer_reviews_insurer_idx ON insurer_reviews (insurer)`;
     })().catch((e) => {
       schemaPromise = null;
       throw e;
