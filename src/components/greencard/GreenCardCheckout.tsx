@@ -11,7 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 
@@ -33,11 +33,12 @@ export interface GreenCardContext {
 // Кожен страховик приймає СВІЙ набір (offer.available_documents), тож у checkout
 // показуємо лише перетин із цим каталогом. Порядок = пріоритет за замовчуванням.
 type DocCode = 1 | 2 | 3;
-const DOC_CATALOG: { key: string; t: DocCode; label: string; serialLabel: string }[] = [
-  { key: "DOCUMENT_ID_CARD",          t: 3, label: "ID-картка",           serialLabel: "Запис № (УНЗР)" },
-  { key: "DOCUMENT_EXTERNAL_PASSPORT", t: 2, label: "Закордонний паспорт", serialLabel: "Серія" },
-  { key: "DOCUMENT_PASSPORT",         t: 1, label: "Паспорт (книжечка)",  serialLabel: "Серія" },
+const DOC_CATALOG: { key: string; t: DocCode; kind: DocKind; label: string; serialLabel: string }[] = [
+  { key: "DOCUMENT_ID_CARD",          t: 3, kind: "idcard",  label: "ID-картка",           serialLabel: "Запис № (УНЗР)" },
+  { key: "DOCUMENT_EXTERNAL_PASSPORT", t: 2, kind: "foreign", label: "Закордонний паспорт", serialLabel: "Серія" },
+  { key: "DOCUMENT_PASSPORT",         t: 1, kind: "passport", label: "Паспорт (книжечка)",  serialLabel: "Серія" },
 ];
+const kindOfDoc = (t: DocCode): DocKind => DOC_CATALOG.find((d) => d.t === t)?.kind ?? "idcard";
 const DOC_FALLBACK = DOC_CATALOG.filter((d) => d.t === 3 || d.t === 1);
 // Дозволені типи для конкретного офера (перетин каталогу з available_documents).
 function allowedDocsFor(available?: string[]) {
@@ -172,14 +173,16 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   // Автопідстановка збереженого профілю страхувальника (як в ОСЦПВ). Оновлюємо лише
   // поля страхувальника — латинські ПІБ і дані авто (підтягнуті з реєстру) не чіпаємо.
   const applyProfile = (p: CustomerProfile) => {
-    // Засіваємо памʼять по типах документа з профілю, а активні поля беремо саме
-    // для збереженого типу — щоб дані одного документа не «протікали» під інший.
-    if (p.docByType) docStash.current = { ...p.docByType } as typeof docStash.current;
-    // Беремо збережений тип, лише якщо цей страховик його приймає; інакше — перший
-    // дозволений (напр. закордонний паспорт для ARX/INGO), з чистими полями документа.
-    const dt: DocCode = isAllowedDoc(p.docType) ? p.docType : allowedDocs[0].t;
-    const active = p.docByType?.[dt];
-    const sameType = dt === p.docType;
+    // Засіваємо памʼять по локальних типах із КАНОНІЧНИХ сутностей (щоб дані одного
+    // документа не «протікали» під інший — навіть між продуктами з різними кодами).
+    const stash: Record<number, DocFields> = {};
+    for (const d of DOC_CATALOG) { const fx = docFieldsByKind(p, d.kind); if (fx) stash[d.t] = fx; }
+    docStash.current = stash;
+    // Беремо збережений тип-сутність, лише якщо цей страховик його приймає; інакше —
+    // перший дозволений (напр. закордонний паспорт для ARX/INGO), з чистими полями.
+    const wantT = DOC_CATALOG.find((d) => d.kind === p.lastDocKind)?.t;
+    const dt: DocCode = wantT && isAllowedDoc(wantT) ? wantT : allowedDocs[0].t;
+    const active = stash[dt];
     setF((s) => ({
       ...s,
       surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
@@ -188,10 +191,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       identificationCode: p.identificationCode,
       dateBirth: p.dateBirth,
       docType: dt,
-      docSerial: active?.serial ?? (sameType ? p.docSerial : ""),
-      docNumber: active?.number ?? (sameType ? p.docNumber : ""),
-      docIssuedBy: active?.issuedBy ?? (sameType ? p.docIssuedBy : ""),
-      docDate: active?.date ?? (sameType ? p.docDate : ""),
+      docSerial: active?.serial ?? "",
+      docNumber: active?.number ?? "",
+      docIssuedBy: active?.issuedBy ?? "",
+      docDate: active?.date ?? "",
       street: p.street, house: p.house,
     }));
     if (p.city) {
@@ -297,7 +300,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       identificationCode: f.identificationCode,
       dateBirth: f.dateBirth,
       street: f.street, house: f.house,
-      docType: f.docType,
+      docType: f.docType, docKind: kindOfDoc(f.docType),
       docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
       city: selectedCity, cityQuery,
     });

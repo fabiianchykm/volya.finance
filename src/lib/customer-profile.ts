@@ -32,14 +32,17 @@ export interface CustomerProfile {
   dateBirth: string;        // "дд.мм.рррр"
   street: string;
   house: string;
-  docType: 1 | 2 | 3 | 4;  // 1 паспорт, 2 закордонний паспорт, 3 ID-картка, 4 водійське
+  docType: 1 | 2 | 3 | 4;  // локальний числовий код продукту, що зберігав (для сумісності)
   docSerial: string;
   docNumber: string;
   docIssuedBy: string;
   docDate: string;          // "дд.мм.рррр"
-  // Дані документа памʼятаються ОКРЕМО по кожному типу — щоб дані ID-картки ніколи
-  // не показувались під «водійським» тощо. docType вгорі — лише «останній обраний».
-  docByType?: Partial<Record<1 | 2 | 3 | 4, DocFields>>;
+  // Дані документа памʼятаються ОКРЕМО за КАНОНІЧНИМ типом-сутністю, а НЕ за числовим
+  // кодом — бо код різниться між продуктами (напр. 4 = «водійське» в ОСЦПВ, але
+  // «закордонний паспорт» у житлі). Так дані одного документа ніколи не показуються
+  // під іншим і коректно шаряться між продуктами.
+  docByKind?: Partial<Record<DocKind, DocFields>>;
+  lastDocKind?: DocKind;   // останній обраний тип-сутність (канонічний)
   city: SavedCity | null;
   cityQuery: string;
   savedAt: number;
@@ -50,6 +53,15 @@ export interface DocFields {
   number: string;
   issuedBy: string;
   date: string;
+}
+
+// Канонічний тип документа-СУТНОСТІ (незалежний від числових кодів продуктів).
+// Кожен продукт мапить свій локальний код у цей ключ при збереженні/читанні.
+export type DocKind = "passport" | "idcard" | "foreign" | "license";
+
+/** Поля документа за канонічним типом-сутністю (для автозаповнення в checkout). */
+export function docFieldsByKind(p: CustomerProfile | null | undefined, kind: DocKind): DocFields | undefined {
+  return p?.docByKind?.[kind];
 }
 
 const KEY = "volya_profiles";        // map: email(lower) → CustomerProfile
@@ -77,22 +89,23 @@ function normEmail(email: string): string {
 /** Зберегти профіль під email (частковий — кожен продукт пише лише свої поля).
  *  Мерджимо з наявним записом, щоб продукт без якогось поля (напр. ОСЦПВ не має
  *  латиниці/паспорта, туристичне — укр. ПІБ/ІПН) не затирав раніше збережене. */
-export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { email: string }): void {
+export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { email: string; docKind?: DocKind }): void {
   const email = normEmail(p.email);
   if (!email) return;
   try {
     const map = readMap();
     const prev = map[email] ?? ({} as CustomerProfile);
-    // Оновлюємо памʼять документа для АКТИВНОГО типу, зберігаючи дані інших типів.
+    // Оновлюємо памʼять документа для АКТИВНОГО типу-сутності, зберігаючи інші типи.
     const activeType = p.docType ?? prev.docType ?? 3;
-    const prevByType = prev.docByType ?? {};
-    const docByType = { ...prevByType };
+    const docKind: DocKind = p.docKind ?? prev.lastDocKind ?? "idcard";
+    const prevByKind = prev.docByKind ?? {};
+    const docByKind = { ...prevByKind };
     if (p.docSerial !== undefined || p.docNumber !== undefined || p.docIssuedBy !== undefined || p.docDate !== undefined) {
-      docByType[activeType] = {
-        serial: p.docSerial ?? prevByType[activeType]?.serial ?? "",
-        number: p.docNumber ?? prevByType[activeType]?.number ?? "",
-        issuedBy: p.docIssuedBy ?? prevByType[activeType]?.issuedBy ?? "",
-        date: p.docDate ?? prevByType[activeType]?.date ?? "",
+      docByKind[docKind] = {
+        serial: p.docSerial ?? prevByKind[docKind]?.serial ?? "",
+        number: p.docNumber ?? prevByKind[docKind]?.number ?? "",
+        issuedBy: p.docIssuedBy ?? prevByKind[docKind]?.issuedBy ?? "",
+        date: p.docDate ?? prevByKind[docKind]?.date ?? "",
       };
     }
     // Явна нормалізація: обовʼязкові рядкові поля не мають бути undefined,
@@ -114,7 +127,8 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
       docNumber: p.docNumber ?? prev.docNumber ?? "",
       docIssuedBy: p.docIssuedBy ?? prev.docIssuedBy ?? "",
       docDate: p.docDate ?? prev.docDate ?? "",
-      docByType,
+      docByKind,
+      lastDocKind: docKind,
       city: p.city ?? prev.city ?? null,
       cityQuery: p.cityQuery ?? prev.cityQuery ?? "",
       passportSerial: p.passportSerial ?? prev.passportSerial,

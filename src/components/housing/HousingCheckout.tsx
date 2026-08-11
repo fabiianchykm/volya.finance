@@ -10,7 +10,7 @@ import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { HomeOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong } from "@/lib/utils";
 
@@ -30,11 +30,12 @@ export interface HousingContext {
 
 // Типи документів для житла: 1 паспорт, 3 ID-картка, 4 закордонний паспорт.
 type DocCode = 1 | 3 | 4;
-const DOC_CATALOG: { key: string; t: DocCode; label: string; serialLabel: string }[] = [
-  { key: "DOCUMENT_ID_CARD",           t: 3, label: "ID-картка",           serialLabel: "Запис № (УНЗР)" },
-  { key: "DOCUMENT_PASSPORT",          t: 1, label: "Паспорт (книжечка)",  serialLabel: "Серія" },
-  { key: "DOCUMENT_EXTERNAL_PASSPORT", t: 4, label: "Закордонний паспорт", serialLabel: "Серія" },
+const DOC_CATALOG: { key: string; t: DocCode; kind: DocKind; label: string; serialLabel: string }[] = [
+  { key: "DOCUMENT_ID_CARD",           t: 3, kind: "idcard",  label: "ID-картка",           serialLabel: "Запис № (УНЗР)" },
+  { key: "DOCUMENT_PASSPORT",          t: 1, kind: "passport", label: "Паспорт (книжечка)",  serialLabel: "Серія" },
+  { key: "DOCUMENT_EXTERNAL_PASSPORT", t: 4, kind: "foreign", label: "Закордонний паспорт", serialLabel: "Серія" },
 ];
+const kindOfDoc = (t: DocCode): DocKind => DOC_CATALOG.find((d) => d.t === t)?.kind ?? "idcard";
 const DOC_FALLBACK = DOC_CATALOG.filter((d) => d.t === 3 || d.t === 1);
 function allowedDocsFor(available?: string[]) {
   if (!available || available.length === 0) return DOC_FALLBACK;
@@ -135,10 +136,14 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
 
   // Автопідстановка профілю (місто НЕ підставляємо як обʼєкт — інший довідник; лише текст).
   const applyProfile = (p: CustomerProfile) => {
-    if (p.docByType) docStash.current = { ...p.docByType } as typeof docStash.current;
-    const dt: DocCode = isAllowedDoc(p.docType) ? p.docType : allowedDocs[0].t;
-    const active = p.docByType?.[dt];
-    const same = dt === p.docType;
+    // Памʼять документів — з КАНОНІЧНИХ сутностей (код 4 у житлі = закордонний, а не
+    // водійське як в ОСЦПВ; ключ-сутність унеможливлює плутанину між продуктами).
+    const stash: Record<number, DocFields> = {};
+    for (const d of DOC_CATALOG) { const fx = docFieldsByKind(p, d.kind); if (fx) stash[d.t] = fx; }
+    docStash.current = stash;
+    const wantT = DOC_CATALOG.find((d) => d.kind === p.lastDocKind)?.t;
+    const dt: DocCode = wantT && isAllowedDoc(wantT) ? wantT : allowedDocs[0].t;
+    const active = stash[dt];
     setF((s) => ({
       ...s,
       surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
@@ -146,10 +151,10 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       identificationCode: p.identificationCode,
       dateBirth: p.dateBirth,
       docType: dt,
-      docSerial: active?.serial ?? (same ? p.docSerial : ""),
-      docNumber: active?.number ?? (same ? p.docNumber : ""),
-      docIssuedBy: active?.issuedBy ?? (same ? p.docIssuedBy : ""),
-      docDate: active?.date ?? (same ? p.docDate : ""),
+      docSerial: active?.serial ?? "",
+      docNumber: active?.number ?? "",
+      docIssuedBy: active?.issuedBy ?? "",
+      docDate: active?.date ?? "",
       street: p.street, house: p.house,
     }));
     // Місто: підставляємо текст і одразу шукаємо збіг у довіднику ЖИТЛА, щоб проставити
@@ -268,7 +273,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       phone: f.phone, email: f.email,
       identificationCode: f.identificationCode, dateBirth: f.dateBirth,
       street: f.street, house: f.house,
-      docType: f.docType, docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
+      docType: f.docType, docKind: kindOfDoc(f.docType), docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
     });
     try {
       const idem = crypto.randomUUID();

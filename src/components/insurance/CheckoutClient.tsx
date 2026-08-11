@@ -8,7 +8,10 @@ import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+
+// Локальні числові коди документів ОСЦПВ → канонічний тип-сутність.
+const OSAGO_DOC_KIND: Record<1 | 3 | 4, DocKind> = { 1: "passport", 3: "idcard", 4: "license" };
 import { useSession } from "next-auth/react";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
@@ -479,6 +482,13 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   // Підставляє збережений профіль у всі поля форми.
   const applyProfile = (p: CustomerProfile) => {
+    // Памʼять документів — з канонічних сутностей (щоб водійське/паспорт/ID не плутались).
+    const stash: Record<number, DocFields> = {};
+    ([1, 3, 4] as const).forEach((t) => { const fx = docFieldsByKind(p, OSAGO_DOC_KIND[t]); if (fx) stash[t] = fx; });
+    docStash.current = stash;
+    // Тип за збереженою сутністю, якщо ОСЦПВ його приймає (закордонний → ID-картка).
+    const dt: 1 | 3 | 4 = p.lastDocKind === "passport" ? 1 : p.lastDocKind === "license" ? 4 : 3;
+    const active = stash[dt];
     setForm({
       name: p.name,
       surname: p.surname,
@@ -489,12 +499,12 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
       dateBirth: p.dateBirth,
       street: p.street,
       house: p.house,
-      docSerial: p.docSerial,
-      docNumber: p.docNumber,
-      docIssuedBy: p.docIssuedBy,
-      docDate: p.docDate,
+      docSerial: active?.serial ?? "",
+      docNumber: active?.number ?? "",
+      docIssuedBy: active?.issuedBy ?? "",
+      docDate: active?.date ?? "",
     });
-    setDocType(p.docType === 2 ? 3 : p.docType); // 2 (закордонний) лише для ЗК
+    setDocType(dt);
     if (p.city) {
       setSelectedCity(p.city);
       setCityQuery(cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua));
@@ -595,6 +605,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
       street: form.street,
       house: form.house,
       docType,
+      docKind: OSAGO_DOC_KIND[docType],
       docSerial: form.docSerial,
       docNumber: form.docNumber,
       docIssuedBy: form.docIssuedBy,

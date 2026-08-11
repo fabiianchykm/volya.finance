@@ -11,7 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, formatCompanyName, cityShort, cityLong } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 
 // Анкета оформлення туристичного (аналог ЗК): дані страхувальника + туристів →
@@ -103,11 +103,18 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   // і закордонний паспорт туриста №1 (страхувальника). Зберігаємо частково (без укр. ПІБ),
   // тож спільний профіль не засмічується. docType звужуємо до 1|3.
   const applyProfile = (p: CustomerProfile) => {
+    // Документ — з канонічних сутностей (туристичне підтримує лише паспорт/ID-картку).
+    const stash: Record<number, DocFields> = {};
+    const pf = docFieldsByKind(p, "passport"); if (pf) stash[1] = pf;
+    const idf = docFieldsByKind(p, "idcard"); if (idf) stash[3] = idf;
+    docStash.current = stash;
+    const dt: 1 | 3 = p.lastDocKind === "passport" ? 1 : 3;
+    const active = stash[dt];
     setC((s) => ({
       ...s,
       phone: p.phone, email: p.email,
-      docType: p.docType === 1 ? 1 : 3,
-      docSerial: p.docSerial, docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
+      docType: dt,
+      docSerial: active?.serial ?? "", docNumber: active?.number ?? "", docIssuedBy: active?.issuedBy ?? "", docDate: active?.date ?? "",
       street: p.street, house: p.house,
     }));
     // Турист №1 (страхувальник) — латинські ПІБ і закордонний паспорт зі збереженого профілю.
@@ -214,7 +221,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     const main = tourists[0];
     saveProfile({
       email: c.email, phone: c.phone,
-      docType: c.docType, docSerial: c.docSerial, docNumber: c.docNumber, docIssuedBy: c.docIssuedBy, docDate: c.docDate,
+      docType: c.docType, docKind: c.docType === 1 ? "passport" : "idcard", docSerial: c.docSerial, docNumber: c.docNumber, docIssuedBy: c.docIssuedBy, docDate: c.docDate,
       street: c.street, house: c.house,
       city: selectedCity, cityQuery,
       identificationCode: main.identificationCode || undefined,

@@ -11,7 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, cityShort, cityLong } from "@/lib/utils";
 import type { PetsOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 
 // Анкета оформлення страхування тварин: дані улюбленця + власника → order/create
@@ -84,6 +84,13 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
   // Автопідстановка збереженого профілю власника (як в ОСЦПВ). Оновлюємо лише поля
   // власника — латинські ПІБ і дані тварини не чіпаємо. docType звужуємо до 1|3.
   const applyProfile = (p: CustomerProfile) => {
+    // Документ — з канонічних сутностей (тварини підтримують лише паспорт/ID-картку).
+    const stash: Record<number, DocFields> = {};
+    const pf = docFieldsByKind(p, "passport"); if (pf) stash[1] = pf;
+    const idf = docFieldsByKind(p, "idcard"); if (idf) stash[3] = idf;
+    docStash.current = stash;
+    const dt: 1 | 3 = p.lastDocKind === "passport" ? 1 : 3;
+    const active = stash[dt];
     setF((s) => ({
       ...s,
       surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
@@ -91,8 +98,8 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       phone: p.phone, email: p.email,
       identificationCode: p.identificationCode,
       dateBirth: p.dateBirth,
-      docType: p.docType === 1 ? 1 : 3,
-      docSerial: p.docSerial, docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
+      docType: dt,
+      docSerial: active?.serial ?? "", docNumber: active?.number ?? "", docIssuedBy: active?.issuedBy ?? "", docDate: active?.date ?? "",
       street: p.street, house: p.house,
     }));
     if (p.city) {
@@ -186,7 +193,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       identificationCode: f.identificationCode,
       dateBirth: f.dateBirth,
       street: f.street, house: f.house,
-      docType: f.docType,
+      docType: f.docType, docKind: f.docType === 1 ? "passport" : "idcard",
       docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
       city: selectedCity, cityQuery,
     });

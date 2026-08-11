@@ -10,7 +10,7 @@ import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { MiniKaskoOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 
@@ -120,13 +120,15 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
 
   // Автопідстановка збереженого профілю (спільний із рештою продуктів).
   const applyProfile = (p: CustomerProfile) => {
+    // Міні-КАСКО — лише паспорт: беремо саме паспортну сутність (не інший документ).
+    const pass = docFieldsByKind(p, "passport");
     setF((s) => ({
       ...s,
       surnameUa: p.surname, nameUa: p.name, patronymicUa: p.patronymic,
       phone: p.phone, email: p.email,
       identificationCode: p.identificationCode,
       dateBirth: p.dateBirth,
-      docNumber: p.docNumber, docIssuedBy: p.docIssuedBy, docDate: p.docDate,
+      docNumber: pass?.number ?? "", docIssuedBy: pass?.issuedBy ?? "", docDate: pass?.date ?? "",
       street: p.street, house: p.house,
     }));
     if (p.city) {
@@ -209,7 +211,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       identificationCode: f.identificationCode,
       dateBirth: f.dateBirth,
       street: f.street, house: f.house,
-      docType: 1, docSerial: "", docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
+      docType: 1, docKind: "passport", docSerial: "", docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
       city: selectedCity, cityQuery,
     });
     setFormStep("vehicle");
