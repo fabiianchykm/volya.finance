@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
@@ -145,6 +145,8 @@ export function InsuranceFlow() {
     setShowVehicleModal(false);
     setEditingVehicle(false);
     setState((s) => ({ ...s, step: "offers", vehicle, periodId: period, offers: [], offersLoading: true }));
+    // Номер авто (напівпублічний) — у URL, щоб перезавантаження показало пропозиції.
+    window.history.replaceState(null, "", `?step=offers&plate=${encodeURIComponent(vehicle.number || state.plate)}`);
 
     // Fetch offers without blocking the UI transition (period передаємо явно).
     void fetchOffers(vehicle, state.buyer, period);
@@ -201,6 +203,46 @@ export function InsuranceFlow() {
       setState((s) => ({ ...s, offersLoading: false }));
     }
   };
+
+  // Відновлення з URL при перезавантаженні: за номером авто робимо lookup і одразу
+  // показуємо пропозиції (з дефолтним страхувальником; ПІБ/ДН — не в URL). Крок
+  // оформлення (/checkout) і так переживає reload через sessionStorage.
+  const didRestore = useRef(false);
+  useEffect(() => {
+    if (didRestore.current) return;
+    didRestore.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    const plate = sp.get("plate");
+    if (sp.get("step") !== "offers" || !plate) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/vehicle/${encodeURIComponent(plate)}`);
+        const json = await res.json();
+        if (!json.success) return; // не вдалося — лишаємось на головному екрані
+        const car = json.data;
+        const vehicle: VehicleData = {
+          number: car.number ?? plate,
+          vin: car.vin ?? "",
+          year: Number(car.year),
+          model: car.model ?? "",
+          mark: car.mark ?? "",
+          autoCategory: car.autoCategory ?? "B1",
+          ...(car.city?.id
+            ? { cityId: car.city.id, cityName: car.city.name_full_name_ua || car.city.name_ua || "", zone: car.city.zone }
+            : { cityId: 1, cityName: "м. Київ", zone: 1 }),
+          capacity: car.additionalParameters?.capacity ? Number(car.additionalParameters.capacity) : undefined,
+          numberOfSeats: car.additionalParameters?.numberOfSeats ? Number(car.additionalParameters.numberOfSeats) : undefined,
+          ownWeight: car.additionalParameters?.ownWeight ? Number(car.additionalParameters.ownWeight) : undefined,
+          totalWeight: car.additionalParameters?.totalWeight ? Number(car.additionalParameters.totalWeight) : undefined,
+        };
+        setState((s) => ({ ...s, plate, vehicle, step: "offers", offers: [], offersLoading: true }));
+        void fetchOffers(vehicle, DEFAULT_BUYER, 12);
+      } catch {
+        // мережевий збій — лишаємось на головному екрані
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Поки користувач на екрані оферів — тихо оновлюємо список кожні OFFERS_TTL_MS,
   // щоб не показувати застарілі ціни (без скелетона, щоб не миготіло).
@@ -259,7 +301,7 @@ export function InsuranceFlow() {
           loading={state.offersLoading}
           vehicle={state.vehicle}
           buyer={state.buyer}
-          onBack={() => setState((s) => ({ ...s, step: "hero" }))}
+          onBack={() => { setState((s) => ({ ...s, step: "hero" })); window.history.replaceState(null, "", window.location.pathname); }}
           onEdit={handleEditVehicle}
           onEditBuyer={handleEditBuyer}
           onSelectOffer={handleSelectOffer}
