@@ -624,21 +624,41 @@ export class UkaskoService {
     return list.filter((o) => o?.offerId && o.price > 0);
   }
 
+  // Внутрішні баги модуля страховика (ІНГО для житла: getCommission / 'module' of
+  // non-object / порожня відповідь тощо) — усе це помилки НА БОЦІ Ukasko, які ми не
+  // можемо виправити з клієнта. Показуємо одне чесне повідомлення.
+  private static readonly HOME_INSURER_BUG =
+    /ECONNRESET|Unable to connect|timeout|Undefined (index|offset)|ErrorException|discount_price|contractFile|getCommission|must be of the type|Argument \d+ passed to|of non-object|Trying to get property|'module'/i;
+
   // Створення замовлення (повне) → orderId. Далі спільні OTP/оплата, потім confirm.
   async createHomeOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
-    const raw = await this.withAuth((t) => postJson(`${HOME_BASE}/order/create`, orderData, t)) as Record<string, unknown>;
+    const FRIENDLY =
+      "На жаль, оформлення поліса житла зараз тимчасово недоступне з боку страхової компанії. Ми вже розбираємось — спробуйте, будь ласка, трохи згодом.";
+    let raw: Record<string, unknown>;
+    try {
+      raw = await this.withAuth((t) => postJson(`${HOME_BASE}/order/create`, orderData, t)) as Record<string, unknown>;
+    } catch (e) {
+      // Ukasko віддає HTTP 500 з PHP-виключенням при внутрішніх багах модуля —
+      // postJson кидає HttpError ще до парсингу. Ловимо й показуємо дружнє.
+      const body = e instanceof Error ? e.message : String(e);
+      console.error("[home order] http error:", body.slice(0, 800));
+      if (UkaskoService.HOME_INSURER_BUG.test(body)) throw new Error(FRIENDLY);
+      throw e;
+    }
     const status = raw.status as string | undefined;
     const msg = raw.message as string | undefined;
     if (status === "error" || status === "validation" || (msg && msg.includes('"result":false'))) {
-      const errText = JSON.stringify(raw.data ?? raw).slice(0, 300);
+      const errText = JSON.stringify(raw.data ?? raw).slice(0, 400);
       console.error("[home order] rejected. raw:", JSON.stringify(raw).slice(0, 800));
-      if (/ECONNRESET|Unable to connect|timeout|Undefined (index|offset)|ErrorException|discount_price|contractFile|getCommission|must be of the type|Argument \d+ passed to/i.test(`${msg ?? ""} ${errText}`)) {
-        throw new Error("На жаль, ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
-      }
+      if (UkaskoService.HOME_INSURER_BUG.test(`${msg ?? ""} ${errText}`)) throw new Error(FRIENDLY);
       throw new Error(`Страхова відхилила заявку: ${errText}`);
     }
     const first = (raw as { data?: Array<{ id: string; status?: string }> }).data?.[0];
-    if (!first?.id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    if (!first?.id) {
+      // 200-успіх, але без id (ще один прояв поламаного модуля страховика).
+      console.error("[home order] empty data. raw:", JSON.stringify(raw).slice(0, 800));
+      throw new Error(FRIENDLY);
+    }
     return first;
   }
 
