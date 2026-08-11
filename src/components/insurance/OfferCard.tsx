@@ -117,9 +117,20 @@ export function OfferCard({
   ].filter((d): d is { label: string; url: string } => !!d.url && d.url.trim().length > 0);
   const hasDocs = docs.length > 0;
   const hasFacts = offer.company.directSettlement === 1 || offer.company.compensationDays > 0;
-  // «Скоро»-послуги (евакуатор/страхування) тепер у «Додатково». Розгортання
-  // доступне, якщо є що показати: екстри, характеристики або документи.
-  const canExpand = hasFacts || hasDocs;
+
+  // Рейтинг МТСБУ (офіційні показники страховика) — показуємо у «Додатково».
+  const mr = offer.company.mtsbuRating;
+  const ratingParams = mr
+    ? ([
+        { label: "Загальна оцінка", v: mr.paramAssessment },
+        { label: "Якість обслуговування", v: mr.paramQuality },
+        { label: "Врегулювання виплат", v: mr.paramClaims },
+      ] as const).filter((p) => p.v != null)
+    : [];
+  const hasRating = ratingParams.length > 0;
+
+  // Розгортання доступне, якщо є що показати: характеристики, рейтинг або документи.
+  const canExpand = hasFacts || hasRating || hasDocs;
 
   const autolawyer = lawyerList[0] ?? null;
   const rowClass = (active: boolean) =>
@@ -339,6 +350,22 @@ export function OfferCard({
                   <Clock className="h-3.5 w-3.5 text-indigo-500" /> Виплата до {offer.company.compensationDays} дн.
                 </span>
               )}
+            </div>
+          )}
+
+          {/* Рейтинг МТСБУ — офіційні показники страховика */}
+          {hasRating && (
+            <div>
+              <p className="mb-2 text-xs font-semibold text-zinc-700">
+                Рейтинг МТСБУ{mr?.quarter ? <span className="font-normal text-zinc-400"> · {mr.quarter}</span> : null}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ratingParams.map((p) => (
+                  <span key={p.label} className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
+                    {p.label}: <span className="font-semibold text-zinc-800">{p.v}</span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
