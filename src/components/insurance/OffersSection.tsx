@@ -23,6 +23,22 @@ interface OffersSectionProps {
   periodId: number;
 }
 
+// Опис ОСЦПВ для «Детальніше» (продукт стандартизований законом — текст однаковий).
+const OSAGO_INFO = (
+  <div>
+    <p className="mb-1.5 text-xs font-semibold text-zinc-700">Що покриває ОСЦПВ</p>
+    <p className="text-xs leading-relaxed text-zinc-600">
+      Обовʼязкове страхування відповідальності водія: покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.
+    </p>
+    <ul className="mt-2 space-y-1 text-xs text-zinc-600">
+      <li>• Майно потерпілих (авто, споруди) — до <span className="font-semibold text-zinc-800">160 000 грн</span> на потерпілого</li>
+      <li>• Життя і здоровʼя потерпілих — до <span className="font-semibold text-zinc-800">320 000 грн</span> на потерпілого</li>
+      <li>• Діє по всій Україні; поліс електронний, зареєстрований у МТСБУ</li>
+    </ul>
+    <p className="mt-2 text-[11px] text-zinc-400">Власне авто ОСЦПВ не покриває — для цього КАСКО або міні-КАСКО.</p>
+  </div>
+);
+
 type SortKey = "price_asc" | "price_desc" | "discount_desc";
 
 // Сума знижки в грн для офера (0, якщо для цієї страхової знижки нема).
@@ -194,6 +210,7 @@ export function OffersSection({
                 index={i}
                 selected={selectedOfferId === offer.offerId}
                 discountEligible
+                productDescription={OSAGO_INFO}
                 selectedDgoId={dgoMap[offer.offerId] ?? null}
                 selectedAutolawyerId={autolawyerMap[offer.offerId] ?? null}
                 onSelect={() => setSelectedOfferId(offer.offerId)}

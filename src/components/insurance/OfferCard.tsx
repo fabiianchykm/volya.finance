@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins, Star } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -28,6 +28,8 @@ interface OfferCardProps {
   cornerBadge?: string;
   /** Показати «стару» ціну закресленою (знижки ОСЦПВ уже враховані в price). */
   discountEligible?: boolean;
+  /** Опис продукту в «Детальніше» (напр. пояснення ОСЦПВ). Передається лише де треба. */
+  productDescription?: ReactNode;
 }
 
 function transliterate(text: string) {
@@ -79,6 +81,7 @@ export function OfferCard({
   subtitle,
   cornerBadge,
   discountEligible,
+  productDescription,
 }: OfferCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -118,9 +121,7 @@ export function OfferCard({
   const hasDocs = docs.length > 0;
   const hasFacts = offer.company.directSettlement === 1 || offer.company.compensationDays > 0;
 
-  // Рейтинг страховика. company.rating — реальне різне значення (0..5). mtsbuRating
-  // (підпараметри) інколи приходить однаково (5/5/5) — тоді його НЕ показуємо, щоб
-  // не вводити в оману; показуємо лише якщо параметри справді відрізняються.
+  // Рейтинг страховика: загальний (company.rating) + рейтинг МТСБУ по параметрах.
   const overallRating = typeof offer.company.rating === "number" && offer.company.rating > 0 ? offer.company.rating : null;
   const mr = offer.company.mtsbuRating;
   const ratingParams = mr
@@ -130,11 +131,10 @@ export function OfferCard({
         { label: "Врегулювання виплат", v: mr.paramClaims },
       ] as const).filter((p) => p.v != null)
     : [];
-  const mrVaried = ratingParams.length >= 2 && new Set(ratingParams.map((p) => Number(p.v))).size > 1;
-  const hasRating = overallRating != null || mrVaried;
+  const hasRating = overallRating != null || ratingParams.length > 0;
 
-  // Розгортання доступне, якщо є що показати: характеристики, рейтинг або документи.
-  const canExpand = hasFacts || hasRating || hasDocs;
+  // Розгортання доступне, якщо є що показати: опис, характеристики, рейтинг, документи.
+  const canExpand = !!productDescription || hasFacts || hasRating || hasDocs;
 
   const autolawyer = lawyerList[0] ?? null;
   const rowClass = (active: boolean) =>
@@ -341,6 +341,8 @@ export function OfferCard({
       {/* Розгорнута секція — «скоро»-послуги, факти, документи */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
+          {/* Опис продукту (передається лише де треба, напр. ОСЦПВ) */}
+          {productDescription}
           {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
           {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
             <div className="flex flex-wrap gap-2">
@@ -370,7 +372,7 @@ export function OfferCard({
                     <span className="font-semibold text-zinc-900">{overallRating.toFixed(2)}</span> / 5
                   </span>
                 )}
-                {mrVaried && ratingParams.map((p) => (
+                {ratingParams.map((p) => (
                   <span key={p.label} className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
                     {p.label}: <span className="font-semibold text-zinc-800">{Number(p.v)} / 5</span>
                   </span>
