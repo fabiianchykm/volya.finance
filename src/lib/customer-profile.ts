@@ -133,13 +133,28 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
     localStorage.setItem(KEY, JSON.stringify(trimmed));
     localStorage.setItem(LAST_KEY, email);
 
-    // Синхронізація в БД під акаунтом (fire-and-forget). Сервер бере email із сесії:
-    // для гостей поверне 401 і просто нічого не збереже — це нормально.
-    void fetch("/api/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(map[email]),
-    }).catch(() => { /* офлайн/гість — ігноруємо */ });
+    // Синхронізація в БД під акаунтом. Сервер бере email із сесії: для гостей
+    // поверне 401 і нічого не збереже — це нормально (крос-девайс лише для залогінених).
+    // Надійність на масштабі:
+    //  • keepalive — запит доживає, навіть якщо користувач одразу переходить на крок
+    //    OTP/оплати або закриває вкладку (інакше браузер може обірвати fetch);
+    //  • легкий ретрай на транзієнтні збої (холодний старт Cloud Run, мережевий флап).
+    //    401 (гість) не ретраїмо — це очікувано.
+    const payload = JSON.stringify(map[email]);
+    const push = async (attempt = 0): Promise<void> => {
+      try {
+        const r = await fetch("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        });
+        if (!r.ok && r.status !== 401 && attempt < 2) throw new Error(String(r.status));
+      } catch {
+        if (attempt < 2) setTimeout(() => void push(attempt + 1), 700 * (attempt + 1));
+      }
+    };
+    void push();
   } catch {
     // localStorage може бути недоступний (приватний режим, квота) — просто пропускаємо.
   }
