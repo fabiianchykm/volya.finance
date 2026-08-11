@@ -632,8 +632,8 @@ export class UkaskoService {
     if (status === "error" || status === "validation" || (msg && msg.includes('"result":false'))) {
       const errText = JSON.stringify(raw.data ?? raw).slice(0, 300);
       console.error("[home order] rejected. raw:", JSON.stringify(raw).slice(0, 800));
-      if (/ECONNRESET|Unable to connect|timeout|Undefined (index|offset)|ErrorException|discount_price|contractFile/i.test(`${msg ?? ""} ${errText}`)) {
-        throw new Error("Страхова тимчасово недоступна. Спробуйте ще раз за хвилину або оберіть іншу пропозицію.");
+      if (/ECONNRESET|Unable to connect|timeout|Undefined (index|offset)|ErrorException|discount_price|contractFile|getCommission|must be of the type|Argument \d+ passed to/i.test(`${msg ?? ""} ${errText}`)) {
+        throw new Error("На жаль, ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
       }
       throw new Error(`Страхова відхилила заявку: ${errText}`);
     }
