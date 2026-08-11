@@ -18,23 +18,30 @@ import {
 //   тож чистимо; якщо owner порожній — це справжній гість, лишаємо його автозаповнення.
 export function ProfileSync() {
   const { data: session, status } = useSession();
+  const uid = (session?.user as { id?: string } | undefined)?.id ?? "";
+  const email = session?.user?.email ?? null;
 
   useEffect(() => {
     if (status === "loading") return;
-    const email = session?.user?.email ?? null;
+    // Рівноправна звʼязка: ключ акаунта — email (Google) АБО "phone:+380…" (вхід за
+    // номером). Раніше враховувався лише email → вхід за номером не тягнув профіль
+    // із БД і навіть чистив локальний кеш (гілка «Гість»).
+    const accountKey = email ? email.trim().toLowerCase() : (uid.startsWith("phone:") ? uid : null);
 
-    if (email) {
-      if (getProfileOwner() !== email.trim().toLowerCase()) {
+    if (accountKey) {
+      if (getProfileOwner() !== accountKey) {
         clearLocalProfiles();
-        setProfileOwner(email);
+        setProfileOwner(accountKey);
       }
       let cancelled = false;
+      // /api/profile ідентичнісно-обізнаний: вхід за номером отримає профіль,
+      // збережений під повʼязаним Google-акаунтом (і навпаки).
       fetch("/api/profile")
         .then((r) => (r.ok ? r.json() : null))
         .then((j) => {
           if (cancelled) return;
           if (j?.profile) importServerProfile(j.profile);
-          setProfileOwner(email); // importServerProfile міг не спрацювати — фіксуємо власника
+          setProfileOwner(accountKey); // importServerProfile міг не спрацювати — фіксуємо власника
         })
         .catch(() => { /* ignore */ });
       return () => { cancelled = true; };
@@ -42,7 +49,7 @@ export function ProfileSync() {
 
     // Гість. Якщо кеш належав акаунту — це вихід (у т.ч. через reload): чистимо.
     if (getProfileOwner()) clearLocalProfiles();
-  }, [session?.user?.email, status]);
+  }, [email, uid, status]);
 
   return null;
 }
