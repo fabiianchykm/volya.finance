@@ -118,7 +118,10 @@ export function OfferCard({
   const hasDocs = docs.length > 0;
   const hasFacts = offer.company.directSettlement === 1 || offer.company.compensationDays > 0;
 
-  // Рейтинг МТСБУ (офіційні показники страховика) — показуємо у «Додатково».
+  // Рейтинг страховика. company.rating — реальне різне значення (0..5). mtsbuRating
+  // (підпараметри) інколи приходить однаково (5/5/5) — тоді його НЕ показуємо, щоб
+  // не вводити в оману; показуємо лише якщо параметри справді відрізняються.
+  const overallRating = typeof offer.company.rating === "number" && offer.company.rating > 0 ? offer.company.rating : null;
   const mr = offer.company.mtsbuRating;
   const ratingParams = mr
     ? ([
@@ -127,7 +130,8 @@ export function OfferCard({
         { label: "Врегулювання виплат", v: mr.paramClaims },
       ] as const).filter((p) => p.v != null)
     : [];
-  const hasRating = ratingParams.length > 0;
+  const mrVaried = ratingParams.length >= 2 && new Set(ratingParams.map((p) => Number(p.v))).size > 1;
+  const hasRating = overallRating != null || mrVaried;
 
   // Розгортання доступне, якщо є що показати: характеристики, рейтинг або документи.
   const canExpand = hasFacts || hasRating || hasDocs;
@@ -353,16 +357,21 @@ export function OfferCard({
             </div>
           )}
 
-          {/* Рейтинг МТСБУ — офіційні показники страховика */}
+          {/* Рейтинг страховика */}
           {hasRating && (
             <div>
               <p className="mb-2 text-xs font-semibold text-zinc-700">
-                Рейтинг МТСБУ{mr?.quarter ? <span className="font-normal text-zinc-400"> · {mr.quarter}</span> : null}
+                Рейтинг страховика{mr?.quarter ? <span className="font-normal text-zinc-400"> · МТСБУ {mr.quarter}</span> : null}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {ratingParams.map((p) => (
+              <div className="flex flex-wrap items-center gap-2">
+                {overallRating != null && (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-1 text-xs text-zinc-700">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    <span className="font-semibold text-zinc-900">{overallRating.toFixed(2)}</span> / 5
+                  </span>
+                )}
+                {mrVaried && ratingParams.map((p) => (
                   <span key={p.label} className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                     {p.label}: <span className="font-semibold text-zinc-800">{Number(p.v)} / 5</span>
                   </span>
                 ))}
