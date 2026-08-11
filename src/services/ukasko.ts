@@ -33,8 +33,8 @@ const AUTH_URL = isDev
 
 // Міні-КАСКО НЕ має {test/prod}-префікса — ендпоінти живуть просто під /api.
 const MINI_BASE = `${AUTH_URL}/insurance/mini-kasko`;
-// Страхування житла — теж без {mode}, під /api.
-const HOME_BASE = `${AUTH_URL}/insurance/home`;
+// Страхування житла — з префіксом {mode} (як ОСЦПВ): /api/prod|test/insurance/home.
+const HOME_BASE = `${BASE_URL}/insurance/home`;
 
 // Модулі страхових Зеленої карти (прод): 9 УСГ, 10 ВУСО, 11 ТАС, 17 УТІКО,
 // 18 ОРАНТА, 29 ІНГО, 31 АРКС. Використовуються лише для деградованого fallback

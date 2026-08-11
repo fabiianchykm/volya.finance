@@ -8,22 +8,19 @@ info:
     ## Загальний потік
 
     ```
-    1.  GET  /insurance/home/tariffs               → вибір комісії агента
-    2.  POST /insurance/home/calculator            → розрахунок вартості
-    3.  POST /insurance/home/order/create          → створення чернетки (statusId = 1)
-    4.  POST /insurance/home/order/create          → створення замовлення (statusId = 5)
-    5.  GET  /payment-systems/list?companyId=...   → список платіжних систем (commissionPaidBy)
-    6.  POST /orders/send-otp/{orderId}            → надсилання OTP (type: 1 або 2)
-    7.  POST /orders/check-otp/{orderId}           → перевірка OTP
-    8.  POST /orders/get-invoice                   → генерація платіжного посилання
+    1.  GET  /{mode}/insurance/home/tariffs          → вибір комісії агента
+    2.  POST /{mode}/insurance/home/calculator       → розрахунок вартості
+    3.  POST /{mode}/insurance/home/order/create     → створення чернетки (statusId = 1)
+    4.  POST /{mode}/insurance/home/order/create     → створення замовлення (statusId = 5)
+    5.  GET  /payment-systems/list?companyId=...     → список платіжних систем (commissionPaidBy)
+    6.  POST /orders/send-otp/{orderId}              → надсилання OTP (type: 1 або 2)
+    7.  POST /orders/check-otp/{orderId}             → перевірка OTP
+    8.  POST /orders/get-invoice                     → генерація платіжного посилання
     *** Redirect клієнта на invoiceLink ***
-    9.  GET  /payments/check-invoice               → очікування оплати (опитувати до status_id = 2)
-    10. POST /insurance/home/contract/confirm      → підтвердження договору
-    11. POST /insurance/home/contract/take         → отримання посилань на файли поліса
+    9.  GET  /payments/check-invoice                 → очікування оплати (опитувати до status_id = 2)
+    10. POST /{mode}/insurance/home/contract/confirm → підтвердження договору
+    11. POST /{mode}/insurance/home/contract/take    → отримання посилань на файли поліса
     ```
-
-    **Увага:** на відміну від деяких інших продуктів, ендпоінти Home Insurance
-    **не містять** сегмент `{mode}` у шляху (немає `test`/`prod` перемикача).
 
 servers:
   - url: /api
@@ -47,6 +44,20 @@ components:
       description: |
         Bearer токен авторизації. Передавати у заголовку:
         `Authorization: Bearer <token>`
+
+  parameters:
+    mode:
+      name: mode
+      in: path
+      required: true
+      description: |
+        Режим роботи:
+        - `test` — тестове середовище (транзакції не реальні)
+        - `prod` — продакшн (реальні страхові договори)
+      schema:
+        type: string
+        enum: [test, prod]
+      example: prod
 
   responses:
     Unauthorized:
@@ -254,6 +265,7 @@ components:
           example: 0
         innStatus:
           type: integer
+          description: Статус перевірки ІПН. `1` — потребує ІПН, `0` — не потребує
           example: 0
         customOptions:
           type: object
@@ -379,7 +391,7 @@ components:
 
     City:
       type: object
-      description: Місто. Отримується через `/api/directories/cities/find`
+      description: Місто. Отримується через `/api/directories/home/cities/find`
       required: [id]
       properties:
         id:
@@ -395,6 +407,11 @@ components:
           nullable: true
           description: Повна назва з областю
           example: "м. Харків, Харківська обл., Україна"
+        region:
+          type: string
+          nullable: true
+          description: Назва області. Повертається `/directories/home/cities/find` та `/all`
+          example: "Харківська обл."
 
     PolicyholderInfo:
       type: object
@@ -591,7 +608,10 @@ components:
           type: string
           example: "01JXXXXXXXXXXXXXXXXXXXXXXXXX"
         status_id:
-          $ref: '#/components/schemas/InvoiceStatus'
+          type: integer
+          deprecated: true
+          description: Застаріле поле, завжди `0`. Для статусу оплати використовувати `invoice.status_id`
+          example: 0
         created_at:
           type: string
           format: date-time
@@ -947,13 +967,15 @@ components:
 
 paths:
 
-  /insurance/home/tariffs:
+  /{mode}/insurance/home/tariffs:
     get:
       tags: [Home]
       summary: Отримати доступні тарифи комісії
       description: |
         Повертає список доступних значень earnings (комісії агента).
       operationId: getHomeTariffs
+      parameters:
+        - $ref: '#/components/parameters/mode'
       responses:
         '200':
           description: Список тарифів
@@ -972,13 +994,15 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /insurance/home/calculator:
+  /{mode}/insurance/home/calculator:
     post:
       tags: [Home]
       summary: Розрахувати вартість страхування
       description: |
         Розраховує вартість поліса та повертає список пропозицій від страховиків.
       operationId: calculateHome
+      parameters:
+        - $ref: '#/components/parameters/mode'
       requestBody:
         required: true
         content:
@@ -1051,7 +1075,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /insurance/home/order/create:
+  /{mode}/insurance/home/order/create:
     post:
       tags: [Home]
       summary: Створити замовлення (чернетку або повне)
@@ -1063,6 +1087,8 @@ paths:
            Зберегти `id` з відповіді.
         2. Повторний виклик з повними даними + `orderId` з кроку 1 — повне замовлення.
       operationId: createHomeOrder
+      parameters:
+        - $ref: '#/components/parameters/mode'
       requestBody:
         required: true
         content:
@@ -1260,7 +1286,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /insurance/home/contract/confirm:
+  /{mode}/insurance/home/contract/confirm:
     post:
       tags: [Home]
       summary: Підтвердити договір у страховика
@@ -1268,6 +1294,8 @@ paths:
         Підтверджує договір після успішного `/check-otp`.
         `contractId` з відповіді передавати як `contractId` у `/contract/take`.
       operationId: confirmHomeContract
+      parameters:
+        - $ref: '#/components/parameters/mode'
       requestBody:
         required: true
         content:
@@ -1361,17 +1389,22 @@ paths:
                         type: string
                         description: |
                           Текстовий статус оплати:
-                          - `"waiting"` — очікуємо підтвердження від платіжної системи (`status_id: 1`)
-                          - `"paid"` — оплату підтверджено (`status_id: 2`)
+                          - `"waiting"` — очікуємо підтвердження оплати (`status_id: 0` або `1`)
+                          - `"success"` — оплату підтверджено (`status_id: 2`)
+                          - `"fail"` — помилка або термін минув (`status_id: 3`, `4`, або прострочений `0`/`1`)
+                        enum: [waiting, success, fail]
                         example: "waiting"
                       message:
                         type: string
-                        description: Опис поточного статусу українською
+                        nullable: true
+                        description: |
+                          Опис поточного статусу українською. `null` при `status: "success"`
                         example: "Очікуємо підтвердження оплати від платіжної системи."
                       final_url:
                         type: string
                         format: uri
                         nullable: true
+                        description: "Заповнюється лише при `status: \"success\"`, інакше `null`"
                         example: null
                       invoice:
                         $ref: '#/components/schemas/Invoice'
@@ -1396,7 +1429,7 @@ paths:
                     created_at: "2026-06-09T15:05:38.000000Z"
                     updated_at: "2026-06-09T15:05:40.000000Z"
 
-  /insurance/home/contract/take:
+  /{mode}/insurance/home/contract/take:
     post:
       tags: [Home]
       summary: Отримати посилання на файли поліса
@@ -1407,6 +1440,8 @@ paths:
         відповідь містить прямі URL на PDF, розміщені на сервері UConnect.
         Якщо `contract` — `null`, файл ще генерується; повторити запит через кілька секунд.
       operationId: takeHomeContract
+      parameters:
+        - $ref: '#/components/parameters/mode'
       requestBody:
         required: true
         content:
@@ -1632,6 +1667,7 @@ paths:
                   - id: 1
                     name: "Київ"
                     name_full_name_ua: "м. Київ, Україна"
+                    region: null
 
   /directories/home/cities/all:
     get:
