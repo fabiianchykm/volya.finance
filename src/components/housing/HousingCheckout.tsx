@@ -139,9 +139,31 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       docDate: active?.date ?? (same ? p.docDate : ""),
       street: p.street, house: p.house,
     }));
-    // Місто: підставляємо лише текст запиту (щоб користувач вибрав із довідника житла).
+    // Місто: підставляємо текст і одразу шукаємо збіг у довіднику ЖИТЛА, щоб проставити
+    // selectedCity (інакше валідація «Оберіть місто зі списку» падає при заповненому полі).
     const cityText = p.cityQuery || p.city?.name_full_name_ua || p.city?.name_ua;
-    if (cityText) setCityQuery(cityShort(cityText));
+    if (cityText) {
+      const short = cityShort(cityText);
+      setCityQuery(short);
+      void resolveHomeCity(short);
+    }
+  };
+
+  // Знаходить місто в довіднику житла за назвою й авто-обирає точний (або єдиний) збіг.
+  const resolveHomeCity = async (name: string) => {
+    try {
+      const res = await fetch(`/api/home/cities?q=${encodeURIComponent(name)}`);
+      const json = await res.json();
+      if (!json.success) return;
+      const list = (json.data ?? []) as HomeCity[];
+      const key = name.trim().toLowerCase();
+      const match = list.find((c) => cityShort(c.name_full_name_ua || c.name).toLowerCase() === key) ?? (list.length === 1 ? list[0] : null);
+      if (match) {
+        setSelectedCity(match);
+        setCityQuery(cityShort(match.name_full_name_ua || match.name));
+        setCityResults([]);
+      }
+    } catch { /* ignore */ }
   };
   const { status: authStatus } = useSession();
   const didAutofill = useRef(false);
@@ -298,8 +320,6 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
           <h2 className="text-lg font-bold text-zinc-900">Оформлення страхування житла</h2>
           <p className="text-sm text-zinc-500">
             <span className="font-semibold text-zinc-900">{ctx.offer.price} грн</span>
-            {" · "}{ctx.homeType === "flat" ? "Квартира" : "Будинок"}
-            {" · "}покриття {(ctx.insuranceAmount / 1000).toLocaleString("uk-UA")} тис. грн
           </p>
         </div>
       </div>
