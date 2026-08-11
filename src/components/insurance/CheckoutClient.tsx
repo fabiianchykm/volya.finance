@@ -8,7 +8,7 @@ import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
-import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
@@ -515,7 +515,9 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     const last = loadLastProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (last) applyProfile(last);
-     
+    // Fallback: кеш ще порожній (ProfileSync не встиг) — тягнемо профіль напряму.
+    else void fetchServerProfile().then((p) => { if (p) applyProfile(p); });
+
   }, [authStatus]);
 
   // Email — окремий обробник: якщо введений email збігається зі збереженим профілем,

@@ -172,6 +172,25 @@ export function loadLastProfile(): CustomerProfile | null {
 // saveProfile() додатково пушить у БД (fire-and-forget); на логіні ProfileSync
 // тягне профіль акаунта в localStorage.
 
+/** Підтягнути профіль акаунта з БД (ідентичнісно-обізнаний /api/profile) і покласти
+ *  в локальний кеш. Використовується як fallback у checkout, коли ProfileSync ще не
+ *  встиг наповнити localStorage (гонка при щойно виконаному вході). Повертає профіль
+ *  або null (гість / немає збереженого). */
+export async function fetchServerProfile(): Promise<CustomerProfile | null> {
+  try {
+    const r = await fetch("/api/profile");
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (j?.profile) {
+      importServerProfile(j.profile);
+      return j.profile as CustomerProfile;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /** Записати профіль із сервера в локальний кеш і зробити його активним. */
 export function importServerProfile(p: CustomerProfile): void {
   try {

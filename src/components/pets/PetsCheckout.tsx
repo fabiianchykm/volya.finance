@@ -11,7 +11,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, cityShort, cityLong } from "@/lib/utils";
 import type { PetsOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 
 // Анкета оформлення страхування тварин: дані улюбленця + власника → order/create
@@ -110,7 +110,9 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
     const last = loadLastProfile();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (last) applyProfile(last);
-     
+    // Fallback: кеш ще порожній (ProfileSync не встиг) — тягнемо профіль напряму.
+    else void fetchServerProfile().then((p) => { if (p) applyProfile(p); });
+
   }, [authStatus]);
 
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
