@@ -313,8 +313,8 @@ export function OfferCard({
           </div>
         )}
 
-        {/* Блок 3: автоюрист + ДГО */}
-        <div className="flex flex-1 flex-col justify-center">
+        {/* Блок 3: автоюрист + ДГО — центруємо в колонці (інакше тулиться ліворуч) */}
+        <div className="flex flex-1 flex-col items-center justify-center">
           {optionsBlock}
         </div>
 
