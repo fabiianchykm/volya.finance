@@ -241,7 +241,7 @@ export function InsuranceFlow() {
         // мережевий збій — лишаємось на головному екрані
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Поки користувач на екрані оферів — тихо оновлюємо список кожні OFFERS_TTL_MS,
