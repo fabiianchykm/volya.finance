@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
-import { InviteFriendCard } from "./InviteFriendCard";
 import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
 import type { InsuranceOffer } from "@/types/api";
@@ -215,7 +214,6 @@ export function OffersSection({
         </div>{/* кінець лівої колонки */}
 
         {/* Права колонка: реферальний банер */}
-        <InviteFriendCard />
 
       </div>{/* кінець flex row */}
       </div>

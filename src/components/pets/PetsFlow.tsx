@@ -7,7 +7,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
 import { OfferCard } from "@/components/insurance/OfferCard";
-import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { PetsCheckout, type PetsCheckoutCtx } from "./PetsCheckout";
 import type { PetsOffer, InsuranceOffer } from "@/types/api";
@@ -127,7 +126,6 @@ export function PetsFlow() {
                     onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   />
                 </div>
-                <InviteFriendCard />
               </div>
             ) : selectedOffer ? (
               <PetsCheckout

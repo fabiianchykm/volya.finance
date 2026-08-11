@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { OfferCard } from "@/components/insurance/OfferCard";
-import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { Navbar } from "@/components/layout/Navbar";
 import { TourismCheckout, type TourismCheckoutCtx } from "./TourismCheckout";
 import type { TourismOffer, InsuranceOffer } from "@/types/api";
@@ -154,7 +153,6 @@ export function TourismFlow() {
                     onSelect={(offer) => { setSelectedOffer(offer); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   />
                 </div>
-                <InviteFriendCard />
               </div>
             ) : selectedOffer ? (
               <TourismCheckout

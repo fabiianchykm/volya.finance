@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
-import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { LeadModal, type LeadMode } from "@/components/layout/LeadModal";
 import { MiniKaskoCheckout, type MiniKaskoContext } from "./MiniKaskoCheckout";
 import { cityShort, cityLong } from "@/lib/utils";
@@ -336,7 +335,6 @@ function MiniKaskoOffers({
           )}
         </div>
 
-        <InviteFriendCard />
       </div>
 
       <LeadModal mode={leadMode} source="Міні-КАСКО — прорахунок консультанта" onClose={() => setLeadMode(null)} />

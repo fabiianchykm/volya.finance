@@ -9,7 +9,6 @@ import { parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
-import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { GreenCardCheckout, type GreenCardContext } from "./GreenCardCheckout";
 import type { GreenCardOffer, InsuranceOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
@@ -328,7 +327,6 @@ function GreenCardOffers({
         </div>{/* кінець лівої колонки */}
 
         {/* Права колонка: запросити друга */}
-        <InviteFriendCard />
       </div>
     </div>
   );

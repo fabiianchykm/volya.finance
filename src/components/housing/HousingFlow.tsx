@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
-import { InviteFriendCard } from "@/components/insurance/InviteFriendCard";
 import { HousingCheckout, type HousingContext } from "./HousingCheckout";
 import type { HomeOffer, InsuranceOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
@@ -258,7 +257,6 @@ function HousingOffers({
           )}
         </div>
 
-        <InviteFriendCard />
       </div>
     </div>
   );
