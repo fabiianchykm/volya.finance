@@ -48,6 +48,37 @@ export async function saveReview(r: {
   `;
 }
 
+// ── Адмінка ──────────────────────────────────────────────────────────────
+export interface AdminReview extends Review {
+  email: string;
+}
+
+export async function getAllReviews(limit = 300): Promise<AdminReview[]> {
+  if (!sql) return [];
+  await ensureSchema();
+  const rows = await sql`
+    SELECT id, insurer, email, author_name, rating, text, product, created_at
+    FROM insurer_reviews ORDER BY created_at DESC LIMIT ${limit}
+  `;
+  return rows.map((r) => ({
+    id: Number(r.id),
+    insurer: r.insurer as string,
+    email: r.email as string,
+    authorName: (r.author_name as string) ?? null,
+    rating: Number(r.rating),
+    text: r.text as string,
+    product: (r.product as string) ?? null,
+    createdAt: (r.created_at as Date).toISOString?.() ?? String(r.created_at),
+  }));
+}
+
+export async function deleteReview(id: number): Promise<boolean> {
+  if (!sql) return false;
+  await ensureSchema();
+  const res = await sql`DELETE FROM insurer_reviews WHERE id = ${id}`;
+  return (res.count ?? 0) > 0;
+}
+
 // Чи вже лишав цей email відгук про цю СК (щоб один відгук на людину).
 export async function hasReviewed(insurer: string, email: string): Promise<boolean> {
   if (!sql) return false;

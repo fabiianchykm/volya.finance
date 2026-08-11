@@ -16,8 +16,8 @@ import { trackEvent } from "@/lib/analytics";
 // герой для форми (вид, дата, строк), далі світлий екран пропозицій.
 
 const PET_TYPES = [
-  { value: "cat", label: "Кіт / кішка", emoji: "🐱" },
-  { value: "dog", label: "Собака", emoji: "🐶" },
+  { value: "cat", label: "Кіт / кішка" },
+  { value: "dog", label: "Собака" },
 ];
 const PERIODS = [
   { value: "6m", label: "6 місяців" },
@@ -170,7 +170,7 @@ export function PetsFlow() {
                         className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition-colors ${
                           petType === p.value ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
                         }`}>
-                        <span className="text-base">{p.emoji}</span> {p.label}
+                        {p.label}
                       </button>
                     ))}
                   </div>
