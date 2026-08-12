@@ -1,19 +1,10 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronRight, Search, Car, Phone, ShieldCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPlate } from "@/lib/utils";
-
-// КАСКО оформлюється через заявку, тож кроки інші, ніж у автоцивілки:
-// номер авто → дані авто → телефон → дзвінок менеджера.
-const heroSteps = [
-  { icon: Search, label: "Номер авто" },
-  { icon: Car, label: "Дані авто" },
-  { icon: Phone, label: "Ваш телефон" },
-  { icon: ShieldCheck, label: "Менеджер передзвонить" },
-];
 
 interface KaskoHeroProps {
   onSearch: (plate: string) => void;
@@ -62,22 +53,6 @@ export function KaskoHero({ onSearch, loading, titleLead, titleHighlight, subtit
           <p className="mx-auto max-w-xl text-base text-zinc-300 sm:text-lg">
             {subtitle}
           </p>
-
-          <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="mx-auto flex w-max items-center gap-1.5 px-4 sm:gap-2.5">
-              {heroSteps.map(({ icon: Icon, label }, i) => (
-                <Fragment key={label}>
-                  <div className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] px-3.5 py-2 ring-1 ring-white/10 backdrop-blur-sm">
-                    <Icon className="h-4 w-4 text-indigo-300" />
-                    <span className="whitespace-nowrap text-sm font-medium text-zinc-200">{label}</span>
-                  </div>
-                  {i < heroSteps.length - 1 && (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-white/25" />
-                  )}
-                </Fragment>
-              ))}
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8 w-full pt-4">
             <div className="relative w-full flex justify-center">
