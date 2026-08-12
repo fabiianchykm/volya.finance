@@ -80,6 +80,24 @@ export function ensureSchema(): Promise<void> {
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS insurer_reviews_insurer_idx ON insurer_reviews (insurer)`;
+      // Ліди воронки: клієнт заповнив дані й перейшов до підтвердження, але міг не
+      // завершити. Для передзвону/доведення — з контактом і статусом обробки.
+      await sql`
+        CREATE TABLE IF NOT EXISTS leads (
+          id           bigserial PRIMARY KEY,
+          product      text,
+          customer_name text,
+          phone        text,
+          email        text,
+          company      text,
+          price        numeric,
+          car          text,
+          stage        text,
+          status       text NOT NULL DEFAULT 'new',
+          created_at   timestamptz NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS leads_created_idx ON leads (created_at DESC)`;
     })().catch((e) => {
       schemaPromise = null;
       throw e;

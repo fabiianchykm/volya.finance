@@ -10,7 +10,7 @@ import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, formatCompanyName, cityShort, cityLong } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 
@@ -245,6 +245,14 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       await fetch("/api/insurance/otp", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "send", orderId: id }),
+      });
+      trackCheckoutStarted({
+        product: "Туристичне",
+        name: [tourists[0]?.surnameLat, tourists[0]?.nameLat].filter(Boolean).join(" "),
+        company: ctx.offer.company?.publicName || ctx.offer.name || ctx.offer.title,
+        price: ctx.offer.price,
+        phone: c.phone ? `+380${c.phone.replace(/\D/g, "")}` : undefined,
+        email: c.email,
       });
       setStep("otp");
     } catch (err) {

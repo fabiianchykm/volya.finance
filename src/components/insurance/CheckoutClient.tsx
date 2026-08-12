@@ -15,7 +15,7 @@ const OSAGO_DOC_KIND: Record<1 | 3 | 4, DocKind> = { 1: "passport", 3: "idcard",
 import { useSession } from "next-auth/react";
 import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { cityShort, cityLong } from "@/lib/utils";
 
 // Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
@@ -223,6 +223,15 @@ export function CheckoutClient() {
         body: JSON.stringify({ action: "send", orderId: declaredId }),
       });
 
+      trackCheckoutStarted({
+        product: "Автоцивілка",
+        name: [customer?.surname, customer?.name, customer?.patronymic].filter(Boolean).join(" "),
+        company: offer?.companyNamePublic || offer?.companyName,
+        price: offer?.price,
+        car: [vehicle?.mark, vehicle?.model].filter(Boolean).join(" "),
+        phone: customer?.phone,
+        email: customer?.email,
+      });
       setOrderId(declaredId);
       setStep("otp");
     } catch (e) {

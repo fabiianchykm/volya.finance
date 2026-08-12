@@ -9,7 +9,7 @@ import { OtpModal } from "@/components/insurance/OtpModal";
 import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { HomeOffer } from "@/types/api";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong } from "@/lib/utils";
@@ -302,6 +302,15 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       await fetch("/api/insurance/otp", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "send", orderId: id }),
+      });
+      // Лід: клієнт заповнив дані й перейшов до підтвердження (навіть якщо не завершить).
+      trackCheckoutStarted({
+        product: "Житло",
+        name: [f.surnameUa, f.nameUa, f.patronymicUa].filter(Boolean).join(" "),
+        company: ctx.offer.companyNamePublic || ctx.offer.companyName,
+        price: ctx.offer.price,
+        phone: `+380${f.phone.replace(/\D/g, "")}`,
+        email: f.email,
       });
       setStep("otp");
     } catch (err) {

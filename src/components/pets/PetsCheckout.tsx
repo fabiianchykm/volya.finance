@@ -10,7 +10,7 @@ import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, cityShort, cityLong } from "@/lib/utils";
 import type { PetsOffer } from "@/types/api";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 
@@ -213,6 +213,14 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       await fetch("/api/insurance/otp", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "send", orderId: id }),
+      });
+      trackCheckoutStarted({
+        product: "Тварини",
+        name: [f.surnameUa, f.nameUa, f.patronymicUa].filter(Boolean).join(" "),
+        company: ctx.offer.companyNamePublic || ctx.offer.companyName,
+        price: ctx.offer.price,
+        phone: `+380${f.phone.replace(/\D/g, "")}`,
+        email: f.email,
       });
       setStep("otp");
     } catch (err) {

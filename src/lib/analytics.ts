@@ -29,3 +29,27 @@ export function trackEvent(event: string, params: EventParams = {}): void {
     // Аналітика ніколи не має ламати основний потік.
   }
 }
+
+// Лід воронки: клієнт заповнив дані й перейшов до підтвердження (OTP/оплата).
+// Шлемо в /api/track → зберігається в БД (/admin/leads) + пінг у sales-Telegram.
+// keepalive — щоб долетіло, навіть якщо клієнт одразу залишить сторінку.
+export interface CheckoutLead {
+  product: string;
+  name?: string;
+  company?: string;
+  price?: number;
+  car?: string;
+  phone?: string;
+  email?: string;
+}
+export function trackCheckoutStarted(context: CheckoutLead): void {
+  if (typeof window === "undefined") return;
+  try {
+    void fetch("/api/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ event: "checkout_started", step: "otp", context }),
+      keepalive: true,
+    }).catch(() => { /* воронка не має ламати оформлення */ });
+  } catch { /* ignore */ }
+}

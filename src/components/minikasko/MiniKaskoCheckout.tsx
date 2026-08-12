@@ -9,7 +9,7 @@ import { OtpModal } from "@/components/insurance/OtpModal";
 import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { MiniKaskoOffer } from "@/types/api";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
@@ -238,6 +238,14 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       await fetch("/api/mini-kasko/order", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "send-otp", orderId: id, channel: "email" }),
+      });
+      trackCheckoutStarted({
+        product: "Міні-КАСКО",
+        name: [f.surnameUa, f.nameUa, f.patronymicUa].filter(Boolean).join(" "),
+        company: ctx.offer.companyNamePublic || ctx.offer.companyName,
+        price: ctx.offer.price,
+        phone: `+380${f.phone.replace(/\D/g, "")}`,
+        email: f.email,
       });
       setStep("otp");
     } catch (err) {

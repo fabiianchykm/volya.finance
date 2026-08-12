@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest } from "@/lib/api-guard";
 import { trySendTelegram, escapeHtml } from "@/lib/telegram";
+import { saveLead } from "@/lib/leads";
 
-// Клієнтські події воронки → Telegram:
-//   payment_started → sales-бот («розпочато оплату», з контекстом покупки)
-//   abandoned       → dev-бот («зрив на пізньому кроці» — лише otp/payment, щоб не спамити)
+// Клієнтські події воронки → Telegram (+ БД для лідів):
+//   checkout_started → лід у БД (/admin/leads) + пінг у sales («почав оформлення»)
+//   payment_started  → sales-бот («розпочато оплату», з контекстом покупки)
+//   abandoned        → dev-бот («зрив на пізньому кроці» — лише otp/payment, щоб не спамити)
 // Усе fire-and-forget з боку клієнта; тут просто акуратно маршрутизуємо.
 
 interface TrackContext {
+  product?: string;
+  name?: string;
   company?: string;
   price?: number;
   car?: string;
@@ -48,6 +52,35 @@ export async function POST(req: NextRequest) {
     : ctx.email
       ? `📧 <code>${s(ctx.email)}</code>`
       : null;
+
+  if (event === "checkout_started") {
+    // Лід у БД (для /admin/leads) — не має ламати відповідь клієнту.
+    try {
+      await saveLead({
+        product: ctx.product ?? null,
+        customerName: ctx.name ?? null,
+        phone: ctx.phone ?? null,
+        email: ctx.email ?? null,
+        company: ctx.company ?? null,
+        price: typeof ctx.price === "number" ? ctx.price : null,
+        car: ctx.car ?? null,
+        stage: step || "otp",
+      });
+    } catch (e) {
+      console.error("[track] saveLead error:", e instanceof Error ? e.message : e);
+    }
+    const lines = [
+      `📝 <b>Почав оформлення${ctx.product ? ` · ${s(ctx.product)}` : ""}</b>`,
+      "",
+      ctx.name ? `👤 ${s(ctx.name)}` : null,
+      company,
+      car,
+      price,
+      contact,
+    ].filter(Boolean);
+    await trySendTelegram("sales", lines.join("\n"));
+    return NextResponse.json({ success: true });
+  }
 
   if (event === "payment_started") {
     const lines = ["💳 <b>Розпочато оплату</b>", "", company, car, price, contact].filter(Boolean);
