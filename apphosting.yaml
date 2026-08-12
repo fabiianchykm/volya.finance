@@ -27,6 +27,13 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Google Ads conversion ID (AW-…, публічне). Той самий gtag.js — для відстеження
+  # конверсій рекламних кампаній. Конкретні конверсії додаються event-снипетами окремо.
+  - variable: NEXT_PUBLIC_GOOGLE_ADS_ID
+    value: AW-18372219221
+    availability:
+      - BUILD
+      - RUNTIME
   # Google Tag Manager container ID (публічне, GTM-XXXXXXX). Розкоментуй і встав
   # реальний ID від маркетологів — контейнер підвантажиться автоматично.
   # - variable: NEXT_PUBLIC_GTM_ID
