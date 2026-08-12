@@ -93,11 +93,12 @@ export function InsuranceFlow() {
             ? Number(car.additionalParameters.totalWeight)
             : undefined,
         };
-        // Дата народження власника з реєстру → одразу коректна ціна за реальним віком
-        // (без дефолту/припущень). "YYYY-MM-DD" → "DD.MM.YYYY". Нема власника → лишаємо "".
-        const ownerDob = typeof car.birthDateOwner === "string" && /^\d{4}-\d{2}-\d{2}$/.test(car.birthDateOwner)
-          ? car.birthDateOwner.split("-").reverse().join(".")
+        // Реєстр віддає лише ВІК: у birthDateOwner правильний РІК, а день/місяць = сьогодні
+        // (фейкові). Тож беремо лише рік → "01.01.РРРР" (для ціни важливий вік/рік, не день).
+        const ownerYear = typeof car.birthDateOwner === "string" && /^\d{4}-\d{2}-\d{2}$/.test(car.birthDateOwner)
+          ? car.birthDateOwner.slice(0, 4)
           : "";
+        const ownerDob = ownerYear ? `01.01.${ownerYear}` : "";
         setState((s) => ({ ...s, plate, vehicle, buyer: { ...s.buyer, birthDate: ownerDob } }));
       } else {
         // Lookup failed — show modal with manual input
@@ -240,10 +241,11 @@ export function InsuranceFlow() {
           ownWeight: car.additionalParameters?.ownWeight ? Number(car.additionalParameters.ownWeight) : undefined,
           totalWeight: car.additionalParameters?.totalWeight ? Number(car.additionalParameters.totalWeight) : undefined,
         };
-        // Дата народження власника з реєстру → коректна ціна і після перезавантаження.
-        const ownerDob = typeof car.birthDateOwner === "string" && /^\d{4}-\d{2}-\d{2}$/.test(car.birthDateOwner)
-          ? car.birthDateOwner.split("-").reverse().join(".")
+        // Лише рік із реєстру (день/місяць фейкові = сьогодні) → "01.01.РРРР".
+        const ownerYear = typeof car.birthDateOwner === "string" && /^\d{4}-\d{2}-\d{2}$/.test(car.birthDateOwner)
+          ? car.birthDateOwner.slice(0, 4)
           : "";
+        const ownerDob = ownerYear ? `01.01.${ownerYear}` : "";
         const restoredBuyer = { ...DEFAULT_BUYER, birthDate: ownerDob };
         setState((s) => ({ ...s, plate, vehicle, buyer: restoredBuyer, step: "offers", offers: [], offersLoading: true }));
         void fetchOffers(vehicle, restoredBuyer, 12);

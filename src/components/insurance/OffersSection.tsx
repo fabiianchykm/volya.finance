@@ -152,7 +152,9 @@ export function OffersSection({
                 {buyerSet ? (
                   <>
                     <span className="block text-sm font-semibold text-zinc-800">Дані страхувальника</span>
-                    <span className="block truncate text-xs text-zinc-500">{privilegeLabel} · нар. {buyer.birthDate}</span>
+                    {/* З реєстру приходить лише ВІК (день/місяць фейкові = сьогодні), тож
+                        показуємо рік народження, а не повну дату. */}
+                    <span className="block truncate text-xs text-zinc-500">{privilegeLabel}{buyer.birthDate ? ` · ${buyer.birthDate.split(".")[2]} р.н.` : ""}</span>
                   </>
                 ) : (
                   <>
