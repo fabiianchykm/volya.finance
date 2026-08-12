@@ -83,23 +83,21 @@ export function FeaturesSection() {
   return (
     <section id="about" className="py-14 sm:py-16">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
-          {/* Заголовок збоку */}
-          <div className="lg:w-72 lg:shrink-0 lg:pt-2">
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-              Переваги купівлі онлайн
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-              Оформлення поліса без черг, паперів і поїздок — швидко, зручно та офіційно.
-            </p>
-          </div>
+        {/* Заголовок — вгорі, зліва */}
+        <div className="mb-8 max-w-2xl">
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+            Переваги купівлі онлайн
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+            Оформлення поліса без черг, паперів і поїздок — швидко, зручно та офіційно.
+          </p>
+        </div>
 
-          {/* Картки */}
-          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
-            {features.map((feature, i) => (
-              <FeatureCard key={feature.title} feature={feature} index={i} />
-            ))}
-          </div>
+        {/* Картки — в один ряд на десктопі */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {features.map((feature, i) => (
+            <FeatureCard key={feature.title} feature={feature} index={i} />
+          ))}
         </div>
       </div>
     </section>
