@@ -46,9 +46,10 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
     { label: "Житло", href: "/housing" },
   ],
   media: [
-    { label: "Блог", href: "/blog" },
-    { label: "Новини", href: "/news" },
-    { label: "Статистика", href: "/statistics" },
+    // Заморожені (порожні, контент готується) — некликабельні.
+    { label: "Блог", href: "/blog", frozen: true },
+    { label: "Новини", href: "/news", frozen: true },
+    { label: "Статистика", href: "/statistics", frozen: true },
   ],
   legal: [
     { label: "Інформація про Субагента", href: "/subagent" },

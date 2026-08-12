@@ -5,7 +5,7 @@ import { getPosts } from "@/lib/blog";
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   // Публічні сторінки-продукти (приватні /checkout, /policies — поза індексом).
-  const routes = ["", "/osago", "/kasko", "/mini-kasko", "/green-card", "/tourism", "/pets", "/housing", "/blog", "/news", "/subagent"];
+  const routes = ["", "/osago", "/kasko", "/mini-kasko", "/green-card", "/tourism", "/pets", "/housing", "/subagent"];
   const productPages: MetadataRoute.Sitemap = routes.map((path) => ({
     url: `${SITE_URL}${path}`,
     lastModified: now,
