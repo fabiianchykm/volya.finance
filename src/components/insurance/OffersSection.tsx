@@ -31,8 +31,8 @@ const OSAGO_INFO = (
       Обовʼязкове страхування відповідальності водія: покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.
     </p>
     <ul className="mt-2 space-y-1 text-xs text-zinc-600">
-      <li>• Майно потерпілих (авто, споруди) — до <span className="font-semibold text-zinc-800">160 000 грн</span> на потерпілого</li>
-      <li>• Життя і здоровʼя потерпілих — до <span className="font-semibold text-zinc-800">320 000 грн</span> на потерпілого</li>
+      <li>• Покриття відповідальності по майну — до <span className="font-semibold text-zinc-800">250 000 грн</span> на потерпілого</li>
+      <li>• Покриття відповідальності за здоровʼям — до <span className="font-semibold text-zinc-800">500 000 грн</span> на потерпілого</li>
       <li>• Діє по всій Україні; поліс електронний, зареєстрований у МТСБУ</li>
     </ul>
     <p className="mt-2 text-[11px] text-zinc-400">Власне авто ОСЦПВ не покриває — для цього КАСКО або міні-КАСКО.</p>
