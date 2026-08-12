@@ -31,6 +31,9 @@ export interface CarInfo {
   mark: string;
   type: string;
   autoCategory: string;
+  // Дані власника з реєстру (МТСБУ): дата народження + вік. ПІБ/ІПН НЕ повертаються.
+  birthDateOwner?: string;  // "YYYY-MM-DD"
+  age?: number | string;
   city: City;
   additionalParameters: {
     capacity: string;

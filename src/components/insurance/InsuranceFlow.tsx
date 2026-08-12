@@ -93,7 +93,12 @@ export function InsuranceFlow() {
             ? Number(car.additionalParameters.totalWeight)
             : undefined,
         };
-        setState((s) => ({ ...s, plate, vehicle }));
+        // Дата народження власника з реєстру → одразу коректна ціна за реальним віком
+        // (без дефолту/припущень). "YYYY-MM-DD" → "DD.MM.YYYY". Нема власника → лишаємо "".
+        const ownerDob = typeof car.birthDateOwner === "string" && /^\d{4}-\d{2}-\d{2}$/.test(car.birthDateOwner)
+          ? car.birthDateOwner.split("-").reverse().join(".")
+          : "";
+        setState((s) => ({ ...s, plate, vehicle, buyer: { ...s.buyer, birthDate: ownerDob } }));
       } else {
         // Lookup failed — show modal with manual input
         setLookupError(json.error ?? "Авто не знайдено в реєстрі");
@@ -235,8 +240,13 @@ export function InsuranceFlow() {
           ownWeight: car.additionalParameters?.ownWeight ? Number(car.additionalParameters.ownWeight) : undefined,
           totalWeight: car.additionalParameters?.totalWeight ? Number(car.additionalParameters.totalWeight) : undefined,
         };
-        setState((s) => ({ ...s, plate, vehicle, step: "offers", offers: [], offersLoading: true }));
-        void fetchOffers(vehicle, DEFAULT_BUYER, 12);
+        // Дата народження власника з реєстру → коректна ціна і після перезавантаження.
+        const ownerDob = typeof car.birthDateOwner === "string" && /^\d{4}-\d{2}-\d{2}$/.test(car.birthDateOwner)
+          ? car.birthDateOwner.split("-").reverse().join(".")
+          : "";
+        const restoredBuyer = { ...DEFAULT_BUYER, birthDate: ownerDob };
+        setState((s) => ({ ...s, plate, vehicle, buyer: restoredBuyer, step: "offers", offers: [], offersLoading: true }));
+        void fetchOffers(vehicle, restoredBuyer, 12);
       } catch {
         // мережевий збій — лишаємось на головному екрані
       }
