@@ -39,12 +39,12 @@ export function HousingFlow() {
   const [homeType, setHomeType] = useState<"flat" | "house">("flat");
   const [amount, setAmount] = useState(1000000);
   const [period, setPeriod] = useState("12m");
-  // Дата початку — за замовчуванням +9 днів: деякі страховики (напр. ІНГО) приймають
-  // замовлення лише з датою старту не раніше ніж через 9 календарних днів. Дефолт +9
-  // гарантує, що будь-яку пропозицію можна одразу оформити; раніше теж можна обрати.
+  // Дата початку — за замовчуванням +14 днів. ІНГО (єдиний страховик житла) відхиляє
+  // ранні дати: формально «не раніше +9», але фактично приймає лише пізніші, а в зоні
+  // +9…+11 модуль ще й нестабільний (перевірено на проді). +14 — надійний запас.
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 9);
+    d.setDate(d.getDate() + 14);
     return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
   });
 
@@ -53,7 +53,11 @@ export function HousingFlow() {
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const today = new Date();
+  // Мінімальна дата старту — +14 днів (див. коментар вище): забороняємо ранні дати
+  // у самому календарі, щоб не впертись у відмову/нестабільність модуля ІНГО.
+  const minStart = new Date();
+  minStart.setDate(minStart.getDate() + 14);
+  minStart.setHours(0, 0, 0, 0);
   const maxStart = new Date();
   maxStart.setFullYear(maxStart.getFullYear() + 1);
   const startD = parseUaDate(startDate);
@@ -100,11 +104,17 @@ export function HousingFlow() {
     const ht = sp.get("homeType"); const amt = Number(sp.get("amount"));
     const per = sp.get("period"); const s = sp.get("start");
     if (sp.get("step") === "offers" && (ht === "flat" || ht === "house") && amt && per && s) {
+      // Застаріла дата з URL (розрахунок робився раніше) може стати < +9 днів —
+      // піднімаємо до мінімальної, інакше ІНГО відхилить замовлення.
+      const sd = parseUaDate(s);
+      const startStr = sd && sd >= minStart
+        ? s
+        : `${String(minStart.getDate()).padStart(2, "0")}.${String(minStart.getMonth() + 1).padStart(2, "0")}.${minStart.getFullYear()}`;
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setHomeType(ht); setAmount(amt); setPeriod(per); setStartDate(s);
-      void runCalc(ht, amt, per, s);
+      setHomeType(ht); setAmount(amt); setPeriod(per); setStartDate(startStr);
+      void runCalc(ht, amt, per, startStr);
     }
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkoutCtx = (offer: HomeOffer): HousingContext => ({
@@ -186,7 +196,7 @@ export function HousingFlow() {
                 </div>
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
-                  <DateInput label="" value={startDate} onChange={setStartDate} minDate={today} maxDate={maxStart} required />
+                  <DateInput label="" value={startDate} onChange={setStartDate} minDate={minStart} maxDate={maxStart} required />
                 </div>
               </div>
 

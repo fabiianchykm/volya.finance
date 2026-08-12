@@ -268,11 +268,12 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     if (!f.docSerial || !f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError("Заповніть дані документа"); return; }
     if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
     if (!f.street || !f.house) { setError("Вкажіть адресу обʼєкта"); return; }
-    // ІНГО: дата старту має бути не раніше ніж через 9 днів (інакше страховик відхиляє).
+    // ІНГО: дата старту має бути з комфортним запасом (~2 тижні) — ранні дати страховик
+    // відхиляє, а в зоні +9…+11 його модуль нестабільний. Backstop до мін. дати в календарі.
     if (isIngo(ctx.offer.companyNamePublic || ctx.offer.companyName)) {
       const d = daysUntil(ctx.startDate);
-      if (d !== null && d < 9) {
-        setError("ІНГО оформлює поліс із датою початку не раніше ніж через 9 днів. Поверніться назад і оберіть пізнішу дату (або іншу страхову).");
+      if (d !== null && d < 14) {
+        setError("Ця страхова оформлює поліс житла з датою початку приблизно за 2 тижні. Поверніться назад і оберіть пізнішу дату.");
         return;
       }
     }

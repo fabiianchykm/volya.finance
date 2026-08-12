@@ -656,8 +656,21 @@ export class UkaskoService {
     }
     const first = (raw as { data?: Array<{ id: string; status?: string }> }).data?.[0];
     if (!first?.id) {
-      // 200-успіх, але без id (ще один прояв поламаного модуля страховика).
+      // 200-успіх, але data порожня. Часто це ЗМІСТОВНА валідація страховика в message
+      // (напр. дата початку) — показуємо її клієнту, а не загальне «тимчасово недоступне».
       console.error("[home order] empty data. raw:", JSON.stringify(raw).slice(0, 800));
+      const m = typeof msg === "string" ? msg.trim() : "";
+      if (m && !/^(ok|success)$/i.test(m) && !UkaskoService.HOME_INSURER_BUG.test(m)) {
+        // Спец-кейс: дата початку надто рання (ІНГО вимагає ≥ +9 днів).
+        if (/start\s*from|дат[аиуіа].*(не раніше|раніше)|не раніше \d{4}-\d{2}-\d{2}/i.test(m)) {
+          const iso = m.match(/(\d{4})-(\d{2})-(\d{2})/);
+          const human = iso ? `${iso[3]}.${iso[2]}.${iso[1]}` : null;
+          throw new Error(human
+            ? `Оберіть пізнішу дату початку — ця страхова приймає поліси з датою не раніше ${human}.`
+            : "Оберіть пізнішу дату початку — обрана дата надто рання для цієї страхової.");
+        }
+        throw new Error(m); // інша змістовна валідація — показуємо як є
+      }
       throw new Error(FRIENDLY);
     }
     return first;
