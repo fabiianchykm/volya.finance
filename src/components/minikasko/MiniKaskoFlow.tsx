@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone, Car, FileText, CreditCard, Download } from "lucide-react";
+import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone, Car, FileText, CreditCard, Download, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { HeroSteps, type HeroStep } from "@/components/sections/HeroSteps";
 
 const MK_STEPS: HeroStep[] = [
@@ -239,6 +239,12 @@ function MiniKaskoOffers({
   const [cvOpen, setCvOpen] = useState(false);
   const [leadMode, setLeadMode] = useState<LeadMode>(null);
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
+  const [sortOpen, setSortOpen] = useState(false);
+  const SORT_OPTIONS = [
+    { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
+    { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
+  ] as const;
+  const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
   const activeCoverage = coverage ?? coverages[0] ?? null;
   const list = offers
     .filter((o) => o.coverage === activeCoverage)
@@ -260,41 +266,80 @@ function MiniKaskoOffers({
             <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary || "Ваше авто"}</p>
           </div>
 
-          {/* Покриття — дропдаун із підказкою «від N грн» на кожен рівень */}
-          {!loading && coverages.length > 0 && activeCoverage != null && (
-            <div className="relative mb-5 inline-block">
-              <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</span>
-              <button
-                type="button"
-                onClick={() => setCvOpen((o) => !o)}
-                aria-expanded={cvOpen}
-                className="flex min-w-[240px] items-center justify-between gap-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200 transition-colors hover:ring-indigo-300"
-              >
-                <span>{fmtCoverage(activeCoverage)}</span>
-                <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${cvOpen ? "rotate-180" : ""}`} />
-              </button>
-              {cvOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setCvOpen(false)} />
-                  <div className="absolute left-0 top-full z-20 mt-2 w-[280px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl">
-                    {coverages.map((cv) => (
-                      <button
-                        key={cv}
-                        type="button"
-                        onClick={() => { setCoverage(cv); setCvOpen(false); }}
-                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                          activeCoverage === cv ? "bg-indigo-50" : "hover:bg-zinc-50"
-                        }`}
-                      >
-                        <span className="flex flex-col">
-                          <span className="text-sm font-semibold text-zinc-900">{fmtCoverage(cv)}</span>
-                          <span className="text-xs text-zinc-400">максимальна виплата</span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </>
+          {/* Покриття + сортування — в одному рядку (як в ОСЦПВ) */}
+          {!loading && offers.length > 0 && (
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+              {/* Сума покриття — дропдаун */}
+              {coverages.length > 0 && activeCoverage != null && (
+                <div className="relative inline-block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</span>
+                  <button
+                    type="button"
+                    onClick={() => setCvOpen((o) => !o)}
+                    aria-expanded={cvOpen}
+                    className="flex min-w-[240px] items-center justify-between gap-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200 transition-colors hover:ring-indigo-300"
+                  >
+                    <span>{fmtCoverage(activeCoverage)}</span>
+                    <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${cvOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {cvOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setCvOpen(false)} />
+                      <div className="absolute left-0 top-full z-20 mt-2 w-[280px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl">
+                        {coverages.map((cv) => (
+                          <button
+                            key={cv}
+                            type="button"
+                            onClick={() => { setCoverage(cv); setCvOpen(false); }}
+                            className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                              activeCoverage === cv ? "bg-indigo-50" : "hover:bg-zinc-50"
+                            }`}
+                          >
+                            <span className="flex flex-col">
+                              <span className="text-sm font-semibold text-zinc-900">{fmtCoverage(cv)}</span>
+                              <span className="text-xs text-zinc-400">максимальна виплата</span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
+
+              {/* Сортування — дропдаун (той самий стиль) */}
+              <div className="relative inline-block">
+                <span className="mb-1.5 block text-xs font-medium text-zinc-400">Сортувати</span>
+                <button
+                  type="button"
+                  onClick={() => setSortOpen((o) => !o)}
+                  aria-expanded={sortOpen}
+                  className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200 transition-colors hover:ring-indigo-300"
+                >
+                  <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600" />{activeSort.label}</span>
+                  <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+                </button>
+                {sortOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+                    <div className="absolute right-0 top-full z-20 mt-2 w-[220px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl">
+                      {SORT_OPTIONS.map(({ k, label, Icon }) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => { setSortBy(k); setSortOpen(false); }}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                            sortBy === k ? "bg-indigo-50 font-semibold text-indigo-700" : "text-zinc-700 hover:bg-zinc-50"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4 shrink-0 text-indigo-600" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
@@ -311,18 +356,6 @@ function MiniKaskoOffers({
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="mb-2 flex items-center justify-end gap-2">
-                <label htmlFor="mk-sort" className="text-xs font-medium text-zinc-400">Сортувати</label>
-                <select
-                  id="mk-sort"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "price_asc" | "price_desc")}
-                  className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                >
-                  <option value="price_asc">Спершу дешевші</option>
-                  <option value="price_desc">Спершу дорожчі</option>
-                </select>
-              </div>
               {list.map((o, i) => (
                 <OfferCard
                   key={o.offerId}
