@@ -228,8 +228,11 @@ function MiniKaskoOffers({
   const [coverage, setCoverage] = useState<number | null>(null);
   const [cvOpen, setCvOpen] = useState(false);
   const [leadMode, setLeadMode] = useState<LeadMode>(null);
+  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
   const activeCoverage = coverage ?? coverages[0] ?? null;
-  const list = offers.filter((o) => o.coverage === activeCoverage).sort((a, b) => a.price - b.price);
+  const list = offers
+    .filter((o) => o.coverage === activeCoverage)
+    .sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -298,6 +301,18 @@ function MiniKaskoOffers({
             </div>
           ) : (
             <div className="space-y-3">
+              <div className="mb-2 flex items-center justify-end gap-2">
+                <label htmlFor="mk-sort" className="text-xs font-medium text-zinc-400">Сортувати</label>
+                <select
+                  id="mk-sort"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "price_asc" | "price_desc")}
+                  className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="price_asc">Спершу дешевші</option>
+                  <option value="price_desc">Спершу дорожчі</option>
+                </select>
+              </div>
               {list.map((o, i) => (
                 <OfferCard
                   key={o.offerId}

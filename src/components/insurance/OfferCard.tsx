@@ -334,7 +334,7 @@ export function OfferCard({
             </div>
             {bonus > 0 && (
               <span title="1% від вартості полісу на бонусний рахунок" className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-                <Coins className="h-3.5 w-3.5" /> +{formatPrice(bonus)} на рахунок
+                <Coins className="h-3.5 w-3.5" /> +{formatPrice(bonus)} бонус
               </span>
             )}
           </div>

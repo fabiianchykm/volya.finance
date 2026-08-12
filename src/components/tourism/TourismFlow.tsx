@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, ArrowDownWideNarrow, ArrowUpWideNarrow, Home, ChevronRight, ChevronDown } from "lucide-react";
+import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -336,42 +336,39 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
           <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
         </div>
 
-        {/* Сума покриття — прикріплена смуга (як пільга/ДН в автоцивілці) */}
+        {/* Сума покриття — випадний список */}
         {coverages.length > 1 && (
           <div className="border-t border-zinc-100 bg-indigo-50/40 px-6 py-3.5">
-            <p className="mb-2 text-xs font-medium text-zinc-500">Сума покриття</p>
-            <div className="flex flex-wrap gap-2">
+            <label htmlFor="tour-coverage" className="mb-2 block text-xs font-medium text-zinc-500">Сума покриття</label>
+            <select
+              id="tour-coverage"
+              value={coverage}
+              onChange={(e) => setCoverage(Number(e.target.value))}
+              className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-900 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-72"
+            >
               {coverages.map((c) => (
-                <button key={c} type="button" onClick={() => setCoverage(c)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${c === coverage ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"}`}>
+                <option key={c} value={c}>
                   {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
         )}
       </div>
 
-      {/* Сортування */}
+      {/* Сортування — випадний список */}
       {cards.length > 0 && (
-        <div className="mb-5 flex items-center justify-end gap-3">
-          <span className="text-xs font-medium text-zinc-400">Сортувати</span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-            {([
-              { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
-              { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
-            ] as const).map(({ k, label, Icon }) => (
-              <button key={k} type="button" onClick={() => setSortBy(k)}
-                className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 hover:text-zinc-800"}`}>
-                {sortBy === k && (
-                  <motion.span layoutId="tourSortPill" transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                    className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
-                )}
-                <Icon className="relative z-10 h-3.5 w-3.5" />
-                <span className="relative z-10">{label}</span>
-              </button>
-            ))}
-          </div>
+        <div className="mb-5 flex items-center justify-end gap-2">
+          <label htmlFor="tour-sort" className="text-xs font-medium text-zinc-400">Сортувати</label>
+          <select
+            id="tour-sort"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "price_asc" | "price_desc")}
+            className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="price_asc">Спершу дешевші</option>
+            <option value="price_desc">Спершу дорожчі</option>
+          </select>
         </div>
       )}
 
