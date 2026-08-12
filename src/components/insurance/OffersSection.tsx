@@ -106,7 +106,7 @@ export function OffersSection({
   });
 
   return (
-    <section className="min-h-screen pt-20 pb-8">
+    <section className="min-h-screen bg-[#F5F5F7] pt-20 pb-8">
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* Ліва колонка: пропозиції */}
