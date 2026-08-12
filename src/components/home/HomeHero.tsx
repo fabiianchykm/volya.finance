@@ -20,24 +20,32 @@ const products: Product[] = [
   { href: "/housing", icon: Home, title: "Житло", desc: "Захист квартири чи будинку — від пожежі, затоплення та інших ризиків." },
 ];
 
-// Герой-хаб: широкий меседж (не лише авто) + продукти прямо тут. Середній тон із
-// «переливом» кольору (анімований градієнт індиго/віолет) — не надто темний.
+// Герой-хаб: кольоровий блок із заголовком («перелив» градієнта індиго/віолет),
+// далі — білий блок із продуктами.
 export function HomeHero() {
   return (
-    <section className="relative overflow-hidden bg-white pb-20 pt-32 sm:pb-24 sm:pt-40">
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-5xl md:text-6xl">
+    <section className="relative overflow-hidden">
+      {/* Кольоровий блок — заголовок «Страхування онлайн» */}
+      <div
+        className="relative animate-gradient pb-20 pt-32 sm:pb-24 sm:pt-40"
+        style={{ backgroundImage: "linear-gradient(135deg, #1e1060, #4f46e5, #7c3aed, #4f46e5, #1e1060)" }}
+      >
+        <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.12) 100%)" }} />
+        <div className="relative z-10 mx-auto max-w-3xl px-4 text-center sm:px-6">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
             Страхування{" "}
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">онлайн</span>
+            <span className="bg-gradient-to-r from-indigo-200 to-violet-200 bg-clip-text text-transparent">онлайн</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-zinc-500 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-xl text-base text-indigo-100 sm:text-lg">
             Авто, подорожі та улюбленці — усі поліси в одному місці. Оберіть продукт і оформіть за кілька хвилин.
           </p>
         </div>
+      </div>
 
-        {/* Продукти — прямо в героєві */}
-        <div className="mt-12 grid gap-4 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Білий блок — продукти */}
+      <div className="bg-white pb-20 pt-12 sm:pb-24 sm:pt-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map(({ href, icon: Icon, title, desc, badge, soon }) => {
             const inner = (
               <>
@@ -75,6 +83,7 @@ export function HomeHero() {
               </Link>
             );
           })}
+        </div>
         </div>
       </div>
     </section>
