@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, Clock, FileCheck, HeadphonesIcon } from "lucide-react";
+import { Zap, Clock, FileCheck, HeadphonesIcon, Scale, Coins } from "lucide-react";
 
 const features = [
   {
@@ -13,12 +13,20 @@ const features = [
     glowColor: "bg-amber-600",
   },
   {
-    icon: FileCheck,
-    title: "Можливість повернення коштів за поліс",
-    description: "За потреби ви можете оформити повернення коштів за поліс згідно з умовами страховика.",
-    iconBg: "bg-violet-100",
-    iconColor: "text-violet-600",
-    glowColor: "bg-violet-600",
+    icon: Scale,
+    title: "Порівняння від 18+ страхових",
+    description: "Ціни всіх компаній в одному місці — обираєте найвигіднішу пропозицію за секунди.",
+    iconBg: "bg-indigo-100",
+    iconColor: "text-indigo-600",
+    glowColor: "bg-indigo-600",
+  },
+  {
+    icon: Coins,
+    title: "Економія",
+    description: "Ціна страхової без переплат посередникам, плюс бонус 1% з кожної покупки — знижка на наступний поліс.",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-600",
+    glowColor: "bg-emerald-600",
   },
   {
     icon: Clock,
@@ -27,6 +35,14 @@ const features = [
     iconBg: "bg-sky-100",
     iconColor: "text-sky-600",
     glowColor: "bg-sky-600",
+  },
+  {
+    icon: FileCheck,
+    title: "Можливість повернення коштів за поліс",
+    description: "За потреби ви можете оформити повернення коштів за поліс згідно з умовами страховика.",
+    iconBg: "bg-violet-100",
+    iconColor: "text-violet-600",
+    glowColor: "bg-violet-600",
   },
   {
     icon: HeadphonesIcon,
