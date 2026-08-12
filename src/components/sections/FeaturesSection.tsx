@@ -1,7 +1,6 @@
 "use client";
 
-import { motion, useScroll, useMotionValueEvent, type MotionValue } from "framer-motion";
-import { useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Zap, Clock, FileCheck, HeadphonesIcon } from "lucide-react";
 
 const features = [
@@ -39,30 +38,15 @@ const features = [
   },
 ];
 
-// Картки зʼявляються по черзі зліва направо в міру прогортання секції. Поява
-// «залатчена»: щойно картка досягла свого порогу за скролом — лишається видимою
-// назавжди (скрол назад чи далі її вже не ховає).
-function FeatureCard({
-  feature,
-  index,
-  progress,
-}: {
-  feature: (typeof features)[number];
-  index: number;
-  progress: MotionValue<number>;
-}) {
+// Картки зʼявляються зі стаггером, щойно секція потрапляє в екран (viewport).
+function FeatureCard({ feature, index }: { feature: (typeof features)[number]; index: number }) {
   const { icon: Icon, title, description, iconBg, iconColor, glowColor } = feature;
-  const threshold = index * 0.2;      // картка i виринає, коли прогрес секції ≥ i·0.2
-  const [revealed, setRevealed] = useState(false);
-  useMotionValueEvent(progress, "change", (v) => {
-    if (!revealed && v >= threshold) setRevealed(true);
-  });
-
   return (
     <motion.div
-      initial={false}
-      animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/50 transition-all hover:shadow-lg hover:shadow-indigo-900/5 hover:-translate-y-1"
     >
       <div className="relative z-10 flex-1">
@@ -80,40 +64,25 @@ function FeatureCard({
 }
 
 export function FeaturesSection() {
-  const trackRef = useRef(null);
-
-  // Секція «пінується»: зовнішній трек вищий за екран, а контент усередині —
-  // sticky на весь екран. Поки крутиш у межах треку, секція стоїть на місці й
-  // картки виринають по одній; далі сторінка гортається лише коли всі показані.
-  // progress 0 — трек торкнувся верху вьюпорту (пін увімкнувся), 1 — трек
-  // відпустив пін (усі картки вже зʼявились).
-  const { scrollYProgress } = useScroll({
-    target: trackRef,
-    offset: ["start start", "end end"],
-  });
-
   return (
-    <section id="about" className="bg-[#FAFAFA]">
-      {/* Трек прокрутки: його висота = скільки треба прогорнути для показу всіх карток */}
-      <div ref={trackRef} className="relative h-[200vh]">
-        <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-            <div className="mb-12 text-center max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-                Наші переваги
-              </h2>
-            </div>
+    <section id="about" className="py-14 sm:py-16">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
+          {/* Заголовок збоку */}
+          <div className="lg:w-72 lg:shrink-0 lg:pt-2">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+              Переваги купівлі онлайн
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+              Оформлення поліса без черг, паперів і поїздок — швидко, зручно та офіційно.
+            </p>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {features.map((feature, i) => (
-                <FeatureCard
-                  key={feature.title}
-                  feature={feature}
-                  index={i}
-                  progress={scrollYProgress}
-                />
-              ))}
-            </div>
+          {/* Картки */}
+          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+            {features.map((feature, i) => (
+              <FeatureCard key={feature.title} feature={feature} index={i} />
+            ))}
           </div>
         </div>
       </div>
