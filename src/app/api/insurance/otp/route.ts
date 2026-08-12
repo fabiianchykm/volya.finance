@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
 import { rateLimit, maybeCleanup } from "@/lib/rate-limit";
 import { assertSameOrigin } from "@/lib/api-guard";
+import { notifyDevError } from "@/lib/telegram";
 
 // Ліміти підібрані під реальний UX: на оформлення поліса вистачає
 // кількох SMS і кількох спроб введення коду.
@@ -23,6 +24,7 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  let ctx = "";
   try {
     const originBlocked = assertSameOrigin(req);
     if (originBlocked) return originBlocked;
@@ -30,6 +32,7 @@ export async function POST(req: NextRequest) {
     maybeCleanup();
 
     const { action, orderId, otp } = await req.json();
+    ctx = `${action ?? "?"} order=${orderId ?? "?"}`;
 
     if (!orderId) {
       return NextResponse.json({ success: false, error: "Missing orderId" }, { status: 400 });
@@ -66,6 +69,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (e) {
-    return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Error" }, { status: 500 });
+    // OTP-помилка блокує оформлення — логуємо реальну причину (від Ukasko) + алерт у dev-Telegram.
+    const msg = e instanceof Error ? e.message : "Error";
+    console.error(`[otp] ${ctx} error:`, msg.slice(0, 600));
+    await notifyDevError(`otp ${ctx}`, e);
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
