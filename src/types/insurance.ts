@@ -27,7 +27,9 @@ export interface BuyerData {
 export const DEFAULT_BUYER: BuyerData = {
   customerType: 1,
   privilegeId: 1,
-  birthDate: "01.01.1990",
+  // Порожньо: НЕ підставляємо фейкову дату народження — калькулятор рахує без неї,
+  // а точну ціну під реальну ДН уточнюємо на checkout. (Було "01.01.1990".)
+  birthDate: "",
 };
 
 export interface VehicleDetails {

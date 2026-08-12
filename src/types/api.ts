@@ -164,7 +164,7 @@ export interface CalculatorParams {
   registrationType: number;
   period_id: number;
   "car[year]": number;
-  "car[birthdayAt]": string;
+  "car[birthdayAt]"?: string;
   "customer[dateBirth]"?: string;
   customerBirthday?: string;
 }

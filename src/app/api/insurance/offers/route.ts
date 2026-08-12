@@ -17,6 +17,12 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
 
+    // Дату народження передаємо ЛИШЕ якщо вона реально відома (валідний формат).
+    // Без неї НЕ підставляємо фейкову 01.01.1990 — API порахує за власним припущенням,
+    // а точну ціну під реальну ДН ми уточнюємо на checkout перед оплатою.
+    const rawDob = searchParams.get("carBirthdayAt");
+    const dob = rawDob && /^\d{1,2}\.\d{1,2}\.\d{4}$/.test(rawDob) ? rawDob : null;
+
     const params: CalculatorParams = {
       autoCategoryType: searchParams.get("autoCategoryType") ?? "B1",
       isTaxi: 0,
@@ -31,8 +37,7 @@ export async function GET(req: NextRequest) {
       registrationType: Number(searchParams.get("registrationType") ?? 1),
       period_id: Number(searchParams.get("period_id") ?? 12),
       "car[year]": Number(searchParams.get("carYear") ?? 2015),
-      "customer[dateBirth]": searchParams.get("carBirthdayAt") ?? "01.01.1990",
-      "car[birthdayAt]": searchParams.get("carBirthdayAt") ?? "01.01.1990",
+      ...(dob ? { "customer[dateBirth]": dob, "car[birthdayAt]": dob } : {}),
     };
 
     const cacheKey = JSON.stringify(params);
