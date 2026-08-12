@@ -5,6 +5,10 @@ import { useSession, signIn } from "next-auth/react";
 import { Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
+// Можливість залишати відгуки ТИМЧАСОВО заморожена: кнопка неактивна, форма/логіка
+// нижче збережені й активуються поверненням прапорця у false.
+const REVIEWS_FROZEN = true;
+
 interface Review {
   id: number;
   authorName: string | null;
@@ -99,7 +103,14 @@ export function InsurerReviews({ slug, name }: { slug: string; name: string }) {
 
       {/* Форма */}
       <div className="mb-6 rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
-        {done ? (
+        {REVIEWS_FROZEN ? (
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-sm text-zinc-600">Можливість залишати відгуки скоро зʼявиться.</p>
+            <Button variant="primary" size="md" disabled className="cursor-not-allowed opacity-60">
+              Залишити відгук
+            </Button>
+          </div>
+        ) : done ? (
           <p className="text-sm font-medium text-emerald-600">Дякуємо! Ваш відгук опубліковано.</p>
         ) : status !== "authenticated" ? (
           <div className="flex flex-col items-start gap-3">
