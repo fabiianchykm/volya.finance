@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -68,6 +68,20 @@ function CompanyLogo({ company, cleanName }: { company: InsuranceCompany; cleanN
   );
 }
 
+// Акордеон «Детальніше»: спільний стор — відкрита лише ОДНА картка за раз. За раз
+// показується список одного продукту, тож глобальний ключ безпечний. Розгортання
+// іншої картки автоматично згортає попередню.
+let accordionOpenKey: string | null = null;
+const accordionListeners = new Set<() => void>();
+function setAccordionOpenKey(k: string | null) {
+  accordionOpenKey = k;
+  accordionListeners.forEach((l) => l());
+}
+function subscribeAccordion(cb: () => void) {
+  accordionListeners.add(cb);
+  return () => { accordionListeners.delete(cb); };
+}
+
 export function OfferCard({
   offer,
   selected,
@@ -83,7 +97,14 @@ export function OfferCard({
   discountEligible,
   productDescription,
 }: OfferCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  // Розгортання «Детальніше» — через спільний стор (акордеон): відкрита лише одна.
+  const cardKey = offer.offerId ?? `idx-${index}`;
+  const openKey = useSyncExternalStore(subscribeAccordion, () => accordionOpenKey, () => null);
+  const expanded = openKey === cardKey;
+  const setExpanded = (next: boolean | ((v: boolean) => boolean)) => {
+    const val = typeof next === "function" ? next(expanded) : next;
+    setAccordionOpenKey(val ? cardKey : null);
+  };
 
   const cleanCompanyName = formatCompanyName(offer.company.publicName);
 
