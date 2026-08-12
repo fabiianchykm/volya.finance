@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Fragment } from "react";
-import { ArrowRight, ChevronRight, Search, FileText, CreditCard, Download } from "lucide-react";
+import { ArrowRight, Search, FileText, CreditCard, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { HeroSteps } from "@/components/sections/HeroSteps";
 import { formatPlate } from "@/lib/utils";
 import { logoSrc } from "@/lib/logos";
 
@@ -91,21 +91,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
             </span>
           </h1>
 
-          <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="mx-auto flex w-max items-center gap-1.5 px-4 sm:gap-2.5">
-              {heroSteps.map(({ icon: Icon, label }, i) => (
-                <Fragment key={label}>
-                  <div className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] px-3.5 py-2 ring-1 ring-white/10 backdrop-blur-sm">
-                    <Icon className="h-4 w-4 text-indigo-300" />
-                    <span className="whitespace-nowrap text-sm font-medium text-zinc-200">{label}</span>
-                  </div>
-                  {i < heroSteps.length - 1 && (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-white/25" />
-                  )}
-                </Fragment>
-              ))}
-            </div>
-          </div>
+          <HeroSteps steps={heroSteps} />
 
           <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8 w-full pt-4">
             <div className="relative w-full flex justify-center">

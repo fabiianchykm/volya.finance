@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Globe, FileText, CreditCard, Download } from "lucide-react";
+import { HeroSteps, type HeroStep } from "@/components/sections/HeroSteps";
+
+const GC_STEPS: HeroStep[] = [
+  { icon: Globe, label: "Країна та авто" },
+  { icon: FileText, label: "Пропозиції" },
+  { icon: CreditCard, label: "Оплата" },
+  { icon: Download, label: "Готовий поліс" },
+];
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
@@ -187,6 +195,8 @@ export function GreenCardFlow() {
               </h1>
               <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть тип авто, напрямок і дати — і побачите ціни страхових.</p>
             </div>
+
+            {step === "params" && <HeroSteps steps={GC_STEPS} />}
 
             {step === "params" && (
               <form onSubmit={calc} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">

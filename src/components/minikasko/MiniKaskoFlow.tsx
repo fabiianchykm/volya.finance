@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone } from "lucide-react";
+import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone, Car, FileText, CreditCard, Download } from "lucide-react";
+import { HeroSteps, type HeroStep } from "@/components/sections/HeroSteps";
+
+const MK_STEPS: HeroStep[] = [
+  { icon: Car, label: "Дані авто" },
+  { icon: FileText, label: "Пропозиції" },
+  { icon: CreditCard, label: "Оплата" },
+  { icon: Download, label: "Готовий поліс" },
+];
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { parseUaDate } from "@/components/ui/DateInput";
@@ -178,6 +186,8 @@ export function MiniKaskoFlow() {
               </h1>
               <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть місто — і побачите ціни страхових із покриттям до 1,2 млн грн.</p>
             </div>
+
+            <HeroSteps steps={MK_STEPS} />
 
             <form onSubmit={calc} className="mx-auto max-w-md rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
               <div className="relative" ref={cityRef}>
