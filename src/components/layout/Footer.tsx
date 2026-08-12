@@ -35,7 +35,7 @@ import { FooterContact } from "./FooterContact";
 
 type FooterLink = { label: string; href: string; frozen?: boolean };
 
-const footerLinks: { products: FooterLink[]; legal: FooterLink[] } = {
+const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
   products: [
     { label: "Автоцивілка", href: "/osago" },
     { label: "КАСКО", href: "/kasko" },
@@ -45,8 +45,10 @@ const footerLinks: { products: FooterLink[]; legal: FooterLink[] } = {
     { label: "Тварини", href: "/pets" },
     { label: "Житло", href: "/housing" },
   ],
+  media: [
+    { label: "Блог і новини", href: "/blog" },
+  ],
   legal: [
-    { label: "Блог", href: "/blog" },
     { label: "Інформація про Субагента", href: "/subagent" },
     // Заморожені (документи ще не опубліковані) — некликабельні.
     { label: "Публічна оферта", href: "#", frozen: true },
@@ -98,8 +100,9 @@ export function Footer() {
           </div>
 
           {/* Колонки посилань — компактні, під підтримкою й застосунком */}
-          <div className="mt-10 grid max-w-lg grid-cols-2 gap-6">
+          <div className="mt-10 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-3">
             <LinkColumn title="Продукти" links={footerLinks.products} />
+            <LinkColumn title="Медіа" links={footerLinks.media} />
             <LinkColumn title="Документи" links={footerLinks.legal} />
           </div>
         </div>
