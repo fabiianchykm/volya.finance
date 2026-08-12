@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Car, HeartPulse } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
@@ -51,8 +52,10 @@ const OSAGO_INFO = (
         </div>
       </div>
     </div>
-    <p className="mt-3 rounded-lg bg-amber-50/70 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
-      Власне авто ОСЦПВ не покриває — для цього КАСКО або міні-КАСКО.
+    <p className="mt-3 text-[11px] leading-relaxed text-zinc-400">
+      Власне авто ОСЦПВ не покриває — для цього{" "}
+      <Link href="/kasko" className="font-medium text-indigo-600 hover:underline">КАСКО</Link>{" "}або{" "}
+      <Link href="/mini-kasko" className="font-medium text-indigo-600 hover:underline">міні-КАСКО</Link>.
     </p>
   </div>
 );
