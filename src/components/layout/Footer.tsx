@@ -46,6 +46,7 @@ const footerLinks: { products: FooterLink[]; legal: FooterLink[] } = {
     { label: "Житло", href: "/housing" },
   ],
   legal: [
+    { label: "Блог", href: "/blog" },
     { label: "Інформація про Субагента", href: "/subagent" },
     // Заморожені (документи ще не опубліковані) — некликабельні.
     { label: "Публічна оферта", href: "#", frozen: true },
