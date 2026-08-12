@@ -24,6 +24,12 @@ function formatUaPhone(digits: string): string {
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(" ");
 }
 
+// Unix-секунди → "DD.MM.YYYY" (формат carBirthdayAt для калькулятора ОСЦПВ).
+function unixToUaDate(sec: number): string {
+  const d = new Date(sec * 1000);
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+}
+
 export function CheckoutClient() {
   const router = useRouter();
   
@@ -126,12 +132,16 @@ export function CheckoutClient() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Перераховуємо ціну обраного оффера перед оформленням — вона могла змінитись,
-  // поки користувач заповнював форму. Повертає актуальний оффер або null, якщо зник.
+  // Перераховуємо ціну обраного оффера перед оформленням під РЕАЛЬНІ дані страхувальника
+  // (дата народження впливає на ціну!). Раніше рахували з buyer.birthDate — дефолтною
+  // 01.01.1990, тож різниця не ловилась і клієнт міг оплатити не ту суму.
   const revalidateOffer = async (): Promise<InsuranceOffer | null> => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const startDate = `${String(tomorrow.getDate()).padStart(2, "0")}.${String(tomorrow.getMonth() + 1).padStart(2, "0")}.${tomorrow.getFullYear()}`;
+
+    // Реальна ДН страхувальника з форми checkout; фолбек — buyer.birthDate.
+    const realBirthDate = customer?.dateBirth ? unixToUaDate(customer.dateBirth) : buyer.birthDate;
 
     const paramsObj = {
       autoCategoryType: vehicle.autoCategory,
@@ -143,7 +153,7 @@ export function CheckoutClient() {
       registrationType: "1",
       period_id: String(periodId),
       carYear: String(vehicle.year),
-      carBirthdayAt: buyer.birthDate,
+      carBirthdayAt: realBirthDate,
     };
 
     // offerId Ukasko генерує заново на КОЖЕН запит (ULID), тож матчимо за стабільним
@@ -179,7 +189,7 @@ export function CheckoutClient() {
       if (fresh && fresh.price !== offer.price) {
         setOffer(fresh);
         setPriceNotice(
-          `Ціна оновилася: ${offer.price} → ${fresh.price} грн. Перевірте суму й натисніть «Продовжити» ще раз.`
+          `Ціна за вашими даними: ${fresh.price} грн (було ${offer.price} грн). Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`
         );
         return;
       }
