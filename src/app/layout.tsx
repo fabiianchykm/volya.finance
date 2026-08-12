@@ -67,7 +67,7 @@ export default async function RootLayout({
   // динамічними й вбиває кешування. SessionProvider підтягне сесію на клієнті.
   return (
     <html lang="uk" className={`${openSans.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-white font-sans">
+      <body className="flex min-h-full flex-col bg-[#F5F5F7] font-sans">
         <GoogleTagManagerNoScript />
         <SessionProvider>
           <ProfileSync />

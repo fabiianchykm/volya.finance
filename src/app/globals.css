@@ -2,8 +2,8 @@
 
 @theme inline {
   --font-sans: var(--font-open-sans);
-  --color-background: #F9F2EC;
-  --color-foreground: #F9F2EC;
+  --color-background: #F5F5F7;
+  --color-foreground: #F5F5F7;
 }
 
 * {
