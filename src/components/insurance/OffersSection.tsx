@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Car, HeartPulse, MapPin, BadgeCheck } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Car, HeartPulse } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
@@ -51,16 +51,7 @@ const OSAGO_INFO = (
         </div>
       </div>
     </div>
-    {/* Ключові факти */}
-    <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-600">
-        <MapPin className="h-3.5 w-3.5 text-indigo-500" /> Діє по всій Україні
-      </span>
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-zinc-600">
-        <BadgeCheck className="h-3.5 w-3.5 text-emerald-500" /> Електронний поліс, зареєстрований у МТСБУ
-      </span>
-    </div>
-    <p className="mt-2.5 rounded-lg bg-amber-50/70 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
+    <p className="mt-3 rounded-lg bg-amber-50/70 px-3 py-2 text-[11px] leading-relaxed text-amber-700">
       Власне авто ОСЦПВ не покриває — для цього КАСКО або міні-КАСКО.
     </p>
   </div>
