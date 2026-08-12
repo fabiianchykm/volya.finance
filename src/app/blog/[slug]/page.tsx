@@ -24,6 +24,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const post = getPost(slug);
   if (!post) notFound();
 
+  const backHref = post.category === "news" ? "/news" : "/blog";
+  const backLabel = post.category === "news" ? "Новини" : "Блог";
+
   return (
     <>
       <Navbar solid />
@@ -31,7 +34,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
           {/* Breadcrumb */}
           <div className="mb-5 flex items-center gap-1.5 text-xs text-zinc-400">
-            <Link href="/blog" className="transition-colors hover:text-indigo-500">Блог</Link>
+            <Link href={backHref} className="transition-colors hover:text-indigo-500">{backLabel}</Link>
             <ChevronRight className="h-3 w-3" />
             <span className="truncate font-medium text-zinc-600">{post.title}</span>
           </div>
@@ -53,8 +56,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <PostBody content={post.content} />
           </article>
 
-          <Link href="/blog" className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:underline">
-            <ArrowLeft className="h-4 w-4" /> Усі дописи
+          <Link href={backHref} className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:underline">
+            <ArrowLeft className="h-4 w-4" /> Усі {post.category === "news" ? "новини" : "статті"}
           </Link>
         </div>
       </main>

@@ -60,9 +60,11 @@ const POSTS: Post[] = [
   },
 ];
 
-export function getPosts(): Post[] {
-  // Найновіші зверху.
-  return [...POSTS].sort((a, b) => (a.date < b.date ? 1 : -1));
+export function getPosts(category?: PostCategory): Post[] {
+  // Найновіші зверху; опційно фільтр за категорією (blog | news).
+  return [...POSTS]
+    .filter((p) => !category || p.category === category)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
 export function getPost(slug: string): Post | null {
