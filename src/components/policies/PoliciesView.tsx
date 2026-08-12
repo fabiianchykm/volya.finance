@@ -3,11 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Plus, Trash2, Loader2 } from "lucide-react";
+import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Modal } from "@/components/ui/Modal";
-import { DateInput } from "@/components/ui/DateInput";
 import type { PolicyRecord } from "@/lib/policies";
 
 interface PoliciesViewProps {
@@ -21,8 +18,6 @@ const PRODUCT_LABELS: Record<string, string> = {
 };
 
 export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
-  const [addOpen, setAddOpen] = useState(false);
-
   if (!loggedIn) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
@@ -41,41 +36,27 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
     );
   }
 
-  return (
-    <>
-      {policies.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100">
-            <FileText className="h-7 w-7 text-zinc-400" />
-          </div>
-          <h2 className="text-lg font-bold text-zinc-900">Полісів поки немає</h2>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
-            На акаунті <span className="font-medium text-zinc-700">{email}</span> ще немає полісів.
-            Оформлені у нас зʼявляться автоматично, а вже наявний можна додати вручну.
-          </p>
-          <Button variant="primary" size="lg" className="mx-auto mt-6 flex items-center gap-2" onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Додати наявний поліс
-          </Button>
+  if (policies.length === 0) {
+    return (
+      <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100">
+          <FileText className="h-7 w-7 text-zinc-400" />
         </div>
-      ) : (
-        <>
-          <div className="mb-4 flex justify-end">
-            <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Додати наявний поліс
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {policies.map((p) => (
-              <PolicyCard key={p.id} policy={p} />
-            ))}
-          </div>
-        </>
-      )}
+        <h2 className="text-lg font-bold text-zinc-900">Полісів поки немає</h2>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+          На акаунті <span className="font-medium text-zinc-700">{email}</span> ще немає полісів.
+          Оформлені у нас зʼявляться тут автоматично.
+        </p>
+      </div>
+    );
+  }
 
-      <AddPolicyModal open={addOpen} onClose={() => setAddOpen(false)} />
-    </>
+  return (
+    <div className="space-y-3">
+      {policies.map((p) => (
+        <PolicyCard key={p.id} policy={p} />
+      ))}
+    </div>
   );
 }
 
@@ -206,107 +187,5 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
       </div>
       {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
     </div>
-  );
-}
-
-const PRODUCT_OPTIONS = [
-  { value: "osago", label: "Автоцивілка (ОСЦПВ)" },
-  { value: "kasko", label: "КАСКО" },
-  { value: "greencard", label: "Зелена карта" },
-  { value: "tourism", label: "Туристичне" },
-  { value: "other", label: "Інше" },
-];
-
-function AddPolicyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const router = useRouter();
-  const [f, setF] = useState({
-    product: "osago", company: "", policyNumber: "",
-    plate: "", mark: "", model: "", startDate: "", endDate: "", price: "",
-  });
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const isAuto = f.product === "osago" || f.product === "kasko" || f.product === "greencard";
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
-    if (!f.policyNumber.trim() && !f.company.trim()) {
-      setError("Вкажіть номер полісу або страхову компанію");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/policies/manual", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          product: f.product,
-          company: f.company || null,
-          policyNumber: f.policyNumber || null,
-          startDate: f.startDate || null,
-          endDate: f.endDate || null,
-          price: f.price ? Number(f.price.replace(/\D/g, "")) : null,
-          vehicle: isAuto ? { plate: f.plate || undefined, mark: f.mark || undefined, model: f.model || undefined } : {},
-        }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Не вдалося додати поліс");
-      onClose();
-      setF({ product: "osago", company: "", policyNumber: "", plate: "", mark: "", model: "", startDate: "", endDate: "", price: "" });
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const selectClass = "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
-
-  return (
-    <Modal open={open} onClose={onClose} title="Додати наявний поліс" size="md">
-      <form onSubmit={submit} className="space-y-4">
-        <p className="text-sm text-zinc-500">
-          Додайте поліс, який ви вже маєте (оформлений деінде), щоб він зберігався у вашому кабінеті.
-        </p>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-zinc-700">Вид страхування</label>
-          <select value={f.product} onChange={(e) => setF((s) => ({ ...s, product: e.target.value }))} className={selectClass}>
-            {PRODUCT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="Страхова компанія" value={f.company} onChange={set("company")} placeholder="напр. PZU, ІНГО" />
-          <Input label="Номер полісу" value={f.policyNumber} onChange={set("policyNumber")} placeholder="напр. AO/1234567" />
-        </div>
-
-        {isAuto && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="Держ. номер" value={f.plate} onChange={set("plate")} placeholder="AA1234BB" />
-            <Input label="Марка" value={f.mark} onChange={set("mark")} placeholder="Audi" />
-            <Input label="Модель" value={f.model} onChange={set("model")} placeholder="A4" />
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <DateInput label="Дата початку" value={f.startDate} onChange={(v) => setF((s) => ({ ...s, startDate: v }))} maxDate={new Date(new Date().getFullYear() + 2, 11, 31)} defaultYear={new Date().getFullYear()} />
-          <DateInput label="Дата завершення" value={f.endDate} onChange={(v) => setF((s) => ({ ...s, endDate: v }))} maxDate={new Date(new Date().getFullYear() + 3, 11, 31)} defaultYear={new Date().getFullYear() + 1} />
-        </div>
-
-        <Input label="Вартість, грн (необовʼязково)" value={f.price} onChange={(e) => setF((s) => ({ ...s, price: e.target.value.replace(/\D/g, "") }))} placeholder="напр. 1200" />
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="ghost" size="md" onClick={onClose}>Скасувати</Button>
-          <Button type="submit" variant="primary" size="md" loading={loading}>Додати поліс</Button>
-        </div>
-      </form>
-    </Modal>
   );
 }
