@@ -43,6 +43,7 @@ const footerLinks: { products: FooterLink[]; legal: FooterLink[] } = {
     { label: "Зелена карта", href: "/green-card" },
     { label: "Туристичне", href: "/tourism" },
     { label: "Тварини", href: "/pets" },
+    { label: "Житло", href: "/housing" },
   ],
   legal: [
     { label: "Інформація про Субагента", href: "/subagent" },
