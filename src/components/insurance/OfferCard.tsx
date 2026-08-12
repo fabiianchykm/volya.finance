@@ -374,16 +374,16 @@ export function OfferCard({
           {hasDocs && (
             <div>
               <p className="mb-2 text-xs font-semibold text-zinc-700">Документи страхового продукту</p>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {docs.map((d) => (
                   <a
                     key={d.label}
                     href={d.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-xs text-indigo-600 transition-colors hover:text-indigo-700 hover:underline"
+                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
                   >
-                    <FileText className="h-3.5 w-3.5 shrink-0" />
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
                     {d.label}
                   </a>
                 ))}
