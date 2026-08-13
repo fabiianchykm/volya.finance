@@ -89,18 +89,18 @@ export function FooterContact() {
   const [mode, setMode] = useState<LeadMode>(null);
 
   const btn =
-    "flex h-11 w-11 items-center justify-center rounded-xl bg-white text-indigo-600 ring-1 ring-zinc-200 shadow-sm transition-colors hover:bg-indigo-600 hover:text-white hover:ring-indigo-500";
+    "flex h-11 w-11 items-center justify-center rounded-xl bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 ring-1 ring-zinc-200 dark:ring-zinc-700 shadow-sm transition-colors hover:bg-indigo-600 hover:text-white hover:ring-indigo-500";
   // Соцмережі поки «заморожені» (профілів ще немає) — показуємо іконки, але нікуди
   // не ведемо: статичні span-и, курсор default, без hover-стану.
   const social =
-    "flex h-11 w-11 cursor-default items-center justify-center rounded-xl bg-white text-zinc-400 ring-1 ring-zinc-200 shadow-sm";
+    "flex h-11 w-11 cursor-default items-center justify-center rounded-xl bg-white dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 ring-1 ring-zinc-200 dark:ring-zinc-700 shadow-sm";
 
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-x-14 gap-y-8">
         {/* Підтримка — способи звʼязку */}
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
             Підтримка
           </p>
           <div className="flex items-center gap-3">
@@ -122,7 +122,7 @@ export function FooterContact() {
 
         {/* Соцмережі — паралельно від підтримки */}
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
             Соцмережі
           </p>
           <div className="flex flex-wrap items-center gap-3">

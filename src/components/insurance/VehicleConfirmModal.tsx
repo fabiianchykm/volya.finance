@@ -150,7 +150,7 @@ export function VehicleConfirmModal({
   // режимі. Засіяне з реєстру, якщо той повернув місто; інакше користувач обирає сам.
   const cityField = (
     <div className="relative" ref={cityRef}>
-      <label className="mb-1.5 block text-xs font-medium text-zinc-500">
+      <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
         Місто реєстрації ТЗ
       </label>
       <input
@@ -159,7 +159,7 @@ export function VehicleConfirmModal({
         onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
         placeholder="Введіть місто..."
         spellCheck={false}
-        className={`h-10 w-full rounded-xl border bg-white px-3 text-sm text-zinc-900 outline-none transition-colors ${selectedCity ? "border-emerald-400 bg-emerald-50/40" : "border-zinc-200 focus:border-indigo-400"}`}
+        className={`h-10 w-full rounded-xl border bg-white px-3 text-sm text-zinc-900 outline-none transition-colors dark:bg-zinc-900 dark:text-zinc-100 ${selectedCity ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : "border-zinc-200 focus:border-indigo-400 dark:border-zinc-700"}`}
       />
       {!selectedCity && (
         <p className="mt-1 text-xs text-amber-600 font-medium">
@@ -167,13 +167,13 @@ export function VehicleConfirmModal({
         </p>
       )}
       {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
-        <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
+        <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden dark:border-zinc-700 dark:bg-zinc-900">
           {cityResults.map((city) => (
             <button
               key={city.id}
               type="button"
               onClick={() => { setSelectedCity(city); setCityQuery(cityShort(city.name_full_name_ua ?? city.name_ua)); setCityResults([]); }}
-              className="w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+              className="w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors dark:text-zinc-200 dark:hover:bg-zinc-800/60"
             >
               {cityShort(city.name_full_name_ua ?? city.name_ua)}
             </button>
@@ -189,19 +189,19 @@ export function VehicleConfirmModal({
       onClose={onClose}
       title={manualMode ? (vehicleComplete ? "Змінити дані авто" : "Введіть дані авто вручну") : undefined}
       size="md"
-      className={isFound ? "bg-emerald-50 border border-emerald-100" : ""}
+      className={isFound ? "bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-900" : ""}
     >
       <div className="space-y-4">
 
         {/* Авто не знайдено / реєстр повернув неповні дані → підказка ручного вводу */}
         {manualDueToLookup && (
-          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950/40">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <div>
-              <p className="text-sm font-medium text-amber-800">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                 Авто не знайдено в реєстрі
               </p>
-              <p className="mt-0.5 text-xs text-amber-700">
+              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-300">
                 Перевірте номер або введіть дані вручну — це займе 30 секунд
               </p>
             </div>
@@ -233,36 +233,36 @@ export function VehicleConfirmModal({
 
             {/* Марка, модель, рік */}
             <div className="text-center">
-              <p className="text-xl font-bold text-zinc-900">
+              <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
                 {vehicle.mark} {vehicle.model}, {vehicle.year}
               </p>
             </div>
 
             {/* Місце реєстрації */}
             <div className="text-center">
-              <p className="text-sm text-zinc-500">
-                <span className="font-medium text-zinc-700">Місце реєстрації: </span>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                <span className="font-medium text-zinc-700 dark:text-zinc-200">Місце реєстрації: </span>
                 {vehicle.cityName?.replace(/,?\s*Україна$/i, '')}
               </p>
             </div>
 
             {/* VIN та категорія */}
             <div className="text-center space-y-1">
-              <p className="text-sm text-zinc-500">
-                <span className="font-medium text-zinc-700">VIN: </span>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                <span className="font-medium text-zinc-700 dark:text-zinc-200">VIN: </span>
                 {vehicle.vin || '—'}
               </p>
-              <p className="text-sm text-zinc-500">
-                <span className="font-medium text-zinc-700">Категорія: </span>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                <span className="font-medium text-zinc-700 dark:text-zinc-200">Категорія: </span>
                 {vehicle.autoCategory} · {categoryLabels[vehicle.autoCategory] ?? vehicle.autoCategory}
               </p>
             </div>
 
             {/* Кнопка змінити */}
-            <div className="pt-1 border-t border-zinc-100">
+            <div className="pt-1 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 onClick={() => setManualMode(true)}
-                className="w-full flex items-center justify-center gap-1.5 text-sm text-zinc-400 hover:text-indigo-600 transition-colors py-2"
+                className="w-full flex items-center justify-center gap-1.5 text-sm text-zinc-400 hover:text-indigo-600 transition-colors py-2 dark:text-zinc-500 dark:hover:text-indigo-400"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Дані невірні?
@@ -274,8 +274,8 @@ export function VehicleConfirmModal({
         {/* Manual form */}
         {manualMode && (
           <div className="space-y-3">
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-2.5 text-center">
-              <span className="text-sm font-mono font-bold tracking-widest text-zinc-900">
+            <div className="rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-2.5 text-center dark:border-zinc-800 dark:bg-zinc-800/50">
+              <span className="text-sm font-mono font-bold tracking-widest text-zinc-900 dark:text-zinc-100">
                 {plate}
               </span>
             </div>
@@ -299,13 +299,13 @@ export function VehicleConfirmModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-500">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
                   Рік випуску
                 </label>
                 <select
                   value={form.year}
                   onChange={set("year")}
-                  className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400"
+                  className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                 >
                   {years.map((y) => (
                     <option key={y} value={y}>
@@ -316,13 +316,13 @@ export function VehicleConfirmModal({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-500">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
                   Категорія ТЗ
                 </label>
                 <select
                   value={form.autoCategory}
                   onChange={set("autoCategory")}
-                  className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400"
+                  className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                 >
                   {AUTO_CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>
@@ -346,7 +346,7 @@ export function VehicleConfirmModal({
             {vehicleComplete && !editMode && (
               <button
                 onClick={() => setManualMode(false)}
-                className="text-xs text-indigo-600 hover:underline"
+                className="text-xs text-indigo-600 hover:underline dark:text-indigo-400"
               >
                 ← Повернутись до автоматичних даних
               </button>
@@ -356,8 +356,8 @@ export function VehicleConfirmModal({
 
         {/* Період дії поліса — рік (за замовч.) або пів року. Лише ОСЦПВ. */}
         {periodId !== undefined && (
-          <div className="border-t border-zinc-100 pt-3">
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500">Період страхування</label>
+          <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Період страхування</label>
             <PeriodSelect value={period} onChange={setPeriod} />
           </div>
         )}
@@ -404,21 +404,21 @@ function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex h-12 w-full items-center justify-between rounded-xl border bg-white px-3 text-left transition-colors ${
-          open ? "border-indigo-400 ring-1 ring-indigo-400" : "border-zinc-200 hover:border-indigo-300"
+        className={`flex h-12 w-full items-center justify-between rounded-xl border bg-white px-3 text-left transition-colors dark:bg-zinc-900 ${
+          open ? "border-indigo-400 ring-1 ring-indigo-400" : "border-zinc-200 hover:border-indigo-300 dark:border-zinc-700"
         }`}
       >
         <span className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
             <CalendarRange className="h-4 w-4" />
           </span>
-          <span className="text-sm font-semibold text-zinc-900">{cur.l}</span>
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{cur.l}</span>
         </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-xl">
+        <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
           {PERIOD_OPTIONS.map((o) => {
             const active = o.v === value;
             return (
@@ -427,11 +427,11 @@ function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number
                 type="button"
                 onClick={() => { onChange(o.v); setOpen(false); }}
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors ${
-                  active ? "bg-indigo-50" : "hover:bg-zinc-50"
+                  active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                 }`}
               >
-                <span className={`text-sm font-semibold ${active ? "text-indigo-700" : "text-zinc-800"}`}>{o.l}</span>
-                {active && <Check className="h-4 w-4 shrink-0 text-indigo-600" />}
+                <span className={`text-sm font-semibold ${active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-200"}`}>{o.l}</span>
+                {active && <Check className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />}
               </button>
             );
           })}

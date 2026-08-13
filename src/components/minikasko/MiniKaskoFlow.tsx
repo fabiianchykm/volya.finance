@@ -30,7 +30,7 @@ const MK_INSURERS = ["ВУСО", "ТАС", "ОРАНТА", "УНІКА", "УСГ
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number }
 
 const inputCls =
-  "h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
+  "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
 
 function fmtCoverage(v: number): string {
   return `${(v / 1000).toLocaleString("uk-UA")} тис. грн`;
@@ -189,21 +189,21 @@ export function MiniKaskoFlow() {
 
             <HeroSteps steps={MK_STEPS} />
 
-            <form onSubmit={calc} className="mx-auto max-w-md rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+            <form onSubmit={calc} className="mx-auto max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
               <div className="relative" ref={cityRef}>
-                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Місто реєстрації авто</label>
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><MapPin className="h-3.5 w-3.5" /> Місто реєстрації авто</label>
                 <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" spellCheck={false}
                   onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
-                  className={`${inputCls} pr-10${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
+                  className={`${inputCls} pr-10${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
                 {cityLoading && !selectedCity && cityQuery.length >= 2 && (
                   <Loader2 className="pointer-events-none absolute right-3 top-[2.15rem] h-4 w-4 animate-spin text-indigo-500" />
                 )}
                 {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
-                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                  <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg">
                     {cityResults.map((c) => (
                       <button key={c.id} type="button"
                         onClick={() => { setSelectedCity(c); setCityQuery(cityShort(c.name_full_name_ua || c.name_ua)); setCityResults([]); }}
-                        className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
+                        className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
                     ))}
                   </div>
                 )}
@@ -255,15 +255,15 @@ function MiniKaskoOffers({
       <div className="flex flex-col items-start gap-6 lg:flex-row">
         <div className="min-w-0 flex-1">
           {/* Картка-підсумок */}
-          <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
+          <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
               <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
                 <Home className="h-3.5 w-3.5" />
               </button>
               <ChevronRight className="h-3 w-3" />
-              <span className="font-medium text-zinc-600">Міні-КАСКО</span>
+              <span className="font-medium text-zinc-600 dark:text-zinc-300">Міні-КАСКО</span>
             </div>
-            <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary || "Ваше авто"}</p>
+            <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary || "Ваше авто"}</p>
           </div>
 
           {/* Покриття + сортування — в одному рядку (як в ОСЦПВ) */}
@@ -272,32 +272,32 @@ function MiniKaskoOffers({
               {/* Сума покриття — дропдаун */}
               {coverages.length > 0 && activeCoverage != null && (
                 <div className="relative inline-block">
-                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</span>
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400 dark:text-zinc-500"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</span>
                   <button
                     type="button"
                     onClick={() => setCvOpen((o) => !o)}
                     aria-expanded={cvOpen}
-                    className="flex min-w-[240px] items-center justify-between gap-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200 transition-colors hover:ring-indigo-300"
+                    className="flex min-w-[240px] items-center justify-between gap-3 rounded-xl bg-white dark:bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100 shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700 transition-colors hover:ring-indigo-300"
                   >
                     <span>{fmtCoverage(activeCoverage)}</span>
-                    <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${cvOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`h-4 w-4 text-zinc-400 dark:text-zinc-500 transition-transform ${cvOpen ? "rotate-180" : ""}`} />
                   </button>
                   {cvOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setCvOpen(false)} />
-                      <div className="absolute left-0 top-full z-20 mt-2 w-[280px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl">
+                      <div className="absolute left-0 top-full z-20 mt-2 w-[280px] overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5 shadow-xl">
                         {coverages.map((cv) => (
                           <button
                             key={cv}
                             type="button"
                             onClick={() => { setCoverage(cv); setCvOpen(false); }}
                             className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                              activeCoverage === cv ? "bg-indigo-50" : "hover:bg-zinc-50"
+                              activeCoverage === cv ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                             }`}
                           >
                             <span className="flex flex-col">
-                              <span className="text-sm font-semibold text-zinc-900">{fmtCoverage(cv)}</span>
-                              <span className="text-xs text-zinc-400">максимальна виплата</span>
+                              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{fmtCoverage(cv)}</span>
+                              <span className="text-xs text-zinc-400 dark:text-zinc-500">максимальна виплата</span>
                             </span>
                           </button>
                         ))}
@@ -309,30 +309,30 @@ function MiniKaskoOffers({
 
               {/* Сортування — дропдаун (той самий стиль) */}
               <div className="relative inline-block">
-                <span className="mb-1.5 block text-xs font-medium text-zinc-400">Сортувати</span>
+                <span className="mb-1.5 block text-xs font-medium text-zinc-400 dark:text-zinc-500">Сортувати</span>
                 <button
                   type="button"
                   onClick={() => setSortOpen((o) => !o)}
                   aria-expanded={sortOpen}
-                  className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200 transition-colors hover:ring-indigo-300"
+                  className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl bg-white dark:bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100 shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700 transition-colors hover:ring-indigo-300"
                 >
-                  <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600" />{activeSort.label}</span>
-                  <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+                  <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />{activeSort.label}</span>
+                  <ChevronDown className={`h-4 w-4 text-zinc-400 dark:text-zinc-500 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
                 </button>
                 {sortOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
-                    <div className="absolute right-0 top-full z-20 mt-2 w-[220px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl">
+                    <div className="absolute right-0 top-full z-20 mt-2 w-[220px] overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5 shadow-xl">
                       {SORT_OPTIONS.map(({ k, label, Icon }) => (
                         <button
                           key={k}
                           type="button"
                           onClick={() => { setSortBy(k); setSortOpen(false); }}
                           className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                            sortBy === k ? "bg-indigo-50 font-semibold text-indigo-700" : "text-zinc-700 hover:bg-zinc-50"
+                            sortBy === k ? "bg-indigo-50 dark:bg-indigo-950/40 font-semibold text-indigo-700 dark:text-indigo-300" : "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                           }`}
                         >
-                          <Icon className="h-4 w-4 shrink-0 text-indigo-600" />
+                          <Icon className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
                           {label}
                         </button>
                       ))}
@@ -349,9 +349,9 @@ function MiniKaskoOffers({
               {Array.from({ length: 4 }).map((_, i) => <MiniKaskoSkeleton key={i} />)}
             </>
           ) : error || offers.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-              <p className="text-base font-semibold text-zinc-900">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
-              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте іншу дату чи місто."}</p>
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте іншу дату чи місто."}</p>
               <Button variant="secondary" size="md" onClick={onBack} className="mt-5">Змінити параметри</Button>
             </div>
           ) : (
@@ -377,14 +377,14 @@ function MiniKaskoOffers({
 
           {/* Прорахунок консультантом — додаткова можливість поруч із пропозиціями */}
           {!loading && (
-            <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-indigo-100 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-950/40 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
                   <Phone className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-zinc-900">Потрібен індивідуальний прорахунок?</p>
-                  <p className="text-xs text-zinc-500">Залиште номер — консультант прорахує найкращий варіант і передзвонить.</p>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Потрібен індивідуальний прорахунок?</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Залиште номер — консультант прорахує найкращий варіант і передзвонить.</p>
                 </div>
               </div>
               <Button type="button" variant="secondary" size="md" onClick={() => setLeadMode("phone")} className="shrink-0">
@@ -427,16 +427,16 @@ function toInsuranceOffer(o: MiniKaskoOffer): InsuranceOffer {
 
 function MiniKaskoSkeleton() {
   return (
-    <div className="mb-3 animate-pulse rounded-2xl border border-zinc-100 bg-white px-5 py-5 shadow-sm">
+    <div className="mb-3 animate-pulse rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5 py-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-zinc-100" />
+          <div className="h-12 w-12 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
           <div className="space-y-2">
-            <div className="h-4 w-36 rounded bg-zinc-100" />
-            <div className="h-3 w-20 rounded bg-zinc-100" />
+            <div className="h-4 w-36 rounded bg-zinc-100 dark:bg-zinc-800" />
+            <div className="h-3 w-20 rounded bg-zinc-100 dark:bg-zinc-800" />
           </div>
         </div>
-        <div className="h-9 w-24 rounded-xl bg-zinc-100" />
+        <div className="h-9 w-24 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
       </div>
     </div>
   );

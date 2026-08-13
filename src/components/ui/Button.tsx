@@ -12,13 +12,13 @@ const buttonVariants = cva(
         primary:
           "bg-[#A47862] text-white hover:bg-[#8F6550] active:scale-[0.98] shadow-lg shadow-[#A47862]/20",
         secondary:
-          "bg-white text-[#A47862] border border-[#A47862]/30 hover:bg-[#A47862]/10 active:scale-[0.98]",
+          "bg-white dark:bg-zinc-900 text-[#A47862] border border-[#A47862]/30 hover:bg-[#A47862]/10 active:scale-[0.98]",
         ghost:
-          "bg-transparent text-zinc-600 hover:bg-zinc-100 active:scale-[0.98]",
+          "bg-transparent text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-[0.98]",
         danger:
           "bg-red-600 text-white hover:bg-red-700 active:scale-[0.98] shadow-lg shadow-red-500/20",
         outline:
-          "bg-transparent text-zinc-800 border border-zinc-200 hover:bg-zinc-50 active:scale-[0.98]",
+          "bg-transparent text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 active:scale-[0.98]",
       },
       size: {
         sm: "h-8 px-3 text-xs",

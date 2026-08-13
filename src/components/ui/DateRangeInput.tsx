@@ -93,29 +93,29 @@ export function DateRangeInput({ label, start, end, onChange, minDate, maxDate, 
     : "";
 
   const selectClass =
-    "h-8 rounded-lg border border-zinc-200 bg-white px-2 text-sm text-zinc-800 outline-none focus:border-indigo-400";
+    "h-8 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 text-sm text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-400";
 
   return (
     <div className="relative flex flex-col gap-1.5" ref={ref}>
-      {label && <label className="text-sm font-medium text-zinc-700">{label}</label>}
+      {label && <label className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{label}</label>}
 
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex h-11 items-center justify-between rounded-xl border bg-white px-4 text-left text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
-          open ? "border-indigo-500" : "border-zinc-200"
+        className={`flex h-11 items-center justify-between rounded-xl border bg-white dark:bg-zinc-900 px-4 text-left text-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+          open ? "border-indigo-500" : "border-zinc-200 dark:border-zinc-700"
         } ${className ?? ""}`}
       >
-        <span className={display ? "text-zinc-900" : "text-zinc-400"}>
+        <span className={display ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-400 dark:text-zinc-500"}>
           {display || "Оберіть період"}
         </span>
-        <CalendarDays className={`h-5 w-5 shrink-0 ${open ? "text-indigo-500" : "text-zinc-400"}`} />
+        <CalendarDays className={`h-5 w-5 shrink-0 ${open ? "text-indigo-500" : "text-zinc-400 dark:text-zinc-500"}`} />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-30 mt-2 w-[288px] rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl">
+        <div className="absolute top-full left-0 z-30 mt-2 w-[288px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-xl">
           <div className="mb-2 flex items-center gap-1.5">
-            <button type="button" onClick={prevMonth} aria-label="Попередній місяць" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100">
+            <button type="button" onClick={prevMonth} aria-label="Попередній місяць" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
               <ChevronLeft className="h-4 w-4" />
             </button>
             <select value={view.m} onChange={(e) => setView((v) => ({ ...v, m: +e.target.value }))} className={`${selectClass} flex-1`}>
@@ -124,13 +124,13 @@ export function DateRangeInput({ label, start, end, onChange, minDate, maxDate, 
             <select value={view.y} onChange={(e) => setView((v) => ({ ...v, y: +e.target.value }))} className={selectClass}>
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
-            <button type="button" onClick={nextMonth} aria-label="Наступний місяць" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100">
+            <button type="button" onClick={nextMonth} aria-label="Наступний місяць" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
           <div className="grid grid-cols-7 text-center">
-            {WEEKDAYS.map((w) => <span key={w} className="pb-1 text-[11px] font-medium text-zinc-400">{w}</span>)}
+            {WEEKDAYS.map((w) => <span key={w} className="pb-1 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">{w}</span>)}
           </div>
 
           <div className="grid grid-cols-7 gap-y-0.5">
@@ -141,7 +141,7 @@ export function DateRangeInput({ label, start, end, onChange, minDate, maxDate, 
               const between = inRange(d);
               const disabled = isDisabled(d);
               return (
-                <div key={i} className={`flex justify-center ${between ? "bg-indigo-50" : ""} ${isStart && endD ? "rounded-l-lg bg-indigo-50" : ""} ${isEnd ? "rounded-r-lg bg-indigo-50" : ""}`}>
+                <div key={i} className={`flex justify-center ${between ? "bg-indigo-50 dark:bg-indigo-950/40" : ""} ${isStart && endD ? "rounded-l-lg bg-indigo-50 dark:bg-indigo-950/40" : ""} ${isEnd ? "rounded-r-lg bg-indigo-50 dark:bg-indigo-950/40" : ""}`}>
                   <button
                     type="button"
                     disabled={disabled}
@@ -150,10 +150,10 @@ export function DateRangeInput({ label, start, end, onChange, minDate, maxDate, 
                       isStart || isEnd
                         ? "bg-indigo-600 font-semibold text-white"
                         : between
-                          ? "text-indigo-700 hover:bg-indigo-100"
+                          ? "text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
                           : disabled
-                            ? "cursor-not-allowed text-zinc-300"
-                            : "text-zinc-700 hover:bg-indigo-50"
+                            ? "cursor-not-allowed text-zinc-300 dark:text-zinc-600"
+                            : "text-zinc-700 dark:text-zinc-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
                     }`}
                   >
                     {d}
@@ -163,7 +163,7 @@ export function DateRangeInput({ label, start, end, onChange, minDate, maxDate, 
             })}
           </div>
 
-          <p className="mt-2 px-1 text-[11px] text-zinc-400">
+          <p className="mt-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             {!startD ? "Оберіть дату початку" : !endD ? "Тепер оберіть дату завершення" : `Період: ${daysBetween(startD, endD)} дн.`}
           </p>
         </div>

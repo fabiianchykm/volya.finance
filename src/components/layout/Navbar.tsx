@@ -54,7 +54,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
         className={cn(
           "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
           opaque
-            ? cn("text-zinc-700", open && "bg-indigo-50 text-indigo-700", "hover:bg-indigo-50 hover:text-indigo-700")
+            ? cn("text-zinc-700 dark:text-zinc-200", open && "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300", "hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-700 dark:hover:text-indigo-300")
             : cn("text-white/80", open && "bg-white/10 text-white", "hover:bg-white/10 hover:text-white")
         )}
       >
@@ -68,24 +68,24 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
           open ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"
         )}
       >
-        <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03]">
+        <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03] dark:ring-white/10">
           {links.map(({ href, label, icon: Icon, desc, badge, soon }) => {
             const row = (
               <>
                 <span className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
-                  soon ? "bg-zinc-100 text-zinc-400" : "bg-indigo-50 text-indigo-600 group-hover/item:bg-indigo-600 group-hover/item:text-white"
+                  soon ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500" : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 group-hover/item:bg-indigo-600 group-hover/item:text-white"
                 )}>
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="min-w-0">
-                  <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                     {label}
                     {badge && (
-                      <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{badge}</span>
+                      <span className="rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">{badge}</span>
                     )}
                   </span>
-                  <span className="block truncate text-xs text-zinc-400">{desc}</span>
+                  <span className="block truncate text-xs text-zinc-400 dark:text-zinc-500">{desc}</span>
                 </span>
               </>
             );
@@ -98,7 +98,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70"
+                className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70 dark:hover:bg-indigo-950/30"
               >
                 {row}
               </Link>
@@ -133,7 +133,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
       className={cn(
         "fixed top-0 left-0 right-0 z-40 transition-all duration-500",
         opaque
-          ? "bg-white/95 backdrop-blur-md border-b border-zinc-100 shadow-sm"
+          ? "bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800 shadow-sm"
           : "bg-white/5 backdrop-blur-md border-b border-white/10"
       )}
     >
@@ -143,11 +143,11 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
           <span
             className={cn(
               "text-2xl font-medium uppercase tracking-[0.2em] transition-colors duration-300",
-              opaque ? "text-zinc-900" : "text-white"
+              opaque ? "text-zinc-900 dark:text-zinc-100" : "text-white"
             )}
           >
             OLY<BarlessA className="inline-block h-[0.72em] w-auto align-baseline" />
-            <span className={cn("text-[0.7em] font-semibold normal-case tracking-normal", opaque ? "text-indigo-600" : "text-indigo-300")}>.finance</span>
+            <span className={cn("text-[0.7em] font-semibold normal-case tracking-normal", opaque ? "text-indigo-600 dark:text-indigo-400" : "text-indigo-300")}>.finance</span>
           </span>
         </Link>
 
@@ -181,7 +181,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
           className={cn(
             "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors md:hidden",
             opaque
-              ? "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+              ? "border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
               : "border-white/20 text-white hover:bg-white/10"
           )}
           onClick={() => setMobileOpen((o) => !o)}
@@ -198,7 +198,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-zinc-100 bg-white md:hidden"
+            className="overflow-hidden border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 md:hidden"
           >
             <div className="flex flex-col gap-1 px-4 py-4">
               {navLinks.map((link) => {
@@ -208,26 +208,26 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                   <>
                     {link.label}
                     {badge && (
-                      <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600">{badge}</span>
+                      <span className="rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">{badge}</span>
                     )}
                   </>
                 );
                 return soon ? (
-                  <span key={link.label} aria-disabled className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-400">
+                  <span key={link.label} aria-disabled className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-400 dark:text-zinc-500">
                     {label}
                   </span>
                 ) : (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                    className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                     onClick={() => setMobileOpen(false)}
                   >
                     {label}
                   </Link>
                 );
               })}
-              <div className="mt-3 border-t border-zinc-100 pt-3">
+              <div className="mt-3 border-t border-zinc-100 dark:border-zinc-800 pt-3">
                 {session?.user ? (
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3 px-1 py-1">
@@ -240,14 +240,14 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                           className="rounded-full"
                         />
                       )}
-                      <span className="text-sm font-medium text-zinc-800">{session.user.name}</span>
+                      <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{session.user.name}</span>
                     </div>
                     <Link
                       href="/policies"
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                     >
-                      <FileText className="h-4 w-4 text-zinc-400" />
+                      <FileText className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                       Мої поліси
                     </Link>
                     <Button
@@ -296,7 +296,7 @@ function UserMenu({
         className={cn(
           "flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors",
           scrolled
-            ? "text-zinc-700 hover:bg-zinc-100"
+            ? "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             : "text-white hover:bg-white/10"
         )}
       >
@@ -328,25 +328,25 @@ function UserMenu({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
               transition={{ duration: 0.12 }}
-              className="absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-zinc-100 bg-white p-1.5 shadow-lg"
+              className="absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5 shadow-lg"
             >
-              <div className="px-3 py-2 border-b border-zinc-100 mb-1">
-                <p className="text-sm font-medium text-zinc-900">{user.name}</p>
-                <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 mb-1">
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{user.name}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{user.email}</p>
               </div>
               <Link
                 href="/policies"
                 onClick={() => setOpen(false)}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
               >
-                <FileText className="h-4 w-4 text-zinc-400" />
+                <FileText className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                 Мої поліси
               </Link>
               <button
                 onClick={() => { setOpen(false); signOut(); }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
               >
-                <LogOut className="h-4 w-4 text-zinc-400" />
+                <LogOut className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                 Вийти
               </button>
             </motion.div>

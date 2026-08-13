@@ -76,8 +76,8 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
       {done ? (
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-          <p className="text-base font-semibold text-zinc-900">Дякуємо! Заявку прийнято.</p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Дякуємо! Заявку прийнято.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {mode === "email" ? "Ми напишемо вам найближчим часом." : "Наш менеджер зателефонує вам найближчим часом."}
           </p>
           <Button variant="outline" size="md" className="mt-2 w-full" onClick={close}>
@@ -86,15 +86,15 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
         </div>
       ) : (
         <form onSubmit={submit} className="space-y-4">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {mode === "email"
               ? "Залиште свій email — ми напишемо вам."
               : "Залиште свій номер — ми зателефонуємо вам."}
           </p>
 
           {mode === "phone" ? (
-            <div className="flex items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-              <span className="select-none pl-4 pr-1 text-sm text-zinc-500">+380</span>
+            <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 transition-colors focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+              <span className="select-none pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
               <input
                 type="tel"
                 inputMode="numeric"
@@ -102,7 +102,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
                 placeholder="67 123 45 67"
                 value={formatUaPhone(phone)}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none"
+                className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none"
               />
             </div>
           ) : (
@@ -112,7 +112,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
               placeholder="email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           )}
 

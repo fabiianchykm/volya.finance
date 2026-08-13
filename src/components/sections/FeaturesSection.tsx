@@ -63,14 +63,14 @@ function FeatureCard({ feature, index }: { feature: (typeof features)[number]; i
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200/50 transition-all hover:shadow-lg hover:shadow-indigo-900/5 hover:-translate-y-1"
+      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 p-5 shadow-sm ring-1 ring-zinc-200/50 dark:ring-zinc-700 transition-all hover:shadow-lg hover:shadow-indigo-900/5 hover:-translate-y-1"
     >
       <div className="relative z-10 flex-1">
         <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${iconBg} ${iconColor} transition-transform duration-300 group-hover:scale-110`}>
           <Icon className="h-6 w-6" />
         </div>
-        <h3 className="mb-2 text-base font-bold leading-snug text-zinc-900">{title}</h3>
-        <p className="text-sm leading-relaxed text-zinc-500">{description}</p>
+        <h3 className="mb-2 text-base font-bold leading-snug text-zinc-900 dark:text-zinc-100">{title}</h3>
+        <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{description}</p>
       </div>
       <div
         className={`absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-[0.03] transition-transform duration-500 group-hover:scale-150 ${glowColor}`}
@@ -85,10 +85,10 @@ export function FeaturesSection() {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         {/* Заголовок — вгорі, зліва */}
         <div className="mb-8 max-w-2xl">
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-3xl">
             Переваги купівлі онлайн
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
             Оформлення поліса без черг, паперів і поїздок — швидко, зручно та офіційно.
           </p>
         </div>

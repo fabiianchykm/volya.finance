@@ -299,22 +299,22 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
   };
 
   const inputCls =
-    "h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
+    "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
 
   return (
-    <div className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+    <div className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
       <div className="mb-5 flex items-center gap-3">
         <button
           type="button"
           onClick={() => (formStep === "vehicle" ? setFormStep("customer") : onBack())}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 text-zinc-500 hover:text-zinc-900"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h2 className="text-lg font-bold text-zinc-900">Оформлення Міні-КАСКО</h2>
-          <p className="text-sm text-zinc-500">
-            Крок {formStep === "customer" ? 1 : 2} з 2 · <span className="font-semibold text-zinc-900">{ctx.offer.price} грн</span>
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Оформлення Міні-КАСКО</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Крок {formStep === "customer" ? 1 : 2} з 2 · <span className="font-semibold text-zinc-900 dark:text-zinc-100">{ctx.offer.price} грн</span>
             {" · "}покриття {(ctx.offer.coverage / 1000).toLocaleString("uk-UA")} тис. грн
           </p>
         </div>
@@ -326,7 +326,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         {formStep === "customer" && (
         <>
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Страхувальник</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Страхувальник</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Прізвище" value={f.surnameUa} onChange={set("surnameUa")} required />
             <Input label="Ім'я" value={f.nameUa} onChange={set("nameUa")} required />
@@ -338,20 +338,20 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-zinc-500">Телефон</label>
-              <div className="flex items-center rounded-xl border border-zinc-200 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-                <span className="pl-4 pr-1 text-sm text-zinc-500">+380</span>
+              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Телефон</label>
+              <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+                <span className="pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
                 <input type="tel" inputMode="numeric" placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
                   onChange={(e) => setF((s) => ({ ...s, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
-                  required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 outline-none" />
+                  required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none" />
               </div>
             </div>
             <Input label="Email" type="email" value={f.email} onChange={handleEmail} placeholder="email@example.com" required />
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Паспорт</p>
+        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Паспорт</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Номер паспорта" value={f.docNumber} onChange={set("docNumber")} required />
             <Input label="Ким видано" value={f.docIssuedBy} onChange={set("docIssuedBy")} required />
@@ -359,19 +359,19 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Адреса проживання</p>
+        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Адреса проживання</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500">Місто</label>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Місто</label>
               <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
-                className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
+                className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
-                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg">
                   {cityResults.map((c) => (
                     <button key={c.id} type="button" onClick={() => { setSelectedCity(c); setCityQuery(cityShort(c.name_full_name_ua || c.name_ua)); setCityResults([]); }}
-                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
+                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">{cityLong(c.name_full_name_ua || c.name_ua)}</button>
                   ))}
                 </div>
               )}
@@ -381,7 +381,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-zinc-100 pt-4">
+        <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <Button type="button" onClick={goToVehicle} variant="primary" size="lg" className="w-full sm:w-auto sm:px-8">
             <span className="flex items-center gap-2">Далі <ArrowRight className="h-5 w-5" /></span>
           </Button>
@@ -391,10 +391,10 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
 
         {formStep === "vehicle" && (
         <>
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">Транспортний засіб</p>
+        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Транспортний засіб</p>
           {/* Підказка — зверху, над полями */}
-          <p className="mb-3 text-xs text-zinc-400">Введіть держ. номер — марка, модель і рік підтягнуться автоматично.</p>
+          <p className="mb-3 text-xs text-zinc-400 dark:text-zinc-500">Введіть держ. номер — марка, модель і рік підтягнуться автоматично.</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label="Держ. номер" value={f.number}
               onChange={(e) => setF((s) => ({ ...s, number: e.target.value.toUpperCase() }))}
@@ -410,14 +410,14 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
             <p className="mt-2 text-xs font-medium text-amber-600">{plateError}</p>
           ) : null}
           {/* Таксі — окремим рядком знизу, не збоку */}
-          <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm text-zinc-700">
+          <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
             <input type="checkbox" checked={f.isTaxi} onChange={(e) => setF((s) => ({ ...s, isTaxi: e.target.checked }))}
-              className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" />
+              className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500" />
             Використовується як таксі
           </label>
         </div>
 
-        <div className="flex justify-end border-t border-zinc-100 pt-4">
+        <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto sm:px-8">
             Продовжити до оплати
           </Button>

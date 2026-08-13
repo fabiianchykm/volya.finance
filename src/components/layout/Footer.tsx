@@ -22,7 +22,7 @@ function GooglePlayLogo({ className }: { className?: string }) {
 // Бейдж застосунку з кутовою позначкою «Скоро» (магазини ще не активні).
 function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: string }) {
   return (
-    <div className="relative flex w-full cursor-default items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white px-6 py-3.5">
+    <div className="relative flex w-full cursor-default items-center gap-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-300 bg-white dark:bg-zinc-100 px-6 py-3.5">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center text-zinc-900">{logo}</span>
       <span className="flex flex-col leading-tight">
         <span className="text-xs text-zinc-500">{top}</span>
@@ -63,18 +63,18 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
 function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
   return (
     <div>
-      <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+      <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
         {title}
       </h3>
       <ul className="space-y-1.5">
         {links.map((link) => (
           <li key={link.label}>
             {link.frozen ? (
-              <span className="cursor-default text-[13px] text-zinc-400">{link.label}</span>
+              <span className="cursor-default text-[13px] text-zinc-400 dark:text-zinc-500">{link.label}</span>
             ) : (
               <Link
                 href={link.href}
-                className="text-[13px] text-zinc-600 transition-colors hover:text-indigo-600"
+                className="text-[13px] text-zinc-600 dark:text-zinc-300 transition-colors hover:text-indigo-600 dark:hover:text-indigo-400"
               >
                 {link.label}
               </Link>
@@ -88,7 +88,7 @@ function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200 bg-[#F5F5F7] text-zinc-600">
+    <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-[#F5F5F7] dark:bg-[#0a0a0b] text-zinc-600 dark:text-zinc-300">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
         {/* Бренд + контакти + застосунок, а під ними — компактні колонки посилань */}
         <div className="py-16 lg:py-20">
@@ -96,7 +96,7 @@ export function Footer() {
 
           {/* Застосунки (iOS + Android) — «Скоро» у правому верхньому куті рамок */}
           <div className="mt-7">
-            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Застосунок</p>
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">Застосунок</p>
             <div className="grid max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
               <StoreBadge logo={<AppleLogo className="h-6 w-6" />} top="Завантажити в" name="App Store" />
               <StoreBadge logo={<GooglePlayLogo className="h-6 w-6" />} top="Завантажити в" name="Google Play" />
@@ -137,8 +137,8 @@ export function Footer() {
 
         {/* Довідковий SEO-текст дрібним шрифтом — ПРИРОДНА проза з ключовими фразами,
             вплетеними органічно (без keyword-stuffing, щоб не отримати штраф Google). */}
-        <div className="border-t border-zinc-200 py-6">
-          <p className="text-justify text-[11px] leading-relaxed text-zinc-500">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 py-6">
+          <p className="text-justify text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
             Воля Фінанс (VOLYA.FINANCE) — сервіс онлайн-страхування в Україні.
             У нас можна оформити автоцивілку (ОСЦПВ / ОСАГО), КАСКО та міні-КАСКО, Зелену карту для виїзду за кордон,
             туристичне страхування для подорожей і страхування домашніх тварин. Ми порівнюємо ціни від 18+ провідних
@@ -147,7 +147,7 @@ export function Footer() {
             офісу та зайвих документів, з готовим полісом на email. Оформлення доступне по всій Україні: Київ, Львів,
             Одеса, Харків, Дніпро та інші міста.
           </p>
-          <p className="mt-3 text-[11px] text-zinc-500">
+          <p className="mt-3 text-[11px] text-zinc-500 dark:text-zinc-400">
             © {new Date().getFullYear()} VOLYA.FINANCE. Усі права захищені.
           </p>
         </div>

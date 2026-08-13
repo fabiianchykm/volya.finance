@@ -46,15 +46,15 @@ const CLASSES = [
 
 function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
-    <section className="border-t border-zinc-100 pt-6">
-      <h2 className="mb-3 text-lg font-bold text-zinc-900">{n}. {title}</h2>
-      <div className="space-y-2 text-sm leading-relaxed text-zinc-600">{children}</div>
+    <section className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
+      <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-zinc-100">{n}. {title}</h2>
+      <div className="space-y-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{children}</div>
     </section>
   );
 }
 
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <p><span className="font-medium text-zinc-800">{label}: </span>{children}</p>
+  <p><span className="font-medium text-zinc-800 dark:text-zinc-200">{label}: </span>{children}</p>
 );
 
 export default function SubagentPage() {
@@ -63,9 +63,9 @@ export default function SubagentPage() {
       <Navbar solid />
       <main className="flex-1 pt-24 pb-16">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <p className="text-sm font-medium text-indigo-600">Розкриття інформації</p>
-          <h1 className="mt-1 mb-3 text-2xl font-bold text-zinc-900 sm:text-3xl">Інформація про страхового посередника</h1>
-          <p className="mb-8 text-sm leading-relaxed text-zinc-500">
+          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Розкриття інформації</p>
+          <h1 className="mt-1 mb-3 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">Інформація про страхового посередника</h1>
+          <p className="mb-8 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
             Інформація, яка надається клієнту до укладення договору страхування відповідно до
             статті 88 Закону України «Про страхування».
           </p>
@@ -84,11 +84,11 @@ export default function SubagentPage() {
                 ФОП Александров Володимир Петрович є страховим посередником (субагентом), який діє
                 від імені та за дорученням страхового агента:
               </p>
-              <div className="mt-2 rounded-xl border border-zinc-100 bg-zinc-50 p-4 space-y-1.5">
+              <div className="mt-2 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4 space-y-1.5">
                 <Row label="Агент">ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ «ЮІНШУР» (ТОВ «ЮІНШУР»)</Row>
                 <Row label="Код ЄДРПОУ">45581136</Row>
                 <Row label="Місцезнаходження">Україна, 61001, Харківська обл., м. Харків, пр. Героїв Харкова, буд. 57/63, офіс 57</Row>
-                <Row label="Вебсайт"><a href="https://uconnect.com.ua" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">https://uconnect.com.ua</a></Row>
+                <Row label="Вебсайт"><a href="https://uconnect.com.ua" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">https://uconnect.com.ua</a></Row>
                 <Row label="Рахунок для приймання страхових платежів">UA663077700000026002211241177</Row>
                 <Row label="Реєстраційний номер у Реєстрі посередників НБУ">00004153 від 20.03.2025</Row>
               </div>
@@ -107,8 +107,8 @@ export default function SubagentPage() {
               </p>
               <p>
                 Для отримання консультації звертайтесь до служби підтримки:
-                {" "}<a href="mailto:Aleksandrovvolodimir9@gmail.com" className="text-indigo-600 hover:underline">Aleksandrovvolodimir9@gmail.com</a>
-                {" "}або тел. <a href="tel:+380976898653" className="text-indigo-600 hover:underline">+38 (097) 689-86-53</a>.
+                {" "}<a href="mailto:Aleksandrovvolodimir9@gmail.com" className="text-indigo-600 dark:text-indigo-400 hover:underline">Aleksandrovvolodimir9@gmail.com</a>
+                {" "}або тел. <a href="tel:+380976898653" className="text-indigo-600 dark:text-indigo-400 hover:underline">+38 (097) 689-86-53</a>.
               </p>
             </Section>
 
@@ -116,25 +116,25 @@ export default function SubagentPage() {
               <Row label="Реєстраційний номер у Реєстрі посередників">00001164 від 18.03.2025</Row>
               <p>
                 Перевірити:{" "}
-                <a href="https://kis.bank.gov.ua/search-fu" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">kis.bank.gov.ua/search-fu</a>
+                <a href="https://kis.bank.gov.ua/search-fu" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">kis.bank.gov.ua/search-fu</a>
               </p>
             </Section>
 
             <Section n={5} title="Страхові компанії та продукти, які реалізує посередник">
               <ol className="space-y-3">
                 {INSURERS.map((c, i) => (
-                  <li key={c.edrpou} className="rounded-xl border border-zinc-100 bg-white p-3.5">
-                    <p className="text-sm font-semibold text-zinc-900">{i + 1}. {c.name}</p>
-                    <p className="mt-0.5 text-xs text-zinc-500">ЄДРПОУ {c.edrpou} · {c.address}</p>
+                  <li key={c.edrpou} className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3.5">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{i + 1}. {c.name}</p>
+                    <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">ЄДРПОУ {c.edrpou} · {c.address}</p>
                     <p className="mt-0.5 text-xs">
-                      <a href={c.site} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{c.site.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a>
+                      <a href={c.site} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">{c.site.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a>
                       {" · "}
-                      <a href="https://kis.bank.gov.ua" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Реєстр НБУ</a>
+                      <a href="https://kis.bank.gov.ua" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">Реєстр НБУ</a>
                     </p>
                   </li>
                 ))}
               </ol>
-              <p className="mt-4 font-medium text-zinc-800">Класи страхових продуктів:</p>
+              <p className="mt-4 font-medium text-zinc-800 dark:text-zinc-200">Класи страхових продуктів:</p>
               <ul className="ml-4 list-disc space-y-1">
                 {CLASSES.map((cl) => <li key={cl}>{cl}</li>)}
               </ul>
@@ -184,16 +184,16 @@ export default function SubagentPage() {
                 Звернення може бути усним (через контактний центр страховика та/або субагента) або
                 письмовим (на електронну пошту чи поштову адресу страховика).
               </p>
-              <p className="mt-2 font-medium text-zinc-800">Скарга на дії чи рішення страховика подається у порядку підлеглості:</p>
+              <p className="mt-2 font-medium text-zinc-800 dark:text-zinc-200">Скарга на дії чи рішення страховика подається у порядку підлеглості:</p>
               <ul className="ml-4 list-disc space-y-1">
                 <li>
-                  Національному банку України: <a href="mailto:nbu@bank.gov.ua" className="text-indigo-600 hover:underline">nbu@bank.gov.ua</a>,
-                  форма <a href="https://bank.gov.ua/ua/consumer-protection" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">bank.gov.ua/ua/consumer-protection</a>;
+                  Національному банку України: <a href="mailto:nbu@bank.gov.ua" className="text-indigo-600 dark:text-indigo-400 hover:underline">nbu@bank.gov.ua</a>,
+                  форма <a href="https://bank.gov.ua/ua/consumer-protection" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">bank.gov.ua/ua/consumer-protection</a>;
                   адреса: 01601, м. Київ, вул. Інститутська, 9, тел. 0 800 505 240;
                 </li>
                 <li>
                   Державній службі України з питань безпечності харчових продуктів та захисту споживачів:
-                  01001, м. Київ, вул. Б. Грінченка, 1, тел. (044) 279-12-70, <a href="mailto:info@dpss.gov.ua" className="text-indigo-600 hover:underline">info@dpss.gov.ua</a>.
+                  01001, м. Київ, вул. Б. Грінченка, 1, тел. (044) 279-12-70, <a href="mailto:info@dpss.gov.ua" className="text-indigo-600 dark:text-indigo-400 hover:underline">info@dpss.gov.ua</a>.
                 </li>
               </ul>
               <p className="mt-2">Подання скарги не позбавляє вас права звернутися безпосередньо до суду.</p>

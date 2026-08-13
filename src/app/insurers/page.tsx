@@ -22,11 +22,11 @@ export default function InsurersPage() {
     <>
       <JsonLd data={[breadcrumbLd([{ name: "Головна", path: "/" }, { name: "Страхові компанії", path: "/insurers" }])]} />
       <Navbar solid />
-      <main className="flex-1 bg-[#FAFAFA] pt-24 pb-16">
+      <main className="flex-1 bg-[#FAFAFA] dark:bg-[#0f0f11] pt-24 pb-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Страхові компанії</h1>
-            <p className="mt-2 max-w-2xl text-base text-zinc-500">
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">Страхові компанії</h1>
+            <p className="mt-2 max-w-2xl text-base text-zinc-500 dark:text-zinc-400">
               Інформація про страховиків, контакти та відгуки клієнтів. Залишити відгук може той,
               хто оформив поліс цієї страхової у нас.
             </p>
@@ -39,23 +39,23 @@ export default function InsurersPage() {
                 <Link
                   key={ins.slug}
                   href={`/insurers/${ins.slug}`}
-                  className="group flex items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-100 hover:shadow-md"
+                  className="group flex items-center gap-4 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-100 hover:shadow-md"
                 >
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-100 p-1.5">
                     {src ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={src} alt={ins.name} className="max-h-10 max-w-[48px] object-contain" />
                     ) : (
-                      <span className="text-center text-xs font-semibold text-zinc-500">{ins.name}</span>
+                      <span className="text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400">{ins.name}</span>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-zinc-900">{ins.name}</p>
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-zinc-400">
+                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{ins.name}</p>
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
                       <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Відгуки та контакти
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-zinc-300 transition-colors group-hover:text-indigo-500" />
+                  <ChevronRight className="h-5 w-5 shrink-0 text-zinc-300 dark:text-zinc-600 transition-colors group-hover:text-indigo-500" />
                 </Link>
               );
             })}

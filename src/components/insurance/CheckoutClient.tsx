@@ -122,7 +122,7 @@ export function CheckoutClient() {
   }, []);
 
   if (!loaded || !vehicle || !offer) {
-    return <div className="p-8 text-center text-zinc-500">Завантаження...</div>;
+    return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">Завантаження...</div>;
   }
 
   // Submit flow
@@ -373,30 +373,30 @@ export function CheckoutClient() {
             if (step === "vehicle") setStep("customer");
             else router.push("/osago");
           }} 
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Оформлення поліса</h1>
-          <p className="text-sm text-zinc-500">Крок {step === "customer" ? 1 : step === "vehicle" ? 2 : 3} з 3</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Оформлення поліса</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Крок {step === "customer" ? 1 : step === "vehicle" ? 2 : 3} з 3</p>
         </div>
       </div>
 
       {/* Повідомлення — НАГОРІ (під заголовком), щоб користувач їх точно побачив
           одразу після «Продовжити», а не нижче довгої форми. */}
       {priceNotice && step !== "otp" && (
-        <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
+        <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
           <span className="font-semibold">Увага: </span>{priceNotice}
         </div>
       )}
       {error && step !== "otp" && (
-        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
           <span className="font-semibold">Помилка: </span>{error}
         </div>
       )}
 
-      <div className="rounded-2xl bg-white p-6 shadow-sm border border-zinc-200">
+      <div className="rounded-2xl bg-white p-6 shadow-sm border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-700">
         {step === "customer" && (
           // We extract the form content from CustomerFormModal into a normal component, 
           // or we can reuse the modal logic by keeping it open inline. 
@@ -695,11 +695,11 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-semibold text-zinc-900">Дані страхувальника</h2>
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Дані страхувальника</h2>
       
       <div className="space-y-5">
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Особисті дані
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -728,9 +728,9 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700">Телефон</label>
-            <div className="flex items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-              <span className="select-none pl-4 pr-1 text-sm text-zinc-500">+380</span>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Телефон</label>
+            <div className="flex items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900">
+              <span className="select-none pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
               <input
                 type="tel"
                 inputMode="numeric"
@@ -738,7 +738,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                 value={formatUaPhone(form.phone)}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
                 required
-                className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none"
+                className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
             </div>
           </div>
@@ -752,8 +752,8 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
           />
         </div>
 
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Документ, що посвідчує особу
           </p>
           {/* Вибір типу документа: ID-карта (type 3) або паспорт старого зразка (type 1) */}
@@ -769,8 +769,8 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                 onClick={() => changeDocType(t)}
                 className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium leading-tight transition-colors ${
                   docType === t
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200"
-                    : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
+                    ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 dark:border-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
                 }`}
               >
                 {label}
@@ -811,15 +811,15 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Адреса проживання
           </p>
           {/* ПК: Місто + Вулиця + Будинок в один ряд; моб: стек. */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-5 sm:items-start">
             {/* Місто (з автопідбором) */}
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-sm font-medium text-zinc-700">Місто</label>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Місто</label>
               <input
                 type="text"
                 spellCheck={false}
@@ -831,19 +831,19 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                 }}
                 placeholder="Почніть вводити місто..."
                 required
-                className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors ${
+                className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${
                   cityError
                     ? "border-red-400 focus:border-red-500 focus:ring-red-500"
                     : selectedCity
-                      ? "border-emerald-400 bg-emerald-50/40 focus:border-emerald-500 focus:ring-emerald-500"
-                      : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500"
+                      ? "border-emerald-400 bg-emerald-50/40 focus:border-emerald-500 focus:ring-emerald-500 dark:bg-emerald-950/40"
+                      : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500 dark:border-zinc-700"
                 }`}
               />
               {cityError && !selectedCity && (
                 <p className="mt-1 text-xs font-medium text-red-500">Оберіть місто зі списку</p>
               )}
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
-                <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
+                <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden dark:border-zinc-700 dark:bg-zinc-900">
                   {cityResults.map((city) => (
                     <button
                       key={city.id}
@@ -853,7 +853,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                         setCityQuery(cityShort(city.name_full_name_ua || city.name_ua));
                         setCityResults([]);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors dark:text-zinc-200 dark:hover:bg-zinc-800/60"
                     >
                       {cityLong(city.name_full_name_ua || city.name_ua)}
                     </button>
@@ -871,7 +871,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
         </div>
       </div>
 
-      <div className="flex justify-end pt-4 border-t border-zinc-100">
+      <div className="flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
         <Button type="submit" variant="primary" size="lg" className="w-full sm:w-auto px-8">
           Продовжити
         </Button>
@@ -915,12 +915,12 @@ function CheckoutVehicleForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-semibold text-zinc-900">Дані транспортного засобу</h2>
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Дані транспортного засобу</h2>
       
       <div className="space-y-5">
         {/* Дані з API — тільки для перегляду */}
-        <div className="rounded-xl bg-zinc-50 border border-zinc-100 px-5 py-4 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+        <div className="rounded-xl bg-zinc-50 border border-zinc-100 px-5 py-4 space-y-3 dark:bg-zinc-800/50 dark:border-zinc-800">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2 dark:text-zinc-400">
             Дані з реєстру
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
@@ -933,8 +933,8 @@ function CheckoutVehicleForm({
               { label: "Категорія", value: vehicle.autoCategory },
             ].map(({ label, value }) => (
               <div key={label} className="flex flex-col">
-                <span className="text-xs text-zinc-500">{label}</span>
-                <span className="text-sm font-semibold text-zinc-900">{value}</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">{label}</span>
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{value}</span>
               </div>
             ))}
           </div>
@@ -942,7 +942,7 @@ function CheckoutVehicleForm({
 
         {/* Дата народження водія */}
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Водій
           </p>
           <DateInput
@@ -956,8 +956,8 @@ function CheckoutVehicleForm({
 
 
         {/* Технічні характеристики */}
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Технічні характеристики
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1003,7 +1003,7 @@ function CheckoutVehicleForm({
         </div>
       </div>
 
-      <div className="flex justify-end pt-4 border-t border-zinc-100">
+      <div className="flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
         <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto px-8">
           Продовжити
         </Button>
@@ -1016,10 +1016,10 @@ function CheckoutVehicleForm({
 function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-zinc-700">{label}</label>
+      <label className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{label}</label>
       <input
         {...props}
-        className={`h-11 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors ${props.className || ""}`}
+        className={`h-11 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${props.className || ""}`}
       />
     </div>
   );

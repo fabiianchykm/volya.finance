@@ -52,18 +52,18 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className={cn(
-              "relative z-10 w-full rounded-2xl bg-white shadow-2xl flex flex-col",
+              "relative z-10 w-full rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl flex flex-col",
               size === "full" ? "h-full" : "max-h-[calc(100dvh-2rem)]",
               sizes[size],
               className
             )}
           >
             {title && (
-              <div className={cn("flex shrink-0 items-center justify-between border-b px-6 py-4", className?.includes("emerald") ? "border-emerald-100" : "border-zinc-100")}>
-                <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
+              <div className={cn("flex shrink-0 items-center justify-between border-b px-6 py-4", className?.includes("emerald") ? "border-emerald-100 dark:border-emerald-900/40" : "border-zinc-100 dark:border-zinc-800")}>
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
                 <button
                   onClick={onClose}
-                  className="ml-auto rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                  className="ml-auto rounded-lg p-1.5 text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 dark:hover:text-zinc-300"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -73,7 +73,7 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
             {!title && (
               <button
                 onClick={onClose}
-                className="absolute right-4 top-6 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                className="absolute right-4 top-6 rounded-lg p-1.5 text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 dark:hover:text-zinc-300"
               >
                 <X className="h-4 w-4" />
               </button>

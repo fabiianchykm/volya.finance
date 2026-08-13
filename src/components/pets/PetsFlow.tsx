@@ -27,7 +27,7 @@ const PERIODS = [
 const PERIOD_LABEL: Record<string, string> = { "6m": "6 місяців", "9m": "9 місяців", "12m": "12 місяців" };
 
 const selectClass =
-  "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
+  "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
 
 function toPetsInsuranceOffer(o: PetsOffer): InsuranceOffer {
   return {
@@ -160,15 +160,15 @@ export function PetsFlow() {
               <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть параметри — і побачите пропозиції з цінами.</p>
             </div>
 
-            <form onSubmit={submit} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+            <form onSubmit={submit} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-zinc-500">Вид улюбленця</label>
+                  <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Вид улюбленця</label>
                   <div className="grid grid-cols-2 gap-2">
                     {PET_TYPES.map((p) => (
                       <button key={p.value} type="button" onClick={() => setPetType(p.value)}
                         className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition-colors ${
-                          petType === p.value ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
+                          petType === p.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
                         }`}>
                         {p.label}
                       </button>
@@ -176,7 +176,7 @@ export function PetsFlow() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Clock className="h-3.5 w-3.5" /> Строк страхування</label>
+                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Clock className="h-3.5 w-3.5" /> Строк страхування</label>
                   <select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className={selectClass}>
                     {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
@@ -214,27 +214,27 @@ function PetsOffers({ offers, loading, error, petLabel, periodLabel, onBack, onS
   return (
     <div>
       {/* Картка-підсумок */}
-      <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
+      <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
           <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
             <Home className="h-3.5 w-3.5" />
           </button>
           <ChevronRight className="h-3 w-3" />
-          <span className="font-medium text-zinc-600">Страхування тварин</span>
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">Страхування тварин</span>
         </div>
-        <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
+        <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
       </div>
 
       {!loading && cards.length > 0 && (
         <div className="mb-5 flex items-center justify-end gap-3">
-          <span className="text-xs font-medium text-zinc-400">Сортувати</span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Сортувати</span>
+          <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             {([
               { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
               { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
             ] as const).map(({ k, label, Icon }) => (
               <button key={k} type="button" onClick={() => setSortBy(k)}
-                className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 hover:text-zinc-800"}`}>
+                className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>
                 {sortBy === k && (
                   <motion.span layoutId="petsSortPill" transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
@@ -250,9 +250,9 @@ function PetsOffers({ offers, loading, error, petLabel, periodLabel, onBack, onS
       {loading ? (
         <SearchingInsurers />
       ) : error || cards.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-          <p className="text-base font-semibold text-zinc-900">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте інший строк або дату."}</p>
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте інший строк або дату."}</p>
           <Button variant="secondary" size="md" onClick={onBack} className="mt-5">Змінити параметри</Button>
         </div>
       ) : (

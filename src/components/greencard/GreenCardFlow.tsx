@@ -53,7 +53,7 @@ const CAR_TYPES = [
 ];
 
 const selectClass =
-  "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
+  "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
 
 export function GreenCardFlow() {
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
@@ -199,28 +199,28 @@ export function GreenCardFlow() {
             {step === "params" && <HeroSteps steps={GC_STEPS} />}
 
             {step === "params" && (
-              <form onSubmit={calc} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+              <form onSubmit={calc} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Car className="h-3.5 w-3.5" /> Тип авто</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Car className="h-3.5 w-3.5" /> Тип авто</label>
                     <select value={carType} onChange={(e) => setCarType(e.target.value)} className={selectClass}>
                       {CAR_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
                     <select value={territory} onChange={(e) => setTerritory(e.target.value)} className={selectClass}>
                       {TERRITORIES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки</label>
                     <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
                   </div>
                 </div>
 
                 {period && (
-                  <p className="mt-3 text-xs text-zinc-500">Поліс Зелена карта: <span className="font-semibold text-zinc-700">{period.label}</span> <span className="text-zinc-400">(мінімальний термін — 15 днів)</span></p>
+                  <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Поліс Зелена карта: <span className="font-semibold text-zinc-700 dark:text-zinc-200">{period.label}</span> <span className="text-zinc-400 dark:text-zinc-500">(мінімальний термін — 15 днів)</span></p>
                 )}
 
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
@@ -260,15 +260,15 @@ function GreenCardOffers({
       <div className="flex flex-col items-start gap-6 lg:flex-row">
         <div className="min-w-0 flex-1">
       {/* Картка-підсумок */}
-      <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
+      <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
           <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
             <Home className="h-3.5 w-3.5" />
           </button>
           <ChevronRight className="h-3 w-3" />
-          <span className="font-medium text-zinc-600">Зелена карта</span>
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">Зелена карта</span>
         </div>
-        <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>
+        <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>
           {auto}{summary ? `, ${summary}` : ""}
         </p>
       </div>
@@ -276,8 +276,8 @@ function GreenCardOffers({
       {/* Сортування */}
       {!loading && offers.length > 0 && (
         <div className="mb-5 flex items-center justify-end gap-3">
-          <span className="text-xs font-medium text-zinc-400">Сортувати</span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Сортувати</span>
+          <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             {([
               { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
               { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
@@ -287,7 +287,7 @@ function GreenCardOffers({
                 type="button"
                 onClick={() => setSortBy(k)}
                 className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-                  sortBy === k ? "text-white" : "text-zinc-500 hover:text-zinc-800"
+                  sortBy === k ? "text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
                 }`}
               >
                 {sortBy === k && (
@@ -308,9 +308,9 @@ function GreenCardOffers({
           {Array.from({ length: 4 }).map((_, i) => <GreenCardSkeleton key={i} />)}
         </>
       ) : error || offers.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-          <p className="text-base font-semibold text-zinc-900">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
             {error ? "Спробуйте ще раз або змініть параметри поїздки." : "Спробуйте інший термін чи територію."}
           </p>
           <Button variant="secondary" size="md" onClick={onBack} className="mt-5">Змінити параметри</Button>
@@ -356,16 +356,16 @@ function toInsuranceOffer(o: GreenCardOffer): InsuranceOffer {
 
 function GreenCardSkeleton() {
   return (
-    <div className="mb-3 animate-pulse rounded-2xl border border-zinc-100 bg-white px-5 py-5 shadow-sm">
+    <div className="mb-3 animate-pulse rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5 py-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-zinc-100" />
+          <div className="h-12 w-12 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
           <div className="space-y-2">
-            <div className="h-4 w-36 rounded bg-zinc-100" />
-            <div className="h-3 w-20 rounded bg-zinc-100" />
+            <div className="h-4 w-36 rounded bg-zinc-100 dark:bg-zinc-800" />
+            <div className="h-3 w-20 rounded bg-zinc-100 dark:bg-zinc-800" />
           </div>
         </div>
-        <div className="h-9 w-24 rounded-xl bg-zinc-100" />
+        <div className="h-9 w-24 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
       </div>
     </div>
   );

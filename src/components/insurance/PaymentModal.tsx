@@ -120,29 +120,29 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
         {loading && (
           <div className="flex flex-col items-center gap-3 py-8">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-            <p className="text-sm text-zinc-500">Генеруємо рахунок...</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Генеруємо рахунок...</p>
           </div>
         )}
 
         {!loading && paid && (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <CheckCircle className="h-12 w-12 text-emerald-500" />
-            <p className="text-base font-semibold text-zinc-900">Поліс підтверджено!</p>
-            <p className="text-sm text-zinc-500">Договір надіслано на email.</p>
+            <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Поліс підтверджено!</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Договір надіслано на email.</p>
           </div>
         )}
 
         {/* LiqPay invoice — якщо є */}
         {!loading && !paid && invoice?.invoiceLink && (
           <>
-            <div className="rounded-xl bg-zinc-50 border border-zinc-100 p-4 text-center">
-              <p className="text-xs text-zinc-500 mb-1">Сума до оплати</p>
-              <p className="text-3xl font-bold text-zinc-900">{formatPrice(amount)}</p>
+            <div className="rounded-xl bg-zinc-50 border border-zinc-100 p-4 text-center dark:bg-zinc-800/50 dark:border-zinc-800">
+              <p className="text-xs text-zinc-500 mb-1 dark:text-zinc-400">Сума до оплати</p>
+              <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(amount)}</p>
             </div>
             {invoice.qrCode && (
               <div className="flex flex-col items-center gap-2">
-                <p className="text-xs text-zinc-400">Скануйте QR або перейдіть за посиланням</p>
-                <img src={invoice.qrCode} alt="QR код оплати" className="h-40 w-40 rounded-xl border border-zinc-100" />
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Скануйте QR або перейдіть за посиланням</p>
+                <img src={invoice.qrCode} alt="QR код оплати" className="h-40 w-40 rounded-xl border border-zinc-100 dark:border-zinc-800" />
               </div>
             )}
             <Button variant="primary" size="lg" className="w-full"
@@ -162,13 +162,13 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
         {!loading && !paid && testMode && invoice && !invoice.invoiceLink && (
           <>
             <div className="flex flex-col items-center gap-3 text-center py-2">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
-                <ShieldCheck className="h-7 w-7 text-indigo-600" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40">
+                <ShieldCheck className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <p className="text-base font-semibold text-zinc-900">Поліс зареєстровано в МТСБУ</p>
-                <p className="text-sm text-zinc-500 mt-1">
-                  Сума: <span className="font-semibold text-zinc-900">{formatPrice(amount)}</span>
+                <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Поліс зареєстровано в МТСБУ</p>
+                <p className="text-sm text-zinc-500 mt-1 dark:text-zinc-400">
+                  Сума: <span className="font-semibold text-zinc-900 dark:text-zinc-100">{formatPrice(amount)}</span>
                 </p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
               Підтвердити поліс
             </Button>
 
-            <p className="text-center text-xs text-zinc-400">
+            <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
               Тест-режим: оплата через LiqPay недоступна в dev-середовищі
             </p>
           </>
@@ -196,12 +196,12 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
             Показуємо помилку й контакт підтримки. Поліс лишається несплаченим. */}
         {!loading && !paid && !testMode && invoice && !invoice.invoiceLink && (
           <div className="flex flex-col items-center gap-3 text-center py-2">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/40">
               <ShieldCheck className="h-7 w-7 text-amber-600" />
             </div>
             <div>
-              <p className="text-base font-semibold text-zinc-900">Не вдалося сформувати рахунок</p>
-              <p className="text-sm text-zinc-500 mt-1">
+              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Не вдалося сформувати рахунок</p>
+              <p className="text-sm text-zinc-500 mt-1 dark:text-zinc-400">
                 Сплатити онлайн зараз неможливо. Ваш поліс зарезервовано — звʼяжіться з підтримкою,
                 щоб завершити оплату та оформлення.
               </p>

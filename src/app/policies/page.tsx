@@ -56,8 +56,8 @@ export default async function PoliciesPage() {
       <Navbar solid />
       <main className="flex-1 pt-24 pb-16">
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
-          <h1 className="mb-1 text-2xl font-bold text-zinc-900">Мої поліси</h1>
-          <p className="mb-6 text-sm text-zinc-500">Усі оформлені поліси, привʼязані до вашого акаунта.</p>
+          <h1 className="mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100">Мої поліси</h1>
+          <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">Усі оформлені поліси, привʼязані до вашого акаунта.</p>
           {referral && <ReferralCard summary={referral} />}
           <PoliciesView loggedIn={loggedIn} email={email ?? phone} policies={policies} />
         </div>

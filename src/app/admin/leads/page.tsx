@@ -15,10 +15,10 @@ export default async function AdminLeadsPage() {
   return (
     <>
       <Navbar solid />
-      <main className="flex-1 bg-[#FAFAFA] pt-24 pb-16">
+      <main className="flex-1 bg-[#FAFAFA] dark:bg-[#0f0f11] pt-24 pb-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900">Ліди</h1>
-          <p className="mb-6 text-sm text-zinc-500">Клієнти, які заповнили дані й перейшли до підтвердження (могли не завершити).</p>
+          <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Ліди</h1>
+          <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">Клієнти, які заповнили дані й перейшли до підтвердження (могли не завершити).</p>
           <AdminLeads />
         </div>
       </main>

@@ -18,8 +18,8 @@ export default function BlogPage() {
       <Navbar solid />
       <main className="flex-1 pt-24 pb-16">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <h1 className="mb-1 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Блог</h1>
-          <p className="mb-8 text-sm text-zinc-500">Статті та поради про страхування.</p>
+          <h1 className="mb-1 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">Блог</h1>
+          <p className="mb-8 text-sm text-zinc-500 dark:text-zinc-400">Статті та поради про страхування.</p>
           <PostList posts={getPosts("blog")} empty="Статей поки немає." />
         </div>
       </main>

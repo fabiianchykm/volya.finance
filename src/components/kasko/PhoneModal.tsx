@@ -32,18 +32,18 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
   return (
     <Modal open={open} onClose={onClose} title="Залиште номер телефону" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           КАСКО розраховується індивідуально. Лишіть номер — менеджер передзвонить
           найближчим часом і підбере найкращі умови для вашого авто.
         </p>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500">
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
             Номер телефону
           </label>
-          <div className="flex items-center rounded-2xl border border-zinc-200 bg-white px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
-            <span className="select-none pr-3 text-xl font-semibold text-zinc-500">+380</span>
-            <span className="mr-3 h-7 w-px bg-zinc-200" />
+          <div className="flex items-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900">
+            <span className="select-none pr-3 text-xl font-semibold text-zinc-500 dark:text-zinc-400">+380</span>
+            <span className="mr-3 h-7 w-px bg-zinc-200 dark:bg-zinc-700" />
             <input
               type="tel"
               inputMode="numeric"
@@ -51,7 +51,7 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
               value={formatUaPhone(digits)}
               onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 9))}
               placeholder="67 123 45 67"
-              className="w-full bg-transparent py-3.5 text-xl font-semibold tracking-wider text-zinc-900 placeholder:font-normal placeholder:tracking-normal placeholder:text-zinc-300 outline-none"
+              className="w-full bg-transparent py-3.5 text-xl font-semibold tracking-wider text-zinc-900 dark:text-zinc-100 placeholder:font-normal placeholder:tracking-normal placeholder:text-zinc-300 dark:placeholder:text-zinc-600 outline-none"
             />
           </div>
           {error && <p className="mt-1.5 text-sm text-red-500">{error}</p>}
@@ -68,7 +68,7 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
           Надіслати заявку
         </Button>
 
-        <p className="text-center text-xs text-zinc-400">
+        <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
           Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.
         </p>
       </form>

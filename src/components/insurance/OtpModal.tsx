@@ -83,12 +83,12 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
     <Modal open={open} onClose={onClose} title="Підтвердіть email" size="sm" preventOutsideClose>
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50">
-            <Mail className="h-6 w-6 text-indigo-600" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/40">
+            <Mail className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Ми надіслали код підтвердження на{" "}
-            <span className="font-semibold text-zinc-900">{email}</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{email}</span>
           </p>
         </div>
 
@@ -105,8 +105,8 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
               onKeyDown={(e) => handleKeyDown(i, e)}
               className={`h-12 w-10 rounded-xl border text-center text-xl font-bold outline-none transition-colors ${
                 d
-                  ? "border-indigo-400 bg-indigo-50 text-indigo-700"
-                  : "border-zinc-200 bg-white text-zinc-900 focus:border-indigo-400"
+                  ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+                  : "border-zinc-200 bg-white text-zinc-900 focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
               }`}
             />
           ))}
@@ -127,9 +127,9 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           Підтвердити
         </Button>
 
-        <p className="text-center text-xs text-zinc-400">
+        <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
           Не отримали?{" "}
-          <button onClick={onResend} className="text-indigo-600 hover:underline font-medium">
+          <button onClick={onResend} className="text-indigo-600 hover:underline font-medium dark:text-indigo-400">
             Надіслати повторно
           </button>
         </p>

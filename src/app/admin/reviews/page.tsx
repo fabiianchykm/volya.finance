@@ -15,9 +15,9 @@ export default async function AdminReviewsPage() {
   return (
     <>
       <Navbar solid />
-      <main className="flex-1 bg-[#FAFAFA] pt-24 pb-16">
+      <main className="flex-1 bg-[#FAFAFA] dark:bg-[#0f0f11] pt-24 pb-16">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <h1 className="mb-6 text-2xl font-bold tracking-tight text-zinc-900">Модерація відгуків</h1>
+          <h1 className="mb-6 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Модерація відгуків</h1>
           <AdminReviews />
         </div>
       </main>

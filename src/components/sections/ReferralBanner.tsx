@@ -40,7 +40,7 @@ export function ReferralBanner() {
   };
 
   return (
-    <section className="bg-[#FAFAFA] py-12 sm:py-16">
+    <section className="bg-[#FAFAFA] dark:bg-[#0f0f11] py-12 sm:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 shadow-xl shadow-indigo-500/10 sm:p-10">
           <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />

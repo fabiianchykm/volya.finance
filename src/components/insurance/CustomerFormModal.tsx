@@ -72,7 +72,7 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
       <form onSubmit={handleSubmit} className="space-y-5">
 
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Особисті дані
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -117,8 +117,8 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
           />
         </div>
 
-        <div className="border-t border-zinc-100 pt-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             ID-карта (документ)
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -153,8 +153,8 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             Адреса проживання
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

@@ -83,15 +83,15 @@ export function PaymentSuccessClient() {
 
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6">
-      <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-10 text-center shadow-sm">
+      <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-10 text-center shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
         {(phase === "checking" || phase === "confirming") && (
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-indigo-500" />
             <div>
-              <p className="text-lg font-bold text-zinc-900">
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 {phase === "checking" ? "Перевіряємо оплату…" : "Оформлюємо поліс…"}
               </p>
-              <p className="mt-1 text-sm text-zinc-500">Це займе кілька секунд, не закривайте сторінку.</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Це займе кілька секунд, не закривайте сторінку.</p>
             </div>
           </div>
         )}
@@ -100,8 +100,8 @@ export function PaymentSuccessClient() {
           <div className="flex flex-col items-center gap-4">
             <CheckCircle className="h-14 w-14 text-emerald-500" />
             <div>
-              <p className="text-xl font-bold text-zinc-900">Оплату отримано, поліс оформлено!</p>
-              <p className="mt-1 text-sm text-zinc-500">Договір надіслано на вашу email-адресу та збережено в кабінеті.</p>
+              <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Оплату отримано, поліс оформлено!</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Договір надіслано на вашу email-адресу та збережено в кабінеті.</p>
             </div>
             <div className="mt-2 flex w-full flex-col gap-2">
               {contractId && (
@@ -124,8 +124,8 @@ export function PaymentSuccessClient() {
           <div className="flex flex-col items-center gap-4">
             <AlertCircle className="h-12 w-12 text-amber-500" />
             <div>
-              <p className="text-lg font-bold text-zinc-900">Оплата ще обробляється</p>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Оплата ще обробляється</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                 Якщо ви щойно оплатили, статус може оновитись за хвилину. Оформлений поліс зʼявиться в кабінеті.
               </p>
             </div>
@@ -144,9 +144,9 @@ export function PaymentSuccessClient() {
           <div className="flex flex-col items-center gap-4">
             <AlertCircle className="h-12 w-12 text-red-500" />
             <div>
-              <p className="text-lg font-bold text-zinc-900">Не вдалося підтвердити оплату</p>
-              <p className="mt-1 text-sm text-zinc-500">{error}</p>
-              <p className="mt-2 text-sm text-zinc-500">
+              <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Не вдалося підтвердити оплату</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{error}</p>
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
                 Якщо кошти списано — поліс буде оформлено, зверніться до підтримки або перевірте кабінет.
               </p>
             </div>

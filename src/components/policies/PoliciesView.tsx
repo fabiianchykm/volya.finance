@@ -20,12 +20,12 @@ const PRODUCT_LABELS: Record<string, string> = {
 export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
   if (!loggedIn) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50">
-          <ShieldCheck className="h-7 w-7 text-indigo-600" />
+      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/40">
+          <ShieldCheck className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
         </div>
-        <h2 className="text-lg font-bold text-zinc-900">Увійдіть, щоб побачити свої поліси</h2>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Увійдіть, щоб побачити свої поліси</h2>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
           Поліси привʼязані до email. Увійдіть через Google з тим самим email, на який оформляли страховку.
         </p>
         <Button variant="primary" size="lg" className="mx-auto mt-6 flex items-center gap-2" onClick={() => signIn("google")}>
@@ -38,13 +38,13 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
 
   if (policies.length === 0) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100">
-          <FileText className="h-7 w-7 text-zinc-400" />
+      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800">
+          <FileText className="h-7 w-7 text-zinc-400 dark:text-zinc-500" />
         </div>
-        <h2 className="text-lg font-bold text-zinc-900">Полісів поки немає</h2>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
-          На акаунті <span className="font-medium text-zinc-700">{email}</span> ще немає полісів.
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Полісів поки немає</h2>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
+          На акаунті <span className="font-medium text-zinc-700 dark:text-zinc-200">{email}</span> ще немає полісів.
           Оформлені у нас зʼявляться тут автоматично.
         </p>
       </div>
@@ -118,24 +118,24 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
   const subtitle = [v.plate, v.year].filter(Boolean).join(" · ");
 
   return (
-    <div className="rounded-2xl border border-zinc-100 bg-white px-5 py-4 shadow-sm">
+    <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5 py-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
-            <ShieldCheck className="h-5 w-5 text-indigo-600" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40">
+            <ShieldCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-zinc-900">{title}</p>
+              <p className="font-semibold text-zinc-900 dark:text-zinc-100">{title}</p>
               {isManual && (
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   додано вручну
                 </span>
               )}
             </div>
-            {subtitle && <p className="text-sm text-zinc-500">{subtitle}</p>}
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-400">
-              {isManual && <span className="text-zinc-500">{productLabel}</span>}
+            {subtitle && <p className="text-sm text-zinc-500 dark:text-zinc-400">{subtitle}</p>}
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-400 dark:text-zinc-500">
+              {isManual && <span className="text-zinc-500 dark:text-zinc-400">{productLabel}</span>}
               {policy.company && <span>{policy.company}</span>}
               {policy.policyNumber && <span>№ {policy.policyNumber}</span>}
               {policy.startDate && policy.endDate && <span>{policy.startDate} — {policy.endDate}</span>}
@@ -144,7 +144,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
         </div>
         {policy.price != null && (
           <div className="shrink-0 text-right">
-            <div className="font-bold text-zinc-900">{policy.price} грн</div>
+            <div className="font-bold text-zinc-900 dark:text-zinc-100">{policy.price} грн</div>
           </div>
         )}
       </div>
@@ -162,7 +162,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
             >
               {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
               Видалити

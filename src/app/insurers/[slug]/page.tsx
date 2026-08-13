@@ -36,31 +36,31 @@ export default async function InsurerPage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <Navbar solid />
-      <main className="flex-1 bg-[#FAFAFA] pt-24 pb-16">
+      <main className="flex-1 bg-[#FAFAFA] dark:bg-[#0f0f11] pt-24 pb-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           {/* Breadcrumb */}
-          <div className="mb-5 flex items-center gap-1.5 text-xs text-zinc-400">
+          <div className="mb-5 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
             <Link href="/" className="hover:text-indigo-500"><Home className="h-3.5 w-3.5" /></Link>
             <ChevronRight className="h-3 w-3" />
             <Link href="/insurers" className="hover:text-indigo-500">Страхові компанії</Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="font-medium text-zinc-600">{ins.name}</span>
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">{ins.name}</span>
           </div>
 
           {/* Шапка */}
-          <div className="mb-6 flex items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-2">
+          <div className="mb-6 flex items-center gap-4 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-100 p-2">
               {src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={src} alt={ins.name} className="max-h-12 max-w-[56px] object-contain" />
               ) : (
-                <span className="text-center text-xs font-semibold text-zinc-500">{ins.name}</span>
+                <span className="text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400">{ins.name}</span>
               )}
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">{ins.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">{ins.name}</h1>
               {ins.website && (
-                <a href={ins.website} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:underline">
+                <a href={ins.website} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                   <Globe className="h-3.5 w-3.5" /> Офіційний сайт
                 </a>
               )}
@@ -68,20 +68,20 @@ export default async function InsurerPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Інформація (ПРИКЛАД — заповнити реальними даними) */}
-          <div className="mb-6 rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
+          <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm">
             <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
               <Info className="h-3.5 w-3.5" /> Дані для прикладу — буде замінено на реальні
             </div>
-            <h2 className="mb-2 text-lg font-bold text-zinc-900">Про компанію</h2>
-            <p className="text-sm leading-relaxed text-zinc-600">{ins.about}</p>
-            {ins.founded && <p className="mt-2 text-sm text-zinc-500">Рік заснування: <span className="font-medium text-zinc-700">{ins.founded}</span></p>}
+            <h2 className="mb-2 text-lg font-bold text-zinc-900 dark:text-zinc-100">Про компанію</h2>
+            <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{ins.about}</p>
+            {ins.founded && <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Рік заснування: <span className="font-medium text-zinc-700 dark:text-zinc-200">{ins.founded}</span></p>}
 
             {ins.offices && ins.offices.length > 0 && (
               <div className="mt-4">
-                <h3 className="mb-2 text-sm font-semibold text-zinc-800">Офіси</h3>
+                <h3 className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Офіси</h3>
                 <ul className="space-y-1.5">
                   {ins.offices.map((o) => (
-                    <li key={o} className="flex items-start gap-2 text-sm text-zinc-600"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" /> {o}</li>
+                    <li key={o} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" /> {o}</li>
                   ))}
                 </ul>
               </div>
@@ -89,10 +89,10 @@ export default async function InsurerPage({ params }: { params: Promise<{ slug: 
 
             {ins.phones && ins.phones.length > 0 && (
               <div className="mt-4">
-                <h3 className="mb-2 text-sm font-semibold text-zinc-800">Контакти</h3>
+                <h3 className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Контакти</h3>
                 <ul className="space-y-1.5">
                   {ins.phones.map((p) => (
-                    <li key={p} className="flex items-center gap-2 text-sm text-zinc-600"><Phone className="h-4 w-4 shrink-0 text-indigo-500" /> {p}</li>
+                    <li key={p} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300"><Phone className="h-4 w-4 shrink-0 text-indigo-500" /> {p}</li>
                   ))}
                 </ul>
               </div>

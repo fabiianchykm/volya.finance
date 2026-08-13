@@ -115,12 +115,12 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
   if (step === "success") {
     return (
       <section className="flex min-h-[60vh] items-center justify-center px-4 pt-32 pb-16">
-        <div className="w-full max-w-md rounded-2xl border border-zinc-100 bg-white px-6 py-12 text-center shadow-sm">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+        <div className="w-full max-w-md rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-12 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900">Заявку прийнято!</h1>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Заявку прийнято!</h1>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
             Менеджер передзвонить вам найближчим часом і підбере найкращі умови {config.label}
             {" "}для {vehicle?.mark ? `${vehicle.mark} ${vehicle.model}` : "вашого авто"}.
           </p>

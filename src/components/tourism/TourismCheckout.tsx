@@ -283,19 +283,19 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   };
 
   const inputCls =
-    "h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
+    "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
 
   return (
-    <div className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+    <div className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
       <div className="mb-5 flex items-center gap-3">
-        <button type="button" onClick={onBack} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-zinc-500 hover:text-zinc-900">
+        <button type="button" onClick={onBack} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-lg font-bold leading-tight text-zinc-900">Оформлення туристичного</h2>
-            <p className="text-sm text-zinc-500">
-              {formatCompanyName(publicName).toUpperCase()} · <span className="font-semibold text-zinc-900">{formatPrice(o.price)}</span>
+            <h2 className="text-lg font-bold leading-tight text-zinc-900 dark:text-zinc-100">Оформлення туристичного</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {formatCompanyName(publicName).toUpperCase()} · <span className="font-semibold text-zinc-900 dark:text-zinc-100">{formatPrice(o.price)}</span>
             </p>
           </div>
         </div>
@@ -306,8 +306,8 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Туристи */}
         {tourists.map((t, i) => (
-          <div key={i} className={i > 0 ? "border-t border-zinc-100 pt-5" : ""}>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <div key={i} className={i > 0 ? "border-t border-zinc-100 dark:border-zinc-800 pt-5" : ""}>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
               {i === 0 ? "Страхувальник (турист 1)" : `Турист ${i + 1}`}
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -330,16 +330,16 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         ))}
 
         {/* Контакти */}
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Контакти страхувальника</p>
+        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Контакти страхувальника</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-zinc-500">Телефон</label>
-              <div className="flex items-center rounded-xl border border-zinc-200 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-                <span className="pl-4 pr-1 text-sm text-zinc-500">+380</span>
+              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Телефон</label>
+              <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+                <span className="pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
                 <input type="tel" inputMode="numeric" placeholder="67 123 45 67" value={formatUaPhone(c.phone)}
                   onChange={(e) => setC((s) => ({ ...s, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
-                  required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 outline-none" />
+                  required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none" />
               </div>
             </div>
             <Input label="Email" type="email" value={c.email} onChange={handleEmail} placeholder="email@example.com" required />
@@ -347,13 +347,13 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         </div>
 
         {/* Документ страхувальника */}
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Документ страхувальника</p>
+        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Документ страхувальника</p>
           <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
             {DOC_TYPES.map(({ t, label }) => (
               <button key={t} type="button" onClick={() => changeDocType(t)}
                 className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                  c.docType === t ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
+                  c.docType === t ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
                 }`}>{label}</button>
             ))}
           </div>
@@ -368,19 +368,19 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         </div>
 
         {/* Адреса */}
-        <div className="border-t border-zinc-100 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Адреса проживання</p>
+        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Адреса проживання</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500">Місто</label>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Місто</label>
               <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
-                className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40" : ""}`} />
+                className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
-                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg">
                   {cityResults.map((ci) => (
                     <button key={ci.id} type="button" onClick={() => { setSelectedCity(ci); setCityQuery(cityShort(ci.name_full_name_ua || ci.name_ua)); setCityResults([]); }}
-                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50">{cityLong(ci.name_full_name_ua || ci.name_ua)}</button>
+                      className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">{cityLong(ci.name_full_name_ua || ci.name_ua)}</button>
                   ))}
                 </div>
               )}
@@ -390,7 +390,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-zinc-100 pt-4">
+        <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto sm:px-8">
             Продовжити до оплати
           </Button>

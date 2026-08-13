@@ -56,7 +56,7 @@ export function ContactWidget() {
               const Icon = o.icon;
               const inner = (
                 <>
-                  <span className="rounded-lg bg-white px-2.5 py-1 text-sm font-medium text-zinc-800 shadow-md ring-1 ring-black/5">
+                  <span className="rounded-lg bg-white dark:bg-zinc-900 px-2.5 py-1 text-sm font-medium text-zinc-800 dark:text-zinc-200 shadow-md ring-1 ring-black/5 dark:ring-white/10">
                     {o.label}
                   </span>
                   <span className={`flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors ${o.color}`}>

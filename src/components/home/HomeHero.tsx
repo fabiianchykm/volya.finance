@@ -43,23 +43,23 @@ export function HomeHero() {
       </div>
 
       {/* Білий блок — продукти */}
-      <div className="bg-white pb-20 pt-12 sm:pb-24 sm:pt-14">
+      <div className="bg-white dark:bg-zinc-900 pb-20 pt-12 sm:pb-24 sm:pt-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map(({ href, icon: Icon, title, desc, badge, soon }) => {
             const inner = (
               <>
                 <div className="mb-4 flex items-center justify-between">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${soon ? "bg-zinc-100 text-zinc-400" : "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"}`}>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${soon ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500" : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white"}`}>
                     <Icon className="h-6 w-6" />
                   </div>
                   {badge && (
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">{badge}</span>
+                    <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">{badge}</span>
                   )}
                 </div>
-                <h3 className="text-lg font-bold text-zinc-900">{title}</h3>
-                <p className="mt-1 flex-1 text-sm leading-relaxed text-zinc-500">{desc}</p>
-                <span className={`mt-4 flex items-center justify-end gap-1.5 text-sm font-semibold ${soon ? "text-zinc-400" : "text-indigo-600"}`}>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{title}</h3>
+                <p className="mt-1 flex-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{desc}</p>
+                <span className={`mt-4 flex items-center justify-end gap-1.5 text-sm font-semibold ${soon ? "text-zinc-400 dark:text-zinc-500" : "text-indigo-600 dark:text-indigo-400"}`}>
                   {soon ? "Незабаром" : "Оформити"}
                   {!soon && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
                 </span>
@@ -69,7 +69,7 @@ export function HomeHero() {
               <div
                 key={title}
                 aria-disabled="true"
-                className="group flex cursor-default flex-col rounded-2xl bg-white p-6 text-left shadow-sm ring-1 ring-zinc-200/60"
+                className="group flex cursor-default flex-col rounded-2xl bg-white dark:bg-zinc-900 p-6 text-left shadow-sm ring-1 ring-zinc-200/60 dark:ring-zinc-700"
               >
                 {inner}
               </div>
@@ -77,7 +77,7 @@ export function HomeHero() {
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col rounded-2xl bg-white p-6 text-left shadow-sm ring-1 ring-zinc-200/60 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-100"
+                className="group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 p-6 text-left shadow-sm ring-1 ring-zinc-200/60 dark:ring-zinc-700 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-100 dark:hover:ring-indigo-900"
               >
                 {inner}
               </Link>

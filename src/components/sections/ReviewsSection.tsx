@@ -51,40 +51,40 @@ export function ReviewsSection() {
   const row = [...reviews, ...reviews];
 
   return (
-    <section className="bg-[#FAFAFA] py-20 sm:py-24">
+    <section className="bg-[#FAFAFA] dark:bg-[#0f0f11] py-20 sm:py-24">
       {/* Заголовок — ліворуч, трохи більший */}
       <div className="mx-auto mb-12 max-w-7xl px-4 sm:px-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">Відгуки клієнтів</h2>
+          <h2 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">Відгуки клієнтів</h2>
           <div className="flex items-center gap-1.5">
-            <GoogleIcon className="h-6 w-6 text-zinc-400" />
-            <FacebookIcon className="h-6 w-6 text-zinc-400" />
-            <ThreadsIcon className="h-6 w-6 text-zinc-400" />
-            <XIcon className="h-6 w-6 text-zinc-400" />
+            <GoogleIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+            <FacebookIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+            <ThreadsIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+            <XIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
           </div>
         </div>
       </div>
 
       <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#FAFAFA] to-transparent sm:w-24" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#FAFAFA] to-transparent sm:w-24" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#FAFAFA] dark:from-[#0f0f11] to-transparent sm:w-24" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#FAFAFA] dark:from-[#0f0f11] to-transparent sm:w-24" />
         <div className="animate-marquee">
           {row.map(({ name, city, text, color, source }, i) => {
             const SourceIcon = SOURCE_ICON[source];
             return (
-              <div key={i} className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/50">
+              <div key={i} className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-sm ring-1 ring-zinc-200/50 dark:ring-zinc-700">
                 <div className="mb-3 flex items-center justify-between">
-                  <Quote className="h-6 w-6 text-zinc-200" />
-                  <SourceIcon className="h-5 w-5 text-zinc-400" />
+                  <Quote className="h-6 w-6 text-zinc-200 dark:text-zinc-700" />
+                  <SourceIcon className="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
                 </div>
-                <p className="flex-1 text-sm leading-relaxed text-zinc-700">{text}</p>
+                <p className="flex-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">{text}</p>
                 <div className="mt-5 flex items-center gap-3">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
                     {name[0]}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-zinc-900">{name}</p>
-                    <p className="text-xs text-zinc-400">{city}</p>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{name}</p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">{city}</p>
                   </div>
                 </div>
               </div>

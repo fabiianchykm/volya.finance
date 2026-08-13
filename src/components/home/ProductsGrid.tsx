@@ -53,8 +53,8 @@ export function ProductsGrid() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
       <div className="mb-10 text-center">
-        <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">Оберіть продукт</h2>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-500 sm:text-base">
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">Оберіть продукт</h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
           Усі види автострахування з офіційних джерел — в одному застосунку.
         </p>
       </div>
@@ -64,21 +64,21 @@ export function ProductsGrid() {
           <Link
             key={href}
             href={href}
-            className="group flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
+            className="group flex flex-col rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
           >
             <div className="mb-4 flex items-center justify-between">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 transition-colors group-hover:bg-indigo-600">
-                <Icon className="h-6 w-6 text-indigo-600 transition-colors group-hover:text-white" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40 transition-colors group-hover:bg-indigo-600">
+                <Icon className="h-6 w-6 text-indigo-600 dark:text-indigo-400 transition-colors group-hover:text-white" />
               </div>
               {badge && (
-                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
+                <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   {badge}
                 </span>
               )}
             </div>
-            <h3 className="text-lg font-bold text-zinc-900">{title}</h3>
-            <p className="mt-1 flex-1 text-sm text-zinc-500">{desc}</p>
-            <span className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-indigo-600">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{title}</h3>
+            <p className="mt-1 flex-1 text-sm text-zinc-500 dark:text-zinc-400">{desc}</p>
+            <span className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
               Оформити
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </span>

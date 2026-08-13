@@ -34,7 +34,7 @@ const ZONES = [
 // Той самий вигляд, що й тригер DateRangeInput (щоб «Куди прямуєте?» і «Дати поїздки»
 // виглядали стандартно: однакові рамка, паддінги й фокус із ring).
 const selectClass =
-  "h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
+  "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm text-zinc-900 dark:text-zinc-100 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
 
 export function TourismFlow() {
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
@@ -197,43 +197,43 @@ export function TourismFlow() {
               <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть параметри подорожі — і побачите пропозиції з цінами й покриттям.</p>
             </div>
 
-            <form onSubmit={submit} className="rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+            <form onSubmit={submit} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
                   <div className="relative">
                     <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={`${selectClass} cursor-pointer appearance-none pr-10`}>
                       {ZONES.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                   </div>
                 </div>
                 {multiVisa ? (
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
                     <DateInput value={startDate} onChange={setStartDate} minDate={today} maxDate={maxStart} />
                   </div>
                 ) : (
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки{days > 0 && <span className="text-zinc-400">· {days} дн.</span>}</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки{days > 0 && <span className="text-zinc-400 dark:text-zinc-500">· {days} дн.</span>}</label>
                     <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
                   </div>
                 )}
                 {multiVisa && (
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Днів на поїздку</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Днів на поїздку</label>
                     <div className="relative">
                       <select value={tripDays} onChange={(e) => setTripDays(Number(e.target.value))} className={`${selectClass} cursor-pointer appearance-none pr-10`}>
                         {[30, 60, 90, 180].map((d) => <option key={d} value={d}>до {d} днів на поїздку</option>)}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                     </div>
                   </div>
                 )}
               </div>
 
               <div className="mt-5">
-                <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Users className="h-3.5 w-3.5" /> Туристи</label>
+                <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Users className="h-3.5 w-3.5" /> Туристи</label>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {birthDates.map((b, i) => (
                     <div key={i} className="flex items-end gap-2">
@@ -242,7 +242,7 @@ export function TourismFlow() {
                       </div>
                       {birthDates.length > 1 && (
                         <button type="button" aria-label={`Прибрати туриста ${i + 1}`} onClick={() => removeTourist(i)}
-                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-zinc-400 transition-colors hover:border-rose-300 hover:text-rose-500">
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500 transition-colors hover:border-rose-300 hover:text-rose-500">
                           <X className="h-4 w-4" />
                         </button>
                       )}
@@ -251,19 +251,19 @@ export function TourismFlow() {
                   {/* Кнопка «Додати туриста» — збоку в сітці, як окрема комірка, а не знизу */}
                   {birthDates.length < 6 && (
                     <button type="button" onClick={addTourist}
-                      className="flex h-11 items-center justify-center gap-1.5 self-end rounded-xl border border-dashed border-zinc-300 px-4 text-sm font-medium text-indigo-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50">
+                      className="flex h-11 items-center justify-center gap-1.5 self-end rounded-xl border border-dashed border-zinc-300 dark:border-zinc-600 px-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/40">
                       <Plus className="h-4 w-4" /> Додати туриста
                     </button>
                   )}
                 </div>
               </div>
 
-              <label className="mt-5 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-indigo-200">
+              <label className="mt-5 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 px-4 py-3 transition-colors hover:border-indigo-200">
                 <span className="flex flex-col">
-                  <span className="text-sm font-medium text-zinc-800">Річний поліс (мультивіза)</span>
-                  <span className="text-xs text-zinc-400">Багато поїздок протягом року</span>
+                  <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Річний поліс (мультивіза)</span>
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">Багато поїздок протягом року</span>
                 </span>
-                <input type="checkbox" checked={multiVisa} onChange={(e) => setMultiVisa(e.target.checked)} className="h-5 w-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" />
+                <input type="checkbox" checked={multiVisa} onChange={(e) => setMultiVisa(e.target.checked)} className="h-5 w-5 rounded border-zinc-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500" />
               </label>
 
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
@@ -324,27 +324,27 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
   return (
     <div>
       {/* Картка-підсумок (breadcrumb + параметри) + сума покриття прикріплена знизу */}
-      <div className="mb-6 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+      <div className="mb-6 overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
         <div className="px-6 pt-4 pb-4">
-          <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
+          <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
             <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
               <Home className="h-3.5 w-3.5" />
             </button>
             <ChevronRight className="h-3 w-3" />
-            <span className="font-medium text-zinc-600">Туристичне страхування</span>
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">Туристичне страхування</span>
           </div>
-          <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
+          <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
         </div>
 
         {/* Сума покриття — випадний список */}
         {coverages.length > 1 && (
-          <div className="border-t border-zinc-100 bg-indigo-50/40 px-6 py-3.5">
-            <label htmlFor="tour-coverage" className="mb-2 block text-xs font-medium text-zinc-500">Сума покриття</label>
+          <div className="border-t border-zinc-100 dark:border-zinc-800 bg-indigo-50/40 dark:bg-indigo-950/40 px-6 py-3.5">
+            <label htmlFor="tour-coverage" className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Сума покриття</label>
             <select
               id="tour-coverage"
               value={coverage}
               onChange={(e) => setCoverage(Number(e.target.value))}
-              className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-900 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-72"
+              className="h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-72"
             >
               {coverages.map((c) => (
                 <option key={c} value={c}>
@@ -359,12 +359,12 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
       {/* Сортування — випадний список */}
       {cards.length > 0 && (
         <div className="mb-5 flex items-center justify-end gap-2">
-          <label htmlFor="tour-sort" className="text-xs font-medium text-zinc-400">Сортувати</label>
+          <label htmlFor="tour-sort" className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Сортувати</label>
           <select
             id="tour-sort"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as "price_asc" | "price_desc")}
-            className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            className="h-10 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           >
             <option value="price_asc">Спершу дешевші</option>
             <option value="price_desc">Спершу дорожчі</option>
@@ -374,9 +374,9 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
 
       {/* Картки (переюз OSAGO OfferCard) */}
       {cards.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-          <p className="text-base font-semibold text-zinc-900">Пропозицій не знайдено</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">Спробуйте інші дати чи зону.</p>
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Пропозицій не знайдено</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">Спробуйте інші дати чи зону.</p>
         </div>
       ) : (
         <div className="space-y-3">

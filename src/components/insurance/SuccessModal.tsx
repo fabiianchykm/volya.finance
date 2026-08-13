@@ -43,13 +43,13 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
   return (
     <Modal open={open} onClose={onClose} size="sm">
       <div className="flex flex-col items-center gap-5 text-center py-2">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/40">
           <CheckCircle className="h-9 w-9 text-emerald-500" />
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-zinc-900">Поліс оформлено!</h2>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Поліс оформлено!</h2>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Договір надіслано на вашу email-адресу
           </p>
         </div>
@@ -80,7 +80,7 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
 
         <button
           onClick={onClose}
-          className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+          className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
         >
           Закрити
         </button>

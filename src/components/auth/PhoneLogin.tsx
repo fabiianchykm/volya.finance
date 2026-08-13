@@ -101,9 +101,9 @@ export function PhoneLogin() {
     <>
       {step === "phone" ? (
         <form onSubmit={sendCode} className="space-y-3">
-          <div className="flex items-center rounded-2xl border border-zinc-200 bg-white px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
-            <span className="select-none pr-3 text-xl font-semibold text-zinc-500">+380</span>
-            <span className="mr-3 h-7 w-px bg-zinc-200" />
+          <div className="flex items-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900">
+            <span className="select-none pr-3 text-xl font-semibold text-zinc-500 dark:text-zinc-400">+380</span>
+            <span className="mr-3 h-7 w-px bg-zinc-200 dark:bg-zinc-700" />
             <input
               type="tel"
               inputMode="numeric"
@@ -111,7 +111,7 @@ export function PhoneLogin() {
               placeholder="67 123 45 67"
               value={formatUaPhone(phone)}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-              className="w-full bg-transparent py-3.5 text-xl font-semibold tracking-wider text-zinc-900 placeholder:font-normal placeholder:tracking-normal placeholder:text-zinc-300 outline-none"
+              className="w-full bg-transparent py-3.5 text-xl font-semibold tracking-wider text-zinc-900 dark:text-zinc-100 placeholder:font-normal placeholder:tracking-normal placeholder:text-zinc-300 dark:placeholder:text-zinc-600 outline-none"
             />
           </div>
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
@@ -121,11 +121,11 @@ export function PhoneLogin() {
         </form>
       ) : (
         <form onSubmit={verify} className="space-y-3">
-          <p className="flex items-start gap-2 text-sm text-zinc-500">
+          <p className="flex items-start gap-2 text-sm text-zinc-500 dark:text-zinc-400">
             <Send className={`mt-0.5 h-4 w-4 shrink-0 ${channel === "sms" ? "text-emerald-500" : "text-sky-500"}`} />
             <span>
               Код надіслано {channel === "sms" ? "по SMS" : "в Telegram"} на{" "}
-              <span className="font-medium text-zinc-700">+380 {formatUaPhone(phone)}</span>. Введіть його:
+              <span className="font-medium text-zinc-700 dark:text-zinc-200">+380 {formatUaPhone(phone)}</span>. Введіть його:
             </span>
           </p>
           <input
@@ -136,13 +136,13 @@ export function PhoneLogin() {
             placeholder="••••••"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            className="h-14 w-full rounded-2xl border border-zinc-200 bg-white text-center text-2xl font-bold tracking-[0.5em] text-zinc-900 shadow-sm outline-none transition-all placeholder:text-zinc-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            className="h-14 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-center text-2xl font-bold tracking-[0.5em] text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900"
           />
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
           <Button type="submit" variant="primary" size="lg" loading={loading} disabled={code.length !== 6 || loading} className="w-full rounded-2xl">
             Підтвердити
           </Button>
-          <button type="button" onClick={() => { setStep("phone"); setCode(""); setError(null); }} className="w-full text-center text-xs text-indigo-600 hover:underline">
+          <button type="button" onClick={() => { setStep("phone"); setCode(""); setError(null); }} className="w-full text-center text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
             Змінити номер
           </button>
         </form>

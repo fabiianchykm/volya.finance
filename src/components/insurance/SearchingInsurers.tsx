@@ -20,10 +20,10 @@ export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string
   }, []);
   const name = names[i % names.length];
   return (
-    <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3">
+    <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
       <div className="flex items-center justify-center gap-2.5">
-        <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500" />
-        <p className="flex items-center justify-center gap-x-1.5 text-sm text-zinc-600">
+        <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500 dark:border-indigo-800" />
+        <p className="flex items-center justify-center gap-x-1.5 text-sm text-zinc-600 dark:text-zinc-300">
           <span>Порівнюємо тарифи страховиків —</span>
           <span className="relative inline-grid">
             <AnimatePresence mode="popLayout" initial={false}>
@@ -33,7 +33,7 @@ export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25 }}
-                className="col-start-1 row-start-1 whitespace-nowrap font-semibold text-indigo-600"
+                className="col-start-1 row-start-1 whitespace-nowrap font-semibold text-indigo-600 dark:text-indigo-400"
               >
                 {name}
               </motion.span>
@@ -43,7 +43,7 @@ export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string
       </div>
 
       {/* Смуга завантаження — рухається зліва направо, поки тягнемо пропозиції. */}
-      <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-indigo-100">
+      <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-indigo-100 dark:bg-indigo-900/40">
         <motion.div
           className="h-full w-1/3 rounded-full bg-gradient-to-r from-indigo-400 to-violet-500"
           animate={{ x: ["-100%", "300%"] }}

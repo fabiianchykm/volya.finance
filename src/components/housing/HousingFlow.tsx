@@ -31,7 +31,7 @@ function fmtPeriod(p: string): string {
 }
 
 const selectClass =
-  "h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400";
+  "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
 
 export function HousingFlow() {
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
@@ -168,13 +168,13 @@ export function HousingFlow() {
               <p className="mx-auto max-w-xl text-base text-zinc-300">Захист від пожежі, затоплення, стихії та інших ризиків. Оберіть параметри — і побачите ціни страхових.</p>
             </div>
 
-            <form onSubmit={calc} className="mx-auto max-w-2xl rounded-2xl bg-white p-5 text-left shadow-2xl sm:p-7">
+            <form onSubmit={calc} className="mx-auto max-w-2xl rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
               {/* Тип житла */}
               <div className="mb-4 grid grid-cols-2 gap-2">
                 {([{ v: "flat", label: "Квартира", Icon: Building2 }, { v: "house", label: "Будинок", Icon: HomeIcon }] as const).map(({ v, label, Icon }) => (
                   <button key={v} type="button" onClick={() => setHomeType(v)}
                     className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
-                      homeType === v ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200" : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200"
+                      homeType === v ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
                     }`}>
                     <Icon className="h-4 w-4" /> {label}
                   </button>
@@ -183,19 +183,19 @@ export function HousingFlow() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</label>
                   <select value={amount} onChange={(e) => setAmount(Number(e.target.value))} className={selectClass}>
                     {AMOUNTS.map((a) => <option key={a} value={a}>{fmtAmount(a)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Строк</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Строк</label>
                   <select value={period} onChange={(e) => setPeriod(e.target.value)} className={selectClass}>
                     {PERIODS.map((p) => <option key={p} value={p}>{fmtPeriod(p)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
                   <DateInput label="" value={startDate} onChange={setStartDate} minDate={minStart} maxDate={maxStart} required />
                 </div>
               </div>
@@ -227,15 +227,15 @@ function HousingOffers({
     <div className="mx-auto max-w-[1200px]">
       <div className="flex flex-col items-start gap-6 lg:flex-row">
         <div className="min-w-0 flex-1">
-          <div className="mb-6 rounded-2xl border border-zinc-100 bg-white px-6 py-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400">
+          <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
               <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
                 <HomeIcon className="h-3.5 w-3.5" />
               </button>
               <ChevronRight className="h-3 w-3" />
-              <span className="font-medium text-zinc-600">Страхування житла</span>
+              <span className="font-medium text-zinc-600 dark:text-zinc-300">Страхування житла</span>
             </div>
-            <p className="font-bold text-zinc-900" style={{ fontSize: 19 }}>{summary}</p>
+            <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
           </div>
 
           {loading ? (
@@ -244,9 +244,9 @@ function HousingOffers({
               {Array.from({ length: 4 }).map((_, i) => <HousingSkeleton key={i} />)}
             </>
           ) : error || offers.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center">
-              <p className="text-base font-semibold text-zinc-900">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
-              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте інші параметри."}</p>
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте інші параметри."}</p>
               <Button variant="secondary" size="md" onClick={onBack} className="mt-5">Змінити параметри</Button>
             </div>
           ) : (
@@ -287,16 +287,16 @@ function toInsuranceOffer(o: HomeOffer): InsuranceOffer {
 
 function HousingSkeleton() {
   return (
-    <div className="mb-3 animate-pulse rounded-2xl border border-zinc-100 bg-white px-5 py-5 shadow-sm">
+    <div className="mb-3 animate-pulse rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5 py-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-zinc-100" />
+          <div className="h-12 w-12 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
           <div className="space-y-2">
-            <div className="h-4 w-36 rounded bg-zinc-100" />
-            <div className="h-3 w-20 rounded bg-zinc-100" />
+            <div className="h-4 w-36 rounded bg-zinc-100 dark:bg-zinc-800" />
+            <div className="h-3 w-20 rounded bg-zinc-100 dark:bg-zinc-800" />
           </div>
         </div>
-        <div className="h-9 w-24 rounded-xl bg-zinc-100" />
+        <div className="h-9 w-24 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
       </div>
     </div>
   );

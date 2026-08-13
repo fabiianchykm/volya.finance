@@ -57,7 +57,7 @@ function CompanyLogo({ company, cleanName }: { company: InsuranceCompany; cleanN
   const src = logoSrc(transliterate(cleanName)) || company.logo || null;
 
   if (!src || failed) {
-    return <span className="text-sm font-bold text-zinc-400">{cleanName.slice(0, 2).toUpperCase()}</span>;
+    return <span className="text-sm font-bold text-zinc-400 dark:text-zinc-500">{cleanName.slice(0, 2).toUpperCase()}</span>;
   }
 
   return (
@@ -90,16 +90,16 @@ function subscribeAccordion(cb: () => void) {
 // Керований (акордеон): відкритий лише один блок за раз — стан тримає картка.
 function DetailsDropdown({ label, children, open, onToggle, bodyClassName = "px-3.5 py-3" }: { label: string; children: ReactNode; open: boolean; onToggle: () => void; bodyClassName?: string }) {
   return (
-    <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 bg-white">
+    <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-zinc-50"
+        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
       >
-        <span className="text-sm font-medium text-zinc-800">{label}</span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform", open && "rotate-180")} />
+        <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{label}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500", open && "rotate-180")} />
       </button>
-      {open && <div className={cn("flex flex-col gap-3 border-t border-zinc-100", bodyClassName)}>{children}</div>}
+      {open && <div className={cn("flex flex-col gap-3 border-t border-zinc-100 dark:border-zinc-800", bodyClassName)}>{children}</div>}
     </div>
   );
 }
@@ -178,7 +178,7 @@ export function OfferCard({
   const coverageChips = coverageTags && coverageTags.length > 0 ? (
     <div className="flex flex-wrap justify-center gap-1.5">
       {coverageTags.map((t) => (
-        <span key={t} className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+        <span key={t} className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900">
           {t}
         </span>
       ))}
@@ -189,7 +189,7 @@ export function OfferCard({
   const rowClass = (active: boolean) =>
     cn(
       "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all",
-      active ? "border-indigo-300 bg-indigo-50/60 ring-1 ring-indigo-200" : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50"
+      active ? "border-indigo-300 bg-indigo-50/60 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:ring-indigo-800" : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800/60"
     );
 
   const optionsBlock = (
@@ -197,10 +197,10 @@ export function OfferCard({
       {autolawyer && (
         <button type="button" onClick={() => onSelectAutolawyer(selectedAutolawyerId === autolawyer.id ? null : autolawyer.id)} className={rowClass(selectedAutolawyerId === autolawyer.id)}>
           <span className="flex min-w-0 flex-col">
-            <span className="text-sm font-medium text-zinc-800">Автоюрист</span>
-            <span className="text-[11px] text-zinc-400">Додаткова опція</span>
+            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Автоюрист</span>
+            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">Додаткова опція</span>
           </span>
-          <span className="shrink-0 text-sm font-semibold text-indigo-600">
+          <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
             {autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : "Безкоштовно"}
           </span>
         </button>
@@ -215,8 +215,8 @@ export function OfferCard({
             className={cn(
               "w-full cursor-pointer appearance-none rounded-xl border py-2.5 pl-3.5 pr-9 text-sm font-medium outline-none transition-all",
               selectedDgoId
-                ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200"
-                : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200"
+                ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-zinc-200 dark:ring-indigo-800"
+                : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
             )}
           >
             <option value="">Додаткове покриття</option>
@@ -226,7 +226,7 @@ export function OfferCard({
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
         </div>
       )}
     </div>
@@ -237,10 +237,10 @@ export function OfferCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`relative rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
+      className={`relative rounded-2xl border bg-white shadow-sm transition-all duration-200 dark:bg-zinc-900 ${
         selected
           ? "border-indigo-400 shadow-md shadow-indigo-100 ring-1 ring-indigo-400"
-          : "border-zinc-100 hover:border-zinc-200 hover:shadow-md"
+          : "border-zinc-100 hover:border-zinc-200 hover:shadow-md dark:border-zinc-800 dark:hover:border-zinc-700"
       }`}
     >
       {specialOffer && (
@@ -258,29 +258,29 @@ export function OfferCard({
       <div className={`p-4 lg:hidden ${specialOffer ? "pt-8" : ""}`}>
         {/* Ряд 1: лого + назва + ціна */}
         <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5 dark:border-zinc-800 dark:bg-zinc-100">
             <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold uppercase text-zinc-900 leading-snug">
+            <p className="text-sm font-semibold uppercase text-zinc-900 leading-snug dark:text-zinc-100">
               {cleanCompanyName}
             </p>
-            {subtitle && <p className="mt-0.5 text-xs text-zinc-400">{subtitle}</p>}
+            {subtitle && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">{subtitle}</p>}
           </div>
 
           <div className="flex shrink-0 flex-col items-end">
             {strikePrice && (
               <span className="flex items-center gap-1.5">
-                <span className="text-xs text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
+                <span className="text-xs text-zinc-400 line-through tabular-nums dark:text-zinc-500">{formatPrice(strikePrice)}</span>
                 {discountPct != null && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">−{Math.round(discountPct)}%</span>}
               </span>
             )}
-            <span className="text-lg font-bold text-zinc-900 tabular-nums">
+            <span className="text-lg font-bold text-zinc-900 tabular-nums dark:text-zinc-100">
               {formatPrice(totalPrice)}
             </span>
             {bonus > 0 && (
-              <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 whitespace-nowrap text-[11px] font-semibold text-emerald-600">
+              <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 whitespace-nowrap text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                 +{formatPrice(bonus)} бонус
               </span>
             )}
@@ -289,14 +289,14 @@ export function OfferCard({
 
         {/* Що покриває — чипи (напр. міні-КАСКО) */}
         {coverageChips && (
-          <div className="mt-3 border-t border-zinc-100 pt-3">
+          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
             {coverageChips}
           </div>
         )}
 
         {/* Опції (автоюрист / ДГО / Допомога) */}
         {showOptionsBlock && (
-          <div className="mt-3 border-t border-zinc-100 pt-3">
+          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
             {optionsBlock}
           </div>
         )}
@@ -314,7 +314,7 @@ export function OfferCard({
           {canExpand && (
             <button
               onClick={() => setExpanded(v => !v)}
-              className="flex items-center justify-center gap-0.5 text-xs text-zinc-400 hover:text-indigo-600 transition-colors"
+              className="flex items-center justify-center gap-0.5 text-xs text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               Детальніше
@@ -331,10 +331,10 @@ export function OfferCard({
           <div className="flex h-[152px] w-[152px] items-center justify-center overflow-hidden">
             <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
           </div>
-          <span className="text-sm uppercase text-zinc-900 leading-tight text-center">
+          <span className="text-sm uppercase text-zinc-900 leading-tight text-center dark:text-zinc-100">
             {cleanCompanyName}
           </span>
-          {subtitle && <span className="text-xs text-zinc-400 text-center">{subtitle}</span>}
+          {subtitle && <span className="text-xs text-zinc-400 text-center dark:text-zinc-500">{subtitle}</span>}
         </div>
 
         {/* Блок 2: кількість опцій / документи. Фіксована ширина = ширина розгорнутих
@@ -344,16 +344,16 @@ export function OfferCard({
             <div className="flex flex-col items-center gap-2 flex-1 justify-center">
               {hasOptions && (
                 <>
-                  <span className="text-3xl text-zinc-900">
+                  <span className="text-3xl text-zinc-900 dark:text-zinc-100">
                     {(dgoList.length ? 1 : 0) + (lawyerList.length ? 1 : 0)}
                   </span>
-                  <span className="text-xs text-zinc-400 font-medium">опції</span>
+                  <span className="text-xs text-zinc-400 font-medium dark:text-zinc-500">опції</span>
                 </>
               )}
             </div>
             <button
               onClick={() => setExpanded(v => !v)}
-              className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors mt-auto"
+              className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors mt-auto dark:text-zinc-500 dark:hover:text-indigo-400"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               Додатково
@@ -372,15 +372,15 @@ export function OfferCard({
           <div className="flex flex-col items-center gap-1">
             {strikePrice && (
               <div className="flex items-center gap-1.5">
-                <span className="text-sm text-zinc-400 line-through tabular-nums">{formatPrice(strikePrice)}</span>
+                <span className="text-sm text-zinc-400 line-through tabular-nums dark:text-zinc-500">{formatPrice(strikePrice)}</span>
                 {discountPct != null && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-xs font-bold text-white">−{Math.round(discountPct)}%</span>}
               </div>
             )}
-            <div className="text-2xl text-zinc-900 tabular-nums">
+            <div className="text-2xl text-zinc-900 tabular-nums dark:text-zinc-100">
               {formatPrice(totalPrice)}
             </div>
             {bonus > 0 && (
-              <span title="1% від вартості полісу на бонусний рахунок" className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
+              <span title="1% від вартості полісу на бонусний рахунок" className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
                 +{formatPrice(bonus)} бонус
               </span>
             )}
@@ -399,18 +399,18 @@ export function OfferCard({
       {/* Розгорнута секція (Базові опції / Документи). На десктопі зсунута ліворуч
           так, щоб починалась під 2-м блоком «опис» (після колонки з лого w-48). */}
       {expanded && (
-        <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4">
+        <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4 dark:border-zinc-800">
           {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + пряме врегулювання */}
           {(productDescription || offer.company.directSettlement === 1) && (
             <DetailsDropdown label="Базові опції" open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
               {productDescription}
               {offer.company.directSettlement === 1 && (
-                <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-zinc-700">Пряме врегулювання</span>
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">Пряме врегулювання</span>
                     <span
                       title="Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП."
-                      className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500"
+                      className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
                     >
                       <Info className="h-3.5 w-3.5" />
                     </span>
@@ -423,8 +423,8 @@ export function OfferCard({
           {/* «Умови виплат» — окремий dropdown (між Базові опції та Документи) */}
           {offer.company.compensationDays > 0 && (
             <DetailsDropdown label="Умови виплат" open={openDetail === "term"} onToggle={() => toggleDetail("term")}>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
-                <span className="text-xs font-bold text-zinc-700">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
+                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-200">
                   Виплата до {offer.company.compensationDays} дн.
                 </span>
               </div>
@@ -441,13 +441,13 @@ export function OfferCard({
                     href={d.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:text-indigo-400"
                   >
                     <span className="flex min-w-0 items-start gap-2">
                       <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-500" />
                       <span className="leading-snug">{d.label}</span>
                     </span>
-                    <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                    <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
                   </a>
                 ))}
               </div>
