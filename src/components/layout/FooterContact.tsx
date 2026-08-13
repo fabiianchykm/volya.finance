@@ -73,11 +73,12 @@ function TikTokIcon({ className }: { className?: string }) {
 
 const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 
-// TODO: замінити на реальні профілі, коли будуть.
+// `live: true` — реальний профіль (клікабельний). Решта — заглушки (заморожені),
+// поки профілів немає. TODO: замінити на реальні й проставити live, коли будуть.
 const SOCIALS = [
   { label: "Threads", href: "https://www.threads.net/@volya.finance", Icon: ThreadsIcon },
   { label: "Telegram", href: TELEGRAM_URL, Icon: TelegramIcon },
-  { label: "Instagram", href: "https://www.instagram.com/volya.finance", Icon: InstagramIcon },
+  { label: "Instagram", href: "https://www.instagram.com/volya_finance", Icon: InstagramIcon, live: true },
   { label: "Facebook", href: "https://www.facebook.com/volya.finance", Icon: FacebookIcon },
   { label: "TikTok", href: "https://www.tiktok.com/@volya.finance", Icon: TikTokIcon },
   { label: "YouTube", href: "https://www.youtube.com/@volya.finance", Icon: YouTubeIcon },
@@ -125,11 +126,17 @@ export function FooterContact() {
             Соцмережі
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            {SOCIALS.map(({ label, Icon }) => (
-              <span key={label} aria-label={label} title={label} role="img" className={social}>
-                <Icon className="h-5 w-5" />
-              </span>
-            ))}
+            {SOCIALS.map(({ label, href, Icon, live }) =>
+              live ? (
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className={btn}>
+                  <Icon className="h-5 w-5" />
+                </a>
+              ) : (
+                <span key={label} aria-label={label} title={label} role="img" className={social}>
+                  <Icon className="h-5 w-5" />
+                </span>
+              )
+            )}
           </div>
         </div>
       </div>
