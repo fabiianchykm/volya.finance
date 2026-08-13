@@ -87,13 +87,13 @@ function subscribeAccordion(cb: () => void) {
 // Згорнутий список у «Детальніше» (напр. «Базові опції», «Документи»).
 // Розмір/вигляд як у рядка «Автоюрист»: rounded-xl, border-zinc-200, bg-white,
 // px-3.5 py-2.5, text-sm, ширина до 340px.
-function DetailsDropdown({ label, children, bodyClassName = "px-3.5 py-3" }: { label: string; children: ReactNode; bodyClassName?: string }) {
-  const [open, setOpen] = useState(false);
+// Керований (акордеон): відкритий лише один блок за раз — стан тримає картка.
+function DetailsDropdown({ label, children, open, onToggle, bodyClassName = "px-3.5 py-3" }: { label: string; children: ReactNode; open: boolean; onToggle: () => void; bodyClassName?: string }) {
   return (
     <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 bg-white">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={onToggle}
         className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-zinc-50"
       >
         <span className="text-sm font-medium text-zinc-800">{label}</span>
@@ -128,6 +128,10 @@ export function OfferCard({
     const val = typeof next === "function" ? next(expanded) : next;
     setAccordionOpenKey(val ? cardKey : null);
   };
+
+  // Внутрішній акордеон розгорнутої секції: відкритий лише один блок за раз.
+  const [openDetail, setOpenDetail] = useState<string | null>(null);
+  const toggleDetail = (key: string) => setOpenDetail((cur) => (cur === key ? null : key));
 
   const cleanCompanyName = formatCompanyName(offer.company.publicName);
 
@@ -398,7 +402,7 @@ export function OfferCard({
         <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4">
           {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + пряме врегулювання */}
           {(productDescription || offer.company.directSettlement === 1) && (
-            <DetailsDropdown label="Базові опції">
+            <DetailsDropdown label="Базові опції" open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
               {productDescription}
               {offer.company.directSettlement === 1 && (
                 <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
@@ -411,9 +415,9 @@ export function OfferCard({
             </DetailsDropdown>
           )}
 
-          {/* «Термін виплати» — окремий dropdown (між Базові опції та Документи) */}
+          {/* «Умови виплат» — окремий dropdown (між Базові опції та Документи) */}
           {offer.company.compensationDays > 0 && (
-            <DetailsDropdown label="Термін виплати">
+            <DetailsDropdown label="Умови виплат" open={openDetail === "term"} onToggle={() => toggleDetail("term")}>
               <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
                 <span className="text-xs font-bold text-zinc-700">
                   Виплата до {offer.company.compensationDays} дн.
@@ -424,7 +428,7 @@ export function OfferCard({
 
           {/* Документи — окремий dropdown */}
           {hasDocs && (
-            <DetailsDropdown label="Документи страхового продукту" bodyClassName="px-2 py-2">
+            <DetailsDropdown label="Документи страхового продукту" open={openDetail === "docs"} onToggle={() => toggleDetail("docs")} bodyClassName="px-2 py-2">
               <div className="flex flex-col gap-2">
                 {docs.map((d) => (
                   <a
