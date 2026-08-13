@@ -269,6 +269,30 @@ export function CheckoutClient() {
 
       setStep("payment");
 
+      // Клієнт дійшов до оплати — ще раз зберігаємо його дані (з даних замовлення).
+      // saveProfile мержиться з локальним кешем, тож у БД летить повний профіль.
+      if (customer?.email) {
+        const doc = customer.documentation;
+        const dt = doc?.type as 1 | 3 | 4;
+        saveProfile({
+          email: customer.email,
+          surname: customer.surname,
+          name: customer.name,
+          patronymic: customer.patronymic,
+          phone: customer.phone.replace(/^\+?380/, ""),
+          identificationCode: customer.identificationCode,
+          dateBirth: unixToUaDate(customer.dateBirth),
+          street: customer.address?.street,
+          house: customer.address?.house,
+          docType: dt,
+          docKind: OSAGO_DOC_KIND[dt],
+          docSerial: doc?.serial,
+          docNumber: doc?.number,
+          docIssuedBy: doc?.issuedBy,
+          docDate: doc?.dateOfIssue ? unixToUaDate(doc.dateOfIssue) : undefined,
+        });
+      }
+
       // Конверсія для GA4/Ads: клієнт дійшов до оплати.
       trackEvent("begin_checkout", {
         product: "osago",
@@ -600,21 +624,10 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     4: { serial: "Серія", serialPh: "ААХ", number: "Номер", numberPh: "123456", issuedBy: "Ким видано", issuedByPh: "Орган, що видав" },
   }[docType];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const dob = parseUaDate(form.dateBirth);
-    if (!dob) { setDobError(true); return; }
-    setDobError(false);
-    const issue = parseUaDate(form.docDate);
-    if (!issue) { setDocDateError(true); return; }
-    setDocDateError(false);
-    if (!selectedCity) { setCityError(true); return; }
-    const dateBirth = Math.floor(dob.getTime() / 1000);
-    const dateOfIssue = Math.floor(issue.getTime() / 1000);
-
-    const cityName = selectedCity.name_full_name_ua || selectedCity.name_ua;
-
-    // Зберігаємо профіль на пристрої під email — для автозаповнення наступного разу.
+  // Зберегти профіль страхувальника (localStorage + БД для залогінених) — викликаємо
+  // і на подачі даних, і на переході до оплати (гарантований дубль-запис).
+  const persistProfile = () => {
+    if (!form.email) return;
     saveProfile({
       surname: form.surname,
       name: form.name,
@@ -634,6 +647,24 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
       city: selectedCity,
       cityQuery,
     });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const dob = parseUaDate(form.dateBirth);
+    if (!dob) { setDobError(true); return; }
+    setDobError(false);
+    const issue = parseUaDate(form.docDate);
+    if (!issue) { setDocDateError(true); return; }
+    setDocDateError(false);
+    if (!selectedCity) { setCityError(true); return; }
+    const dateBirth = Math.floor(dob.getTime() / 1000);
+    const dateOfIssue = Math.floor(issue.getTime() / 1000);
+
+    const cityName = selectedCity.name_full_name_ua || selectedCity.name_ua;
+
+    // Зберігаємо профіль на пристрої під email — для автозаповнення наступного разу.
+    persistProfile();
 
     onSubmit({
       customerType: 1,

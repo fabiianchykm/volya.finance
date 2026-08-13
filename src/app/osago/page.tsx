@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Footer } from "@/components/layout/Footer";
 import { InsuranceFlow } from "@/components/insurance/InsuranceFlow";
 import { MarketingSections } from "@/components/sections/MarketingSections";
@@ -36,7 +37,9 @@ export default function OsagoPage() {
         ]}
       />
       <main className="flex-1">
-        <InsuranceFlow />
+        <Suspense>
+          <InsuranceFlow />
+        </Suspense>
         <MarketingSections showFaq />
       </main>
       <Footer />

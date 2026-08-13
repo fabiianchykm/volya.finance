@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { OffersSection } from "./OffersSection";
@@ -31,7 +31,9 @@ interface FlowState {
 
 export function InsuranceFlow() {
   const router = useRouter();
-  
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [state, setState] = useState<FlowState>({
     step: "hero",
     plate: "",
@@ -151,8 +153,9 @@ export function InsuranceFlow() {
     setShowVehicleModal(false);
     setEditingVehicle(false);
     setState((s) => ({ ...s, step: "offers", vehicle, periodId: period, offers: [], offersLoading: true }));
-    // Номер авто (напівпублічний) — у URL, щоб перезавантаження показало пропозиції.
-    window.history.replaceState(null, "", `?step=offers&plate=${encodeURIComponent(vehicle.number || state.plate)}`);
+    // Номер авто (напівпублічний) — у URL через РОУТЕР (не replaceState), щоб клік по
+    // меню на /osago розпізнавався як навігація й повертав на головний екран.
+    router.replace(`${pathname}?step=offers&plate=${encodeURIComponent(vehicle.number || state.plate)}`, { scroll: false });
 
     // Fetch offers without blocking the UI transition (period передаємо явно).
     void fetchOffers(vehicle, state.buyer, period);
@@ -256,6 +259,18 @@ export function InsuranceFlow() {
      
   }, []);
 
+  // Клік по меню на /osago, поки показані пропозиції: URL стає без «?step=offers» —
+  // повертаємось на головний екран (введення номера). stepRef (синхронізуємо ефектом,
+  // не в рендері) — щоб не залежати від state.step у deps, інакше скидання спрацьовувало
+  // б у момент самого показу оферів (гонка).
+  const stepRef = useRef(state.step);
+  useEffect(() => { stepRef.current = state.step; });
+  useEffect(() => {
+    if (searchParams.get("step") !== "offers" && stepRef.current === "offers") {
+      setState((s) => ({ ...s, step: "hero" }));
+    }
+  }, [searchParams]);
+
   // Поки користувач на екрані оферів — тихо оновлюємо список кожні OFFERS_TTL_MS,
   // щоб не показувати застарілі ціни (без скелетона, щоб не миготіло).
   useEffect(() => {
@@ -313,7 +328,7 @@ export function InsuranceFlow() {
           loading={state.offersLoading}
           vehicle={state.vehicle}
           buyer={state.buyer}
-          onBack={() => { setState((s) => ({ ...s, step: "hero" })); window.history.replaceState(null, "", window.location.pathname); }}
+          onBack={() => { setState((s) => ({ ...s, step: "hero" })); router.replace(pathname, { scroll: false }); }}
           onEdit={handleEditVehicle}
           onEditBuyer={handleEditBuyer}
           onSelectOffer={handleSelectOffer}
