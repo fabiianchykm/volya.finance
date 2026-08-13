@@ -84,6 +84,25 @@ function subscribeAccordion(cb: () => void) {
   return () => { accordionListeners.delete(cb); };
 }
 
+// Згорнутий список «Базові опції» всередині «Детальніше»: покриття ОСЦПВ +
+// характеристики компанії (пряме врегулювання, строк виплати).
+function BasicOptions({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50/60">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+      >
+        <span className="text-xs font-semibold text-zinc-700">Базові опції</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="flex flex-col gap-3 px-3 pb-3">{children}</div>}
+    </div>
+  );
+}
+
 export function OfferCard({
   offer,
   selected,
@@ -373,22 +392,27 @@ export function OfferCard({
       {/* Розгорнута секція — «скоро»-послуги, факти, документи */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
-          {/* Опис продукту (передається лише де треба, напр. ОСЦПВ) */}
-          {productDescription}
-          {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
-          {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
-            <div className="flex flex-wrap gap-2">
-              {offer.company.directSettlement === 1 && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Пряме врегулювання
-                </span>
+          {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + факти компанії */}
+          {(productDescription || offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
+            <BasicOptions>
+              {/* Опис продукту (передається лише де треба, напр. ОСЦПВ) */}
+              {productDescription}
+              {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
+              {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
+                <div className="flex flex-wrap gap-2">
+                  {offer.company.directSettlement === 1 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-white px-2.5 py-1 text-xs text-zinc-600">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Пряме врегулювання
+                    </span>
+                  )}
+                  {offer.company.compensationDays > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-white px-2.5 py-1 text-xs text-zinc-600">
+                      <Clock className="h-3.5 w-3.5 text-indigo-500" /> Виплата до {offer.company.compensationDays} дн.
+                    </span>
+                  )}
+                </div>
               )}
-              {offer.company.compensationDays > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-600">
-                  <Clock className="h-3.5 w-3.5 text-indigo-500" /> Виплата до {offer.company.compensationDays} дн.
-                </span>
-              )}
-            </div>
+            </BasicOptions>
           )}
 
           {/* Документи — посилання з API */}
