@@ -395,34 +395,28 @@ export function OfferCard({
           так, щоб починалась під 2-м блоком «опис» (після колонки з лого w-48). */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4">
-          {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) */}
-          {productDescription && (
+          {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + пряме врегулювання */}
+          {(productDescription || offer.company.directSettlement === 1) && (
             <DetailsDropdown label="Базові опції">
               {productDescription}
-            </DetailsDropdown>
-          )}
-
-          {/* «Умови виплат» — факти компанії з API (між Базові опції та Документи) */}
-          {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
-            <DetailsDropdown label="Умови виплат">
-              <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
-                <div className="flex flex-wrap gap-2">
-                  {offer.company.directSettlement === 1 && (
-                    <span className="inline-flex items-center text-xs font-bold text-zinc-700">
-                      Пряме врегулювання
-                    </span>
-                  )}
-                  {offer.company.compensationDays > 0 && (
-                    <span className="inline-flex items-center rounded-lg border border-zinc-200 bg-transparent px-2.5 py-1 text-xs text-zinc-600">
-                      Виплата до {offer.company.compensationDays} дн.
-                    </span>
-                  )}
-                </div>
-                {offer.company.directSettlement === 1 && (
+              {offer.company.directSettlement === 1 && (
+                <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
+                  <span className="text-xs font-bold text-zinc-700">Пряме врегулювання</span>
                   <p className="text-xs leading-relaxed text-zinc-500">
                     Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.
                   </p>
-                )}
+                </div>
+              )}
+            </DetailsDropdown>
+          )}
+
+          {/* «Термін виплати» — окремий dropdown (між Базові опції та Документи) */}
+          {offer.company.compensationDays > 0 && (
+            <DetailsDropdown label="Термін виплати">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
+                <span className="text-xs font-bold text-zinc-700">
+                  Виплата до {offer.company.compensationDays} дн.
+                </span>
               </div>
             </DetailsDropdown>
           )}
