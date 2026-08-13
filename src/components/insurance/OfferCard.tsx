@@ -84,12 +84,11 @@ function subscribeAccordion(cb: () => void) {
   return () => { accordionListeners.delete(cb); };
 }
 
-// Згорнутий список «Базові опції» всередині «Детальніше»: покриття ОСЦПВ +
-// характеристики компанії (пряме врегулювання, строк виплати).
-function BasicOptions({ children }: { children: ReactNode }) {
+// Згорнутий список у «Детальніше» (напр. «Базові опції», «Документи»).
+// Розмір/вигляд як у рядка «Автоюрист»: rounded-xl, border-zinc-200, bg-white,
+// px-3.5 py-2.5, text-sm, ширина до 340px.
+function DetailsDropdown({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  // Розмір/вигляд як у рядка «Автоюрист»: rounded-xl, border-zinc-200, bg-white,
-  // px-3.5 py-2.5, text-sm, ширина до 340px.
   return (
     <div className="w-full max-w-[340px] overflow-hidden rounded-xl border border-zinc-200 bg-white">
       <button
@@ -97,7 +96,7 @@ function BasicOptions({ children }: { children: ReactNode }) {
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-zinc-50"
       >
-        <span className="text-sm font-medium text-zinc-800">Базові опції</span>
+        <span className="text-sm font-medium text-zinc-800">{label}</span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform", open && "rotate-180")} />
       </button>
       {open && <div className="flex flex-col gap-3 border-t border-zinc-100 px-3.5 py-3">{children}</div>}
@@ -394,9 +393,9 @@ export function OfferCard({
       {/* Розгорнута секція — «скоро»-послуги, факти, документи */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
-          {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + факти компанії + документи */}
-          {(productDescription || offer.company.directSettlement === 1 || offer.company.compensationDays > 0 || hasDocs) && (
-            <BasicOptions>
+          {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + факти компанії */}
+          {(productDescription || offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
+            <DetailsDropdown label="Базові опції">
               {/* Опис продукту (передається лише де треба, напр. ОСЦПВ) */}
               {productDescription}
               {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
@@ -414,27 +413,27 @@ export function OfferCard({
                   )}
                 </div>
               )}
-              {/* Документи — посилання з API */}
-              {hasDocs && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold text-zinc-700">Документи страхового продукту</p>
-                  <div className="flex flex-wrap gap-2">
-                    {docs.map((d) => (
-                      <a
-                        key={d.label}
-                        href={d.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
-                      >
-                        <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                        {d.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </BasicOptions>
+            </DetailsDropdown>
+          )}
+
+          {/* Документи — окремий dropdown */}
+          {hasDocs && (
+            <DetailsDropdown label="Документи страхового продукту">
+              <div className="flex flex-wrap gap-2">
+                {docs.map((d) => (
+                  <a
+                    key={d.label}
+                    href={d.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                  >
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                    {d.label}
+                  </a>
+                ))}
+              </div>
+            </DetailsDropdown>
           )}
         </div>
       )}
