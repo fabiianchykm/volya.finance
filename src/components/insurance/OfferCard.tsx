@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -405,11 +405,16 @@ export function OfferCard({
             <DetailsDropdown label="Базові опції" open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
               {productDescription}
               {offer.company.directSettlement === 1 && (
-                <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
-                  <span className="text-xs font-bold text-zinc-700">Пряме врегулювання</span>
-                  <p className="text-xs leading-relaxed text-zinc-500">
-                    Можливість отримати страхове відшкодування через свою страхову компанію, без звернення до страховика винуватця ДТП.
-                  </p>
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-zinc-700">Пряме врегулювання</span>
+                    <span
+                      title="Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП."
+                      className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500"
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
                 </div>
               )}
             </DetailsDropdown>
