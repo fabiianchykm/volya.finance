@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, ShieldCheck, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, ShieldCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -404,13 +404,13 @@ export function OfferCard({
                 <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
                   <div className="flex flex-wrap gap-2">
                     {offer.company.directSettlement === 1 && (
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-white px-2.5 py-1 text-xs text-zinc-600">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Пряме врегулювання
+                      <span className="inline-flex items-center rounded-lg border border-zinc-200 bg-transparent px-2.5 py-1 text-xs text-zinc-600">
+                        Пряме врегулювання
                       </span>
                     )}
                     {offer.company.compensationDays > 0 && (
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-white px-2.5 py-1 text-xs text-zinc-600">
-                        <Clock className="h-3.5 w-3.5 text-indigo-500" /> Виплата до {offer.company.compensationDays} дн.
+                      <span className="inline-flex items-center rounded-lg border border-zinc-200 bg-transparent px-2.5 py-1 text-xs text-zinc-600">
+                        Виплата до {offer.company.compensationDays} дн.
                       </span>
                     )}
                   </div>
