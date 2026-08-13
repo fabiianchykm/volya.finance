@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, ShieldCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -419,17 +419,20 @@ export function OfferCard({
           {/* Документи — окремий dropdown */}
           {hasDocs && (
             <DetailsDropdown label="Документи страхового продукту">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
                 {docs.map((d) => (
                   <a
                     key={d.label}
                     href={d.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
                   >
-                    <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                    {d.label}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                      <span className="truncate">{d.label}</span>
+                    </span>
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                   </a>
                 ))}
               </div>
