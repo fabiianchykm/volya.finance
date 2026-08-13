@@ -410,8 +410,8 @@ function coverageTags(title?: string | null): string[] {
   if (/воєн|війсь|war/.test(t)) tags.push("Воєнні ризики");
   const bez = (t.match(/без вини/g) || []).length;
   const z = (t.match(/з вини/g) || []).length;
-  if (z > bez) tags.push("З вини");
-  if (bez > 0) tags.push("Без вини");
+  if (z > bez) tags.push("ДТП з вашої вини");
+  if (bez > 0) tags.push("ДТП не з вашої вини");
   return tags;
 }
 
