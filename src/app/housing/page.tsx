@@ -2,7 +2,8 @@ import { Footer } from "@/components/layout/Footer";
 import { HousingFlow } from "@/components/housing/HousingFlow";
 import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
+import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
+import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
 export const metadata = buildMetadata({
   title: "Страхування житла онлайн — квартира та будинок",
@@ -27,6 +28,7 @@ export default function HousingPage() {
               "Онлайн-страхування квартири чи будинку від пожежі, затоплення, стихії та інших ризиків. Порівняння цін від страхових компаній.",
             path: "/housing",
           }),
+          faqLd(FAQ_BY_PRODUCT["housing"]),
           breadcrumbLd([
             { name: "Головна", path: "/" },
             { name: "Страхування житла", path: "/housing" },
@@ -36,7 +38,11 @@ export default function HousingPage() {
       {/* Navbar рендериться всередині HousingFlow (прозорий герой → solid екран пропозицій) */}
       <main className="flex-1">
         <HousingFlow />
-        <MarketingSections />
+        <MarketingSections
+          showFaq
+          faqItems={FAQ_BY_PRODUCT["housing"]}
+          faqSubtitle="Усе, що потрібно знати про страхування житла"
+        />
       </main>
       <Footer />
     </>

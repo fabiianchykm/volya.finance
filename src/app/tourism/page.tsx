@@ -2,7 +2,8 @@ import { Footer } from "@/components/layout/Footer";
 import { TourismFlow } from "@/components/tourism/TourismFlow";
 import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
+import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
+import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
 export const metadata = buildMetadata({
   title: "Туристичне страхування онлайн — поліс для подорожей за кордон",
@@ -27,6 +28,7 @@ export default function TourismPage() {
               "Туристичний страховий поліс для подорожей за кордон: медична допомога, нещасні випадки, ризики поїздки. Підбір вигідної пропозиції за параметрами подорожі.",
             path: "/tourism",
           }),
+          faqLd(FAQ_BY_PRODUCT["tourism"]),
           breadcrumbLd([
             { name: "Головна", path: "/" },
             { name: "Туристичне страхування", path: "/tourism" },
@@ -35,7 +37,11 @@ export default function TourismPage() {
       />
       <main className="flex-1">
         <TourismFlow />
-        <MarketingSections />
+        <MarketingSections
+          showFaq
+          faqItems={FAQ_BY_PRODUCT["tourism"]}
+          faqSubtitle="Усе, що потрібно знати про туристичне страхування"
+        />
       </main>
       <Footer />
     </>

@@ -2,7 +2,8 @@ import { Footer } from "@/components/layout/Footer";
 import { GreenCardFlow } from "@/components/greencard/GreenCardFlow";
 import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
+import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
+import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
 export const metadata = buildMetadata({
   title: "Зелена карта онлайн — автострахування за кордон",
@@ -27,6 +28,7 @@ export default function GreenCardPage() {
               "Оформлення міжнародного поліса «Зелена карта» для виїзду за кордон: Європа, Молдова, Азербайджан. Підбір вигідної пропозиції за параметрами поїздки.",
             path: "/green-card",
           }),
+          faqLd(FAQ_BY_PRODUCT["green-card"]),
           breadcrumbLd([
             { name: "Головна", path: "/" },
             { name: "Зелена карта", path: "/green-card" },
@@ -35,7 +37,11 @@ export default function GreenCardPage() {
       />
       <main className="flex-1">
         <GreenCardFlow />
-        <MarketingSections />
+        <MarketingSections
+          showFaq
+          faqItems={FAQ_BY_PRODUCT["green-card"]}
+          faqSubtitle="Усе, що потрібно знати про Зелену карту"
+        />
       </main>
       <Footer />
     </>

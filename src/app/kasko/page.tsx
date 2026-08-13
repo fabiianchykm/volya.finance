@@ -3,8 +3,10 @@ import { Footer } from "@/components/layout/Footer";
 import { KaskoFlow } from "@/components/kasko/KaskoFlow";
 import { KaskoBenefits } from "@/components/kasko/KaskoBenefits";
 import { KASKO_PRODUCTS } from "@/components/kasko/products";
+import { FAQSection } from "@/components/sections/FAQSection";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
+import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
+import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
 export const metadata = buildMetadata({
   title: "КАСКО онлайн — купити страховку на авто",
@@ -29,6 +31,7 @@ export default function KaskoPage() {
               "Оформлення поліса КАСКО з повним захистом авто від угону, ДТП, пошкоджень і стихійних ризиків. Індивідуальний розрахунок від страхових компаній.",
             path: "/kasko",
           }),
+          faqLd(FAQ_BY_PRODUCT["kasko"]),
           breadcrumbLd([
             { name: "Головна", path: "/" },
             { name: "КАСКО", path: "/kasko" },
@@ -39,6 +42,7 @@ export default function KaskoPage() {
       <main className="flex-1">
         <KaskoFlow product="kasko" />
         <KaskoBenefits config={KASKO_PRODUCTS.kasko} />
+        <FAQSection items={FAQ_BY_PRODUCT["kasko"]} subtitle="Усе, що потрібно знати про КАСКО" />
       </main>
       <Footer />
     </>

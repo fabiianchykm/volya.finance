@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FAQ_ITEMS } from "@/lib/faq";
+import { FAQ_ITEMS, type FaqItem } from "@/lib/faq";
 
 function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,7 +59,13 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
   );
 }
 
-export function FAQSection() {
+export function FAQSection({
+  items = FAQ_ITEMS,
+  subtitle = "Усе, що потрібно знати про електронну автоцивілку",
+}: {
+  items?: FaqItem[];
+  subtitle?: string;
+}) {
   return (
     <section id="faq" className="bg-[#FAFAFA] py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
@@ -68,12 +74,12 @@ export function FAQSection() {
             Поширені запитання
           </h2>
           <p className="mt-4 text-lg text-zinc-600">
-            Усе, що потрібно знати про електронну автоцивілку
+            {subtitle}
           </p>
         </div>
 
         <div>
-          {FAQ_ITEMS.map((faq, index) => (
+          {items.map((faq, index) => (
             <FAQItem key={index} question={faq.question} answer={faq.answer} index={index} />
           ))}
         </div>

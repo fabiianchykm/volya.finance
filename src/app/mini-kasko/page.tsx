@@ -2,7 +2,8 @@ import { Footer } from "@/components/layout/Footer";
 import { MiniKaskoFlow } from "@/components/minikasko/MiniKaskoFlow";
 import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
+import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
+import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
 export const metadata = buildMetadata({
   title: "Міні-КАСКО онлайн — бюджетна страховка авто",
@@ -29,6 +30,7 @@ export default function MiniKaskoPage() {
               "Бюджетний поліс Міні-КАСКО з покриттям ключових ризиків для авто. Індивідуальний розрахунок вартості від страхових компаній.",
             path: "/mini-kasko",
           }),
+          faqLd(FAQ_BY_PRODUCT["mini-kasko"]),
           breadcrumbLd([
             { name: "Головна", path: "/" },
             { name: "Міні-КАСКО", path: "/mini-kasko" },
@@ -38,7 +40,11 @@ export default function MiniKaskoPage() {
       {/* Navbar рендериться всередині MiniKaskoFlow (прозорий герой → solid екран пропозицій) */}
       <main className="flex-1">
         <MiniKaskoFlow />
-        <MarketingSections />
+        <MarketingSections
+          showFaq
+          faqItems={FAQ_BY_PRODUCT["mini-kasko"]}
+          faqSubtitle="Усе, що потрібно знати про міні-КАСКО"
+        />
       </main>
       <Footer />
     </>

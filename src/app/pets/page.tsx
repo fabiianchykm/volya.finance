@@ -2,7 +2,8 @@ import { Footer } from "@/components/layout/Footer";
 import { PetsFlow } from "@/components/pets/PetsFlow";
 import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
+import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
+import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
 export const metadata = buildMetadata({
   title: "Страхування тварин онлайн — поліс для кота чи собаки",
@@ -27,6 +28,7 @@ export default function PetsPage() {
               "Страховий поліс для домашніх тварин (кіт, собака): ветеринарні витрати та ризики. Підбір вигідної пропозиції онлайн.",
             path: "/pets",
           }),
+          faqLd(FAQ_BY_PRODUCT["pets"]),
           breadcrumbLd([
             { name: "Головна", path: "/" },
             { name: "Страхування тварин", path: "/pets" },
@@ -35,7 +37,11 @@ export default function PetsPage() {
       />
       <main className="flex-1">
         <PetsFlow />
-        <MarketingSections />
+        <MarketingSections
+          showFaq
+          faqItems={FAQ_BY_PRODUCT["pets"]}
+          faqSubtitle="Усе, що потрібно знати про страхування тварин"
+        />
       </main>
       <Footer />
     </>
