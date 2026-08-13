@@ -188,8 +188,12 @@ export function CheckoutClient() {
       const fresh = await revalidateOffer();
       if (fresh && fresh.price !== offer.price) {
         setOffer(fresh);
+        const dir = fresh.price > offer.price ? "збільшилась" : "зменшилась";
         setPriceNotice(
-          `Ціна за вашими даними: ${fresh.price} грн (було ${offer.price} грн). Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`
+          `Ціна ${dir}: ${fresh.price} грн (у пропозиції було ${offer.price} грн). ` +
+          `Причина: у пропозиції ціна була орієнтовна, а тепер її розраховано точно за вказаними вами ` +
+          `датою народження та пільгою страхувальника — вони впливають на тариф ОСЦПВ. ` +
+          `Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`
         );
         return;
       }
