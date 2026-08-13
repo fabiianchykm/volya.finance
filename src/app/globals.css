@@ -1,9 +1,22 @@
 @import "tailwindcss";
 
+/* Класова темна тема (перемикач у футері ставить .dark на <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-open-sans);
   --color-background: #F5F5F7;
-  --color-foreground: #F5F5F7;
+  --color-foreground: #0a0a0b;
+}
+
+/* Значення CSS-змінних теми: світла (root) і темна (.dark). */
+:root {
+  --color-background: #F5F5F7;
+  --color-foreground: #0a0a0b;
+}
+.dark {
+  --color-background: #0a0a0b;
+  --color-foreground: #ededed;
 }
 
 * {
@@ -91,4 +104,11 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1aa;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
 }

@@ -66,8 +66,16 @@ export default async function RootLayout({
   // Сесію НЕ читаємо на сервері — інакше auth() (cookies) робить усі сторінки
   // динамічними й вбиває кешування. SessionProvider підтягне сесію на клієнті.
   return (
-    <html lang="uk" className={`${openSans.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-[#F5F5F7] font-sans">
+    <html lang="uk" className={`${openSans.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Ставимо клас теми ДО рендеру, щоб не було спалаху світлого фону (FOUC). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col bg-[#F5F5F7] font-sans dark:bg-[#0a0a0b]">
         <GoogleTagManagerNoScript />
         <SessionProvider>
           <ProfileSync />

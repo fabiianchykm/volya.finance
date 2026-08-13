@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 function AppleLogo({ className }: { className?: string }) {
   return (
@@ -110,23 +111,28 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Рядок довіри — офіційне лого МТСБУ (лінк на реєстр) + галочка */}
-        <div className="flex items-center border-t border-zinc-200 py-6">
+        {/* Рядок довіри — лого МТСБУ (лінк на реєстр) + перемикач теми праворуч */}
+        <div className="flex items-center justify-between gap-4 border-t border-zinc-200 py-6 dark:border-zinc-800">
           <a
             href="https://policy.mtsbu.ua"
             target="_blank"
             rel="noopener noreferrer"
             title="Перевірити поліс у реєстрі МТСБУ"
-            className="inline-flex items-center gap-2.5 rounded-full bg-white px-4 py-2 ring-1 ring-black/5 transition-transform hover:scale-[1.03]"
+            className="inline-flex items-center gap-2.5 rounded-full bg-white px-4 py-2 ring-1 ring-black/5 transition-transform hover:scale-[1.03] dark:bg-zinc-800 dark:ring-white/10"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/mtsbu-logo.svg"
               alt="МТСБУ — Моторне (транспортне) страхове бюро України"
-              className="h-5 w-auto opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0"
+              className="h-5 w-auto opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0 dark:invert"
             />
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </a>
+
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">Тема</span>
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Довідковий SEO-текст дрібним шрифтом — ПРИРОДНА проза з ключовими фразами,
