@@ -392,8 +392,8 @@ export function OfferCard({
       {/* Розгорнута секція — «скоро»-послуги, факти, документи */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
-          {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + факти компанії */}
-          {(productDescription || offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
+          {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + факти компанії + документи */}
+          {(productDescription || offer.company.directSettlement === 1 || offer.company.compensationDays > 0 || hasDocs) && (
             <BasicOptions>
               {/* Опис продукту (передається лише де треба, напр. ОСЦПВ) */}
               {productDescription}
@@ -412,28 +412,27 @@ export function OfferCard({
                   )}
                 </div>
               )}
+              {/* Документи — посилання з API */}
+              {hasDocs && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-zinc-700">Документи страхового продукту</p>
+                  <div className="flex flex-wrap gap-2">
+                    {docs.map((d) => (
+                      <a
+                        key={d.label}
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                      >
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                        {d.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </BasicOptions>
-          )}
-
-          {/* Документи — посилання з API */}
-          {hasDocs && (
-            <div>
-              <p className="mb-2 text-xs font-semibold text-zinc-700">Документи страхового продукту</p>
-              <div className="flex flex-wrap gap-2">
-                {docs.map((d) => (
-                  <a
-                    key={d.label}
-                    href={d.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
-                  >
-                    <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                    {d.label}
-                  </a>
-                ))}
-              </div>
-            </div>
           )}
         </div>
       )}
