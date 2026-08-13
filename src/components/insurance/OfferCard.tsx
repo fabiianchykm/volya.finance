@@ -403,7 +403,7 @@ export function OfferCard({
                 <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
                   <span className="text-xs font-bold text-zinc-700">Пряме врегулювання</span>
                   <p className="text-xs leading-relaxed text-zinc-500">
-                    Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.
+                    Можливість отримати страхове відшкодування через свою страхову компанію, без звернення до страховика винуватця ДТП.
                   </p>
                 </div>
               )}
