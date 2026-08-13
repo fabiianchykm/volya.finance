@@ -368,6 +368,7 @@ function MiniKaskoOffers({
                   onSelectDgo={() => {}}
                   onSelectAutolawyer={() => {}}
                   onBuy={() => onSelect(o)}
+                  subtitle={o.title || undefined}
                   hideExtras
                 />
               ))}
