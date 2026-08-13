@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -256,8 +256,8 @@ export function OfferCard({
               {formatPrice(totalPrice)}
             </span>
             {bonus > 0 && (
-              <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-emerald-600">
-                <Coins className="h-3 w-3" /> +{formatPrice(bonus)} бонус
+              <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 whitespace-nowrap text-[11px] font-semibold text-emerald-600">
+                +{formatPrice(bonus)} бонус
               </span>
             )}
           </div>
@@ -354,8 +354,8 @@ export function OfferCard({
               {formatPrice(totalPrice)}
             </div>
             {bonus > 0 && (
-              <span title="1% від вартості полісу на бонусний рахунок" className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-                <Coins className="h-3.5 w-3.5" /> +{formatPrice(bonus)} бонус
+              <span title="1% від вартості полісу на бонусний рахунок" className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
+                +{formatPrice(bonus)} бонус
               </span>
             )}
           </div>
