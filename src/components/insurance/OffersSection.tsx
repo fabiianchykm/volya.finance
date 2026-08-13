@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Car, HeartPulse, Info } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Info } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
@@ -35,25 +35,15 @@ const OSAGO_INFO = (
         <Info className="h-3.5 w-3.5" />
       </span>
     </div>
-    {/* Ліміти виплат — картки-інфографіка */}
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white p-3 shadow-sm">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-          <Car className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-base font-bold leading-tight text-zinc-900">до 250 000 ₴</p>
-          <p className="text-[11px] text-zinc-500">Майно потерпілих — авто, споруди</p>
-        </div>
+    {/* Ліміти виплат — простим текстом, без іконок */}
+    <div className="flex flex-col gap-2">
+      <div>
+        <p className="text-sm font-bold leading-tight text-zinc-900">до 250 000 ₴</p>
+        <p className="text-[11px] text-zinc-500">Майно потерпілих — авто, споруди</p>
       </div>
-      <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white p-3 shadow-sm">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-500">
-          <HeartPulse className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-base font-bold leading-tight text-zinc-900">до 500 000 ₴</p>
-          <p className="text-[11px] text-zinc-500">Життя і здоровʼя потерпілих</p>
-        </div>
+      <div>
+        <p className="text-sm font-bold leading-tight text-zinc-900">до 500 000 ₴</p>
+        <p className="text-[11px] text-zinc-500">Життя і здоровʼя потерпілих</p>
       </div>
     </div>
   </div>
