@@ -25,7 +25,7 @@ interface OffersSectionProps {
 
 // Опис ОСЦПВ для «Детальніше» (продукт стандартизований законом — текст однаковий).
 const OSAGO_INFO = (
-  <div>
+  <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
     <p className="mb-3 text-xs leading-relaxed text-zinc-500">
       Обовʼязкове страхування відповідальності водія: покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.
     </p>

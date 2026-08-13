@@ -398,9 +398,9 @@ export function OfferCard({
             <DetailsDropdown label="Базові опції">
               {/* Опис продукту (передається лише де треба, напр. ОСЦПВ) */}
               {productDescription}
-              {/* Характеристики компанії — факти з API (прапорці/числа), без опису */}
+              {/* Характеристики компанії — факти з API. Окрема рамка = 2-й пункт. */}
               {(offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
                   {offer.company.directSettlement === 1 && (
                     <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-white px-2.5 py-1 text-xs text-zinc-600">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Пряме врегулювання
