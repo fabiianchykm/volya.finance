@@ -73,6 +73,12 @@ export async function POST(req: NextRequest) {
     const msg = e instanceof Error ? e.message : "Error";
     console.error(`[otp] ${ctx} error:`, msg.slice(0, 600));
     await notifyDevError(`otp ${ctx}`, e);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    // Відомий баг Ukasko (телеметрія recordApiMetrics/UpdateModuleProductCalcTimeJob крашить
+    // із null) — показуємо клієнту зрозуміле, а не сирий PHP-дамп.
+    const ukaskoBug = /UpdateModuleProductCalcTimeJob|recordApiMetrics|must be of the type string, null given|ErrorException/i.test(msg);
+    const clientMsg = ukaskoBug
+      ? "Страхова тимчасово недоступна — не вдалося надіслати код. Спробуйте за кілька хвилин або оберіть іншу страхову компанію."
+      : msg;
+    return NextResponse.json({ success: false, error: clientMsg }, { status: 500 });
   }
 }
