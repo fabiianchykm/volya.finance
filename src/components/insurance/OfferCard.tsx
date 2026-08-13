@@ -407,7 +407,7 @@ export function OfferCard({
               {offer.company.directSettlement === 1 && (
                 <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-zinc-700">Пряме врегулювання</span>
+                    <span className="text-xs font-medium text-zinc-700">Пряме врегулювання</span>
                     <span
                       title="Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП."
                       className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500"

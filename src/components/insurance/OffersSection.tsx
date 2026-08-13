@@ -38,11 +38,11 @@ const OSAGO_INFO = (
     {/* Ліміти виплат — простим текстом, без іконок */}
     <div className="flex flex-col gap-2">
       <div>
-        <p className="text-sm font-bold leading-tight text-zinc-900">до 250 000 ₴</p>
+        <p className="text-sm font-medium leading-tight text-zinc-900">до 250 000 ₴</p>
         <p className="text-[11px] text-zinc-500">Майно потерпілих — авто, споруди</p>
       </div>
       <div>
-        <p className="text-sm font-bold leading-tight text-zinc-900">до 500 000 ₴</p>
+        <p className="text-sm font-medium leading-tight text-zinc-900">до 500 000 ₴</p>
         <p className="text-[11px] text-zinc-500">Життя і здоровʼя потерпілих</p>
       </div>
     </div>
