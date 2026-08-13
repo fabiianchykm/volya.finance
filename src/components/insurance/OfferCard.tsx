@@ -193,7 +193,7 @@ export function OfferCard({
     );
 
   const optionsBlock = (
-    <div className="flex w-full max-w-[340px] flex-col gap-2">
+    <div className="flex w-full max-w-[240px] flex-col gap-2">
       {autolawyer && (
         <button type="button" onClick={() => onSelectAutolawyer(selectedAutolawyerId === autolawyer.id ? null : autolawyer.id)} className={rowClass(selectedAutolawyerId === autolawyer.id)}>
           <span className="flex min-w-0 flex-col">
