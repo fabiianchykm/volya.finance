@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ChevronRight, Star } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { INSURERS } from "@/lib/insurers";
+import { INSURERS, INSURERS_FROZEN } from "@/lib/insurers";
 import { logoSrc } from "@/lib/logos";
 import { buildMetadata, breadcrumbLd } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -16,6 +17,7 @@ export const metadata = buildMetadata({
 });
 
 export default function InsurersPage() {
+  if (INSURERS_FROZEN) notFound(); // розділ заморожено, поки нема реальних даних профілів
   return (
     <>
       <JsonLd data={[breadcrumbLd([{ name: "Головна", path: "/" }, { name: "Страхові компанії", path: "/insurers" }])]} />

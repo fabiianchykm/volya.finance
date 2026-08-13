@@ -4,12 +4,13 @@ import { ChevronRight, Home, MapPin, Phone, Globe, Info } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { InsurerReviews } from "@/components/reviews/InsurerReviews";
-import { getInsurer, INSURERS } from "@/lib/insurers";
+import { getInsurer, INSURERS, INSURERS_FROZEN } from "@/lib/insurers";
 import { logoSrc } from "@/lib/logos";
 import { buildMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export function generateStaticParams() {
+  if (INSURERS_FROZEN) return []; // розділ заморожено — сторінки не генеруємо
   return INSURERS.map((i) => ({ slug: i.slug }));
 }
 
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function InsurerPage({ params }: { params: Promise<{ slug: string }> }) {
+  if (INSURERS_FROZEN) notFound(); // розділ заморожено, поки нема реальних даних профілів
   const { slug } = await params;
   const ins = getInsurer(slug);
   if (!ins) notFound();

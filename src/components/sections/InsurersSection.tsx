@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 import { logoSrc } from "@/lib/logos";
+import { INSURERS_FROZEN } from "@/lib/insurers";
 
 const insurers = [
   { name: "ІНГО",         slug: "inho" },
@@ -90,16 +91,19 @@ export function InsurersSection() {
           ))}
         </div>
 
-        {/* Перехід до каталогу страхових із відгуками й контактами */}
-        <div className="mt-10 text-center">
-          <Link
-            href="/insurers"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm ring-1 ring-indigo-100 transition-all hover:-translate-y-0.5 hover:shadow-md"
-          >
-            Відгуки та контакти страхових
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+        {/* Перехід до каталогу страхових із відгуками й контактами. Заморожено, поки
+            не додані реальні дані профілів (INSURERS_FROZEN). */}
+        {!INSURERS_FROZEN && (
+          <div className="mt-10 text-center">
+            <Link
+              href="/insurers"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-sm ring-1 ring-indigo-100 transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              Відгуки та контакти страхових
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
