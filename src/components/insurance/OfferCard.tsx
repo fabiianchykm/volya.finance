@@ -87,7 +87,7 @@ function subscribeAccordion(cb: () => void) {
 // Згорнутий список у «Детальніше» (напр. «Базові опції», «Документи»).
 // Розмір/вигляд як у рядка «Автоюрист»: rounded-xl, border-zinc-200, bg-white,
 // px-3.5 py-2.5, text-sm, ширина до 340px.
-function DetailsDropdown({ label, children }: { label: string; children: ReactNode }) {
+function DetailsDropdown({ label, children, bodyClassName = "px-3.5 py-3" }: { label: string; children: ReactNode; bodyClassName?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -99,7 +99,7 @@ function DetailsDropdown({ label, children }: { label: string; children: ReactNo
         <span className="text-sm font-medium text-zinc-800">{label}</span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform", open && "rotate-180")} />
       </button>
-      {open && <div className="flex flex-col gap-3 border-t border-zinc-100 px-3.5 py-3">{children}</div>}
+      {open && <div className={cn("flex flex-col gap-3 border-t border-zinc-100", bodyClassName)}>{children}</div>}
     </div>
   );
 }
@@ -424,7 +424,7 @@ export function OfferCard({
 
           {/* Документи — окремий dropdown */}
           {hasDocs && (
-            <DetailsDropdown label="Документи страхового продукту">
+            <DetailsDropdown label="Документи страхового продукту" bodyClassName="px-2 py-2">
               <div className="flex flex-col gap-2">
                 {docs.map((d) => (
                   <a
@@ -432,13 +432,13 @@ export function OfferCard({
                     href={d.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-200 hover:text-indigo-600"
                   >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                      <span className="truncate">{d.label}</span>
+                    <span className="flex min-w-0 items-start gap-2">
+                      <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                      <span className="leading-snug">{d.label}</span>
                     </span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                    <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" />
                   </a>
                 ))}
               </div>
