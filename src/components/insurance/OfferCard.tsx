@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, ShieldCheck, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -174,8 +174,8 @@ export function OfferCard({
   const coverageChips = coverageTags && coverageTags.length > 0 ? (
     <div className="flex flex-wrap justify-center gap-1.5">
       {coverageTags.map((t) => (
-        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> {t}
+        <span key={t} className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+          {t}
         </span>
       ))}
     </div>
@@ -404,7 +404,7 @@ export function OfferCard({
                 <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
                   <div className="flex flex-wrap gap-2">
                     {offer.company.directSettlement === 1 && (
-                      <span className="inline-flex items-center rounded-lg border border-zinc-200 bg-transparent px-2.5 py-1 text-xs text-zinc-600">
+                      <span className="inline-flex items-center rounded-lg border border-zinc-200 bg-transparent px-2.5 py-1 text-xs font-bold text-zinc-700">
                         Пряме врегулювання
                       </span>
                     )}
@@ -416,7 +416,7 @@ export function OfferCard({
                   </div>
                   {offer.company.directSettlement === 1 && (
                     <p className="text-xs leading-relaxed text-zinc-500">
-                      Пряме врегулювання — можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.
+                      Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.
                     </p>
                   )}
                 </div>

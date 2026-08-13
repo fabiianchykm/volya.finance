@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Info } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
@@ -26,9 +26,15 @@ interface OffersSectionProps {
 // Опис ОСЦПВ для «Детальніше» (продукт стандартизований законом — текст однаковий).
 const OSAGO_INFO = (
   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
-    <p className="mb-3 text-xs leading-relaxed text-zinc-500">
-      Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.
-    </p>
+    <div className="mb-2 flex items-center gap-1.5">
+      <p className="text-xs font-semibold text-zinc-700">Ліміти</p>
+      <span
+        title="Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП."
+        className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500"
+      >
+        <Info className="h-3.5 w-3.5" />
+      </span>
+    </div>
     {/* Ліміти виплат — простим текстом, без іконок */}
     <div className="flex flex-col gap-2">
       <div>
