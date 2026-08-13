@@ -9,6 +9,7 @@ import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/analyti
 import { Clarity } from "@/components/analytics/Clarity";
 import { ReferralCapture } from "@/components/referral/ReferralCapture";
 import { ContactWidget } from "@/components/layout/ContactWidget";
+import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SITE_URL, organizationLd, websiteLd } from "@/lib/seo";
 
@@ -71,12 +72,13 @@ export default async function RootLayout({
         {/* Ставимо клас теми ДО рендеру, щоб не було спалаху світлого фону (FOUC). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();`,
+            __html: `(function(){var e=document.documentElement;try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(x){}try{var a=JSON.parse(localStorage.getItem('a11y')||'{}');if(a.fontScale)e.style.fontSize=(16*a.fontScale)+'px';e.classList.toggle('a11y-contrast',!!a.contrast);e.classList.toggle('a11y-spacing',!!a.spacing);e.classList.toggle('a11y-underline',!!a.underline);e.classList.toggle('a11y-no-motion',!!a.motion);}catch(x){}})();`,
           }}
         />
       </head>
       <body className="flex min-h-full flex-col bg-[#F5F5F7] font-sans dark:bg-[#0a0a0b]">
         <GoogleTagManagerNoScript />
+        <SkipLink />
         <SessionProvider>
           <ProfileSync />
           <LoginProvider>{children}</LoginProvider>

@@ -27,6 +27,65 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ────────────────────────── Доступність (a11y) ────────────────────────── */
+
+/* Видимий фокус для навігації з клавіатури (WCAG 2.4.7). */
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Повага до системного «менше руху» + ручний тумблер у панелі доступності. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+.a11y-no-motion *, .a11y-no-motion *::before, .a11y-no-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Підкреслення всіх посилань (не покладатись лише на колір). */
+.a11y-underline a {
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+/* Збільшені інтервали тексту (WCAG 1.4.12). */
+.a11y-spacing p, .a11y-spacing li, .a11y-spacing span, .a11y-spacing a,
+.a11y-spacing h1, .a11y-spacing h2, .a11y-spacing h3, .a11y-spacing h4,
+.a11y-spacing button, .a11y-spacing label, .a11y-spacing div {
+  line-height: 1.7 !important;
+  letter-spacing: 0.045em !important;
+  word-spacing: 0.1em !important;
+}
+
+/* Високий контраст — притемнюємо приглушені відтінки тексту й посилюємо рамки.
+   Без CSS-фільтрів (вони ламають fixed-модалки), лише перекриття утиліт. */
+.a11y-contrast .text-zinc-400,
+.a11y-contrast .text-zinc-500,
+.a11y-contrast .text-zinc-600 { color: #18181b !important; }
+.a11y-contrast .border-zinc-100,
+.a11y-contrast .border-zinc-200 { border-color: #71717a !important; }
+.a11y-contrast a { text-decoration: underline; text-underline-offset: 2px; }
+.a11y-contrast .text-indigo-600 { color: #3730a3 !important; }
+/* Темна тема + високий контраст — навпаки, висвітлюємо приглушений текст. */
+.dark.a11y-contrast .text-zinc-400,
+.dark.a11y-contrast .text-zinc-500,
+.dark.a11y-contrast .text-zinc-600,
+.dark .a11y-contrast .text-zinc-400,
+.dark .a11y-contrast .text-zinc-500,
+.dark .a11y-contrast .text-zinc-600 { color: #fafafa !important; }
+.dark.a11y-contrast .border-zinc-800,
+.dark.a11y-contrast .border-zinc-700 { border-color: #a1a1aa !important; }
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);

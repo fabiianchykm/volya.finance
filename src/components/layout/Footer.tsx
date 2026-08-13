@@ -2,6 +2,7 @@ import Link from "next/link";
 import { type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { AccessibilityControls } from "./AccessibilityControls";
 
 function AppleLogo({ className }: { className?: string }) {
   return (
@@ -109,6 +110,11 @@ export function Footer() {
             <LinkColumn title="Медіа" links={footerLinks.media} />
             <LinkColumn title="Документи" links={footerLinks.legal} />
           </div>
+        </div>
+
+        {/* Панель доступності — перемикачі для слабозорих/дальтоніків */}
+        <div className="border-t border-zinc-200 py-6 dark:border-zinc-800">
+          <AccessibilityControls />
         </div>
 
         {/* Рядок довіри — лого МТСБУ (лінк на реєстр) + перемикач теми праворуч */}
