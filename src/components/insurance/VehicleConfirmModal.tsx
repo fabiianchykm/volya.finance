@@ -7,8 +7,10 @@ interface City { id: number; name_ua: string; name_full_name_ua: string; zone: n
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import type { VehicleData } from "@/types/insurance";
 import { AUTO_CATEGORIES } from "@/lib/constants";
+import { searchMarks, searchModels } from "@/lib/car-catalog";
 import { cityShort } from "@/lib/utils";
 
 interface VehicleConfirmModalProps {
@@ -281,18 +283,20 @@ export function VehicleConfirmModal({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Input
+              <AutocompleteInput
                 label="Марка авто"
                 placeholder="Toyota"
                 value={form.mark}
-                onChange={set("mark")}
+                onChange={(v) => setForm((f) => ({ ...f, mark: v }))}
+                options={searchMarks(form.mark)}
                 required
               />
-              <Input
+              <AutocompleteInput
                 label="Модель"
                 placeholder="Camry"
                 value={form.model}
-                onChange={set("model")}
+                onChange={(v) => setForm((f) => ({ ...f, model: v }))}
+                options={searchModels(form.mark, form.model)}
                 required
               />
             </div>
