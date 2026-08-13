@@ -88,17 +88,19 @@ function subscribeAccordion(cb: () => void) {
 // характеристики компанії (пряме врегулювання, строк виплати).
 function BasicOptions({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  // Розмір/вигляд як у рядка «Автоюрист»: rounded-xl, border-zinc-200, bg-white,
+  // px-3.5 py-2.5, text-sm, ширина до 340px.
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50/60">
+    <div className="w-full max-w-[340px] overflow-hidden rounded-xl border border-zinc-200 bg-white">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-zinc-50"
       >
-        <span className="text-xs font-semibold text-zinc-700">Базові опції</span>
+        <span className="text-sm font-medium text-zinc-800">Базові опції</span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform", open && "rotate-180")} />
       </button>
-      {open && <div className="flex flex-col gap-3 px-3 pb-3">{children}</div>}
+      {open && <div className="flex flex-col gap-3 border-t border-zinc-100 px-3.5 py-3">{children}</div>}
     </div>
   );
 }
