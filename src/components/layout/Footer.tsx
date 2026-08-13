@@ -3,6 +3,7 @@ import { type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { AccessibilityControls } from "./AccessibilityControls";
+import { LanguageToggle } from "./LanguageToggle";
 
 function AppleLogo({ className }: { className?: string }) {
   return (
@@ -130,7 +131,8 @@ export function Footer() {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </a>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <LanguageToggle />
             <AccessibilityControls />
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">Тема</span>
             <ThemeToggle />

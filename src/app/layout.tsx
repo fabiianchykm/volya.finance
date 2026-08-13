@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { LangProvider } from "@/lib/i18n";
 import { ProfileSync } from "@/components/profile/ProfileSync";
 import { LoginProvider } from "@/components/auth/LoginProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
@@ -79,11 +80,13 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col bg-[#F5F5F7] font-sans dark:bg-[#0a0a0b]">
         <GoogleTagManagerNoScript />
         <SkipLink />
-        <SessionProvider>
-          <ProfileSync />
-          <LoginProvider>{children}</LoginProvider>
-        </SessionProvider>
-        <ContactWidget />
+        <LangProvider>
+          <SessionProvider>
+            <ProfileSync />
+            <LoginProvider>{children}</LoginProvider>
+          </SessionProvider>
+          <ContactWidget />
+        </LangProvider>
         <ReferralCapture />
         <JsonLd data={[organizationLd(), websiteLd()]} />
         <GoogleAnalytics />
