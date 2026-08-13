@@ -297,20 +297,20 @@ export function OfferCard({
           </div>
         )}
 
-        {/* Ряд 2: кнопка купити + детальніше */}
-        <div className="mt-4 flex items-center gap-3">
+        {/* Ряд 2: кнопка купити (на всю ширину) + детальніше окремим рядком */}
+        <div className="mt-4 flex flex-col gap-2">
           <Button
             variant="primary"
             size="md"
             onClick={() => { onSelect(); onBuy(); }}
-            className="flex-1"
+            className="w-full"
           >
             Купити
           </Button>
           {canExpand && (
             <button
               onClick={() => setExpanded(v => !v)}
-              className="flex shrink-0 items-center gap-0.5 px-2 text-xs text-zinc-400 hover:text-indigo-600 transition-colors"
+              className="flex items-center justify-center gap-0.5 text-xs text-zinc-400 hover:text-indigo-600 transition-colors"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               Детальніше
@@ -390,9 +390,10 @@ export function OfferCard({
         </div>
       </div>
 
-      {/* Розгорнута секція — «скоро»-послуги, факти, документи */}
+      {/* Розгорнута секція (Базові опції / Документи). На десктопі зсунута ліворуч
+          так, щоб починалась під 2-м блоком «опис» (після колонки з лого w-48). */}
       {expanded && (
-        <div className="border-t border-zinc-100 px-4 lg:px-5 py-4 flex flex-col gap-4">
+        <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4">
           {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + факти компанії */}
           {(productDescription || offer.company.directSettlement === 1 || offer.company.compensationDays > 0) && (
             <DetailsDropdown label="Базові опції">

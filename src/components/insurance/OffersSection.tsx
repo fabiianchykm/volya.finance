@@ -27,7 +27,7 @@ interface OffersSectionProps {
 const OSAGO_INFO = (
   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3">
     <p className="mb-3 text-xs leading-relaxed text-zinc-500">
-      Обовʼязкове страхування відповідальності водія: покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.
+      Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.
     </p>
     {/* Ліміти виплат — простим текстом, без іконок */}
     <div className="flex flex-col gap-2">
