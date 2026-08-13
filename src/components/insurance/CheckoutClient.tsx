@@ -156,11 +156,11 @@ export function CheckoutClient() {
       carBirthdayAt: realBirthDate,
     };
 
-    // offerId Ukasko генерує заново на КОЖЕН запит (ULID), тож матчимо за стабільним
-    // ключем: компанія + тариф. Крім того, Ukasko інтермітентно повертає різний набір
-    // оферів — тому пробуємо кілька разів, поки обраний страховик не зʼявиться.
-    const matches = (o: InsuranceOffer) =>
-      o.companyId === offer.companyId && String(o.externalIdTariff) === String(offer.externalIdTariff);
+    // Матчимо ЛИШЕ за companyId (стабільний). УВАГА: externalIdTariff — це JSON
+    // коефіцієнтів, що ЗМІНЮЄТЬСЯ з датою народження (K4 = вік) і містить саму ціну,
+    // тож матч по ньому падав при зміні ДН → ціна не оновлювалась. Для ОСЦПВ один
+    // базовий офер на компанію, тож companyId однозначний.
+    const matches = (o: InsuranceOffer) => o.companyId === offer.companyId;
 
     for (let attempt = 0; attempt < 3; attempt++) {
       const res = await fetch(`/api/insurance/offers?${new URLSearchParams(paramsObj)}`);
