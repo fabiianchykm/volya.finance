@@ -357,8 +357,9 @@ export function OfferCard({
           </div>
         )}
 
-        {/* Блок 3: що покриває (чипи) або автоюрист/ДГО — центруємо в колонці */}
-        <div className="flex flex-1 flex-col items-center justify-center">
+        {/* Блок 3: що покриває (чипи) або автоюрист/ДГО. Вирівнюємо ліворуч, щоб вміст
+            не тулився до блоку «Купити» (вільний простір лишається праворуч). */}
+        <div className="flex flex-1 flex-col items-start justify-center">
           {coverageChips ?? optionsBlock}
         </div>
 
