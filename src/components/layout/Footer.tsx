@@ -112,12 +112,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Панель доступності — перемикачі для слабозорих/дальтоніків */}
-        <div className="border-t border-zinc-200 py-6 dark:border-zinc-800">
-          <AccessibilityControls />
-        </div>
-
-        {/* Рядок довіри — лого МТСБУ (лінк на реєстр) + перемикач теми праворуч */}
+        {/* Рядок довіри — лого МТСБУ (лінк на реєстр) + доступність і тема праворуч */}
         <div className="flex items-center justify-between gap-4 border-t border-zinc-200 py-6 dark:border-zinc-800">
           <a
             href="https://policy.mtsbu.ua"
@@ -135,7 +130,8 @@ export function Footer() {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </a>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
+            <AccessibilityControls />
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">Тема</span>
             <ThemeToggle />
           </div>
