@@ -47,6 +47,7 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
             <input
               type="tel"
               inputMode="numeric"
+              aria-label="Номер телефону"
               autoFocus
               value={formatUaPhone(digits)}
               onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 9))}

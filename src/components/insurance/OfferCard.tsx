@@ -94,6 +94,7 @@ function DetailsDropdown({ label, children, open, onToggle, bodyClassName = "px-
       <button
         type="button"
         onClick={onToggle}
+        aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
       >
         <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{label}</span>
@@ -210,6 +211,7 @@ export function OfferCard({
       {dgoList.length > 0 && (
         <div className="relative w-full">
           <select
+            aria-label="Додаткове покриття"
             value={selectedDgoId || ""}
             onChange={(e) => onSelectDgo(e.target.value || null)}
             className={cn(

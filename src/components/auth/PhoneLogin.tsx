@@ -108,6 +108,7 @@ export function PhoneLogin() {
               type="tel"
               inputMode="numeric"
               autoFocus
+              aria-label="Номер телефону"
               placeholder="67 123 45 67"
               value={formatUaPhone(phone)}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
@@ -133,6 +134,7 @@ export function PhoneLogin() {
             inputMode="numeric"
             autoFocus
             maxLength={6}
+            aria-label="Код підтвердження"
             placeholder="••••••"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}

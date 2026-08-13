@@ -408,6 +408,8 @@ function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
         className={`flex h-12 w-full items-center justify-between rounded-xl border bg-white px-3 text-left transition-colors dark:bg-zinc-900 ${
           open ? "border-indigo-400 ring-1 ring-indigo-400" : "border-zinc-200 hover:border-indigo-300 dark:border-zinc-700"
         }`}

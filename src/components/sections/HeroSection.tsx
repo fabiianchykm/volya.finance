@@ -116,6 +116,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
                       setPlate(formatted);
                     }}
                     placeholder="AA 1234 BB"
+                    aria-label="Номер авто"
                     maxLength={11}
                     autoComplete="off"
                     spellCheck={false}

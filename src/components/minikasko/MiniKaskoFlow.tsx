@@ -192,7 +192,7 @@ export function MiniKaskoFlow() {
             <form onSubmit={calc} className="mx-auto max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
               <div className="relative" ref={cityRef}>
                 <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><MapPin className="h-3.5 w-3.5" /> Місто реєстрації авто</label>
-                <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" spellCheck={false}
+                <input type="text" aria-label="Пошук міста" value={cityQuery} placeholder="Почніть вводити місто…" spellCheck={false}
                   onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
                   className={`${inputCls} pr-10${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
                 {cityLoading && !selectedCity && cityQuery.length >= 2 && (

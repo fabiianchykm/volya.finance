@@ -365,7 +365,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
   return (
     <div className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
       <div className="mb-5 flex items-center gap-3">
-        <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
+        <button type="button" aria-label="Назад" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
@@ -396,7 +396,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
               <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Телефон</label>
               <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                 <span className="pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
-                <input type="tel" inputMode="numeric" placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
+                <input type="tel" inputMode="numeric" aria-label="Номер телефону" placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
                   onChange={(e) => setF((s) => ({ ...s, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
                   required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none" />
               </div>
@@ -432,7 +432,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="relative sm:col-span-2" ref={cityRef}>
               <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Місто</label>
-              <input type="text" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
+              <input type="text" aria-label="Пошук міста" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
                 className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
               {cityLoading && !selectedCity && cityQuery.length >= 2 && (

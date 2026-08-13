@@ -55,6 +55,7 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
           <input
             readOnly
             value={summary.link}
+            aria-label="Ваше реферальне посилання"
             onFocus={(e) => e.currentTarget.select()}
             className="h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-700 dark:text-zinc-200 outline-none focus:border-indigo-400"
           />

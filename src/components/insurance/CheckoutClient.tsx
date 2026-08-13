@@ -372,7 +372,8 @@ export function CheckoutClient() {
           onClick={() => {
             if (step === "vehicle") setStep("customer");
             else router.push("/osago");
-          }} 
+          }}
+          aria-label="Назад"
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           <ArrowLeft className="h-5 w-5" />

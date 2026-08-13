@@ -99,6 +99,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
               ref={(el) => { refs.current[i] = el; }}
               type="text"
               inputMode="text"
+              aria-label={`Цифра коду ${i + 1}`}
               maxLength={1}
               value={d}
               onChange={(e) => handleChange(i, e.target.value)}

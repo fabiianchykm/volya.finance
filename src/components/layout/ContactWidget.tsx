@@ -98,6 +98,7 @@ export function ContactWidget() {
           type="button"
           aria-label="Звʼязатися з нами"
           aria-expanded={open}
+          aria-haspopup="menu"
           onClick={() => setOpen((v) => !v)}
           className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95"
         >

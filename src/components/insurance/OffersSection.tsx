@@ -105,7 +105,7 @@ export function OffersSection({
           <div className="px-6 pt-4 pb-4">
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-3 dark:text-zinc-500">
-              <button onClick={onBack} className="hover:text-indigo-500 transition-colors dark:hover:text-indigo-400">
+              <button onClick={onBack} aria-label="На головну" className="hover:text-indigo-500 transition-colors dark:hover:text-indigo-400">
                 <Home className="h-3.5 w-3.5" />
               </button>
               <ChevronRight className="h-3 w-3" />
@@ -168,6 +168,7 @@ export function OffersSection({
                 type="button"
                 onClick={() => setSortOpen((o) => !o)}
                 aria-expanded={sortOpen}
+                aria-haspopup="menu"
                 className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition-colors hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
               >
                 <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />{activeSort.label}</span>

@@ -99,6 +99,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
                 type="tel"
                 inputMode="numeric"
                 autoFocus
+                aria-label="Номер телефону"
                 placeholder="67 123 45 67"
                 value={formatUaPhone(phone)}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
@@ -109,6 +110,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
             <input
               type="email"
               autoFocus
+              aria-label="Електронна пошта"
               placeholder="email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

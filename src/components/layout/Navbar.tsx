@@ -51,6 +51,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        aria-haspopup="menu"
         className={cn(
           "flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors",
           opaque
@@ -185,7 +186,9 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
               : "border-white/20 text-white hover:bg-white/10"
           )}
           onClick={() => setMobileOpen((o) => !o)}
-          aria-label="Toggle menu"
+          aria-label="Меню"
+          aria-expanded={mobileOpen}
+          aria-haspopup="menu"
         >
           {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </button>
@@ -293,6 +296,8 @@ function UserMenu({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
         className={cn(
           "flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors",
           scrolled

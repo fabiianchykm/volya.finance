@@ -126,6 +126,7 @@ export function InsurerReviews({ slug, name }: { slug: string; name: string }) {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
+              aria-label="Ваш відгук"
               placeholder={`Поділіться досвідом зі страховою ${name}…`}
               rows={4}
               className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
