@@ -90,7 +90,7 @@ function subscribeAccordion(cb: () => void) {
 function DetailsDropdown({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="w-full max-w-[340px] overflow-hidden rounded-xl border border-zinc-200 bg-white">
+    <div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-200 bg-white">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -333,9 +333,10 @@ export function OfferCard({
           {subtitle && <span className="text-xs text-zinc-400 text-center">{subtitle}</span>}
         </div>
 
-        {/* Блок 2: кількість опцій / документи */}
+        {/* Блок 2: кількість опцій / документи. Фіксована ширина = ширина розгорнутих
+            dropdown-ів під ним; так блок 3 (опції) зсувається праворуч і не перекривається. */}
         {canExpand && (
-          <div className="flex flex-col items-center shrink-0">
+          <div className="flex w-[280px] flex-col items-center shrink-0">
             <div className="flex flex-col items-center gap-2 flex-1 justify-center">
               {hasOptions && (
                 <>
