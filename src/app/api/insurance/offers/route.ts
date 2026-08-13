@@ -17,11 +17,12 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
 
-    // Дату народження передаємо ЛИШЕ якщо вона реально відома (валідний формат).
-    // Без неї НЕ підставляємо фейкову 01.01.1990 — API порахує за власним припущенням,
-    // а точну ціну під реальну ДН ми уточнюємо на checkout перед оплатою.
+    // Дата народження: якщо відома (з реєстру за номером) — шлемо її (повний набір
+    // пропозицій + правильна ціна). Якщо НЕ відома (авто не в реєстрі / ручне введення)
+    // — запасний дефолт, щоб не втрачати пропозиції (деякі страхові не квотують без віку).
+    // Остаточну ціну під СПРАВЖНЮ ДН страхувальника уточнюємо на checkout перед оплатою.
     const rawDob = searchParams.get("carBirthdayAt");
-    const dob = rawDob && /^\d{1,2}\.\d{1,2}\.\d{4}$/.test(rawDob) ? rawDob : null;
+    const dob = rawDob && /^\d{1,2}\.\d{1,2}\.\d{4}$/.test(rawDob) ? rawDob : "01.01.1990";
 
     const params: CalculatorParams = {
       autoCategoryType: searchParams.get("autoCategoryType") ?? "B1",
@@ -37,7 +38,8 @@ export async function GET(req: NextRequest) {
       registrationType: Number(searchParams.get("registrationType") ?? 1),
       period_id: Number(searchParams.get("period_id") ?? 12),
       "car[year]": Number(searchParams.get("carYear") ?? 2015),
-      ...(dob ? { "customer[dateBirth]": dob, "car[birthdayAt]": dob } : {}),
+      "customer[dateBirth]": dob,
+      "car[birthdayAt]": dob,
     };
 
     const cacheKey = JSON.stringify(params);
