@@ -368,7 +368,7 @@ function MiniKaskoOffers({
                   onSelectDgo={() => {}}
                   onSelectAutolawyer={() => {}}
                   onBuy={() => onSelect(o)}
-                  subtitle={o.title || undefined}
+                  coverageTags={coverageTags(o.title)}
                   hideExtras
                 />
               ))}
@@ -402,6 +402,19 @@ function MiniKaskoOffers({
 }
 
 // Мапимо офер міні-КАСКО у InsuranceOffer, щоб переюзати OSAGO OfferCard.
+// З довгого `title` міні-КАСКО робимо короткі теги: «Воєнні ризики» / «З вини» / «Без вини».
+// «без вини» містить підрядок «з вини», тож рахуємо входження (з > без → є окреме «з вини»).
+function coverageTags(title?: string | null): string[] {
+  const t = (title || "").toLowerCase();
+  const tags: string[] = [];
+  if (/воєн|війсь|war/.test(t)) tags.push("Воєнні ризики");
+  const bez = (t.match(/без вини/g) || []).length;
+  const z = (t.match(/з вини/g) || []).length;
+  if (z > bez) tags.push("З вини");
+  if (bez > 0) tags.push("Без вини");
+  return tags;
+}
+
 function toInsuranceOffer(o: MiniKaskoOffer): InsuranceOffer {
   return {
     offerId: o.offerId,

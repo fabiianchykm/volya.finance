@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, Clock, Coins, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -30,6 +30,8 @@ interface OfferCardProps {
   discountEligible?: boolean;
   /** Опис продукту в «Детальніше» (напр. пояснення ОСЦПВ). Передається лише де треба. */
   productDescription?: ReactNode;
+  /** Що покриває — короткі теги по центру картки (напр. міні-КАСКО: «Воєнні ризики», «З вини»). */
+  coverageTags?: string[];
 }
 
 function transliterate(text: string) {
@@ -96,6 +98,7 @@ export function OfferCard({
   cornerBadge,
   discountEligible,
   productDescription,
+  coverageTags,
 }: OfferCardProps) {
   // Розгортання «Детальніше» — через спільний стор (акордеон): відкрита лише одна.
   const cardKey = offer.offerId ?? `idx-${index}`;
@@ -146,6 +149,17 @@ export function OfferCard({
 
   // Розгортання доступне, якщо є що показати: опис, характеристики, документи.
   const canExpand = !!productDescription || hasFacts || hasDocs;
+
+  // Короткі теги «що покриває» (напр. міні-КАСКО) — чипи по центру картки.
+  const coverageChips = coverageTags && coverageTags.length > 0 ? (
+    <div className="flex flex-wrap justify-center gap-1.5">
+      {coverageTags.map((t) => (
+        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> {t}
+        </span>
+      ))}
+    </div>
+  ) : null;
 
   const autolawyer = lawyerList[0] ?? null;
   const rowClass = (active: boolean) =>
@@ -249,6 +263,13 @@ export function OfferCard({
           </div>
         </div>
 
+        {/* Що покриває — чипи (напр. міні-КАСКО) */}
+        {coverageChips && (
+          <div className="mt-3 border-t border-zinc-100 pt-3">
+            {coverageChips}
+          </div>
+        )}
+
         {/* Опції (автоюрист / ДГО / Допомога) */}
         {showOptionsBlock && (
           <div className="mt-3 border-t border-zinc-100 pt-3">
@@ -315,9 +336,9 @@ export function OfferCard({
           </div>
         )}
 
-        {/* Блок 3: автоюрист + ДГО — центруємо в колонці (інакше тулиться ліворуч) */}
+        {/* Блок 3: що покриває (чипи) або автоюрист/ДГО — центруємо в колонці */}
         <div className="flex flex-1 flex-col items-center justify-center">
-          {optionsBlock}
+          {coverageChips ?? optionsBlock}
         </div>
 
         {/* Блок 4: ціна + купити */}
