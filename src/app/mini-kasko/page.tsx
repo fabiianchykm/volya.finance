@@ -1,7 +1,6 @@
 import { Footer } from "@/components/layout/Footer";
 import { MiniKaskoFlow } from "@/components/minikasko/MiniKaskoFlow";
-import { KaskoBenefits } from "@/components/kasko/KaskoBenefits";
-import { KASKO_PRODUCTS } from "@/components/kasko/products";
+import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, breadcrumbLd } from "@/lib/seo";
 
@@ -39,7 +38,7 @@ export default function MiniKaskoPage() {
       {/* Navbar рендериться всередині MiniKaskoFlow (прозорий герой → solid екран пропозицій) */}
       <main className="flex-1">
         <MiniKaskoFlow />
-        <KaskoBenefits config={KASKO_PRODUCTS["mini-kasko"]} />
+        <MarketingSections />
       </main>
       <Footer />
     </>
