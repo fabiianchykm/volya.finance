@@ -324,6 +324,8 @@ export interface TourismOffer {
   // trip_impossible, visa_impossible, avia_await, cv…) — {status, value}. Саме цим
   // оффери відрізняються між собою.
   options?: Record<string, { status?: boolean; value?: number } | boolean | number | string | null | undefined>;
+  // Перелік ризиків із лімітами й описом (найчистіше джерело для деталізації).
+  programs?: Array<{ code?: number; limit?: number; limitCurrency?: string; description?: string }>;
 }
 
 // Страхування тварин (POST /insurance/pets/calculator).

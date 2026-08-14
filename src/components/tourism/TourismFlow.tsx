@@ -22,40 +22,64 @@ const PROGRAM_LABELS_EN: Record<string, string> = {
 
 const coverageOf = (o: TourismOffer) => Number(o.coverage ?? o.limit ?? 0);
 
-// Опції, що покриває поліс (крім медичних витрат — їх показуємо окремо із сумою).
-const OPT_LABELS: Record<string, { uk: string; en: string }> = {
-  dentistry: { uk: "Стоматологія", en: "Dentistry" },
-  baggage_loss: { uk: "Багаж", en: "Baggage" },
-  trip_impossible: { uk: "Скасування поїздки", en: "Trip cancellation" },
-  visa_impossible: { uk: "Відмова у візі", en: "Visa refusal" },
-  avia_await: { uk: "Затримка рейсу", en: "Flight delay" },
-  cv: { uk: "COVID-19", en: "COVID-19" },
-  covid_help: { uk: "COVID-19", en: "COVID-19" },
-  fr: { uk: "Форс-мажор", en: "Force majeure" },
-  sm: { uk: "Спорт", en: "Sport" },
-  med: { uk: "Медикаменти", en: "Medication" },
+type Tr = (tr: { uk: string; en?: string }) => string;
+const nf = (n: number) => new Intl.NumberFormat("uk-UA").format(n);
+
+// Короткі назви ризиків за кодом (для чипів). Повні описи беремо з programs[].description.
+const RISK_LABELS: Record<number, { uk: string; en: string }> = {
+  1: { uk: "Медицина", en: "Medical" },
+  2: { uk: "Нещасний випадок", en: "Accident" },
+  3: { uk: "COVID-19", en: "COVID-19" },
+  4: { uk: "Багаж", en: "Baggage" },
+  5: { uk: "Скасування поїздки", en: "Trip cancellation" },
+  6: { uk: "Відмова у візі", en: "Visa refusal" },
+  7: { uk: "Фінансові ризики", en: "Financial risks" },
+  8: { uk: "ДМС", en: "VHI" },
+  12: { uk: "Затримка рейсу", en: "Flight delay" },
+  35: { uk: "Спорт", en: "Sport" },
 };
-function isActive(v: unknown): boolean {
-  if (v === true) return true;
-  if (v && typeof v === "object") return (v as { status?: boolean }).status === true;
-  return false;
+
+// Чипи «що покриває» — короткі назви ризиків (медицина — із лімітом), щоб оффери
+// було легко розрізнити з першого погляду.
+function riskTags(o: TourismOffer, t: Tr): string[] {
+  const progs = Array.isArray(o.programs) ? o.programs : [];
+  return progs.map((p) => {
+    const lbl = p.code != null ? RISK_LABELS[p.code] : undefined;
+    const cur = currencySymbol(p.limitCurrency ?? o.limit_currency);
+    if (p.code === 1 && p.limit) return t({ uk: `Медицина ${nf(p.limit)} ${cur}`, en: `Medical ${nf(p.limit)} ${cur}` });
+    return lbl ? t(lbl) : (p.description ?? "");
+  }).filter(Boolean);
 }
-// Чипи «що покриває» — щоб оффери було легко розрізнити.
-function optionTags(o: TourismOffer, t: (tr: { uk: string; en?: string }) => string): string[] {
-  const opts = o.options ?? {};
-  const cur = currencySymbol(o.limit_currency);
-  const tags: string[] = [];
-  const med = opts.medicine_help;
-  const medVal = med && typeof med === "object" ? (med as { value?: number }).value : undefined;
-  if (isActive(med) || medVal || coverageOf(o)) {
-    const val = medVal ?? coverageOf(o);
-    tags.push(t({ uk: `Медицина ${new Intl.NumberFormat("uk-UA").format(val)} ${cur}`, en: `Medical ${new Intl.NumberFormat("en-US").format(val)} ${cur}` }));
-  }
-  const seen = new Set<string>();
-  for (const [key, lbl] of Object.entries(OPT_LABELS)) {
-    if (isActive(opts[key]) && !seen.has(lbl.uk)) { seen.add(lbl.uk); tags.push(t(lbl)); }
-  }
-  return tags;
+
+// Повний перелік ризиків із лімітами й описом + франшиза — у «Детальніше» картки.
+function TourismRiskDetail({ o }: { o: TourismOffer }) {
+  const { t } = useI18n();
+  const progs = Array.isArray(o.programs) ? o.programs : [];
+  if (progs.length === 0) return null;
+  const franchise = Number(o.franchise ?? 0);
+  const cur0 = currencySymbol(o.limit_currency);
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
+      <p className="mb-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Що покриває", en: "What's covered" })}</p>
+      <div className="flex flex-col gap-1.5">
+        {progs.map((p, idx) => (
+          <div key={idx} className="flex items-baseline justify-between gap-3">
+            <span className="text-xs text-zinc-600 dark:text-zinc-300">{p.description || (p.code != null && RISK_LABELS[p.code] ? t(RISK_LABELS[p.code]) : "")}</span>
+            {p.limit ? (
+              <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                {t({ uk: "до", en: "up to" })} {nf(p.limit)} {currencySymbol(p.limitCurrency ?? o.limit_currency)}
+              </span>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+        {franchise > 0
+          ? t({ uk: `Франшиза: ${nf(franchise)} ${cur0} — цю суму за кожним випадком клієнт покриває сам.`, en: `Deductible: ${nf(franchise)} ${cur0} — the client covers this amount per claim.` })
+          : t({ uk: "Франшиза: 0 — страхова відшкодовує з першого євро, без вашої участі.", en: "Deductible: 0 — the insurer pays from the first euro, with no out-of-pocket cost." })}
+      </p>
+    </div>
+  );
 }
 
 // Туристичне страхування — калькулятор Ukasko (POST /insurance/calculator/tourism)
@@ -513,7 +537,8 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
               onSelectAutolawyer={() => {}}
               onBuy={() => onSelect(o)}
               hideExtras
-              coverageTags={optionTags(o, t)}
+              coverageTags={riskTags(o, t)}
+              productDescription={<TourismRiskDetail o={o} />}
               cornerBadge={o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined}
             />
           ))}
