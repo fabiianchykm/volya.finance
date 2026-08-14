@@ -40,6 +40,60 @@ const ZONES = [
 const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm text-zinc-900 dark:text-zinc-100 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500";
 
+// Кастомний вибір зони: у списку кожен пункт = назва зони + опис (які країни входять)
+// прямо під нею (нативний <select> так не вміє).
+function ZoneSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+
+  const cur = ZONES.find((z) => String(z.id) === value) ?? ZONES[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`${selectClass} flex cursor-pointer items-center justify-between gap-2 pr-3 text-left`}
+      >
+        <span className="truncate">{t({ uk: cur.label, en: cur.en })}</span>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div role="listbox" className="absolute left-0 right-0 z-30 mt-2 max-h-80 overflow-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+          {ZONES.map((z) => {
+            const active = String(z.id) === value;
+            return (
+              <button
+                key={z.id}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => { onChange(String(z.id)); setOpen(false); }}
+                className={`flex w-full flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"}`}
+              >
+                <span className={`text-sm font-medium ${active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-200"}`}>{t({ uk: z.label, en: z.en })}</span>
+                <span className="text-xs leading-snug text-zinc-400 dark:text-zinc-500">{t({ uk: z.desc, en: z.descEn })}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TourismFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
@@ -206,16 +260,7 @@ export function TourismFlow() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><MapPin className="h-3.5 w-3.5" /> {t({ uk: "Куди прямуєте?", en: "Where are you heading?" })}</label>
-                  <div className="relative">
-                    <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className={`${selectClass} cursor-pointer appearance-none pr-10`}>
-                      {ZONES.map((z) => <option key={z.id} value={z.id}>{t({ uk: z.label, en: z.en })}</option>)}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
-                  </div>
-                  {(() => {
-                    const z = ZONES.find((z) => String(z.id) === zoneId);
-                    return z ? <p className="mt-1.5 text-xs leading-snug text-zinc-400 dark:text-zinc-500">{t({ uk: z.desc, en: z.descEn })}</p> : null;
-                  })()}
+                  <ZoneSelect value={zoneId} onChange={setZoneId} />
                 </div>
                 {multiVisa ? (
                   <div>
