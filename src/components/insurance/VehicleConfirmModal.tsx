@@ -332,7 +332,7 @@ export function VehicleConfirmModal({
                 >
                   {AUTO_CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>
-                      {c.value} — {c.label}
+                      {c.value} — {t({ uk: c.label, en: c.labelEn })}
                     </option>
                   ))}
                 </select>

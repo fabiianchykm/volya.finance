@@ -5,17 +5,23 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPlate } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface KaskoHeroProps {
   onSearch: (plate: string) => void;
   loading?: boolean;
   titleLead: string;
+  titleLeadEn: string;
   titleHighlight: string;
+  titleHighlightEn: string;
   subtitle: string;
+  subtitleEn: string;
   cta: string;
+  ctaEn: string;
 }
 
-export function KaskoHero({ onSearch, loading, titleLead, titleHighlight, subtitle, cta }: KaskoHeroProps) {
+export function KaskoHero({ onSearch, loading, titleLead, titleLeadEn, titleHighlight, titleHighlightEn, subtitle, subtitleEn, cta, ctaEn }: KaskoHeroProps) {
+  const { t } = useI18n();
   const [plate, setPlate] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -44,14 +50,14 @@ export function KaskoHero({ onSearch, loading, titleLead, titleHighlight, subtit
           className="space-y-10 sm:space-y-12"
         >
           <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-            {titleLead}{" "}
+            {t({ uk: titleLead, en: titleLeadEn })}{" "}
             <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent md:mt-1 md:block">
-              {titleHighlight}
+              {t({ uk: titleHighlight, en: titleHighlightEn })}
             </span>
           </h1>
 
           <p className="mx-auto max-w-xl text-base text-zinc-300 sm:text-lg">
-            {subtitle}
+            {t({ uk: subtitle, en: subtitleEn })}
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8 w-full pt-4">
@@ -105,7 +111,7 @@ export function KaskoHero({ onSearch, loading, titleLead, titleHighlight, subtit
               "
             >
               <span className="relative z-10 flex items-center gap-2.5">
-                {cta}
+                {t({ uk: cta, en: ctaEn })}
                 <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
               </span>
             </Button>

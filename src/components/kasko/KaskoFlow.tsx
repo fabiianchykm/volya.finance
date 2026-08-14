@@ -123,7 +123,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Заявку прийнято!", en: "Request received!" })}</h1>
           <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-            {t({ uk: "Менеджер передзвонить вам найближчим часом і підбере найкращі умови", en: "A manager will call you back shortly and will select the best" })} {config.label}
+            {t({ uk: "Менеджер передзвонить вам найближчим часом і підбере найкращі умови", en: "A manager will call you back shortly and will select the best" })} {t({ uk: config.label, en: config.labelEn })}
             {" "}{t({ uk: "для", en: "terms for" })} {vehicle?.mark ? `${vehicle.mark} ${vehicle.model}` : t({ uk: "вашого авто", en: "your car" })}.
           </p>
           <Button
@@ -150,9 +150,13 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
         onSearch={handlePlateSearch}
         loading={loading}
         titleLead={config.heroTitleLead}
+        titleLeadEn={config.heroTitleLeadEn}
         titleHighlight={config.heroTitleHighlight}
+        titleHighlightEn={config.heroTitleHighlightEn}
         subtitle={config.heroSubtitle}
+        subtitleEn={config.heroSubtitleEn}
         cta={config.cta}
+        ctaEn={config.ctaEn}
       />
 
       <VehicleConfirmModal

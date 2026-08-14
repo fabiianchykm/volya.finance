@@ -2,7 +2,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { KaskoFlow } from "@/components/kasko/KaskoFlow";
 import { KaskoBenefits } from "@/components/kasko/KaskoBenefits";
-import { KASKO_PRODUCTS } from "@/components/kasko/products";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
@@ -41,7 +40,7 @@ export default function KaskoPage() {
       <Navbar />
       <main className="flex-1">
         <KaskoFlow product="kasko" />
-        <KaskoBenefits config={KASKO_PRODUCTS.kasko} />
+        <KaskoBenefits product="kasko" />
         <FAQSection items={FAQ_BY_PRODUCT["kasko"]} subtitle="Усе, що потрібно знати про КАСКО" />
       </main>
       <Footer />

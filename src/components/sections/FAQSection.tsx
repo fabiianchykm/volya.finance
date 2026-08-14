@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 import { FAQ_ITEMS, type FaqItem } from "@/lib/faq";
 import { useI18n } from "@/lib/i18n";
 
-function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
+function FAQItem({ faq, index }: { faq: FaqItem; index: number }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <motion.div
@@ -29,7 +30,7 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
           "text-xl font-semibold transition-colors duration-200",
           isOpen ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
         )}>
-          {question}
+          {t({ uk: faq.question, en: faq.questionEn })}
         </span>
         <span className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300",
@@ -51,7 +52,7 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
             className="overflow-hidden"
           >
             <p className="pb-7 text-lg leading-relaxed text-zinc-600 dark:text-zinc-300 max-w-3xl">
-              {answer}
+              {t({ uk: faq.answer, en: faq.answerEn })}
             </p>
           </motion.div>
         )}
@@ -82,7 +83,7 @@ export function FAQSection({
 
         <div>
           {items.map((faq, index) => (
-            <FAQItem key={index} question={faq.question} answer={faq.answer} index={index} />
+            <FAQItem key={index} faq={faq} index={index} />
           ))}
         </div>
       </div>

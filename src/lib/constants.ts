@@ -1,17 +1,17 @@
 export const AUTO_CATEGORIES = [
-  { value: "B1", label: "до 1600 см³", type: "Легковий" },
-  { value: "B2", label: "1601–2000 см³", type: "Легковий" },
-  { value: "B3", label: "2001–3000 см³", type: "Легковий" },
-  { value: "B4", label: "більше 3001 см³", type: "Легковий" },
-  { value: "B5", label: "Електромобіль", type: "Легковий" },
-  { value: "A1", label: "до 300 см³", type: "Мотоцикл" },
-  { value: "A2", label: "більше 300 см³", type: "Мотоцикл" },
-  { value: "D1", label: "до 20 місць", type: "Автобус" },
-  { value: "D2", label: "більше 20 місць", type: "Автобус" },
-  { value: "C1", label: "до 20 т", type: "Вантажний" },
-  { value: "C2", label: "більше 20 т", type: "Вантажний" },
-  { value: "E", label: "до вантажних", type: "Причіп" },
-  { value: "F", label: "до легкових", type: "Причіп" },
+  { value: "B1", label: "до 1600 см³", labelEn: "up to 1600 cm³ (Car)", type: "Легковий" },
+  { value: "B2", label: "1601–2000 см³", labelEn: "1601–2000 cm³ (Car)", type: "Легковий" },
+  { value: "B3", label: "2001–3000 см³", labelEn: "2001–3000 cm³ (Car)", type: "Легковий" },
+  { value: "B4", label: "більше 3001 см³", labelEn: "over 3001 cm³ (Car)", type: "Легковий" },
+  { value: "B5", label: "Електромобіль", labelEn: "Electric vehicle", type: "Легковий" },
+  { value: "A1", label: "до 300 см³", labelEn: "Motorcycle up to 300 cm³", type: "Мотоцикл" },
+  { value: "A2", label: "більше 300 см³", labelEn: "Motorcycle over 300 cm³", type: "Мотоцикл" },
+  { value: "D1", label: "до 20 місць", labelEn: "Bus up to 20 seats", type: "Автобус" },
+  { value: "D2", label: "більше 20 місць", labelEn: "Bus over 20 seats", type: "Автобус" },
+  { value: "C1", label: "до 20 т", labelEn: "Truck up to 20 t", type: "Вантажний" },
+  { value: "C2", label: "більше 20 т", labelEn: "Truck over 20 t", type: "Вантажний" },
+  { value: "E", label: "до вантажних", labelEn: "Trailer for trucks", type: "Причіп" },
+  { value: "F", label: "до легкових", labelEn: "Trailer for cars", type: "Причіп" },
 ] as const;
 
 export const PERIODS = [
@@ -33,16 +33,16 @@ export const CUSTOMER_TYPES = [
 ] as const;
 
 export const PRIVILEGES = [
-  { id: 1, slug: "no", label: "Немає пільг" },
-  { id: 2, slug: "retired", label: "Пенсіонер" },
-  { id: 3, slug: "war", label: "Учасник війни" },
-  { id: 4, slug: "invalid", label: "Інвалід II групи" },
-  { id: 5, slug: "chernobyl", label: "Постраждалий від ЧАЕС" },
-  { id: 6, slug: "e_retired", label: "Пенсіонер (е-посвідчення)" },
-  { id: 7, slug: "maidan", label: "Учасник Революції Гідності" },
-  { id: 8, slug: "invalid_i", label: "Інвалід I групи" },
-  { id: 9, slug: "invalid_war", label: "Інвалід внаслідок війни" },
-  { id: 10, slug: "ubd", label: "Учасник бойових дій" },
+  { id: 1, slug: "no", label: "Немає пільг", labelEn: "No benefits" },
+  { id: 2, slug: "retired", label: "Пенсіонер", labelEn: "Pensioner" },
+  { id: 3, slug: "war", label: "Учасник війни", labelEn: "War participant" },
+  { id: 4, slug: "invalid", label: "Інвалід II групи", labelEn: "Person with disability group II" },
+  { id: 5, slug: "chernobyl", label: "Постраждалий від ЧАЕС", labelEn: "Chornobyl survivor" },
+  { id: 6, slug: "e_retired", label: "Пенсіонер (е-посвідчення)", labelEn: "Pensioner (e-certificate)" },
+  { id: 7, slug: "maidan", label: "Учасник Революції Гідності", labelEn: "Participant of the Revolution of Dignity" },
+  { id: 8, slug: "invalid_i", label: "Інвалід I групи", labelEn: "Person with disability group I" },
+  { id: 9, slug: "invalid_war", label: "Інвалід внаслідок війни", labelEn: "Person with disability due to war" },
+  { id: 10, slug: "ubd", label: "Учасник бойових дій", labelEn: "Participant of hostilities" },
 ] as const;
 
 export const DOCUMENT_TYPES = [

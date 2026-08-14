@@ -77,7 +77,8 @@ export function OffersSection({
   const periodLabel = periodId === 6 ? t({ uk: "пів року", en: "6 months" }) : t({ uk: "1 рік", en: "1 year" });
   // Чи заповнив користувач дані страхувальника (відрізняються від дефолтних)?
   const buyerSet = buyer.privilegeId !== DEFAULT_BUYER.privilegeId || buyer.birthDate !== DEFAULT_BUYER.birthDate;
-  const privilegeLabel = PRIVILEGES.find((p) => p.id === buyer.privilegeId)?.label ?? t({ uk: "Без пільг", en: "No benefits" });
+  const privilege = PRIVILEGES.find((p) => p.id === buyer.privilegeId);
+  const privilegeLabel = privilege ? t({ uk: privilege.label, en: privilege.labelEn }) : t({ uk: "Без пільг", en: "No benefits" });
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});

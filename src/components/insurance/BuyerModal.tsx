@@ -59,7 +59,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
             className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           >
             {PRIVILEGES.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
+              <option key={p.id} value={p.id}>{t({ uk: p.label, en: p.labelEn })}</option>
             ))}
           </select>
         </div>
