@@ -60,9 +60,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
   ],
   legal: [
     { label: "Інформація про Субагента", labelEn: "Sub-agent information", href: "/subagent" },
-    // Заморожені (документи ще не опубліковані) — некликабельні.
-    { label: "Публічна оферта", labelEn: "Public offer", href: "#", frozen: true },
-    { label: "Політика конфіденційності", labelEn: "Privacy policy", href: "#", frozen: true },
+    // Публічна оферта / Політика конфіденційності — біля копірайта внизу (заморожені).
   ],
 };
 
@@ -154,9 +152,16 @@ export function Footer() {
               en: "Volya Finance (VOLYA.FINANCE) is an online insurance service in Ukraine. Here you can arrange car insurance (OSAGO), CASCO and Mini-CASCO, a Green Card for trips abroad, travel insurance for your journeys and pet insurance. We compare prices from 18+ leading insurance companies and show the best offers, and all policies are electronic and officially registered with MTSBU. Calculate the cost and buy car insurance online in just a few minutes — no queues, office visits or extra paperwork, with a ready policy sent to your email. Available across Ukraine: Kyiv, Lviv, Odesa, Kharkiv, Dnipro and other cities.",
             })}
           </p>
-          <p className="mt-3 text-[11px] text-zinc-500 dark:text-zinc-400">
-            © {new Date().getFullYear()} VOLYA.FINANCE. {t({ uk: "Усі права захищені.", en: "All rights reserved." })}
-          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              © {new Date().getFullYear()} VOLYA.FINANCE. {t({ uk: "Усі права захищені.", en: "All rights reserved." })}
+            </p>
+            {/* Публічна оферта / Політика конфіденційності — заморожені (документів ще нема). */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+              <span className="cursor-default">{t({ uk: "Публічна оферта", en: "Public offer" })}</span>
+              <span className="cursor-default">{t({ uk: "Політика конфіденційності", en: "Privacy policy" })}</span>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
