@@ -843,12 +843,12 @@ export class UkaskoService {
     // (уже перевірений — його ж юзає getOrderInfo) + /payments/check-invoice?invoice=.
     // Статус читаємо з кількох можливих полів. НІКОЛИ не кидаємо — щоб опитування
     // тривало (інакше 500 → «обробляється» назавжди). Логуємо сиру відповідь.
+    // Перевірено на проді: статус оплати живе в GET /api/orders/{id}/get-invoice
+    // (поле statusId). /prod-префікс і /payments/*-варіанти дають 404/405, тож не
+    // використовуємо. BASE лишаємо запасним на випадок відмінностей середовищ.
     const urls = [
       `${AUTH_URL}/orders/${orderId}/get-invoice`,
       `${BASE_URL}/orders/${orderId}/get-invoice`,
-      `${AUTH_URL}/payments/check-invoice?invoice=${encodeURIComponent(orderId)}`,
-      `${BASE_URL}/payments/check-invoice?invoice=${encodeURIComponent(orderId)}`,
-      `${AUTH_URL}/payments/${orderId}/check-invoice`,
     ];
     return this.withAuth(async (token) => {
       for (const url of urls) {
@@ -856,8 +856,10 @@ export class UkaskoService {
           const raw = await getJson(url, token) as Record<string, unknown>;
           const d = (raw.data ?? raw) as Record<string, unknown>;
           const inv = (d.invoice ?? d) as Record<string, unknown>;
-          const statusId = Number(inv.status_id ?? d.status_id ?? 0) || 0;
-          const payedAt = (inv.payed_at ?? d.payed_at ?? null) as string | null;
+          // Ukasko віддає статус у полі `statusId` (camelCase) у get-invoice; у деяких
+          // ендпоінтів — `status_id`. Читаємо обидва варіанти. statusId=2 → оплачено.
+          const statusId = Number(inv.statusId ?? inv.status_id ?? d.statusId ?? d.status_id ?? 0) || 0;
+          const payedAt = (inv.payed_at ?? inv.payedAt ?? d.payed_at ?? d.payedAt ?? null) as string | null;
           console.error(`[ukasko check-invoice] ${url} → status_id=${statusId} payed_at=${payedAt} raw=${JSON.stringify(raw).slice(0, 300)}`);
           // Знайшли підтвердження оплати — повертаємо одразу.
           if (statusId === 2 || payedAt) return { status_id: 2, payed_at: payedAt };
