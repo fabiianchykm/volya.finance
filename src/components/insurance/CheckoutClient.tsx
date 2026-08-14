@@ -7,6 +7,7 @@ import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
+import { registerPendingOrder } from "@/lib/pending-order-client";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { searchMarks, searchModels } from "@/lib/car-catalog";
@@ -247,7 +248,22 @@ export function CheckoutClient() {
       if (!declareJson.success) throw new Error(declareJson.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
 
       const declaredId = declareJson.data?.id ?? id;
-      
+
+      // Контекст фіналізації — щоб /payment-success уклав поліс і зберіг його в
+      // кабінет навіть якщо клієнта редіректнуло з модалки оплати.
+      registerPendingOrder({
+        orderId: declaredId, product: "osago",
+        meta: {
+          email: customer?.email, phone: customer?.phone,
+          customerName: [customer?.surname, customer?.name, customer?.patronymic].filter(Boolean).join(" "),
+          company: offer?.companyNamePublic || offer?.companyName,
+          price: offer?.price,
+          vehicle: { mark: mergedVehicle.mark, model: mergedVehicle.model, year: mergedVehicle.year, plate: mergedVehicle.number },
+          startDate: offer?.startDate, endDate: offer?.endDate,
+          productLabel: "Автоцивілка",
+        },
+      });
+
       // Надіслати OTP на email
       await fetch("/api/insurance/otp", {
         method: "POST",

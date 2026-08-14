@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { registerPendingOrder } from "@/lib/pending-order-client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
@@ -244,6 +245,20 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Policy declaration error" }));
       const id = json.data?.id;
       setOrderId(id);
+      // Реєструємо контекст фіналізації (повний order + мета), щоб /payment-success
+      // міг укласти туристичний договір після оплати навіть поза модалкою.
+      registerPendingOrder({
+        orderId: id, product: "tourism", order,
+        meta: {
+          email: c.email,
+          phone: c.phone ? `+380${c.phone.replace(/\D/g, "")}` : null,
+          customerName: [tourists[0]?.surnameLat, tourists[0]?.nameLat].filter(Boolean).join(" "),
+          company: ctx.offer.company?.publicName || ctx.offer.name || ctx.offer.title,
+          price: ctx.offer.price,
+          startDate: ctx.startDate, endDate: ctx.endDate,
+          productLabel: "Туристичне",
+        },
+      });
       await fetch("/api/insurance/otp", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "send", orderId: id }),

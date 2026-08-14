@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { registerPendingOrder } from "@/lib/pending-order-client";
 import { Input } from "@/components/ui/Input";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { OtpModal } from "@/components/insurance/OtpModal";
@@ -300,6 +301,15 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
       const id = json.data?.id as string;
       setOrderId(id);
+      registerPendingOrder({
+        orderId: id, product: "housing",
+        meta: {
+          email: f.email, phone: `+380${f.phone.replace(/\D/g, "")}`,
+          customerName: [f.surnameUa, f.nameUa, f.patronymicUa].filter(Boolean).join(" "),
+          company: ctx.offer.companyNamePublic || ctx.offer.companyName,
+          price: ctx.offer.price, productLabel: "Житло",
+        },
+      });
       // Спільний OTP (як в ОСЦПВ/ЗК).
       await fetch("/api/insurance/otp", {
         method: "POST", headers: { "content-type": "application/json" },

@@ -38,32 +38,23 @@ export function PaymentSuccessClient() {
       const MAX_ATTEMPTS = 60;   // ~3 хв при 3 c
       const PENDING_AFTER = 10;  // ~30 c → показати «обробляється», але не спинятись
       for (let i = 0; i < MAX_ATTEMPTS && !cancelled; i++) {
-        let paid = false;
+        // Продукт-незалежна фіналізація: /api/finalize сам перевіряє оплату,
+        // укладає договір правильним для продукту способом і зберігає поліс.
         try {
-          const res = await fetch("/api/insurance/payment", {
+          const res = await fetch("/api/finalize", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ action: "check", orderId }),
+            body: JSON.stringify({ orderId }),
           });
           const json = await res.json();
-          paid = json.success && json.data?.status_id === 2;
-        } catch { /* мережевий збій — спробуємо на наступній ітерації */ }
-
-        if (paid) {
-          // Оплачено → підтверджуємо поліс.
-          setPhase("confirming");
-          try {
-            const cRes = await fetch("/api/insurance/contract", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ action: "confirm", orderId }),
-            });
-            const cJson = await cRes.json();
-            if (!cJson.success) throw new Error(cJson.error ?? t({ uk: "Не вдалося підтвердити поліс", en: "Failed to confirm the policy" }));
-            if (!cancelled) { setContractId(cJson.data?.contractId ?? null); setPhase("done"); }
-          } catch (e) {
-            if (!cancelled) { setError(e instanceof Error ? e.message : t({ uk: "Сталася помилка", en: "An error occurred" })); setPhase("error"); }
+          if (json.success && json.paid && json.contractId) {
+            if (!cancelled) { setContractId(json.contractId); setPhase("done"); }
+            return;
           }
+          if (!json.success) throw new Error(json.error ?? t({ uk: "Не вдалося підтвердити поліс", en: "Failed to confirm the policy" }));
+        } catch (e) {
+          // Помилка укладання (а не «ще не оплачено») — показуємо й зупиняємось.
+          if (!cancelled) { setError(e instanceof Error ? e.message : t({ uk: "Сталася помилка", en: "An error occurred" })); setPhase("error"); }
           return;
         }
 

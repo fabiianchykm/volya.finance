@@ -98,6 +98,20 @@ export function ensureSchema(): Promise<void> {
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS leads_created_idx ON leads (created_at DESC)`;
+      // Замовлення, що чекають фіналізації після оплати. Дозволяє БУДЬ-ЯКОМУ продукту
+      // укластися на /payment-success (куди редіректить LiqPay), а не лише ОСЦПВ:
+      // тут лежить продукт + payload укладання (для туризму — повний order) + мета
+      // для збереження поліса. Видаляється/помічається після успішної фіналізації.
+      await sql`
+        CREATE TABLE IF NOT EXISTS pending_orders (
+          order_id      text PRIMARY KEY,
+          product       text NOT NULL,
+          order_payload jsonb,
+          meta          jsonb,
+          finalized     boolean NOT NULL DEFAULT false,
+          created_at    timestamptz NOT NULL DEFAULT now()
+        )
+      `;
     })().catch((e) => {
       schemaPromise = null;
       throw e;

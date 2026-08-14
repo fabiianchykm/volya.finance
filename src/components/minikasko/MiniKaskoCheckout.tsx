@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { registerPendingOrder } from "@/lib/pending-order-client";
 import { Input } from "@/components/ui/Input";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { OtpModal } from "@/components/insurance/OtpModal";
@@ -237,6 +238,15 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
       const id = json.data?.id as string;
       setOrderId(id);
+      registerPendingOrder({
+        orderId: id, product: "mini-kasko",
+        meta: {
+          email: f.email, phone: `+380${f.phone.replace(/\D/g, "")}`,
+          customerName: [f.surnameUa, f.nameUa, f.patronymicUa].filter(Boolean).join(" "),
+          company: ctx.offer.companyNamePublic || ctx.offer.companyName,
+          price: ctx.offer.price, productLabel: "Міні-КАСКО",
+        },
+      });
       await fetch("/api/mini-kasko/order", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "send-otp", orderId: id, channel: "email" }),
