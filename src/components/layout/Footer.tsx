@@ -58,6 +58,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
     { label: "Блог", labelEn: "Blog", href: "/blog", frozen: true },
     { label: "Новини", labelEn: "News", href: "/news", frozen: true },
     { label: "Статистика", labelEn: "Statistics", href: "/statistics", frozen: true },
+    { label: "Звіти", labelEn: "Reports", href: "/reports", frozen: true },
   ],
   legal: [
     { label: "Інформація про Субагента", labelEn: "Sub-agent information", href: "/subagent" },
