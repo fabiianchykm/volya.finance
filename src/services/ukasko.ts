@@ -836,12 +836,39 @@ export class UkaskoService {
     };
   }
 
-  async checkInvoice(orderId: string) {
-    const data = await this.withAuth((token) => getJson(
+  async checkInvoice(orderId: string): Promise<{ status_id: number; payed_at: string | null }> {
+    // Статус оплати. Різні продукти Ukasko віддають його по-різному, а старий
+    // виклик `/payments/{orderId}/check-invoice` на проді падає 500 (orderId у шляху —
+    // некоректно). Тож пробуємо кілька коректних варіантів: GET /orders/{id}/get-invoice
+    // (уже перевірений — його ж юзає getOrderInfo) + /payments/check-invoice?invoice=.
+    // Статус читаємо з кількох можливих полів. НІКОЛИ не кидаємо — щоб опитування
+    // тривало (інакше 500 → «обробляється» назавжди). Логуємо сиру відповідь.
+    const urls = [
+      `${AUTH_URL}/orders/${orderId}/get-invoice`,
+      `${BASE_URL}/orders/${orderId}/get-invoice`,
+      `${AUTH_URL}/payments/check-invoice?invoice=${encodeURIComponent(orderId)}`,
+      `${BASE_URL}/payments/check-invoice?invoice=${encodeURIComponent(orderId)}`,
       `${AUTH_URL}/payments/${orderId}/check-invoice`,
-      token
-    )) as { data: { status_id: number; payed_at: string | null } };
-    return data.data;
+    ];
+    return this.withAuth(async (token) => {
+      for (const url of urls) {
+        try {
+          const raw = await getJson(url, token) as Record<string, unknown>;
+          const d = (raw.data ?? raw) as Record<string, unknown>;
+          const inv = (d.invoice ?? d) as Record<string, unknown>;
+          const statusId = Number(inv.status_id ?? d.status_id ?? 0) || 0;
+          const payedAt = (inv.payed_at ?? d.payed_at ?? null) as string | null;
+          console.error(`[ukasko check-invoice] ${url} → status_id=${statusId} payed_at=${payedAt} raw=${JSON.stringify(raw).slice(0, 300)}`);
+          // Знайшли підтвердження оплати — повертаємо одразу.
+          if (statusId === 2 || payedAt) return { status_id: 2, payed_at: payedAt };
+        } catch (e) {
+          if (e instanceof HttpError && e.status === 401) throw e; // токен протух — withAuth перевипустить
+          console.error(`[ukasko check-invoice] ${url} — error:`, e instanceof Error ? e.message.slice(0, 200) : String(e));
+        }
+      }
+      // Ніде не побачили оплату — вважаємо «ще не оплачено» (клієнт опитає ще раз).
+      return { status_id: 0, payed_at: null };
+    });
   }
 
   async confirmPolicy(orderId: string) {

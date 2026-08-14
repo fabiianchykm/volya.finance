@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (e) {
+    console.error("[payment/route] error →", e instanceof Error ? e.message : String(e));
     await notifyDevError("insurance payment", e);
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }

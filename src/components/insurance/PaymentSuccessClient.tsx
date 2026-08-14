@@ -27,42 +27,54 @@ export function PaymentSuccessClient() {
   useEffect(() => {
     if (ranRef.current) return; // StrictMode / повторний рендер — не дублюємо
     ranRef.current = true;
+    let cancelled = false;
 
     (async () => {
-      try {
-        if (!orderId) { setError(t({ uk: "Не вказано замовлення.", en: "No order specified." })); setPhase("error"); return; }
+      if (!orderId) { setError(t({ uk: "Не вказано замовлення.", en: "No order specified." })); setPhase("error"); return; }
 
-        // Опитуємо статус кілька разів — LiqPay проводить оплату не миттєво.
+      // LiqPay зараховує оплату не миттєво — опитуємо статус ДОВГО (до ~3 хв) і не
+      // зупиняємось на «обробляється»: після ~30 c показуємо його, але продовжуємо
+      // тихо перевіряти, тож поліс підтвердиться сам, щойно оплата пройде на боці СК.
+      const MAX_ATTEMPTS = 60;   // ~3 хв при 3 c
+      const PENDING_AFTER = 10;  // ~30 c → показати «обробляється», але не спинятись
+      for (let i = 0; i < MAX_ATTEMPTS && !cancelled; i++) {
         let paid = false;
-        for (let i = 0; i < 5; i++) {
+        try {
           const res = await fetch("/api/insurance/payment", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ action: "check", orderId }),
           });
           const json = await res.json();
-          if (json.success && json.data?.status_id === 2) { paid = true; break; }
-          if (i < 4) await new Promise((r) => setTimeout(r, 2500));
+          paid = json.success && json.data?.status_id === 2;
+        } catch { /* мережевий збій — спробуємо на наступній ітерації */ }
+
+        if (paid) {
+          // Оплачено → підтверджуємо поліс.
+          setPhase("confirming");
+          try {
+            const cRes = await fetch("/api/insurance/contract", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ action: "confirm", orderId }),
+            });
+            const cJson = await cRes.json();
+            if (!cJson.success) throw new Error(cJson.error ?? t({ uk: "Не вдалося підтвердити поліс", en: "Failed to confirm the policy" }));
+            if (!cancelled) { setContractId(cJson.data?.contractId ?? null); setPhase("done"); }
+          } catch (e) {
+            if (!cancelled) { setError(e instanceof Error ? e.message : t({ uk: "Сталася помилка", en: "An error occurred" })); setPhase("error"); }
+          }
+          return;
         }
 
-        if (!paid) { setPhase("pending"); return; }
-
-        // Оплачено → підтверджуємо поліс.
-        setPhase("confirming");
-        const cRes = await fetch("/api/insurance/contract", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "confirm", orderId }),
-        });
-        const cJson = await cRes.json();
-        if (!cJson.success) throw new Error(cJson.error ?? t({ uk: "Не вдалося підтвердити поліс", en: "Failed to confirm the policy" }));
-        setContractId(cJson.data?.contractId ?? null);
-        setPhase("done");
-      } catch (e) {
-        setError(e instanceof Error ? e.message : t({ uk: "Сталася помилка", en: "An error occurred" }));
-        setPhase("error");
+        // Ще не оплачено: після порогу показуємо «обробляється», але цикл триває.
+        if (i + 1 >= PENDING_AFTER && !cancelled) setPhase("pending");
+        await new Promise((r) => setTimeout(r, 3000));
       }
+      if (!cancelled) setPhase("pending");
     })();
+
+    return () => { cancelled = true; };
   }, [orderId]);
 
   const downloadPdf = async () => {
