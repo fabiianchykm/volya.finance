@@ -281,28 +281,7 @@ export function VehicleConfirmModal({
               </span>
             </div>
 
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {t({ uk: "Марку, модель і VIN вкажете на кроці оформлення — для розрахунку ціни вони не потрібні.", en: "You'll enter make, model and VIN at checkout — they aren't needed to calculate the price." })}
-            </p>
-
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                  {t({ uk: "Рік випуску", en: "Year of manufacture" })}
-                </label>
-                <select
-                  value={form.year}
-                  onChange={set("year")}
-                  className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
                   {t({ uk: "Категорія ТЗ", en: "Vehicle category" })}
@@ -315,6 +294,23 @@ export function VehicleConfirmModal({
                   {AUTO_CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>
                       {c.value} — {t({ uk: c.label, en: c.labelEn })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  {t({ uk: "Рік випуску", en: "Year of manufacture" })}
+                </label>
+                <select
+                  value={form.year}
+                  onChange={set("year")}
+                  className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
                     </option>
                   ))}
                 </select>
