@@ -1,4 +1,7 @@
+"use client";
+
 import { Quote } from "lucide-react";
+import { useI18n, type Tr } from "@/lib/i18n";
 
 // Бренд-іконки джерел відгуків (self-contained SVG, без залежностей).
 function GoogleIcon({ className }: { className?: string }) {
@@ -38,16 +41,17 @@ type Source = keyof typeof SOURCE_ICON;
 
 // ⚠️ ЗАГОТОВКИ-ПРИКЛАДИ. Заміни на РЕАЛЬНІ відгуки з відповідних платформ. Приписувати
 // вигадані відгуки Google/Facebook — недопустимо (довіра + закон).
-const reviews: { name: string; city: string; text: string; color: string; source: Source }[] = [
-  { name: "Андрій", city: "Київ", text: "Оформив автоцивілку за 5 хвилин, без черг. Ціна виявилась дешевшою, ніж я платив раніше.", color: "bg-indigo-500", source: "google" },
-  { name: "Оксана", city: "Львів", text: "Порівняла кілька страхових і одразу обрала найвигіднішу. Поліс прийшов на пошту миттєво.", color: "bg-emerald-500", source: "facebook" },
-  { name: "Дмитро", city: "Одеса", text: "Зробив зелену карту перед поїздкою за кордон прямо з телефону. Дуже зручно й швидко.", color: "bg-amber-500", source: "threads" },
-  { name: "Ірина", city: "Харків", text: "Підтримка відповіла швидко й допомогла розібратись із документами. Рекомендую.", color: "bg-rose-500", source: "x" },
-  { name: "Сергій", city: "Дніпро", text: "Все чесно й прозоро — жодних прихованих платежів. Наступний поліс оформлю тут же.", color: "bg-sky-500", source: "facebook" },
-  { name: "Наталія", city: "Вінниця", text: "Туристичне для всієї родини оформила за кілька хвилин. Ціни приємно здивували.", color: "bg-violet-500", source: "google" },
+const reviews: { name: string; city: Tr; text: Tr; color: string; source: Source }[] = [
+  { name: "Андрій", city: { uk: "Київ", en: "Kyiv" }, text: { uk: "Оформив автоцивілку за 5 хвилин, без черг. Ціна виявилась дешевшою, ніж я платив раніше.", en: "Bought my car insurance in 5 minutes, no queues. The price turned out cheaper than I paid before." }, color: "bg-indigo-500", source: "google" },
+  { name: "Оксана", city: { uk: "Львів", en: "Lviv" }, text: { uk: "Порівняла кілька страхових і одразу обрала найвигіднішу. Поліс прийшов на пошту миттєво.", en: "Compared several insurers and instantly picked the best deal. The policy arrived by email right away." }, color: "bg-emerald-500", source: "facebook" },
+  { name: "Дмитро", city: { uk: "Одеса", en: "Odesa" }, text: { uk: "Зробив зелену карту перед поїздкою за кордон прямо з телефону. Дуже зручно й швидко.", en: "Got a Green Card before a trip abroad right from my phone. Very convenient and fast." }, color: "bg-amber-500", source: "threads" },
+  { name: "Ірина", city: { uk: "Харків", en: "Kharkiv" }, text: { uk: "Підтримка відповіла швидко й допомогла розібратись із документами. Рекомендую.", en: "Support replied quickly and helped me sort out the documents. Recommended." }, color: "bg-rose-500", source: "x" },
+  { name: "Сергій", city: { uk: "Дніпро", en: "Dnipro" }, text: { uk: "Все чесно й прозоро — жодних прихованих платежів. Наступний поліс оформлю тут же.", en: "Everything is honest and transparent — no hidden fees. I'll get my next policy right here." }, color: "bg-sky-500", source: "facebook" },
+  { name: "Наталія", city: { uk: "Вінниця", en: "Vinnytsia" }, text: { uk: "Туристичне для всієї родини оформила за кілька хвилин. Ціни приємно здивували.", en: "Arranged travel insurance for the whole family in a few minutes. The prices were a pleasant surprise." }, color: "bg-violet-500", source: "google" },
 ];
 
 export function ReviewsSection() {
+  const { t } = useI18n();
   const row = [...reviews, ...reviews];
 
   return (
@@ -55,7 +59,7 @@ export function ReviewsSection() {
       {/* Заголовок — ліворуч, трохи більший */}
       <div className="mx-auto mb-12 max-w-7xl px-4 sm:px-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">Відгуки клієнтів</h2>
+          <h2 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">{t({ uk: "Відгуки клієнтів", en: "Customer reviews" })}</h2>
           <div className="flex items-center gap-1.5">
             <GoogleIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
             <FacebookIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
@@ -77,14 +81,14 @@ export function ReviewsSection() {
                   <Quote className="h-6 w-6 text-zinc-200 dark:text-zinc-700" />
                   <SourceIcon className="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
                 </div>
-                <p className="flex-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">{text}</p>
+                <p className="flex-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">{t(text)}</p>
                 <div className="mt-5 flex items-center gap-3">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
                     {name[0]}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{name}</p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">{city}</p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">{t(city)}</p>
                   </div>
                 </div>
               </div>
