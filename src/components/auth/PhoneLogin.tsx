@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useI18n } from "@/lib/i18n";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
 
@@ -26,6 +27,7 @@ export function PhoneLogin() {
   const [error, setError] = useState<string | null>(null);
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
+  const { t } = useI18n();
 
   const phoneDigits = phone.replace(/\D/g, "");
 
@@ -51,7 +53,7 @@ export function PhoneLogin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!json.success) {
-        setError(json.error ?? "Не вдалося надіслати код. Спробуйте ще раз.");
+        setError(json.error ?? t({ uk: "Не вдалося надіслати код. Спробуйте ще раз.", en: "Could not send the code. Please try again." }));
         return;
       }
       if (json.channel === "sms") {
@@ -64,7 +66,7 @@ export function PhoneLogin() {
     } catch (err) {
       const code = (err as { code?: string })?.code ?? "";
       console.error("[phone-login] send failed:", code, err instanceof Error ? err.message : err);
-      setError(`Не вдалося надіслати код${code ? ` (${code})` : ""}. Спробуйте ще раз.`);
+      setError(`${t({ uk: "Не вдалося надіслати код", en: "Could not send the code" })}${code ? ` (${code})` : ""}${t({ uk: ". Спробуйте ще раз.", en: ". Please try again." })}`);
     } finally {
       setLoading(false);
     }
@@ -88,10 +90,10 @@ export function PhoneLogin() {
       if (res?.ok && !res.error) {
         window.location.reload();
       } else {
-        setError("Невірний або протермінований код.");
+        setError(t({ uk: "Невірний або протермінований код.", en: "Invalid or expired code." }));
       }
     } catch {
-      setError("Невірний код. Спробуйте ще раз.");
+      setError(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
     } finally {
       setLoading(false);
     }
@@ -108,7 +110,7 @@ export function PhoneLogin() {
               type="tel"
               inputMode="numeric"
               autoFocus
-              aria-label="Номер телефону"
+              aria-label={t({ uk: "Номер телефону", en: "Phone number" })}
               placeholder="67 123 45 67"
               value={formatUaPhone(phone)}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
@@ -117,7 +119,7 @@ export function PhoneLogin() {
           </div>
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
           <Button type="submit" variant="primary" size="lg" loading={loading} disabled={phoneDigits.length !== 9 || loading} className="w-full rounded-2xl">
-            Отримати код
+            {t({ uk: "Отримати код", en: "Get code" })}
           </Button>
         </form>
       ) : (
@@ -125,8 +127,8 @@ export function PhoneLogin() {
           <p className="flex items-start gap-2 text-sm text-zinc-500 dark:text-zinc-400">
             <Send className={`mt-0.5 h-4 w-4 shrink-0 ${channel === "sms" ? "text-emerald-500" : "text-sky-500"}`} />
             <span>
-              Код надіслано {channel === "sms" ? "по SMS" : "в Telegram"} на{" "}
-              <span className="font-medium text-zinc-700 dark:text-zinc-200">+380 {formatUaPhone(phone)}</span>. Введіть його:
+              {t({ uk: "Код надіслано", en: "Code sent" })} {channel === "sms" ? t({ uk: "по SMS", en: "via SMS" }) : t({ uk: "в Telegram", en: "on Telegram" })} {t({ uk: "на", en: "to" })}{" "}
+              <span className="font-medium text-zinc-700 dark:text-zinc-200">+380 {formatUaPhone(phone)}</span>. {t({ uk: "Введіть його:", en: "Enter it:" })}
             </span>
           </p>
           <input
@@ -134,7 +136,7 @@ export function PhoneLogin() {
             inputMode="numeric"
             autoFocus
             maxLength={6}
-            aria-label="Код підтвердження"
+            aria-label={t({ uk: "Код підтвердження", en: "Confirmation code" })}
             placeholder="••••••"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -142,10 +144,10 @@ export function PhoneLogin() {
           />
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
           <Button type="submit" variant="primary" size="lg" loading={loading} disabled={code.length !== 6 || loading} className="w-full rounded-2xl">
-            Підтвердити
+            {t({ uk: "Підтвердити", en: "Confirm" })}
           </Button>
           <button type="button" onClick={() => { setStep("phone"); setCode(""); setError(null); }} className="w-full text-center text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
-            Змінити номер
+            {t({ uk: "Змінити номер", en: "Change number" })}
           </button>
         </form>
       )}

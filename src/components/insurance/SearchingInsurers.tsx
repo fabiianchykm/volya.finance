@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useI18n } from "@/lib/i18n";
 
 // Динамічний індикатор пошуку: «опитуємо» страховиків по черзі — реальні назви
 // компаній змінюються + смуга завантаження, щоб було відчуття живого порівняння.
@@ -13,6 +14,7 @@ const DEFAULT_INSURERS = [
 ];
 
 export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string[] }) {
+  const { t } = useI18n();
   const [i, setI] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setI((v) => v + 1), 480);
@@ -24,7 +26,7 @@ export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string
       <div className="flex items-center justify-center gap-2.5">
         <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500 dark:border-indigo-800" />
         <p className="flex items-center justify-center gap-x-1.5 text-sm text-zinc-600 dark:text-zinc-300">
-          <span>Порівнюємо тарифи страховиків —</span>
+          <span>{t({ uk: "Порівнюємо тарифи страховиків —", en: "Comparing insurer rates —" })}</span>
           <span className="relative inline-grid">
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span

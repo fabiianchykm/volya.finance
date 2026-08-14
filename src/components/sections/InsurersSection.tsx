@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 import { logoSrc } from "@/lib/logos";
 import { INSURERS_FROZEN } from "@/lib/insurers";
+import { useI18n } from "@/lib/i18n";
 
 const insurers = [
   { name: "ІНГО",         slug: "inho" },
@@ -57,6 +58,7 @@ function InsurerCard({ name, slug, i, inView }: { name: string; slug: string; i:
 }
 
 export function InsurersSection() {
+  const { t } = useI18n();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
@@ -75,13 +77,13 @@ export function InsurersSection() {
         >
           <span className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-zinc-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Партнери
+            {t({ uk: "Партнери", en: "Partners" })}
           </span>
           <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">
-            Провідні страхові компанії України
+            {t({ uk: "Провідні страхові компанії України", en: "Leading insurance companies of Ukraine" })}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-zinc-500 dark:text-zinc-400">
-            Порівнюйте пропозиції 18+ акредитованих страховиків в одному місці — і обирайте найкраще.
+            {t({ uk: "Порівнюйте пропозиції 18+ акредитованих страховиків в одному місці — і обирайте найкраще.", en: "Compare offers from 18+ accredited insurers in one place — and choose the best." })}
           </p>
         </motion.div>
 
@@ -99,7 +101,7 @@ export function InsurersSection() {
               href="/insurers"
               className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-zinc-900 px-6 py-3 text-sm font-semibold text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900 transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              Відгуки та контакти страхових
+              {t({ uk: "Відгуки та контакти страхових", en: "Insurer reviews and contacts" })}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

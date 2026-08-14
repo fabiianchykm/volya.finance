@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Mail } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 // Код приходить латиницею, але клієнт із кириличною розкладкою може ввести
 // візуально ІДЕНТИЧНІ кириличні літери (с, а, о, р, х, е…). Конвертуємо такі
@@ -35,6 +36,7 @@ interface OtpModalProps {
 }
 
 export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, error }: OtpModalProps) {
+  const { t } = useI18n();
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -80,14 +82,14 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Підтвердіть email" size="sm" preventOutsideClose>
+    <Modal open={open} onClose={onClose} title={t({ uk: "Підтвердіть email", en: "Confirm email" })} size="sm" preventOutsideClose>
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/40">
             <Mail className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Ми надіслали код підтвердження на{" "}
+            {t({ uk: "Ми надіслали код підтвердження на", en: "We have sent a confirmation code to" })}{" "}
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">{email}</span>
           </p>
         </div>
@@ -99,7 +101,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
               ref={(el) => { refs.current[i] = el; }}
               type="text"
               inputMode="text"
-              aria-label={`Цифра коду ${i + 1}`}
+              aria-label={t({ uk: `Цифра коду ${i + 1}`, en: `Code digit ${i + 1}` })}
               maxLength={1}
               value={d}
               onChange={(e) => handleChange(i, e.target.value)}
@@ -125,13 +127,13 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           disabled={digits.some((d) => !d) || loading}
           className="w-full"
         >
-          Підтвердити
+          {t({ uk: "Підтвердити", en: "Confirm" })}
         </Button>
 
         <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
-          Не отримали?{" "}
+          {t({ uk: "Не отримали?", en: "Didn't receive it?" })}{" "}
           <button onClick={onResend} className="text-indigo-600 hover:underline font-medium dark:text-indigo-400">
-            Надіслати повторно
+            {t({ uk: "Надіслати повторно", en: "Resend" })}
           </button>
         </p>
       </div>

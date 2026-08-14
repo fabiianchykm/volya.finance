@@ -13,6 +13,7 @@ import type { PetsOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
+import { useI18n } from "@/lib/i18n";
 
 // Анкета оформлення страхування тварин: дані улюбленця + власника → order/create
 // (statusId:5) → OTP → оплата → confirm → поліс. Дати — Unix timestamp (сек).
@@ -26,8 +27,8 @@ export interface PetsCheckoutCtx {
 }
 
 const DOC_TYPES = [
-  { t: 3 as const, label: "ID-карта" },
-  { t: 1 as const, label: "Паспорт (книжечка)" },
+  { t: 3 as const, label: "ID-карта", en: "ID card" },
+  { t: 1 as const, label: "Паспорт (книжечка)", en: "Passport (booklet)" },
 ];
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number }
@@ -39,6 +40,7 @@ function formatUaPhone(digits: string): string {
 const toUnix = (ua: string): number | null => { const d = parseUaDate(ua); return d ? Math.floor(d.getTime() / 1000) : null; };
 
 export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: () => void }) {
+  const { t } = useI18n();
   const [step, setStep] = useState<"form" | "otp" | "payment" | "success">("form");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
@@ -176,13 +178,13 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    if (!f.petAlias.trim()) { setError("Вкажіть кличку тварини"); return; }
-    if (!parseUaDate(f.petBirthDate)) { setError("Вкажіть дату народження тварини"); return; }
-    if (!f.microchipCode.trim()) { setError("Вкажіть номер мікрочіпа"); return; }
-    if (!f.docSerial.trim()) { setError("Вкажіть серію / запис документа"); return; }
-    if (!parseUaDate(f.dateBirth)) { setError("Вкажіть дату народження власника"); return; }
-    if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
-    if (!parseUaDate(f.docDate)) { setError("Вкажіть дату видачі документа"); return; }
+    if (!f.petAlias.trim()) { setError(t({ uk: "Вкажіть кличку тварини", en: "Enter the pet's name" })); return; }
+    if (!parseUaDate(f.petBirthDate)) { setError(t({ uk: "Вкажіть дату народження тварини", en: "Enter the pet's date of birth" })); return; }
+    if (!f.microchipCode.trim()) { setError(t({ uk: "Вкажіть номер мікрочіпа", en: "Enter the microchip number" })); return; }
+    if (!f.docSerial.trim()) { setError(t({ uk: "Вкажіть серію / запис документа", en: "Enter the document series / record" })); return; }
+    if (!parseUaDate(f.dateBirth)) { setError(t({ uk: "Вкажіть дату народження власника", en: "Enter the owner's date of birth" })); return; }
+    if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
+    if (!parseUaDate(f.docDate)) { setError(t({ uk: "Вкажіть дату видачі документа", en: "Enter the document issue date" })); return; }
     setLoading(true);
     setError(null);
     // Зберігаємо профіль власника на пристрої — для автозаповнення наступного разу.
@@ -207,7 +209,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
         body: JSON.stringify({ action: "declare", order }),
       });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Помилка заявлення поліса");
+      if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Policy declaration error" }));
       const id = json.data?.id;
       setOrderId(id);
       await fetch("/api/insurance/otp", {
@@ -224,7 +226,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       });
       setStep("otp");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка");
+      setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -240,11 +242,11 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-      if (!json.valid) throw new Error("Невірний код. Спробуйте ще раз.");
+      if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
       setStep("payment");
       trackEvent("begin_checkout", { product: "pets", currency: "UAH", value: ctx.offer.price });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка");
+      setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -255,11 +257,11 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
   return (
     <div className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
       <div className="mb-5 flex items-center gap-3">
-        <button type="button" aria-label="Назад" onClick={onBack} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
+        <button type="button" aria-label={t({ uk: "Назад", en: "Back" })} onClick={onBack} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h2 className="text-lg font-bold leading-tight text-zinc-900 dark:text-zinc-100">Оформлення страхування тварини</h2>
+          <h2 className="text-lg font-bold leading-tight text-zinc-900 dark:text-zinc-100">{t({ uk: "Оформлення страхування тварини", en: "Pet insurance checkout" })}</h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400"><span className="font-semibold text-zinc-900 dark:text-zinc-100">{formatPrice(ctx.offer.price)}</span></p>
         </div>
       </div>
@@ -269,55 +271,55 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Тварина */}
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Улюбленець</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Улюбленець", en: "Pet" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Кличка" value={f.petAlias} onChange={set("petAlias")} placeholder="Барсик" required />
-            <Input label="Порода" value={f.petBreed} onChange={set("petBreed")} placeholder="напр. Британська" />
+            <Input label={t({ uk: "Кличка", en: "Name" })} value={f.petAlias} onChange={set("petAlias")} placeholder={t({ uk: "Барсик", en: "Rex" })} required />
+            <Input label={t({ uk: "Порода", en: "Breed" })} value={f.petBreed} onChange={set("petBreed")} placeholder={t({ uk: "напр. Британська", en: "e.g. British Shorthair" })} />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Стать</label>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Стать", en: "Sex" })}</label>
               <div className="grid grid-cols-2 gap-2">
-                {([{ v: "male", l: "Хлопчик" }, { v: "female", l: "Дівчинка" }] as const).map((o) => (
+                {([{ v: "male", l: "Хлопчик", en: "Male" }, { v: "female", l: "Дівчинка", en: "Female" }] as const).map((o) => (
                   <button key={o.v} type="button" onClick={() => setF((s) => ({ ...s, petSex: o.v }))}
-                    className={`h-11 rounded-xl border text-sm font-medium transition-colors ${f.petSex === o.v ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"}`}>{o.l}</button>
+                    className={`h-11 rounded-xl border text-sm font-medium transition-colors ${f.petSex === o.v ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"}`}>{t({ uk: o.l, en: o.en })}</button>
                 ))}
               </div>
             </div>
-            <DateInput label="Дата народження тварини" value={f.petBirthDate} onChange={(v) => setF((s) => ({ ...s, petBirthDate: v }))} defaultYear={2020} required />
+            <DateInput label={t({ uk: "Дата народження тварини", en: "Pet's date of birth" })} value={f.petBirthDate} onChange={(v) => setF((s) => ({ ...s, petBirthDate: v }))} defaultYear={2020} required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Ветпаспорт — номер" value={f.vetPassportNumber} onChange={set("vetPassportNumber")} placeholder="UA-1234567" />
-            <Input label="Ким виданий" value={f.vetPassportIssuedBy} onChange={set("vetPassportIssuedBy")} placeholder="Ветклініка" />
+            <Input label={t({ uk: "Ветпаспорт — номер", en: "Vet passport — number" })} value={f.vetPassportNumber} onChange={set("vetPassportNumber")} placeholder="UA-1234567" />
+            <Input label={t({ uk: "Ким виданий", en: "Issued by" })} value={f.vetPassportIssuedBy} onChange={set("vetPassportIssuedBy")} placeholder={t({ uk: "Ветклініка", en: "Vet clinic" })} />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <DateInput label="Дата видачі ветпаспорта" value={f.vetPassportDate} onChange={(v) => setF((s) => ({ ...s, vetPassportDate: v }))} defaultYear={2021} />
-            <Input label="Номер мікрочіпа" value={f.microchipCode} onChange={set("microchipCode")} placeholder="15 цифр" required />
+            <DateInput label={t({ uk: "Дата видачі ветпаспорта", en: "Vet passport issue date" })} value={f.vetPassportDate} onChange={(v) => setF((s) => ({ ...s, vetPassportDate: v }))} defaultYear={2021} />
+            <Input label={t({ uk: "Номер мікрочіпа", en: "Microchip number" })} value={f.microchipCode} onChange={set("microchipCode")} placeholder={t({ uk: "15 цифр", en: "15 digits" })} required />
           </div>
         </div>
 
         {/* Власник */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Власник</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Власник", en: "Owner" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="Прізвище" value={f.surnameUa} onChange={set("surnameUa")} required />
-            <Input label="Ім'я" value={f.nameUa} onChange={set("nameUa")} required />
-            <Input label="По-батькові" value={f.patronymicUa} onChange={set("patronymicUa")} />
+            <Input label={t({ uk: "Прізвище", en: "Surname" })} value={f.surnameUa} onChange={set("surnameUa")} required />
+            <Input label={t({ uk: "Ім'я", en: "First name" })} value={f.nameUa} onChange={set("nameUa")} required />
+            <Input label={t({ uk: "По-батькові", en: "Patronymic" })} value={f.patronymicUa} onChange={set("patronymicUa")} />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Прізвище (латиницею)" value={f.surnameLat} onChange={set("surnameLat")} placeholder="Ivanenko" required />
-            <Input label="Ім'я (латиницею)" value={f.nameLat} onChange={set("nameLat")} placeholder="Ivan" required />
+            <Input label={t({ uk: "Прізвище (латиницею)", en: "Surname (Latin)" })} value={f.surnameLat} onChange={set("surnameLat")} placeholder="Ivanenko" required />
+            <Input label={t({ uk: "Ім'я (латиницею)", en: "First name (Latin)" })} value={f.nameLat} onChange={set("nameLat")} placeholder="Ivan" required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <DateInput label="Дата народження" value={f.dateBirth} onChange={(v) => setF((s) => ({ ...s, dateBirth: v }))} defaultYear={1990} required />
-            <Input label="ІПН" value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" />
+            <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={f.dateBirth} onChange={(v) => setF((s) => ({ ...s, dateBirth: v }))} defaultYear={1990} required />
+            <Input label={t({ uk: "ІПН", en: "Tax ID (INN)" })} value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Телефон</label>
+              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Телефон", en: "Phone" })}</label>
               <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                 <span className="pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
-                <input type="tel" inputMode="numeric" aria-label="Номер телефону" placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
+                <input type="tel" inputMode="numeric" aria-label={t({ uk: "Номер телефону", en: "Phone number" })} placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
                   onChange={(e) => setF((s) => ({ ...s, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
                   required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none" />
               </div>
@@ -328,30 +330,30 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
 
         {/* Документ */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Документ власника</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Документ власника", en: "Owner document" })}</p>
           <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
-            {DOC_TYPES.map(({ t, label }) => (
-              <button key={t} type="button" onClick={() => changeDocType(t)}
-                className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${f.docType === t ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"}`}>{label}</button>
+            {DOC_TYPES.map(({ t: dt, label, en }) => (
+              <button key={dt} type="button" onClick={() => changeDocType(dt)}
+                className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${f.docType === dt ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"}`}>{t({ uk: label, en })}</button>
             ))}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label={f.docType === 3 ? "Запис № (УНЗР)" : "Серія"} value={f.docSerial} onChange={set("docSerial")} required />
-            <Input label="Номер документа" value={f.docNumber} onChange={set("docNumber")} required />
+            <Input label={f.docType === 3 ? t({ uk: "Запис № (УНЗР)", en: "Record No. (UNZR)" }) : t({ uk: "Серія", en: "Series" })} value={f.docSerial} onChange={set("docSerial")} required />
+            <Input label={t({ uk: "Номер документа", en: "Document number" })} value={f.docNumber} onChange={set("docNumber")} required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Ким видано" value={f.docIssuedBy} onChange={set("docIssuedBy")} required />
-            <DateInput label="Дата видачі" value={f.docDate} onChange={(v) => setF((s) => ({ ...s, docDate: v }))} required />
+            <Input label={t({ uk: "Ким видано", en: "Issued by" })} value={f.docIssuedBy} onChange={set("docIssuedBy")} required />
+            <DateInput label={t({ uk: "Дата видачі", en: "Issue date" })} value={f.docDate} onChange={(v) => setF((s) => ({ ...s, docDate: v }))} required />
           </div>
         </div>
 
         {/* Адреса */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Адреса</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Адреса", en: "Address" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Місто</label>
-              <input type="text" aria-label="Пошук міста" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Місто", en: "City" })}</label>
+              <input type="text" aria-label={t({ uk: "Пошук міста", en: "City search" })} value={cityQuery} placeholder={t({ uk: "Почніть вводити місто…", en: "Start typing a city…" })} required spellCheck={false}
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
                 className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
@@ -363,14 +365,14 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
                 </div>
               )}
             </div>
-            <Input label="Вулиця" value={f.street} onChange={set("street")} required />
-            <Input label="Будинок / кв." value={f.house} onChange={set("house")} required />
+            <Input label={t({ uk: "Вулиця", en: "Street" })} value={f.street} onChange={set("street")} required />
+            <Input label={t({ uk: "Будинок / кв.", en: "House / apt." })} value={f.house} onChange={set("house")} required />
           </div>
         </div>
 
         <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto sm:px-8">
-            Продовжити до оплати
+            {t({ uk: "Продовжити до оплати", en: "Continue to payment" })}
           </Button>
         </div>
       </form>

@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { Customer } from "@/types/api";
+import { useI18n } from "@/lib/i18n";
 
 interface CustomerFormModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface CustomerFormModalProps {
 }
 
 export function CustomerFormModal({ open, onClose, onSubmit, loading }: CustomerFormModalProps) {
+  const { t } = useI18n();
   const [form, setForm] = useState({
     name: "",
     surname: "",
@@ -68,30 +70,30 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Дані страхувальника" size="2xl" preventOutsideClose>
+    <Modal open={open} onClose={onClose} title={t({ uk: "Дані страхувальника", en: "Policyholder details" })} size="2xl" preventOutsideClose>
       <form onSubmit={handleSubmit} className="space-y-5">
 
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Особисті дані
+            {t({ uk: "Особисті дані", en: "Personal details" })}
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Input label="Прізвище" value={form.surname} onChange={set("surname")} required />
-            <Input label="Ім'я" value={form.name} onChange={set("name")} required />
-            <Input label="По-батькові" value={form.patronymic} onChange={set("patronymic")} />
+            <Input label={t({ uk: "Прізвище", en: "Surname" })} value={form.surname} onChange={set("surname")} required />
+            <Input label={t({ uk: "Ім'я", en: "First name" })} value={form.name} onChange={set("name")} required />
+            <Input label={t({ uk: "По-батькові", en: "Patronymic" })} value={form.patronymic} onChange={set("patronymic")} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
-            label="Дата народження"
+            label={t({ uk: "Дата народження", en: "Date of birth" })}
             type="date"
             value={form.dateBirth}
             onChange={set("dateBirth")}
             required
           />
           <Input
-            label="ІПН / ЄДРПО"
+            label={t({ uk: "ІПН / ЄДРПО", en: "Tax ID / USREOU" })}
             value={form.identificationCode}
             onChange={set("identificationCode")}
             placeholder="1234567890"
@@ -100,7 +102,7 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
-            label="Телефон"
+            label={t({ uk: "Телефон", en: "Phone" })}
             type="tel"
             value={form.phone}
             onChange={set("phone")}
@@ -119,18 +121,18 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
 
         <div className="border-t border-zinc-100 pt-4 dark:border-zinc-800">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            ID-карта (документ)
+            {t({ uk: "ID-карта (документ)", en: "ID card (document)" })}
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input
-              label="Серія/Запис №"
+              label={t({ uk: "Серія/Запис №", en: "Series / Record no." })}
               value={form.docSerial}
               onChange={set("docSerial")}
               placeholder="19860427-09718"
               required
             />
             <Input
-              label="Номер документа"
+              label={t({ uk: "Номер документа", en: "Document number" })}
               value={form.docNumber}
               onChange={set("docNumber")}
               required
@@ -138,13 +140,13 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
           </div>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input
-              label="Ким видано (код органу)"
+              label={t({ uk: "Ким видано (код органу)", en: "Issued by (authority code)" })}
               value={form.docIssuedBy}
               onChange={set("docIssuedBy")}
               required
             />
             <Input
-              label="Дата видачі"
+              label={t({ uk: "Дата видачі", en: "Date of issue" })}
               type="date"
               value={form.docDate}
               onChange={set("docDate")}
@@ -155,25 +157,25 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
 
         <div className="border-t border-zinc-100 pt-4 dark:border-zinc-800">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Адреса проживання
+            {t({ uk: "Адреса проживання", en: "Residential address" })}
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="sm:col-span-2">
-              <Input label="Вулиця" value={form.street} onChange={set("street")} required />
+              <Input label={t({ uk: "Вулиця", en: "Street" })} value={form.street} onChange={set("street")} required />
             </div>
-            <Input label="Будинок / кв." value={form.house} onChange={set("house")} required />
+            <Input label={t({ uk: "Будинок / кв.", en: "House / apt." })} value={form.house} onChange={set("house")} required />
           </div>
           <div className="mt-3">
-            <Input label="Місто" value={form.city} onChange={set("city")} placeholder="Київ" />
+            <Input label={t({ uk: "Місто", en: "City" })} value={form.city} onChange={set("city")} placeholder={t({ uk: "Київ", en: "Kyiv" })} />
           </div>
         </div>
 
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="outline" size="md" onClick={onClose} className="flex-1">
-            Скасувати
+            {t({ uk: "Скасувати", en: "Cancel" })}
           </Button>
           <Button type="submit" variant="primary" size="md" loading={loading} className="flex-1">
-            Продовжити
+            {t({ uk: "Продовжити", en: "Continue" })}
           </Button>
         </div>
       </form>

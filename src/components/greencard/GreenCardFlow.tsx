@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Globe, FileText, CreditCard, Download } from "lucide-react";
-import { HeroSteps, type HeroStep } from "@/components/sections/HeroSteps";
+import { HeroSteps } from "@/components/sections/HeroSteps";
+import { useI18n } from "@/lib/i18n";
 
-const GC_STEPS: HeroStep[] = [
-  { icon: Globe, label: "Країна та авто" },
-  { icon: FileText, label: "Пропозиції" },
-  { icon: CreditCard, label: "Оплата" },
-  { icon: Download, label: "Готовий поліс" },
+const GC_STEPS = [
+  { icon: Globe, label: "Країна та авто", en: "Country & car" },
+  { icon: FileText, label: "Пропозиції", en: "Offers" },
+  { icon: CreditCard, label: "Оплата", en: "Payment" },
+  { icon: Download, label: "Готовий поліс", en: "Ready policy" },
 ];
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
@@ -27,8 +28,8 @@ import { trackEvent } from "@/lib/analytics";
 // лоадером перебору страхових і картками пропозицій.
 
 const TERRITORIES = [
-  { value: "60", label: "Європа" },
-  { value: "117", label: "Молдова" },
+  { value: "60", label: "Європа", en: "Europe" },
+  { value: "117", label: "Молдова", en: "Moldova" },
 ];
 
 // Страхові Зеленої карти — для лоадера (перебір назв).
@@ -36,26 +37,27 @@ const GC_INSURERS = ["УСГ", "ВУСО", "ТАС", "УТІКО", "ОРАНТА
 
 // periodOption Зеленої карти дискретний: 15/21 = дні, 1..12 = місяці. Користувач
 // обирає діапазон дат, а ми підбираємо НАЙМЕНШИЙ період ЗК, що покриває поїздку.
-function periodFromDays(days: number): { value: number; label: string } {
-  if (days <= 15) return { value: 15, label: "15 днів" };
-  if (days <= 21) return { value: 21, label: "21 день" };
+function periodFromDays(days: number): { value: number; label: { uk: string; en: string } } {
+  if (days <= 15) return { value: 15, label: { uk: "15 днів", en: "15 days" } };
+  if (days <= 21) return { value: 21, label: { uk: "21 день", en: "21 days" } };
   const m = Math.min(12, Math.ceil(days / 30));
-  return { value: m, label: `${m} ${m === 1 ? "місяць" : m < 5 ? "місяці" : "місяців"}` };
+  return { value: m, label: { uk: `${m} ${m === 1 ? "місяць" : m < 5 ? "місяці" : "місяців"}`, en: `${m} ${m === 1 ? "month" : "months"}` } };
 }
 
 // Для зеленої карти достатньо КАТЕГОРІЇ авто (ціна залежить від неї), а не номера.
 const CAR_TYPES = [
-  { value: "B", label: "Легковий автомобіль" },
-  { value: "C", label: "Вантажний автомобіль" },
-  { value: "D", label: "Автобус" },
-  { value: "A", label: "Мотоцикл / мопед" },
-  { value: "E", label: "Причіп" },
+  { value: "B", label: "Легковий автомобіль", en: "Car" },
+  { value: "C", label: "Вантажний автомобіль", en: "Truck" },
+  { value: "D", label: "Автобус", en: "Bus" },
+  { value: "A", label: "Мотоцикл / мопед", en: "Motorcycle / moped" },
+  { value: "E", label: "Причіп", en: "Trailer" },
 ];
 
 const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
 
 export function GreenCardFlow() {
+  const { t } = useI18n();
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
 
   // Для ЦІНИ достатньо типу авто; номер/марку/модель збираємо на кроці оформлення.
@@ -77,8 +79,10 @@ export function GreenCardFlow() {
   const startD = parseUaDate(startDate);
   const endD = parseUaDate(endDate);
   const period = startD && endD ? periodFromDays(daysBetween(startD, endD)) : null;
-  const territoryLabel = TERRITORIES.find((t) => t.value === territory)?.label ?? "";
-  const carTypeLabel = CAR_TYPES.find((c) => c.value === carType)?.label ?? "";
+  const territoryDef = TERRITORIES.find((x) => x.value === territory);
+  const territoryLabel = territoryDef ? t({ uk: territoryDef.label, en: territoryDef.en }) : "";
+  const carTypeDef = CAR_TYPES.find((x) => x.value === carType);
+  const carTypeLabel = carTypeDef ? t({ uk: carTypeDef.label, en: carTypeDef.en }) : "";
 
   // Розрахунок за явними параметрами (щоб можна було відновити з URL). Несенситивні
   // параметри (тип авто, територія, дати) пишемо в URL — reload одразу дасть пропозиції.
@@ -108,12 +112,12 @@ export function GreenCardFlow() {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.success) throw new Error(data?.error ?? "Не вдалося отримати пропозиції");
+      if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }));
       const list: GreenCardOffer[] = (data.offers ?? []).filter((o: GreenCardOffer) => o && o.price > 0);
       list.sort((a, b) => a.price - b.price);
       setOffers(list);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не вдалося отримати пропозиції.");
+      setError(err instanceof Error ? err.message : t({ uk: "Не вдалося отримати пропозиції.", en: "Could not fetch offers." }));
     } finally {
       setOffersLoading(false);
     }
@@ -161,7 +165,7 @@ export function GreenCardFlow() {
                 loading={offersLoading}
                 error={error}
                 vehicle={null}
-                summary={[carTypeLabel, territoryLabel, period?.label].filter(Boolean).join(" · ")}
+                summary={[carTypeLabel, territoryLabel, period ? t(period.label) : ""].filter(Boolean).join(" · ")}
                 onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
@@ -188,46 +192,46 @@ export function GreenCardFlow() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
             <div className="space-y-4">
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-                Зелена карта
+                {t({ uk: "Зелена карта", en: "Green Card" })}
                 <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-                  страховка для виїзду за кордон
+                  {t({ uk: "страховка для виїзду за кордон", en: "insurance for travel abroad" })}
                 </span>
               </h1>
-              <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть тип авто, напрямок і дати — і побачите ціни страхових.</p>
+              <p className="mx-auto max-w-xl text-base text-zinc-300">{t({ uk: "Оберіть тип авто, напрямок і дати — і побачите ціни страхових.", en: "Choose your vehicle type, destination and dates — and see insurers' prices." })}</p>
             </div>
 
-            {step === "params" && <HeroSteps steps={GC_STEPS} />}
+            {step === "params" && <HeroSteps steps={GC_STEPS.map((s) => ({ icon: s.icon, label: t({ uk: s.label, en: s.en }) }))} />}
 
             {step === "params" && (
               <form onSubmit={calc} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Car className="h-3.5 w-3.5" /> Тип авто</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Car className="h-3.5 w-3.5" /> {t({ uk: "Тип авто", en: "Vehicle type" })}</label>
                     <select value={carType} onChange={(e) => setCarType(e.target.value)} className={selectClass}>
-                      {CAR_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      {CAR_TYPES.map((c) => <option key={c.value} value={c.value}>{t({ uk: c.label, en: c.en })}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><MapPin className="h-3.5 w-3.5" /> Куди прямуєте?</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><MapPin className="h-3.5 w-3.5" /> {t({ uk: "Куди прямуєте?", en: "Where are you heading?" })}</label>
                     <select value={territory} onChange={(e) => setTerritory(e.target.value)} className={selectClass}>
-                      {TERRITORIES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      {TERRITORIES.map((z) => <option key={z.value} value={z.value}>{t({ uk: z.label, en: z.en })}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Дати поїздки</label>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Дати поїздки", en: "Trip dates" })}</label>
                     <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
                   </div>
                 </div>
 
                 {period && (
-                  <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Поліс Зелена карта: <span className="font-semibold text-zinc-700 dark:text-zinc-200">{period.label}</span> <span className="text-zinc-400 dark:text-zinc-500">(мінімальний термін — 15 днів)</span></p>
+                  <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Поліс Зелена карта: ", en: "Green Card policy: " })}<span className="font-semibold text-zinc-700 dark:text-zinc-200">{t(period.label)}</span> <span className="text-zinc-400 dark:text-zinc-500">{t({ uk: "(мінімальний термін — 15 днів)", en: "(minimum term — 15 days)" })}</span></p>
                 )}
 
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
                 <Button type="submit" variant="primary" size="lg" disabled={!period} className="mt-5 w-full">
                   <span className="flex items-center gap-2">
-                    Розрахувати вартість <ArrowRight className="h-5 w-5" />
+                    {t({ uk: "Розрахувати вартість", en: "Calculate cost" })} <ArrowRight className="h-5 w-5" />
                   </span>
                 </Button>
               </form>
@@ -251,9 +255,10 @@ function GreenCardOffers({
   onBack: () => void;
   onSelect: (o: GreenCardOffer) => void;
 }) {
+  const { t } = useI18n();
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
   const sorted = [...offers].sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
-  const auto = vehicle ? [vehicle.mark, vehicle.model].filter(Boolean).join(" ") + (vehicle.year ? `, ${vehicle.year}` : "") : "Авто";
+  const auto = vehicle ? [vehicle.mark, vehicle.model].filter(Boolean).join(" ") + (vehicle.year ? `, ${vehicle.year}` : "") : t({ uk: "Авто", en: "Vehicle" });
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -262,11 +267,11 @@ function GreenCardOffers({
       {/* Картка-підсумок */}
       <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">
         <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-          <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
+          <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label={t({ uk: "Змінити параметри", en: "Change parameters" })}>
             <Home className="h-3.5 w-3.5" />
           </button>
           <ChevronRight className="h-3 w-3" />
-          <span className="font-medium text-zinc-600 dark:text-zinc-300">Зелена карта</span>
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">{t({ uk: "Зелена карта", en: "Green Card" })}</span>
         </div>
         <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>
           {auto}{summary ? `, ${summary}` : ""}
@@ -276,12 +281,12 @@ function GreenCardOffers({
       {/* Сортування */}
       {!loading && offers.length > 0 && (
         <div className="mb-5 flex items-center justify-end gap-3">
-          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Сортувати</span>
+          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
           <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             {([
-              { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
-              { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
-            ] as const).map(({ k, label, Icon }) => (
+              { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
+              { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
+            ] as const).map(({ k, label, en, Icon }) => (
               <button
                 key={k}
                 type="button"
@@ -295,7 +300,7 @@ function GreenCardOffers({
                     className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
                 )}
                 <Icon className="relative z-10 h-3.5 w-3.5" />
-                <span className="relative z-10">{label}</span>
+                <span className="relative z-10">{t({ uk: label, en })}</span>
               </button>
             ))}
           </div>
@@ -309,11 +314,11 @@ function GreenCardOffers({
         </>
       ) : error || offers.length === 0 ? (
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }) : t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-            {error ? "Спробуйте ще раз або змініть параметри поїздки." : "Спробуйте інший термін чи територію."}
+            {error ? t({ uk: "Спробуйте ще раз або змініть параметри поїздки.", en: "Try again or change your trip parameters." }) : t({ uk: "Спробуйте інший термін чи територію.", en: "Try a different term or territory." })}
           </p>
-          <Button variant="secondary" size="md" onClick={onBack} className="mt-5">Змінити параметри</Button>
+          <Button variant="secondary" size="md" onClick={onBack} className="mt-5">{t({ uk: "Змінити параметри", en: "Change parameters" })}</Button>
         </div>
       ) : (
         <div className="space-y-3">

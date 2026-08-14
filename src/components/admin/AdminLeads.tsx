@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Trash2, Loader2, Phone, Mail } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 type LeadStatus = "new" | "called" | "converted" | "lost";
 
@@ -19,11 +20,11 @@ interface Lead {
   createdAt: string;
 }
 
-const STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
-  new:       { label: "Новий",       cls: "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900" },
-  called:    { label: "Передзвонив", cls: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900" },
-  converted: { label: "Оформив",     cls: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900" },
-  lost:      { label: "Втрачений",   cls: "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700" },
+const STATUS_META: Record<LeadStatus, { label: string; en: string; cls: string }> = {
+  new:       { label: "Новий",       en: "New",       cls: "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900" },
+  called:    { label: "Передзвонив", en: "Called",    cls: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900" },
+  converted: { label: "Оформив",     en: "Converted", cls: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900" },
+  lost:      { label: "Втрачений",   en: "Lost",      cls: "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700" },
 };
 
 export function AdminLeads() {
@@ -31,6 +32,7 @@ export function AdminLeads() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     (async () => {
@@ -38,13 +40,14 @@ export function AdminLeads() {
         const res = await fetch("/api/admin/leads");
         const json = await res.json();
         if (json.success) setLeads(json.leads);
-        else setError(json.error ?? "Помилка");
+        else setError(json.error ?? t({ uk: "Помилка", en: "Error" }));
       } catch {
-        setError("Помилка завантаження");
+        setError(t({ uk: "Помилка завантаження", en: "Loading error" }));
       } finally {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setStatus = async (id: number, status: LeadStatus) => {
@@ -59,7 +62,7 @@ export function AdminLeads() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Видалити цей лід?")) return;
+    if (!confirm(t({ uk: "Видалити цей лід?", en: "Delete this lead?" }))) return;
     setDeleting(id);
     try {
       const res = await fetch(`/api/admin/leads?id=${id}`, { method: "DELETE" });
@@ -70,15 +73,15 @@ export function AdminLeads() {
     }
   };
 
-  if (loading) return <div className="flex items-center gap-2 text-sm text-zinc-400 dark:text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> Завантаження…</div>;
+  if (loading) return <div className="flex items-center gap-2 text-sm text-zinc-400 dark:text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> {t({ uk: "Завантаження…", en: "Loading…" })}</div>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (leads.length === 0) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Лідів ще немає.</p>;
+  if (leads.length === 0) return <p className="text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Лідів ще немає.", en: "No leads yet." })}</p>;
 
   const active = leads.filter((l) => l.status === "new").length;
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Усього: {leads.length} · нових: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{active}</span></p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Усього:", en: "Total:" })} {leads.length} · {t({ uk: "нових:", en: "new:" })} <span className="font-semibold text-indigo-600 dark:text-indigo-400">{active}</span></p>
       {leads.map((l) => (
         <div key={l.id} className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -119,7 +122,7 @@ export function AdminLeads() {
                     l.status === st ? STATUS_META[st].cls : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200"
                   }`}
                 >
-                  {STATUS_META[st].label}
+                  {t({ uk: STATUS_META[st].label, en: STATUS_META[st].en })}
                 </button>
               ))}
             </div>
@@ -130,7 +133,7 @@ export function AdminLeads() {
               className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
             >
               {deleting === l.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-              Видалити
+              {t({ uk: "Видалити", en: "Delete" })}
             </button>
           </div>
         </div>

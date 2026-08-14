@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/Button";
 import { HeroSteps } from "@/components/sections/HeroSteps";
 import { formatPlate } from "@/lib/utils";
 import { logoSrc } from "@/lib/logos";
+import { useI18n } from "@/lib/i18n";
 
 const heroSteps = [
-  { icon: Search, label: "Номер авто" },
-  { icon: FileText, label: "Пропозиції" },
-  { icon: CreditCard, label: "Оплата" },
-  { icon: Download, label: "Готовий поліс" },
+  { icon: Search, label: { uk: "Номер авто", en: "Car number" } },
+  { icon: FileText, label: { uk: "Пропозиції", en: "Offers" } },
+  { icon: CreditCard, label: { uk: "Оплата", en: "Payment" } },
+  { icon: Download, label: { uk: "Готовий поліс", en: "Ready policy" } },
 ];
 
 const insurersList = [
@@ -56,7 +57,9 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onSearch, loading }: HeroSectionProps) {
+  const { t } = useI18n();
   const [plate, setPlate] = useState("");
+  const steps = heroSteps.map(({ icon, label }) => ({ icon, label: t(label) }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,13 +88,13 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
           className="space-y-10 sm:space-y-12"
         >
           <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-            Автоцивілка
+            {t({ uk: "Автоцивілка", en: "Car insurance (OSAGO)" })}
             <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-              швидко та вигідно
+              {t({ uk: "швидко та вигідно", en: "fast and affordable" })}
             </span>
           </h1>
 
-          <HeroSteps steps={heroSteps} />
+          <HeroSteps steps={steps} />
 
           <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8 w-full pt-4">
             <div className="relative w-full flex justify-center">
@@ -116,7 +119,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
                       setPlate(formatted);
                     }}
                     placeholder="AA 1234 BB"
-                    aria-label="Номер авто"
+                    aria-label={t({ uk: "Номер авто", en: "Car number" })}
                     maxLength={11}
                     autoComplete="off"
                     spellCheck={false}
@@ -145,7 +148,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
               "
             >
               <span className="relative z-10 flex items-center gap-2.5">
-                Розрахувати вартість
+                {t({ uk: "Розрахувати вартість", en: "Calculate price" })}
                 <ArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
               </span>
             </Button>

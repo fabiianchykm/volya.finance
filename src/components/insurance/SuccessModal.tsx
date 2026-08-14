@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle, Download, ExternalLink } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface SuccessModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface SuccessModalProps {
 }
 
 export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/api/insurance/contract" }: SuccessModalProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [contract, setContract] = useState<{ mtsbuLink: string; contract: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
         window.open(json.data.contract, "_blank");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Помилка завантаження");
+      setError(e instanceof Error ? e.message : t({ uk: "Помилка завантаження", en: "Download error" }));
     } finally {
       setLoading(false);
     }
@@ -48,9 +50,9 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Поліс оформлено!</h2>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Поліс оформлено!", en: "Policy issued!" })}</h2>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Договір надіслано на вашу email-адресу
+            {t({ uk: "Договір надіслано на вашу email-адресу", en: "The contract has been sent to your email address" })}
           </p>
         </div>
 
@@ -63,14 +65,14 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
             onClick={handleDownload}
           >
             <Download className="h-4 w-4" />
-            Завантажити договір (PDF)
+            {t({ uk: "Завантажити договір (PDF)", en: "Download contract (PDF)" })}
           </Button>
 
           {contract?.mtsbuLink && (
             <a href={contract.mtsbuLink} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="md" className="w-full">
                 <ExternalLink className="h-4 w-4" />
-                Перевірити в реєстрі МТСБУ
+                {t({ uk: "Перевірити в реєстрі МТСБУ", en: "Check in the MTIBU registry" })}
               </Button>
             </a>
           )}
@@ -82,7 +84,7 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
           onClick={onClose}
           className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors dark:text-zinc-500 dark:hover:text-zinc-300"
         >
-          Закрити
+          {t({ uk: "Закрити", en: "Close" })}
         </button>
       </div>
     </Modal>

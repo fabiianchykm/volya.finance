@@ -9,6 +9,7 @@ import { KASKO_PRODUCTS, type KaskoProduct } from "./products";
 import { Button } from "@/components/ui/Button";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
+import { useI18n } from "@/lib/i18n";
 
 const VehicleConfirmModal = dynamic(
   () => import("@/components/insurance/VehicleConfirmModal").then((m) => m.VehicleConfirmModal),
@@ -19,6 +20,7 @@ type Step = "hero" | "success";
 
 export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
   const config = KASKO_PRODUCTS[product];
+  const { t } = useI18n();
   const [step, setStep] = useState<Step>("hero");
   const [plate, setPlate] = useState("");
   const [vehicle, setVehicle] = useState<VehicleData | null>(null);
@@ -56,11 +58,11 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
             : { cityId: 1, cityName: "м. Київ", zone: 1 }),
         });
       } else {
-        setLookupError(json.error ?? "Авто не знайдено в реєстрі");
+        setLookupError(json.error ?? t({ uk: "Авто не знайдено в реєстрі", en: "Vehicle not found in the registry" }));
         setVehicle(null);
       }
     } catch {
-      setLookupError("Помилка з'єднання з реєстром");
+      setLookupError(t({ uk: "Помилка з'єднання з реєстром", en: "Connection error with the registry" }));
       setVehicle(null);
     } finally {
       setPlate(p);
@@ -101,12 +103,12 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
         }),
       });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Не вдалося надіслати заявку");
+      if (!json.success) throw new Error(json.error ?? t({ uk: "Не вдалося надіслати заявку", en: "Failed to submit the request" }));
       trackEvent("generate_lead", { form: "kasko", product });
       setShowPhoneModal(false);
       setStep("success");
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Помилка надсилання");
+      setSubmitError(e instanceof Error ? e.message : t({ uk: "Помилка надсилання", en: "Submission error" }));
     } finally {
       setSubmitting(false);
     }
@@ -119,10 +121,10 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40">
             <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Заявку прийнято!</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Заявку прийнято!", en: "Request received!" })}</h1>
           <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-            Менеджер передзвонить вам найближчим часом і підбере найкращі умови {config.label}
-            {" "}для {vehicle?.mark ? `${vehicle.mark} ${vehicle.model}` : "вашого авто"}.
+            {t({ uk: "Менеджер передзвонить вам найближчим часом і підбере найкращі умови", en: "A manager will call you back shortly and will select the best" })} {config.label}
+            {" "}{t({ uk: "для", en: "terms for" })} {vehicle?.mark ? `${vehicle.mark} ${vehicle.model}` : t({ uk: "вашого авто", en: "your car" })}.
           </p>
           <Button
             variant="outline"
@@ -135,7 +137,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
             }}
           >
             <Phone className="h-4 w-4" />
-            Подати ще одну заявку
+            {t({ uk: "Подати ще одну заявку", en: "Submit another request" })}
           </Button>
         </div>
       </section>

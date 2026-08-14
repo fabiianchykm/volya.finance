@@ -13,6 +13,7 @@ import type { TourismOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
+import { useI18n } from "@/lib/i18n";
 
 // Анкета оформлення туристичного (аналог ЗК): дані страхувальника + туристів →
 // declare (order/create save) → OTP → оплата → confirm (nextFinal) → поліс.
@@ -30,8 +31,8 @@ export interface TourismCheckoutCtx {
 }
 
 const DOC_TYPES = [
-  { t: 3 as const, label: "ID-карта" },
-  { t: 1 as const, label: "Паспорт (книжечка)" },
+  { t: 3 as const, label: "ID-карта", en: "ID card" },
+  { t: 1 as const, label: "Паспорт (книжечка)", en: "Passport (booklet)" },
 ];
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number }
@@ -54,6 +55,7 @@ const emptyTourist = (dob = ""): TouristForm => ({
 });
 
 export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBack: () => void }) {
+  const { t } = useI18n();
   const [step, setStep] = useState<"form" | "otp" | "payment" | "success">("form");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
@@ -211,9 +213,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
-    if (tourists.some((t) => !parseUaDate(t.dateBirth))) { setError("Вкажіть коректні дати народження туристів"); return; }
-    if (!parseUaDate(c.docDate)) { setError("Вкажіть дату видачі документа"); return; }
+    if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
+    if (tourists.some((tr) => !parseUaDate(tr.dateBirth))) { setError(t({ uk: "Вкажіть коректні дати народження туристів", en: "Enter valid dates of birth for the travellers" })); return; }
+    if (!parseUaDate(c.docDate)) { setError(t({ uk: "Вкажіть дату видачі документа", en: "Enter the document issue date" })); return; }
     setLoading(true);
     setError(null);
     // Зберігаємо профіль (контакт/документ/адреса/місто + латиниця й закордонний паспорт
@@ -239,7 +241,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         body: JSON.stringify({ action: "declare", order }),
       });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Помилка заявлення поліса");
+      if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Policy declaration error" }));
       const id = json.data?.id;
       setOrderId(id);
       await fetch("/api/insurance/otp", {
@@ -256,7 +258,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       });
       setStep("otp");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка");
+      setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -272,11 +274,11 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-      if (!json.valid) throw new Error("Невірний код. Спробуйте ще раз.");
+      if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
       setStep("payment");
       trackEvent("begin_checkout", { product: "tourism", currency: "UAH", value: ctx.offer.price });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка");
+      setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -288,12 +290,12 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   return (
     <div className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
       <div className="mb-5 flex items-center gap-3">
-        <button type="button" aria-label="Назад" onClick={onBack} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
+        <button type="button" aria-label={t({ uk: "Назад", en: "Back" })} onClick={onBack} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-lg font-bold leading-tight text-zinc-900 dark:text-zinc-100">Оформлення туристичного</h2>
+            <h2 className="text-lg font-bold leading-tight text-zinc-900 dark:text-zinc-100">{t({ uk: "Оформлення туристичного", en: "Travel insurance checkout" })}</h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               {formatCompanyName(publicName).toUpperCase()} · <span className="font-semibold text-zinc-900 dark:text-zinc-100">{formatPrice(o.price)}</span>
             </p>
@@ -305,39 +307,39 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Туристи */}
-        {tourists.map((t, i) => (
+        {tourists.map((t2, i) => (
           <div key={i} className={i > 0 ? "border-t border-zinc-100 dark:border-zinc-800 pt-5" : ""}>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              {i === 0 ? "Страхувальник (турист 1)" : `Турист ${i + 1}`}
+              {i === 0 ? t({ uk: "Страхувальник (турист 1)", en: "Policyholder (traveller 1)" }) : t({ uk: `Турист ${i + 1}`, en: `Traveller ${i + 1}` })}
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="Прізвище (латиницею)" value={t.surnameLat} onChange={(e) => setT(i, "surnameLat", e.target.value)} placeholder="як у закордонному паспорті" required />
-              <Input label="Ім'я (латиницею)" value={t.nameLat} onChange={(e) => setT(i, "nameLat", e.target.value)} placeholder="як у закордонному паспорті" required />
+              <Input label={t({ uk: "Прізвище (латиницею)", en: "Surname (Latin)" })} value={t2.surnameLat} onChange={(e) => setT(i, "surnameLat", e.target.value)} placeholder={t({ uk: "як у закордонному паспорті", en: "as in the international passport" })} required />
+              <Input label={t({ uk: "Ім'я (латиницею)", en: "First name (Latin)" })} value={t2.nameLat} onChange={(e) => setT(i, "nameLat", e.target.value)} placeholder={t({ uk: "як у закордонному паспорті", en: "as in the international passport" })} required />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <DateInput label="Дата народження" value={t.dateBirth} onChange={(v) => setT(i, "dateBirth", v)} defaultYear={1990} required />
-              <Input label="ІПН" value={t.identificationCode} onChange={(e) => setT(i, "identificationCode", e.target.value)} placeholder="1234567890" />
+              <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={t2.dateBirth} onChange={(v) => setT(i, "dateBirth", v)} defaultYear={1990} required />
+              <Input label={t({ uk: "ІПН", en: "Tax ID (INN)" })} value={t2.identificationCode} onChange={(e) => setT(i, "identificationCode", e.target.value)} placeholder="1234567890" />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label="Закордонний паспорт — серія / №" value={t.passportNumber} onChange={(e) => setT(i, "passportNumber", e.target.value)} placeholder="FA123456" />
-              <Input label="Ким виданий" value={t.passportIssuedBy} onChange={(e) => setT(i, "passportIssuedBy", e.target.value)} placeholder="напр. 1234" />
+              <Input label={t({ uk: "Закордонний паспорт — серія / №", en: "International passport — series / no." })} value={t2.passportNumber} onChange={(e) => setT(i, "passportNumber", e.target.value)} placeholder="FA123456" />
+              <Input label={t({ uk: "Ким виданий", en: "Issued by" })} value={t2.passportIssuedBy} onChange={(e) => setT(i, "passportIssuedBy", e.target.value)} placeholder={t({ uk: "напр. 1234", en: "e.g. 1234" })} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <DateInput label="Дата видачі паспорта" value={t.passportDate} onChange={(v) => setT(i, "passportDate", v)} defaultYear={2015} />
-              <DateInput label="Паспорт дійсний до" value={t.passportEndDate} onChange={(v) => setT(i, "passportEndDate", v)} minDate={new Date()} maxDate={new Date(new Date().getFullYear() + 15, 11, 31)} defaultYear={new Date().getFullYear() + 5} />
+              <DateInput label={t({ uk: "Дата видачі паспорта", en: "Passport issue date" })} value={t2.passportDate} onChange={(v) => setT(i, "passportDate", v)} defaultYear={2015} />
+              <DateInput label={t({ uk: "Паспорт дійсний до", en: "Passport valid until" })} value={t2.passportEndDate} onChange={(v) => setT(i, "passportEndDate", v)} minDate={new Date()} maxDate={new Date(new Date().getFullYear() + 15, 11, 31)} defaultYear={new Date().getFullYear() + 5} />
             </div>
           </div>
         ))}
 
         {/* Контакти */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Контакти страхувальника</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Контакти страхувальника", en: "Policyholder contacts" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Телефон</label>
+              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Телефон", en: "Phone" })}</label>
               <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                 <span className="pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
-                <input type="tel" inputMode="numeric" aria-label="Номер телефону" placeholder="67 123 45 67" value={formatUaPhone(c.phone)}
+                <input type="tel" inputMode="numeric" aria-label={t({ uk: "Номер телефону", en: "Phone number" })} placeholder="67 123 45 67" value={formatUaPhone(c.phone)}
                   onChange={(e) => setC((s) => ({ ...s, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
                   required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none" />
               </div>
@@ -348,32 +350,32 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
         {/* Документ страхувальника */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Документ страхувальника</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Документ страхувальника", en: "Policyholder document" })}</p>
           <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
-            {DOC_TYPES.map(({ t, label }) => (
-              <button key={t} type="button" onClick={() => changeDocType(t)}
+            {DOC_TYPES.map(({ t: dt, label, en }) => (
+              <button key={dt} type="button" onClick={() => changeDocType(dt)}
                 className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                  c.docType === t ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
-                }`}>{label}</button>
+                  c.docType === dt ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
+                }`}>{t({ uk: label, en })}</button>
             ))}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label={c.docType === 3 ? "Запис № (УНЗР)" : "Серія"} value={c.docSerial} onChange={setCf("docSerial")} required={c.docType === 1} />
-            <Input label="Номер документа" value={c.docNumber} onChange={setCf("docNumber")} required />
+            <Input label={c.docType === 3 ? t({ uk: "Запис № (УНЗР)", en: "Record No. (UNZR)" }) : t({ uk: "Серія", en: "Series" })} value={c.docSerial} onChange={setCf("docSerial")} required={c.docType === 1} />
+            <Input label={t({ uk: "Номер документа", en: "Document number" })} value={c.docNumber} onChange={setCf("docNumber")} required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Ким видано" value={c.docIssuedBy} onChange={setCf("docIssuedBy")} required />
-            <DateInput label="Дата видачі" value={c.docDate} onChange={(v) => setC((s) => ({ ...s, docDate: v }))} required />
+            <Input label={t({ uk: "Ким видано", en: "Issued by" })} value={c.docIssuedBy} onChange={setCf("docIssuedBy")} required />
+            <DateInput label={t({ uk: "Дата видачі", en: "Issue date" })} value={c.docDate} onChange={(v) => setC((s) => ({ ...s, docDate: v }))} required />
           </div>
         </div>
 
         {/* Адреса */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Адреса проживання</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Адреса проживання", en: "Residential address" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Місто</label>
-              <input type="text" aria-label="Пошук міста" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Місто", en: "City" })}</label>
+              <input type="text" aria-label={t({ uk: "Пошук міста", en: "City search" })} value={cityQuery} placeholder={t({ uk: "Почніть вводити місто…", en: "Start typing a city…" })} required spellCheck={false}
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
                 className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
@@ -385,14 +387,14 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
                 </div>
               )}
             </div>
-            <Input label="Вулиця" value={c.street} onChange={setCf("street")} required />
-            <Input label="Будинок / кв." value={c.house} onChange={setCf("house")} required />
+            <Input label={t({ uk: "Вулиця", en: "Street" })} value={c.street} onChange={setCf("street")} required />
+            <Input label={t({ uk: "Будинок / кв.", en: "House / apt." })} value={c.house} onChange={setCf("house")} required />
           </div>
         </div>
 
         <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto sm:px-8">
-            Продовжити до оплати
+            {t({ uk: "Продовжити до оплати", en: "Continue to payment" })}
           </Button>
         </div>
       </form>

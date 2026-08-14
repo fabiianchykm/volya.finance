@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { PhoneCall, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { trackEvent } from "@/lib/analytics";
+import { useI18n } from "@/lib/i18n";
 
 // Форматує введені цифри у вигляд "67 123 45 67" (без коду країни)
 function formatPhone(digits: string): string {
@@ -14,6 +15,7 @@ function formatPhone(digits: string): string {
 }
 
 export function CTASection() {
+  const { t } = useI18n();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [phone, setPhone] = useState("");
@@ -37,12 +39,12 @@ export function CTASection() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
-        throw new Error(json.error ?? "Не вдалося надіслати заявку. Спробуйте ще раз.");
+        throw new Error(json.error ?? t({ uk: "Не вдалося надіслати заявку. Спробуйте ще раз.", en: "Could not submit your request. Please try again." }));
       }
       trackEvent("generate_lead", { form: "cta", source: "home-consultant" });
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Сталася помилка. Спробуйте ще раз.");
+      setError(err instanceof Error ? err.message : t({ uk: "Сталася помилка. Спробуйте ще раз.", en: "Something went wrong. Please try again." }));
     } finally {
       setSubmitting(false);
     }
@@ -82,19 +84,18 @@ export function CTASection() {
                   <div className="mb-6 flex justify-center lg:justify-start">
                     <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-indigo-100 backdrop-blur-sm ring-1 ring-white/15">
                       <PhoneCall className="h-4 w-4" />
-                      Безкоштовна консультація
+                      {t({ uk: "Безкоштовна консультація", en: "Free consultation" })}
                     </span>
                   </div>
 
                   <h2 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
-                    Оформити з{" "}
+                    {t({ uk: "Оформити з", en: "Sign up with" })}{" "}
                     <span className="bg-gradient-to-r from-indigo-200 to-violet-200 bg-clip-text text-transparent">
-                      консультантом
+                      {t({ uk: "консультантом", en: "a consultant" })}
                     </span>
                   </h2>
                   <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-indigo-200 lg:mx-0">
-                    Залиште номер — менеджер передзвонить протягом 5 хвилин,
-                    підбере найкращий поліс і допоможе оформити.
+                    {t({ uk: "Залиште номер — менеджер передзвонить протягом 5 хвилин, підбере найкращий поліс і допоможе оформити.", en: "Leave your number — a manager will call back within 5 minutes, pick the best policy and help you sign up." })}
                   </p>
                 </div>
 
@@ -103,7 +104,7 @@ export function CTASection() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <label className="block text-left">
                       <span className="mb-2 block text-sm font-medium text-indigo-100">
-                        Ваш номер телефону
+                        {t({ uk: "Ваш номер телефону", en: "Your phone number" })}
                       </span>
                       <div className="flex items-center rounded-xl border border-white/20 bg-white/95 px-4 transition-colors focus-within:border-white focus-within:ring-2 focus-within:ring-white/40">
                         <span className="flex items-center gap-2 pr-3 text-base font-semibold text-zinc-500">
@@ -133,7 +134,7 @@ export function CTASection() {
                       disabled={!isValid || submitting}
                       className="w-full rounded-xl bg-white font-bold text-indigo-700 shadow-xl shadow-indigo-950/30 hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:hover:scale-100"
                     >
-                      Замовити дзвінок
+                      {t({ uk: "Замовити дзвінок", en: "Request a call" })}
                     </Button>
 
                     {error && (
@@ -141,7 +142,7 @@ export function CTASection() {
                     )}
 
                     <p className="text-center text-xs leading-relaxed text-indigo-200/80">
-                      Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних
+                      {t({ uk: "Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних", en: "By clicking the button, you agree to the processing of personal data" })}
                     </p>
                   </form>
                 </div>
@@ -156,12 +157,12 @@ export function CTASection() {
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
                 <h3 className="mb-2 text-2xl font-bold text-white">
-                  Дякуємо за заявку!
+                  {t({ uk: "Дякуємо за заявку!", en: "Thank you for your request!" })}
                 </h3>
                 <p className="mx-auto max-w-md text-indigo-200">
-                  Наш консультант зв&apos;яжеться з вами на номер{" "}
+                  {t({ uk: "Наш консультант зв'яжеться з вами на номер", en: "Our consultant will contact you at" })}{" "}
                   <span className="whitespace-nowrap font-semibold text-white">+380&nbsp;{phone}</span>{" "}
-                  найближчим часом.
+                  {t({ uk: "найближчим часом.", en: "shortly." })}
                 </p>
               </motion.div>
             )}

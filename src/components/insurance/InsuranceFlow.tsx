@@ -10,6 +10,7 @@ import { BuyerModal } from "./BuyerModal";
 import type { InsuranceOffer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
 import { trackEvent } from "@/lib/analytics";
+import { useI18n } from "@/lib/i18n";
 
 const VehicleConfirmModal = dynamic(() => import("./VehicleConfirmModal").then(mod => mod.VehicleConfirmModal), { ssr: false });
 
@@ -30,6 +31,7 @@ interface FlowState {
 }
 
 export function InsuranceFlow() {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -104,11 +106,11 @@ export function InsuranceFlow() {
         setState((s) => ({ ...s, plate, vehicle, buyer: { ...s.buyer, birthDate: ownerDob } }));
       } else {
         // Lookup failed — show modal with manual input
-        setLookupError(json.error ?? "Авто не знайдено в реєстрі");
+        setLookupError(json.error ?? t({ uk: "Авто не знайдено в реєстрі", en: "Vehicle not found in the registry" }));
         setState((s) => ({ ...s, plate, vehicle: null }));
       }
     } catch {
-      setLookupError("Помилка з'єднання з реєстром");
+      setLookupError(t({ uk: "Помилка з'єднання з реєстром", en: "Registry connection error" }));
       setState((s) => ({ ...s, plate, vehicle: null }));
     } finally {
       setLoading(false);
@@ -144,7 +146,7 @@ export function InsuranceFlow() {
 
     if (missing.length > 0) {
       // Keep the modal open so the user can correct the data.
-      setError(`Відсутні обов'язкові поля: ${missing.join(", ")}`);
+      setError(t({ uk: `Відсутні обов'язкові поля: ${missing.join(", ")}`, en: `Missing required fields: ${missing.join(", ")}` }));
       return;
     }
 
@@ -195,20 +197,20 @@ export function InsuranceFlow() {
       const json = await res.json();
 
       if (!json.success) {
-        throw new Error(json.error ?? "Помилка завантаження пропозицій");
+        throw new Error(json.error ?? t({ uk: "Помилка завантаження пропозицій", en: "Error loading offers" }));
       }
 
       const offersResp = json.data;
       const offers: InsuranceOffer[] = Array.isArray(offersResp?.data) ? offersResp.data : [];
 
       if (offers.length === 0) {
-        throw new Error("Не знайдено пропозицій для вашого авто. Спробуйте змінити параметри.");
+        throw new Error(t({ uk: "Не знайдено пропозицій для вашого авто. Спробуйте змінити параметри.", en: "No offers found for your vehicle. Try changing the parameters." }));
       }
 
       setState((s) => ({ ...s, offers, offersLoading: false }));
     } catch (e) {
       console.error("[offers] error →", e);
-      setError(e instanceof Error ? e.message : "Помилка");
+      setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" }));
       setState((s) => ({ ...s, offersLoading: false }));
     }
   };
@@ -361,12 +363,13 @@ export function InsuranceFlow() {
 }
 
 function ErrorToast({ message, onClose }: { message: string; onClose: () => void }) {
+  const { t } = useI18n();
   return (
     <div
       className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 max-w-sm w-full mx-4 rounded-2xl bg-zinc-900 px-5 py-3.5 text-sm text-white shadow-xl cursor-pointer"
       onClick={onClose}
     >
-      <span className="font-medium text-red-400">Помилка: </span>
+      <span className="font-medium text-red-400">{t({ uk: "Помилка: ", en: "Error: " })}</span>
       {message}
     </div>
   );

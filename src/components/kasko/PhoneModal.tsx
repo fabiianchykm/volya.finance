@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { useI18n } from "@/lib/i18n";
 
 // "671234567" → "67 123 45 67" (зберігаємо лише цифри у стані).
 function formatUaPhone(digits: string): string {
@@ -20,6 +21,7 @@ interface PhoneModalProps {
 
 // Вводимо 9 цифр після +380 (напр. 671234567). Маска прибирає все зайве.
 export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneModalProps) {
+  const { t } = useI18n();
   const [digits, setDigits] = useState("");
 
   const valid = digits.length === 9;
@@ -30,16 +32,15 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Залиште номер телефону" size="md">
+    <Modal open={open} onClose={onClose} title={t({ uk: "Залиште номер телефону", en: "Leave your phone number" })} size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          КАСКО розраховується індивідуально. Лишіть номер — менеджер передзвонить
-          найближчим часом і підбере найкращі умови для вашого авто.
+          {t({ uk: "КАСКО розраховується індивідуально. Лишіть номер — менеджер передзвонить найближчим часом і підбере найкращі умови для вашого авто.", en: "CASCO is calculated individually. Leave your number — a manager will call you back shortly and select the best terms for your car." })}
         </p>
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Номер телефону
+            {t({ uk: "Номер телефону", en: "Phone number" })}
           </label>
           <div className="flex items-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900">
             <span className="select-none pr-3 text-xl font-semibold text-zinc-500 dark:text-zinc-400">+380</span>
@@ -47,7 +48,7 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
             <input
               type="tel"
               inputMode="numeric"
-              aria-label="Номер телефону"
+              aria-label={t({ uk: "Номер телефону", en: "Phone number" })}
               autoFocus
               value={formatUaPhone(digits)}
               onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 9))}
@@ -66,11 +67,11 @@ export function PhoneModal({ open, onClose, onSubmit, loading, error }: PhoneMod
           disabled={!valid}
           className="w-full"
         >
-          Надіслати заявку
+          {t({ uk: "Надіслати заявку", en: "Submit request" })}
         </Button>
 
         <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
-          Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.
+          {t({ uk: "Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.", en: "By clicking the button, you agree to the processing of personal data." })}
         </p>
       </form>
     </Modal>

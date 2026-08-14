@@ -17,6 +17,7 @@ import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { cityShort, cityLong } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 // Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
 function formatUaPhone(digits: string): string {
@@ -32,7 +33,8 @@ function unixToUaDate(sec: number): string {
 
 export function CheckoutClient() {
   const router = useRouter();
-  
+  const { t } = useI18n();
+
   // Checkout state
   const [vehicle, setVehicle] = useState<VehicleData | null>(null);
   const [offer, setOffer] = useState<InsuranceOffer | null>(null);
@@ -122,7 +124,7 @@ export function CheckoutClient() {
   }, []);
 
   if (!loaded || !vehicle || !offer) {
-    return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">Завантаження...</div>;
+    return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">{t({ uk: "Завантаження...", en: "Loading..." })}</div>;
   }
 
   // Submit flow
@@ -189,9 +191,16 @@ export function CheckoutClient() {
       if (fresh && fresh.price !== offer.price) {
         setOffer(fresh);
         setPriceNotice(
-          `Страхова компанія перерахувала вартість поліса за вказаною датою народження. ` +
-          `Актуальна ціна: ${fresh.price} грн (у пропозиції — ${offer.price} грн). ` +
-          `Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`
+          t({
+            uk:
+              `Страхова компанія перерахувала вартість поліса за вказаною датою народження. ` +
+              `Актуальна ціна: ${fresh.price} грн (у пропозиції — ${offer.price} грн). ` +
+              `Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`,
+            en:
+              `The insurance company recalculated the policy price based on the specified date of birth. ` +
+              `Current price: ${fresh.price} UAH (in the offer — ${offer.price} UAH). ` +
+              `Check the amount and click "Continue" to proceed to payment.`,
+          })
         );
         return;
       }
@@ -214,7 +223,7 @@ export function CheckoutClient() {
         body: JSON.stringify({ action: "draft", ...payload }),
       });
       const draftJson = await draftRes.json();
-      if (!draftJson.success) throw new Error(draftJson.error ?? "Помилка створення чернетки");
+      if (!draftJson.success) throw new Error(draftJson.error ?? t({ uk: "Помилка створення чернетки", en: "Error creating draft" }));
       const id = draftJson.data.id;
 
       // 5b. Заявити поліс
@@ -224,7 +233,7 @@ export function CheckoutClient() {
         body: JSON.stringify({ action: "declare", ...payload, orderId: id }),
       });
       const declareJson = await declareRes.json();
-      if (!declareJson.success) throw new Error(declareJson.error ?? "Помилка заявлення поліса");
+      if (!declareJson.success) throw new Error(declareJson.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
 
       const declaredId = declareJson.data?.id ?? id;
       
@@ -247,7 +256,7 @@ export function CheckoutClient() {
       setOrderId(declaredId);
       setStep("otp");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Помилка");
+      setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -265,7 +274,7 @@ export function CheckoutClient() {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-      if (!json.valid) throw new Error("Невірний код. Спробуйте ще раз.");
+      if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
 
       setStep("payment");
 
@@ -319,7 +328,7 @@ export function CheckoutClient() {
         }),
       }).catch(() => {});
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Помилка");
+      setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -373,14 +382,14 @@ export function CheckoutClient() {
             if (step === "vehicle") setStep("customer");
             else router.push("/osago");
           }}
-          aria-label="Назад"
+          aria-label={t({ uk: "Назад", en: "Back" })}
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Оформлення поліса</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Крок {step === "customer" ? 1 : step === "vehicle" ? 2 : 3} з 3</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Оформлення поліса", en: "Policy checkout" })}</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: `Крок ${step === "customer" ? 1 : step === "vehicle" ? 2 : 3} з 3`, en: `Step ${step === "customer" ? 1 : step === "vehicle" ? 2 : 3} of 3` })}</p>
         </div>
       </div>
 
@@ -388,12 +397,12 @@ export function CheckoutClient() {
           одразу після «Продовжити», а не нижче довгої форми. */}
       {priceNotice && step !== "otp" && (
         <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
-          <span className="font-semibold">Увага: </span>{priceNotice}
+          <span className="font-semibold">{t({ uk: "Увага: ", en: "Attention: " })}</span>{priceNotice}
         </div>
       )}
       {error && step !== "otp" && (
         <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
-          <span className="font-semibold">Помилка: </span>{error}
+          <span className="font-semibold">{t({ uk: "Помилка: ", en: "Error: " })}</span>{error}
         </div>
       )}
 
@@ -475,6 +484,7 @@ export function CheckoutClient() {
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 
 function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({
     name: "",
     surname: "",
@@ -620,9 +630,9 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   // Підписи/плейсхолдери полів документа залежно від обраного типу.
   const docFields = {
-    3: { serial: "Запис № (УНЗР)", serialPh: "19860427-09718", number: "Номер документа", numberPh: "", issuedBy: "Ким видано (код органу)", issuedByPh: "1234" },
-    1: { serial: "Серія", serialPh: "АА", number: "Номер", numberPh: "123456", issuedBy: "Ким виданий", issuedByPh: "Назва органу, що видав" },
-    4: { serial: "Серія", serialPh: "ААХ", number: "Номер", numberPh: "123456", issuedBy: "Ким видано", issuedByPh: "Орган, що видав" },
+    3: { serial: t({ uk: "Запис № (УНЗР)", en: "Record no. (UNZR)" }), serialPh: "19860427-09718", number: t({ uk: "Номер документа", en: "Document number" }), numberPh: "", issuedBy: t({ uk: "Ким видано (код органу)", en: "Issued by (authority code)" }), issuedByPh: "1234" },
+    1: { serial: t({ uk: "Серія", en: "Series" }), serialPh: "АА", number: t({ uk: "Номер", en: "Number" }), numberPh: "123456", issuedBy: t({ uk: "Ким виданий", en: "Issued by" }), issuedByPh: t({ uk: "Назва органу, що видав", en: "Name of issuing authority" }) },
+    4: { serial: t({ uk: "Серія", en: "Series" }), serialPh: "ААХ", number: t({ uk: "Номер", en: "Number" }), numberPh: "123456", issuedBy: t({ uk: "Ким видано", en: "Issued by" }), issuedByPh: t({ uk: "Орган, що видав", en: "Issuing authority" }) },
   }[docType];
 
   // Зберегти профіль страхувальника (localStorage + БД для залогінених) — викликаємо
@@ -696,31 +706,31 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Дані страхувальника</h2>
-      
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Дані страхувальника", en: "Policyholder details" })}</h2>
+
       <div className="space-y-5">
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Особисті дані
+            {t({ uk: "Особисті дані", en: "Personal details" })}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="Прізвище" value={form.surname} onChange={handleSurname} required />
-            <Input label="Ім'я" value={form.name} onChange={set("name")} required />
-            <Input label="По-батькові" value={form.patronymic} onChange={set("patronymic")} />
+            <Input label={t({ uk: "Прізвище", en: "Surname" })} value={form.surname} onChange={handleSurname} required />
+            <Input label={t({ uk: "Ім'я", en: "First name" })} value={form.name} onChange={set("name")} required />
+            <Input label={t({ uk: "По-батькові", en: "Patronymic" })} value={form.patronymic} onChange={set("patronymic")} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <DateInput
-            label="Дата народження"
+            label={t({ uk: "Дата народження", en: "Date of birth" })}
             value={form.dateBirth}
             onChange={(v) => { setForm((f) => ({ ...f, dateBirth: v })); if (dobError) setDobError(false); }}
-            error={dobError ? "Вкажіть дату народження" : undefined}
+            error={dobError ? t({ uk: "Вкажіть дату народження", en: "Enter the date of birth" }) : undefined}
             defaultYear={1990}
             required
           />
           <Input
-            label="ІПН / ЄДРПО"
+            label={t({ uk: "ІПН / ЄДРПО", en: "Tax ID / USREOU" })}
             value={form.identificationCode}
             onChange={set("identificationCode")}
             placeholder="1234567890"
@@ -729,7 +739,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Телефон</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Телефон", en: "Phone" })}</label>
             <div className="flex items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900">
               <span className="select-none pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
               <input
@@ -755,21 +765,21 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
         <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Документ, що посвідчує особу
+            {t({ uk: "Документ, що посвідчує особу", en: "Identity document" })}
           </p>
           {/* Вибір типу документа: ID-карта (type 3) або паспорт старого зразка (type 1) */}
           <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {[
-              { t: 3 as const, label: "ID-карта" },
-              { t: 1 as const, label: "Паспорт (старого зразка)" },
-              { t: 4 as const, label: "Водійське посвідчення" },
-            ].map(({ t, label }) => (
+              { docT: 3 as const, label: t({ uk: "ID-карта", en: "ID card" }) },
+              { docT: 1 as const, label: t({ uk: "Паспорт (старого зразка)", en: "Passport (old format)" }) },
+              { docT: 4 as const, label: t({ uk: "Водійське посвідчення", en: "Driver's license" }) },
+            ].map(({ docT, label }) => (
               <button
-                key={t}
+                key={docT}
                 type="button"
-                onClick={() => changeDocType(t)}
+                onClick={() => changeDocType(docT)}
                 className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium leading-tight transition-colors ${
-                  docType === t
+                  docType === docT
                     ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 dark:border-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800"
                     : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
                 }`}
@@ -803,10 +813,10 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
               required
             />
             <DateInput
-              label="Дата видачі"
+              label={t({ uk: "Дата видачі", en: "Date of issue" })}
               value={form.docDate}
               onChange={(v) => { setForm((f) => ({ ...f, docDate: v })); if (docDateError) setDocDateError(false); }}
-              error={docDateError ? "Вкажіть дату видачі" : undefined}
+              error={docDateError ? t({ uk: "Вкажіть дату видачі", en: "Enter the date of issue" }) : undefined}
               required
             />
           </div>
@@ -814,13 +824,13 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
         <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Адреса проживання
+            {t({ uk: "Адреса проживання", en: "Residential address" })}
           </p>
           {/* ПК: Місто + Вулиця + Будинок в один ряд; моб: стек. */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-5 sm:items-start">
             {/* Місто (з автопідбором) */}
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Місто</label>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Місто", en: "City" })}</label>
               <input
                 type="text"
                 spellCheck={false}
@@ -830,7 +840,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                   setSelectedCity(null);
                   setCityError(false);
                 }}
-                placeholder="Почніть вводити місто..."
+                placeholder={t({ uk: "Почніть вводити місто...", en: "Start typing a city..." })}
                 required
                 className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${
                   cityError
@@ -841,7 +851,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
                 }`}
               />
               {cityError && !selectedCity && (
-                <p className="mt-1 text-xs font-medium text-red-500">Оберіть місто зі списку</p>
+                <p className="mt-1 text-xs font-medium text-red-500">{t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })}</p>
               )}
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
                 <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden dark:border-zinc-700 dark:bg-zinc-900">
@@ -864,17 +874,17 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
             </div>
             {/* Вулиця */}
             <div className="sm:col-span-2">
-              <Input label="Вулиця" value={form.street} onChange={set("street")} required />
+              <Input label={t({ uk: "Вулиця", en: "Street" })} value={form.street} onChange={set("street")} required />
             </div>
             {/* Будинок */}
-            <Input label="Будинок / кв." value={form.house} onChange={set("house")} required />
+            <Input label={t({ uk: "Будинок / кв.", en: "House / apt." })} value={form.house} onChange={set("house")} required />
           </div>
         </div>
       </div>
 
       <div className="flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
         <Button type="submit" variant="primary" size="lg" className="w-full sm:w-auto px-8">
-          Продовжити
+          {t({ uk: "Продовжити", en: "Continue" })}
         </Button>
       </div>
     </form>
@@ -892,6 +902,7 @@ function CheckoutVehicleForm({
   onSubmit: (v: VehicleDetails) => void,
   loading: boolean
 }) {
+  const { t } = useI18n();
   const [form, setForm] = useState<VehicleDetails>({
     // Пробіг більше не запитуємо у формі — API його не вимагатиме; шлемо дефолт "0".
     odometr: "0",
@@ -916,22 +927,22 @@ function CheckoutVehicleForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Дані транспортного засобу</h2>
-      
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Дані транспортного засобу", en: "Vehicle details" })}</h2>
+
       <div className="space-y-5">
         {/* Дані з API — тільки для перегляду */}
         <div className="rounded-xl bg-zinc-50 border border-zinc-100 px-5 py-4 space-y-3 dark:bg-zinc-800/50 dark:border-zinc-800">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2 dark:text-zinc-400">
-            Дані з реєстру
+            {t({ uk: "Дані з реєстру", en: "Registry data" })}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
             {[
-              { label: "Марка", value: vehicle.mark },
-              { label: "Модель", value: vehicle.model },
-              { label: "Рік", value: vehicle.year },
-              { label: "Номер", value: vehicle.number },
+              { label: t({ uk: "Марка", en: "Make" }), value: vehicle.mark },
+              { label: t({ uk: "Модель", en: "Model" }), value: vehicle.model },
+              { label: t({ uk: "Рік", en: "Year" }), value: vehicle.year },
+              { label: t({ uk: "Номер", en: "Plate" }), value: vehicle.number },
               { label: "VIN", value: vehicle.vin || "—" },
-              { label: "Категорія", value: vehicle.autoCategory },
+              { label: t({ uk: "Категорія", en: "Category" }), value: vehicle.autoCategory },
             ].map(({ label, value }) => (
               <div key={label} className="flex flex-col">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{label}</span>
@@ -944,10 +955,10 @@ function CheckoutVehicleForm({
         {/* Дата народження водія */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Водій
+            {t({ uk: "Водій", en: "Driver" })}
           </p>
           <DateInput
-            label="Дата народження наймолодшого водія"
+            label={t({ uk: "Дата народження наймолодшого водія", en: "Date of birth of the youngest driver" })}
             value={form.birthdayAt}
             onChange={(v) => setForm((f) => ({ ...f, birthdayAt: v }))}
             defaultYear={1990}
@@ -959,12 +970,12 @@ function CheckoutVehicleForm({
         {/* Технічні характеристики */}
         <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Технічні характеристики
+            {t({ uk: "Технічні характеристики", en: "Technical specifications" })}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {isElectric ? (
               <Input
-                label="Потужність (кВт)"
+                label={t({ uk: "Потужність (кВт)", en: "Power (kW)" })}
                 placeholder="150"
                 value={form.capacity}
                 onChange={set("capacity")}
@@ -972,7 +983,7 @@ function CheckoutVehicleForm({
               />
             ) : (
               <Input
-                label="Об'єм двигуна (см³)"
+                label={t({ uk: "Об'єм двигуна (см³)", en: "Engine capacity (cm³)" })}
                 placeholder="1600"
                 value={form.capacity}
                 onChange={set("capacity")}
@@ -980,21 +991,21 @@ function CheckoutVehicleForm({
               />
             )}
             <Input
-              label="Кількість місць"
+              label={t({ uk: "Кількість місць", en: "Number of seats" })}
               placeholder="5"
               value={form.numberOfSeats}
               onChange={set("numberOfSeats")}
               required
             />
             <Input
-              label="Маса без навантаження (кг)"
+              label={t({ uk: "Маса без навантаження (кг)", en: "Curb weight (kg)" })}
               placeholder="1200"
               value={form.ownWeight}
               onChange={set("ownWeight")}
               required
             />
             <Input
-              label="Повна маса (кг)"
+              label={t({ uk: "Повна маса (кг)", en: "Gross weight (kg)" })}
               placeholder="1600"
               value={form.totalWeight}
               onChange={set("totalWeight")}
@@ -1006,7 +1017,7 @@ function CheckoutVehicleForm({
 
       <div className="flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
         <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto px-8">
-          Продовжити
+          {t({ uk: "Продовжити", en: "Continue" })}
         </Button>
       </div>
     </form>

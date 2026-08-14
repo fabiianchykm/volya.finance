@@ -13,6 +13,7 @@ import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 // Оформлення міні-КАСКО: дані страхувальника (паспорт, ІПН, адреса) + авто за
 // номером → declare → OTP підпису → оплата → confirm → готовий поліс (PDF).
@@ -46,6 +47,7 @@ function plusYearUa(ua: string): string {
 }
 
 export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBack: () => void }) {
+  const { t } = useI18n();
   const [step, setStep] = useState<"form" | "otp" | "payment" | "success">("form");
   const [formStep, setFormStep] = useState<"customer" | "vehicle">("customer");
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
     try {
       const res = await fetch(`/api/vehicle/${encodeURIComponent(formatPlate(f.number))}`);
       const json = await res.json();
-      if (!json.success) { setPlateError(json.error ?? "Авто не знайдено — заповніть дані вручну"); return; }
+      if (!json.success) { setPlateError(json.error ?? t({ uk: "Авто не знайдено — заповніть дані вручну", en: "Vehicle not found — fill in the details manually" })); return; }
       const car = json.data;
       if (car.number) lastPlate.current = String(car.number).replace(/\s/g, "");
       setF((s) => ({
@@ -105,7 +107,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         category: (car.autoCategory ? String(car.autoCategory).charAt(0) : s.category) || "B",
       }));
     } catch {
-      setPlateError("Помилка звʼязку з реєстром — заповніть дані вручну");
+      setPlateError(t({ uk: "Помилка звʼязку з реєстром — заповніть дані вручну", en: "Registry connection error — fill in the details manually" }));
     } finally {
       setPlateLoading(false);
     }
@@ -196,14 +198,14 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
   };
 
   const goToVehicle = () => {
-    if (!f.surnameUa || !f.nameUa || !f.patronymicUa) { setError("Заповніть ПІБ"); return; }
-    if (!parseUaDate(f.dateBirth)) { setError("Вкажіть коректну дату народження"); return; }
-    if (f.identificationCode.replace(/\D/g, "").length !== 10) { setError("Вкажіть коректний ІПН (10 цифр)"); return; }
-    if (f.phone.replace(/\D/g, "").length < 9) { setError("Вкажіть номер телефону"); return; }
-    if (!f.email) { setError("Вкажіть email"); return; }
-    if (!f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError("Заповніть дані паспорта"); return; }
-    if (!selectedCity) { setError("Оберіть місто зі списку"); return; }
-    if (!f.street || !f.house) { setError("Вкажіть адресу проживання"); return; }
+    if (!f.surnameUa || !f.nameUa || !f.patronymicUa) { setError(t({ uk: "Заповніть ПІБ", en: "Fill in your full name" })); return; }
+    if (!parseUaDate(f.dateBirth)) { setError(t({ uk: "Вкажіть коректну дату народження", en: "Enter a valid date of birth" })); return; }
+    if (f.identificationCode.replace(/\D/g, "").length !== 10) { setError(t({ uk: "Вкажіть коректний ІПН (10 цифр)", en: "Enter a valid Tax ID (10 digits)" })); return; }
+    if (f.phone.replace(/\D/g, "").length < 9) { setError(t({ uk: "Вкажіть номер телефону", en: "Enter your phone number" })); return; }
+    if (!f.email) { setError(t({ uk: "Вкажіть email", en: "Enter your email" })); return; }
+    if (!f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError(t({ uk: "Заповніть дані паспорта", en: "Fill in the passport details" })); return; }
+    if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
+    if (!f.street || !f.house) { setError(t({ uk: "Вкажіть адресу проживання", en: "Enter your residential address" })); return; }
     setError(null);
     saveProfile({
       surname: f.surnameUa, name: f.nameUa, patronymic: f.patronymicUa,
@@ -221,7 +223,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    if (!f.number || !f.brand || !f.model || !f.year) { setError("Заповніть дані авто"); return; }
+    if (!f.number || !f.brand || !f.model || !f.year) { setError(t({ uk: "Заповніть дані авто", en: "Fill in the vehicle details" })); return; }
     setLoading(true);
     setError(null);
     try {
@@ -232,7 +234,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         body: JSON.stringify({ action: "declare", ...buildPayload() }),
       });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Помилка заявлення поліса");
+      if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
       const id = json.data?.id as string;
       setOrderId(id);
       await fetch("/api/mini-kasko/order", {
@@ -249,7 +251,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       });
       setStep("otp");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка");
+      setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -265,11 +267,11 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-      if (!json.valid) throw new Error("Невірний код. Спробуйте ще раз.");
+      if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
       setStep("payment");
       trackEvent("begin_checkout", { product: "mini-kasko", currency: "UAH", value: ctx.offer.price });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Помилка");
+      setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
       setLoading(false);
     }
@@ -306,17 +308,17 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       <div className="mb-5 flex items-center gap-3">
         <button
           type="button"
-          aria-label="Назад"
+          aria-label={t({ uk: "Назад", en: "Back" })}
           onClick={() => (formStep === "vehicle" ? setFormStep("customer") : onBack())}
           className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Оформлення Міні-КАСКО</h2>
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Оформлення Міні-КАСКО", en: "Mini-CASCO checkout" })}</h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Крок {formStep === "customer" ? 1 : 2} з 2 · <span className="font-semibold text-zinc-900 dark:text-zinc-100">{ctx.offer.price} грн</span>
-            {" · "}покриття {(ctx.offer.coverage / 1000).toLocaleString("uk-UA")} тис. грн
+            {t({ uk: "Крок", en: "Step" })} {formStep === "customer" ? 1 : 2} {t({ uk: "з 2", en: "of 2" })} · <span className="font-semibold text-zinc-900 dark:text-zinc-100">{ctx.offer.price} {t({ uk: "грн", en: "UAH" })}</span>
+            {" · "}{t({ uk: "покриття", en: "coverage" })} {(ctx.offer.coverage / 1000).toLocaleString("uk-UA")} {t({ uk: "тис. грн", en: "K UAH" })}
           </p>
         </div>
       </div>
@@ -327,22 +329,22 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         {formStep === "customer" && (
         <>
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Страхувальник</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Страхувальник", en: "Policyholder" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="Прізвище" value={f.surnameUa} onChange={set("surnameUa")} required />
-            <Input label="Ім'я" value={f.nameUa} onChange={set("nameUa")} required />
-            <Input label="По-батькові" value={f.patronymicUa} onChange={set("patronymicUa")} required />
+            <Input label={t({ uk: "Прізвище", en: "Surname" })} value={f.surnameUa} onChange={set("surnameUa")} required />
+            <Input label={t({ uk: "Ім'я", en: "First name" })} value={f.nameUa} onChange={set("nameUa")} required />
+            <Input label={t({ uk: "По-батькові", en: "Patronymic" })} value={f.patronymicUa} onChange={set("patronymicUa")} required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <DateInput label="Дата народження" value={f.dateBirth} onChange={(v) => setF((s) => ({ ...s, dateBirth: v }))} defaultYear={1990} required />
-            <Input label="ІПН" value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" required />
+            <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={f.dateBirth} onChange={(v) => setF((s) => ({ ...s, dateBirth: v }))} defaultYear={1990} required />
+            <Input label={t({ uk: "ІПН", en: "Tax ID" })} value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Телефон</label>
+              <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Телефон", en: "Phone" })}</label>
               <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                 <span className="pl-4 pr-1 text-sm text-zinc-500 dark:text-zinc-400">+380</span>
-                <input type="tel" inputMode="numeric" aria-label="Номер телефону" placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
+                <input type="tel" inputMode="numeric" aria-label={t({ uk: "Номер телефону", en: "Phone number" })} placeholder="67 123 45 67" value={formatUaPhone(f.phone)}
                   onChange={(e) => setF((s) => ({ ...s, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))}
                   required className="h-11 w-full rounded-r-xl bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none" />
               </div>
@@ -352,20 +354,20 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         </div>
 
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Паспорт</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Паспорт", en: "Passport" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="Номер паспорта" value={f.docNumber} onChange={set("docNumber")} required />
-            <Input label="Ким видано" value={f.docIssuedBy} onChange={set("docIssuedBy")} required />
-            <DateInput label="Дата видачі" value={f.docDate} onChange={(v) => setF((s) => ({ ...s, docDate: v }))} required />
+            <Input label={t({ uk: "Номер паспорта", en: "Passport number" })} value={f.docNumber} onChange={set("docNumber")} required />
+            <Input label={t({ uk: "Ким видано", en: "Issued by" })} value={f.docIssuedBy} onChange={set("docIssuedBy")} required />
+            <DateInput label={t({ uk: "Дата видачі", en: "Issue date" })} value={f.docDate} onChange={(v) => setF((s) => ({ ...s, docDate: v }))} required />
           </div>
         </div>
 
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Адреса проживання</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Адреса проживання", en: "Residential address" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="relative sm:col-span-2" ref={cityRef}>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Місто</label>
-              <input type="text" aria-label="Пошук міста" value={cityQuery} placeholder="Почніть вводити місто…" required spellCheck={false}
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Місто", en: "City" })}</label>
+              <input type="text" aria-label={t({ uk: "Пошук міста", en: "City search" })} value={cityQuery} placeholder={t({ uk: "Почніть вводити місто…", en: "Start typing a city…" })} required spellCheck={false}
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
                 className={`${inputCls}${selectedCity ? " border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : ""}`} />
               {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
@@ -377,14 +379,14 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
                 </div>
               )}
             </div>
-            <Input label="Вулиця" value={f.street} onChange={set("street")} required />
-            <Input label="Будинок / кв." value={f.house} onChange={set("house")} required />
+            <Input label={t({ uk: "Вулиця", en: "Street" })} value={f.street} onChange={set("street")} required />
+            <Input label={t({ uk: "Будинок / кв.", en: "Building / apt." })} value={f.house} onChange={set("house")} required />
           </div>
         </div>
 
         <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <Button type="button" onClick={goToVehicle} variant="primary" size="lg" className="w-full sm:w-auto sm:px-8">
-            <span className="flex items-center gap-2">Далі <ArrowRight className="h-5 w-5" /></span>
+            <span className="flex items-center gap-2">{t({ uk: "Далі", en: "Next" })} <ArrowRight className="h-5 w-5" /></span>
           </Button>
         </div>
         </>
@@ -393,20 +395,20 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         {formStep === "vehicle" && (
         <>
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Транспортний засіб</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Транспортний засіб", en: "Vehicle" })}</p>
           {/* Підказка — зверху, над полями */}
-          <p className="mb-3 text-xs text-zinc-400 dark:text-zinc-500">Введіть держ. номер — марка, модель і рік підтягнуться автоматично.</p>
+          <p className="mb-3 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Введіть держ. номер — марка, модель і рік підтягнуться автоматично.", en: "Enter the license plate — make, model and year will be filled in automatically." })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label="Держ. номер" value={f.number}
+            <Input label={t({ uk: "Держ. номер", en: "License plate" })} value={f.number}
               onChange={(e) => setF((s) => ({ ...s, number: e.target.value.toUpperCase() }))}
               onBlur={lookupPlate} placeholder="AA 1234 BB" required />
-            <Input label="Марка" value={f.brand} onChange={set("brand")} placeholder="SKODA" required />
-            <Input label="Модель" value={f.model} onChange={set("model")} placeholder="OCTAVIA" required />
-            <Input label="Рік випуску" value={f.year} onChange={set("year")} placeholder="2018" required />
-            <Input label="VIN" value={f.vin} onChange={set("vin")} placeholder="необовʼязково" />
+            <Input label={t({ uk: "Марка", en: "Make" })} value={f.brand} onChange={set("brand")} placeholder="SKODA" required />
+            <Input label={t({ uk: "Модель", en: "Model" })} value={f.model} onChange={set("model")} placeholder="OCTAVIA" required />
+            <Input label={t({ uk: "Рік випуску", en: "Year of manufacture" })} value={f.year} onChange={set("year")} placeholder="2018" required />
+            <Input label="VIN" value={f.vin} onChange={set("vin")} placeholder={t({ uk: "необовʼязково", en: "optional" })} />
           </div>
           {plateLoading ? (
-            <p className="mt-2 text-xs font-medium text-indigo-500">Підтягуємо дані авто за номером…</p>
+            <p className="mt-2 text-xs font-medium text-indigo-500">{t({ uk: "Підтягуємо дані авто за номером…", en: "Fetching vehicle data by plate…" })}</p>
           ) : plateError ? (
             <p className="mt-2 text-xs font-medium text-amber-600">{plateError}</p>
           ) : null}
@@ -414,13 +416,13 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
           <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
             <input type="checkbox" checked={f.isTaxi} onChange={(e) => setF((s) => ({ ...s, isTaxi: e.target.checked }))}
               className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500" />
-            Використовується як таксі
+            {t({ uk: "Використовується як таксі", en: "Used as a taxi" })}
           </label>
         </div>
 
         <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto sm:px-8">
-            Продовжити до оплати
+            {t({ uk: "Продовжити до оплати", en: "Continue to payment" })}
           </Button>
         </div>
         </>

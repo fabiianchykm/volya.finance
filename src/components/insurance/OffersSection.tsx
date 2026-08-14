@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
 import type { InsuranceOffer } from "@/types/api";
 import { osagoStrikePrice } from "@/lib/osago-discounts";
+import { useI18n } from "@/lib/i18n";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
 
 interface OffersSectionProps {
@@ -24,12 +25,14 @@ interface OffersSectionProps {
 }
 
 // Опис ОСЦПВ для «Детальніше» (продукт стандартизований законом — текст однаковий).
-const OSAGO_INFO = (
+function OsagoInfo() {
+  const { t } = useI18n();
+  return (
   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
     <div className="mb-2 flex items-center gap-1.5">
-      <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Ліміти</p>
+      <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Ліміти", en: "Limits" })}</p>
       <span
-        title="Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП."
+        title={t({ uk: "Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.", en: "Covers the damage you caused to other participants in an accident." })}
         className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
       >
         <Info className="h-3.5 w-3.5" />
@@ -38,16 +41,17 @@ const OSAGO_INFO = (
     {/* Ліміти виплат — простим текстом, без іконок */}
     <div className="flex flex-col gap-2">
       <div>
-        <p className="text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">до 250 000 ₴</p>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Майно потерпілих — авто, споруди</p>
+        <p className="text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">{t({ uk: "до 250 000 ₴", en: "up to 250,000 ₴" })}</p>
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{t({ uk: "Майно потерпілих — авто, споруди", en: "Victims' property — vehicles, structures" })}</p>
       </div>
       <div>
-        <p className="text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">до 500 000 ₴</p>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Життя і здоровʼя потерпілих</p>
+        <p className="text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">{t({ uk: "до 500 000 ₴", en: "up to 500,000 ₴" })}</p>
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{t({ uk: "Життя і здоровʼя потерпілих", en: "Life and health of victims" })}</p>
       </div>
     </div>
   </div>
-);
+  );
+}
 
 type SortKey = "price_asc" | "price_desc" | "discount_desc";
 
@@ -69,19 +73,20 @@ export function OffersSection({
   onSelectOffer,
   periodId,
 }: OffersSectionProps) {
-  const periodLabel = periodId === 6 ? "пів року" : "1 рік";
+  const { t } = useI18n();
+  const periodLabel = periodId === 6 ? t({ uk: "пів року", en: "6 months" }) : t({ uk: "1 рік", en: "1 year" });
   // Чи заповнив користувач дані страхувальника (відрізняються від дефолтних)?
   const buyerSet = buyer.privilegeId !== DEFAULT_BUYER.privilegeId || buyer.birthDate !== DEFAULT_BUYER.birthDate;
-  const privilegeLabel = PRIVILEGES.find((p) => p.id === buyer.privilegeId)?.label ?? "Без пільг";
+  const privilegeLabel = PRIVILEGES.find((p) => p.id === buyer.privilegeId)?.label ?? t({ uk: "Без пільг", en: "No benefits" });
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
   const [sortBy, setSortBy] = useState<SortKey>("price_asc");
   const [sortOpen, setSortOpen] = useState(false);
   const SORT_OPTIONS = [
-    { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
-    { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
-    { k: "discount_desc", label: "Найбільша знижка", Icon: Percent },
+    { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
+    { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
+    { k: "discount_desc", label: "Найбільша знижка", en: "Biggest discount", Icon: Percent },
   ] as const;
   const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
 
@@ -105,11 +110,11 @@ export function OffersSection({
           <div className="px-6 pt-4 pb-4">
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-xs text-zinc-400 mb-3 dark:text-zinc-500">
-              <button onClick={onBack} aria-label="На головну" className="hover:text-indigo-500 transition-colors dark:hover:text-indigo-400">
+              <button onClick={onBack} aria-label={t({ uk: "На головну", en: "Home" })} className="hover:text-indigo-500 transition-colors dark:hover:text-indigo-400">
                 <Home className="h-3.5 w-3.5" />
               </button>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-zinc-600 font-medium dark:text-zinc-300">Автоцивілка</span>
+              <span className="text-zinc-600 font-medium dark:text-zinc-300">{t({ uk: "Автоцивілка", en: "OSAGO" })}</span>
             </div>
 
             <p className="font-bold text-zinc-900 inline-flex items-center gap-2 flex-wrap dark:text-zinc-100" style={{ fontSize: 19 }}>
@@ -119,7 +124,7 @@ export function OffersSection({
               {`, ${periodLabel}`}
               <button
                 onClick={onEdit}
-                aria-label="Змінити дані авто"
+                aria-label={t({ uk: "Змінити дані авто", en: "Edit vehicle data" })}
                 className="text-zinc-300 hover:text-indigo-500 transition-colors dark:text-zinc-600 dark:hover:text-indigo-400"
               >
                 <Pencil className="h-4 w-4" />
@@ -140,21 +145,21 @@ export function OffersSection({
               <span className="min-w-0">
                 {buyerSet ? (
                   <>
-                    <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">Дані страхувальника</span>
+                    <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Дані страхувальника", en: "Policyholder details" })}</span>
                     {/* З реєстру приходить лише ВІК (день/місяць фейкові = сьогодні), тож
                         показуємо рік народження, а не повну дату. */}
-                    <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{privilegeLabel}{buyer.birthDate ? ` · ${buyer.birthDate.split(".")[2]} р.н.` : ""}</span>
+                    <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{privilegeLabel}{buyer.birthDate ? t({ uk: ` · ${buyer.birthDate.split(".")[2]} р.н.`, en: ` · b. ${buyer.birthDate.split(".")[2]}` }) : ""}</span>
                   </>
                 ) : (
                   <>
-                    <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">Пільга та дата народження</span>
-                    <span className="block text-xs text-zinc-500 dark:text-zinc-400">Вкажіть — ціна може зменшитись</span>
+                    <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Пільга та дата народження", en: "Benefit and date of birth" })}</span>
+                    <span className="block text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Вкажіть — ціна може зменшитись", en: "Specify — the price may decrease" })}</span>
                   </>
                 )}
               </span>
             </span>
             <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-              {buyerSet ? "Змінити" : "Вказати"}
+              {buyerSet ? t({ uk: "Змінити", en: "Edit" }) : t({ uk: "Вказати", en: "Specify" })}
               <ChevronRight className="h-4 w-4" />
             </span>
           </button>
@@ -162,7 +167,7 @@ export function OffersSection({
 
         {!loading && offers.length > 0 && (
           <div className="mb-5 flex items-center justify-end gap-3">
-            <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Сортувати</span>
+            <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
             <div className="relative">
               <button
                 type="button"
@@ -171,14 +176,14 @@ export function OffersSection({
                 aria-haspopup="menu"
                 className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition-colors hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
               >
-                <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />{activeSort.label}</span>
+                <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />{t({ uk: activeSort.label, en: activeSort.en })}</span>
                 <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform dark:text-zinc-500 ${sortOpen ? "rotate-180" : ""}`} />
               </button>
               {sortOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
                   <div className="absolute right-0 top-full z-20 mt-2 w-[220px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-                    {SORT_OPTIONS.map(({ k, label, Icon }) => (
+                    {SORT_OPTIONS.map(({ k, label, en, Icon }) => (
                       <button
                         key={k}
                         type="button"
@@ -188,7 +193,7 @@ export function OffersSection({
                         }`}
                       >
                         <Icon className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                        {label}
+                        {t({ uk: label, en })}
                       </button>
                     ))}
                   </div>
@@ -208,10 +213,10 @@ export function OffersSection({
           </div>
         ) : offers.length === 0 ? (
           <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Пропозицій не знайдено</p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Спробуйте змінити параметри авто.</p>
+            <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Спробуйте змінити параметри авто.", en: "Try changing the vehicle parameters." })}</p>
             <Button variant="secondary" size="md" onClick={onBack} className="mt-5">
-              Назад
+              {t({ uk: "Назад", en: "Back" })}
             </Button>
           </div>
         ) : (
@@ -223,7 +228,7 @@ export function OffersSection({
                 index={i}
                 selected={selectedOfferId === offer.offerId}
                 discountEligible
-                productDescription={OSAGO_INFO}
+                productDescription={<OsagoInfo />}
                 selectedDgoId={dgoMap[offer.offerId] ?? null}
                 selectedAutolawyerId={autolawyerMap[offer.offerId] ?? null}
                 onSelect={() => setSelectedOfferId(offer.offerId)}

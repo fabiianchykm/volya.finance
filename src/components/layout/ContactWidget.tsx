@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, Mail, Send, MessageCircle, X } from "lucide-react";
 import { LeadModal, type LeadMode } from "./LeadModal";
+import { useI18n } from "@/lib/i18n";
 
 // Плаваюча кругла кнопка звʼязку (низ-праворуч). Клік розкриває варіанти:
 // Telegram (лінк), Дзвінок і Email (спільне віконце заявки). Ховаємо у флоу
@@ -13,6 +14,7 @@ import { LeadModal, type LeadMode } from "./LeadModal";
 const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 
 export function ContactWidget() {
+  const { t } = useI18n();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<LeadMode>(null);
@@ -24,6 +26,7 @@ export function ContactWidget() {
     {
       key: "telegram",
       label: "Telegram",
+      labelEn: "Telegram",
       icon: Send,
       color: "bg-sky-500 hover:bg-sky-600",
       href: TELEGRAM_URL,
@@ -31,6 +34,7 @@ export function ContactWidget() {
     {
       key: "phone",
       label: "Замовити дзвінок",
+      labelEn: "Order a call",
       icon: Phone,
       color: "bg-emerald-500 hover:bg-emerald-600",
       onClick: () => { setMode("phone"); setOpen(false); },
@@ -38,6 +42,7 @@ export function ContactWidget() {
     {
       key: "email",
       label: "Написати на email",
+      labelEn: "Write to us by email",
       icon: Mail,
       color: "bg-indigo-500 hover:bg-indigo-600",
       href: "mailto:volya.finance.team@gmail.com",
@@ -54,10 +59,11 @@ export function ContactWidget() {
           {open &&
             options.map((o, i) => {
               const Icon = o.icon;
+              const label = t({ uk: o.label, en: o.labelEn });
               const inner = (
                 <>
                   <span className="rounded-lg bg-white dark:bg-zinc-900 px-2.5 py-1 text-sm font-medium text-zinc-800 dark:text-zinc-200 shadow-md ring-1 ring-black/5 dark:ring-white/10">
-                    {o.label}
+                    {label}
                   </span>
                   <span className={`flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors ${o.color}`}>
                     <Icon className="h-5 w-5" />
@@ -78,14 +84,14 @@ export function ContactWidget() {
                       href={o.href}
                       target={o.href.startsWith("http") ? "_blank" : undefined}
                       rel={o.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                      aria-label={o.label}
+                      aria-label={label}
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-2.5"
                     >
                       {inner}
                     </a>
                   ) : (
-                    <button type="button" aria-label={o.label} onClick={o.onClick} className="flex items-center gap-2.5">
+                    <button type="button" aria-label={label} onClick={o.onClick} className="flex items-center gap-2.5">
                       {inner}
                     </button>
                   )}
@@ -96,7 +102,7 @@ export function ContactWidget() {
 
         <button
           type="button"
-          aria-label="Звʼязатися з нами"
+          aria-label={t({ uk: "Звʼязатися з нами", en: "Contact us" })}
           aria-expanded={open}
           aria-haspopup="menu"
           onClick={() => setOpen((v) => !v)}

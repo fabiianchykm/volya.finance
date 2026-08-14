@@ -4,6 +4,7 @@ import { useEffect, useId, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface ModalProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, children, size = "md", className, preventOutsideClose }: ModalProps) {
+  const { t } = useI18n();
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
@@ -76,7 +78,7 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
-            aria-label={title ? undefined : "Діалогове вікно"}
+            aria-label={title ? undefined : t({ uk: "Діалогове вікно", en: "Dialog window" })}
             tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -94,7 +96,7 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
                 <h2 id={titleId} className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
                 <button
                   onClick={onClose}
-                  aria-label="Закрити"
+                  aria-label={t({ uk: "Закрити", en: "Close" })}
                   className="ml-auto rounded-lg p-1.5 text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 dark:hover:text-zinc-300"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
@@ -105,7 +107,7 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
             {!title && (
               <button
                 onClick={onClose}
-                aria-label="Закрити"
+                aria-label={t({ uk: "Закрити", en: "Close" })}
                 className="absolute right-4 top-6 rounded-lg p-1.5 text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 dark:hover:text-zinc-300"
               >
                 <X className="h-4 w-4" aria-hidden="true" />

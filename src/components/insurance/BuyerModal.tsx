@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { PRIVILEGES } from "@/lib/constants";
+import { useI18n } from "@/lib/i18n";
 import { DEFAULT_BUYER, type BuyerData } from "@/types/insurance";
 
 interface BuyerModalProps {
@@ -17,6 +18,7 @@ interface BuyerModalProps {
 }
 
 export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerModalProps) {
+  const { t } = useI18n();
   const [privilegeId, setPrivilegeId] = useState(buyer.privilegeId);
   const [birth, setBirth] = useState(buyer.birthDate); // "ДД.ММ.РРРР"
   const [wasOpen, setWasOpen] = useState(false);
@@ -40,17 +42,17 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Дані страхувальника" size="md">
+    <Modal open={open} onClose={onClose} title={t({ uk: "Дані страхувальника", en: "Policyholder details" })} size="md">
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
           <BadgePercent className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
           <p className="text-sm text-indigo-800 dark:text-indigo-200">
-            Пільга та вік страхувальника впливають на ціну — вкажіть їх, щоб отримати знижку.
+            {t({ uk: "Пільга та вік страхувальника впливають на ціну — вкажіть їх, щоб отримати знижку.", en: "The policyholder's benefit and age affect the price — specify them to get a discount." })}
           </p>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Пільгова категорія</label>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Пільгова категорія", en: "Benefit category" })}</label>
           <select
             value={privilegeId}
             onChange={(e) => setPrivilegeId(Number(e.target.value))}
@@ -63,12 +65,12 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Дата народження</label>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження", en: "Date of birth" })}</label>
           <DateInput value={birth} onChange={setBirth} defaultYear={1990} />
         </div>
 
         <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} className="w-full">
-          Застосувати
+          {t({ uk: "Застосувати", en: "Apply" })}
         </Button>
       </div>
     </Modal>

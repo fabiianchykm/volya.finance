@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Wallet, Copy, Check } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import type { ReferralSummary } from "@/lib/referral";
 
 // Єдиний бонусний рахунок у кабінеті: загальний баланс (1% з покупок + 5% з
 // рефералів), розбивка, посилання для запрошень і к-сть запрошених.
 
 export function ReferralCard({ summary }: { summary: ReferralSummary }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const { balance } = summary;
 
@@ -31,7 +33,7 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
             <Wallet className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs font-medium text-indigo-100">Бонусний рахунок</p>
+            <p className="text-xs font-medium text-indigo-100">{t({ uk: "Бонусний рахунок", en: "Bonus account" })}</p>
             <p className="text-2xl font-bold leading-tight">{formatPrice(balance.total)}</p>
           </div>
         </div>
@@ -41,21 +43,21 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
       <div className="p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Запрошуй друзів — отримуй 5%</h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">Друг оформлює поліс — вам 5% на бонусний рахунок</p>
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Запрошуй друзів — отримуй 5%", en: "Invite friends — get 5%" })}</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Друг оформлює поліс — вам 5% на бонусний рахунок", en: "A friend buys a policy — you get 5% to your bonus account" })}</p>
           </div>
           <div className="shrink-0 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-3 py-1.5 text-center">
             <div className="text-base font-bold text-zinc-900 dark:text-zinc-100">{summary.invitedCount}</div>
-            <div className="text-[10px] text-zinc-500 dark:text-zinc-400">запрошено</div>
+            <div className="text-[10px] text-zinc-500 dark:text-zinc-400">{t({ uk: "запрошено", en: "invited" })}</div>
           </div>
         </div>
 
-        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Ваше посилання</label>
+        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Ваше посилання", en: "Your link" })}</label>
         <div className="flex items-center gap-2">
           <input
             readOnly
             value={summary.link}
-            aria-label="Ваше реферальне посилання"
+            aria-label={t({ uk: "Ваше реферальне посилання", en: "Your referral link" })}
             onFocus={(e) => e.currentTarget.select()}
             className="h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-700 dark:text-zinc-200 outline-none focus:border-indigo-400"
           />
@@ -65,13 +67,12 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
             className="flex h-11 shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Скопійовано" : "Копіювати"}
+            {copied ? t({ uk: "Скопійовано", en: "Copied" }) : t({ uk: "Копіювати", en: "Copy" })}
           </button>
         </div>
 
         <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
-          На рахунок нараховується 1% від кожної вашої покупки та 5% від покупок запрошених друзів.
-          Застосування бонусів — за підтримки менеджера.
+          {t({ uk: "На рахунок нараховується 1% від кожної вашої покупки та 5% від покупок запрошених друзів. Застосування бонусів — за підтримки менеджера.", en: "Your account earns 1% of each of your purchases and 5% of purchases by friends you invited. Bonuses are applied with a manager's assistance." })}
         </p>
       </div>
     </div>

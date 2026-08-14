@@ -11,20 +11,22 @@ import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { PetsCheckout, type PetsCheckoutCtx } from "./PetsCheckout";
 import type { PetsOffer, InsuranceOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
+import { useI18n } from "@/lib/i18n";
 
 // Страхування тварин — потік і дизайн як у туристичному/зеленій карті: темний
 // герой для форми (вид, дата, строк), далі світлий екран пропозицій.
 
 const PET_TYPES = [
-  { value: "cat", label: "Кіт / кішка" },
-  { value: "dog", label: "Собака" },
+  { value: "cat", label: "Кіт / кішка", en: "Cat" },
+  { value: "dog", label: "Собака", en: "Dog" },
 ];
 const PERIODS = [
-  { value: "6m", label: "6 місяців" },
-  { value: "9m", label: "9 місяців" },
-  { value: "12m", label: "12 місяців" },
+  { value: "6m", label: "6 місяців", en: "6 months" },
+  { value: "9m", label: "9 місяців", en: "9 months" },
+  { value: "12m", label: "12 місяців", en: "12 months" },
 ] as const;
 const PERIOD_LABEL: Record<string, string> = { "6m": "6 місяців", "9m": "9 місяців", "12m": "12 місяців" };
+const PERIOD_LABEL_EN: Record<string, string> = { "6m": "6 months", "9m": "9 months", "12m": "12 months" };
 
 const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
@@ -40,6 +42,7 @@ function toPetsInsuranceOffer(o: PetsOffer): InsuranceOffer {
 }
 
 export function PetsFlow() {
+  const { t } = useI18n();
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
   const [petType, setPetType] = useState("cat");
   // Дата початку зашита за замовчуванням (мінімум за API — через 10 днів), поле не показуємо.
@@ -73,13 +76,13 @@ export function PetsFlow() {
         body: JSON.stringify({ startFrom: startDate, insurancePeriod: per }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.success) throw new Error(data?.error ?? "Не вдалося отримати пропозиції");
+      if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }));
       const list: PetsOffer[] = (data.offers ?? []).filter((o: PetsOffer) => o && o.price > 0);
       list.sort((a, b) => a.price - b.price);
       setOffers(list);
       if (typeof data.earnings === "number") setEarnings(data.earnings);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не вдалося отримати пропозиції.");
+      setError(err instanceof Error ? err.message : t({ uk: "Не вдалося отримати пропозиції.", en: "Could not fetch offers." }));
     } finally {
       setLoading(false);
     }
@@ -120,8 +123,8 @@ export function PetsFlow() {
                     offers={offers}
                     loading={loading}
                     error={error}
-                    petLabel={PET_TYPES.find((p) => p.value === petType)?.label ?? ""}
-                    periodLabel={PERIOD_LABEL[period]}
+                    petLabel={(() => { const p = PET_TYPES.find((p) => p.value === petType); return p ? t({ uk: p.label, en: p.en }) : ""; })()}
+                    periodLabel={t({ uk: PERIOD_LABEL[period], en: PERIOD_LABEL_EN[period] })}
                     onBack={() => { setError(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); }}
                     onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   />
@@ -152,33 +155,33 @@ export function PetsFlow() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
             <div className="space-y-4">
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-                Страхування тварин
+                {t({ uk: "Страхування тварин", en: "Pet insurance" })}
                 <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-                  захист вашого улюбленця
+                  {t({ uk: "захист вашого улюбленця", en: "protection for your pet" })}
                 </span>
               </h1>
-              <p className="mx-auto max-w-xl text-base text-zinc-300">Оберіть параметри — і побачите пропозиції з цінами.</p>
+              <p className="mx-auto max-w-xl text-base text-zinc-300">{t({ uk: "Оберіть параметри — і побачите пропозиції з цінами.", en: "Choose your options — and see offers with prices." })}</p>
             </div>
 
             <form onSubmit={submit} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Вид улюбленця</label>
+                  <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Вид улюбленця", en: "Pet type" })}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {PET_TYPES.map((p) => (
                       <button key={p.value} type="button" onClick={() => setPetType(p.value)}
                         className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition-colors ${
                           petType === p.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
                         }`}>
-                        {p.label}
+                        {t({ uk: p.label, en: p.en })}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Clock className="h-3.5 w-3.5" /> Строк страхування</label>
+                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Clock className="h-3.5 w-3.5" /> {t({ uk: "Строк страхування", en: "Insurance term" })}</label>
                   <select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className={selectClass}>
-                    {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    {PERIODS.map((p) => <option key={p.value} value={p.value}>{t({ uk: p.label, en: p.en })}</option>)}
                   </select>
                 </div>
               </div>
@@ -187,7 +190,7 @@ export function PetsFlow() {
 
               <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!valid || loading} className="mt-5 w-full">
                 <span className="flex items-center gap-2">
-                  {loading ? "Шукаємо пропозиції…" : <>Розрахувати вартість <ArrowRight className="h-5 w-5" /></>}
+                  {loading ? t({ uk: "Шукаємо пропозиції…", en: "Searching for offers…" }) : <>{t({ uk: "Розрахувати вартість", en: "Calculate cost" })} <ArrowRight className="h-5 w-5" /></>}
                 </span>
               </Button>
             </form>
@@ -207,6 +210,7 @@ function PetsOffers({ offers, loading, error, petLabel, periodLabel, onBack, onS
   onBack: () => void;
   onSelect: (o: PetsOffer) => void;
 }) {
+  const { t } = useI18n();
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
   const cards = [...offers].sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
   const summary = [petLabel, periodLabel].filter(Boolean).join(" · ");
@@ -216,23 +220,23 @@ function PetsOffers({ offers, loading, error, petLabel, periodLabel, onBack, onS
       {/* Картка-підсумок */}
       <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">
         <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-          <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
+          <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label={t({ uk: "Змінити параметри", en: "Change parameters" })}>
             <Home className="h-3.5 w-3.5" />
           </button>
           <ChevronRight className="h-3 w-3" />
-          <span className="font-medium text-zinc-600 dark:text-zinc-300">Страхування тварин</span>
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">{t({ uk: "Страхування тварин", en: "Pet insurance" })}</span>
         </div>
         <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
       </div>
 
       {!loading && cards.length > 0 && (
         <div className="mb-5 flex items-center justify-end gap-3">
-          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Сортувати</span>
+          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
           <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             {([
-              { k: "price_asc", label: "Спершу дешевші", Icon: ArrowDownWideNarrow },
-              { k: "price_desc", label: "Спершу дорожчі", Icon: ArrowUpWideNarrow },
-            ] as const).map(({ k, label, Icon }) => (
+              { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
+              { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
+            ] as const).map(({ k, label, en, Icon }) => (
               <button key={k} type="button" onClick={() => setSortBy(k)}
                 className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>
                 {sortBy === k && (
@@ -240,7 +244,7 @@ function PetsOffers({ offers, loading, error, petLabel, periodLabel, onBack, onS
                     className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
                 )}
                 <Icon className="relative z-10 h-3.5 w-3.5" />
-                <span className="relative z-10">{label}</span>
+                <span className="relative z-10">{t({ uk: label, en })}</span>
               </button>
             ))}
           </div>
@@ -251,9 +255,9 @@ function PetsOffers({ offers, loading, error, petLabel, periodLabel, onBack, onS
         <SearchingInsurers />
       ) : error || cards.length === 0 ? (
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте інший строк або дату."}</p>
-          <Button variant="secondary" size="md" onClick={onBack} className="mt-5">Змінити параметри</Button>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }) : t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? t({ uk: "Спробуйте ще раз або змініть параметри.", en: "Try again or change your parameters." }) : t({ uk: "Спробуйте інший строк або дату.", en: "Try a different term or date." })}</p>
+          <Button variant="secondary" size="md" onClick={onBack} className="mt-5">{t({ uk: "Змінити параметри", en: "Change parameters" })}</Button>
         </div>
       ) : (
         <div className="space-y-3">

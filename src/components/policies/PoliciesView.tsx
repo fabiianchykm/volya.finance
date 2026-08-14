@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useI18n, type Tr } from "@/lib/i18n";
 import type { PolicyRecord } from "@/lib/policies";
 
 interface PoliciesViewProps {
@@ -13,24 +14,25 @@ interface PoliciesViewProps {
   policies: PolicyRecord[];
 }
 
-const PRODUCT_LABELS: Record<string, string> = {
-  osago: "Автоцивілка", kasko: "КАСКО", greencard: "Зелена карта", tourism: "Туристичне", other: "Страховий поліс",
+const PRODUCT_LABELS: Record<string, Tr> = {
+  osago: { uk: "Автоцивілка", en: "Car insurance" }, kasko: { uk: "КАСКО", en: "CASCO" }, greencard: { uk: "Зелена карта", en: "Green Card" }, tourism: { uk: "Туристичне", en: "Travel insurance" }, other: { uk: "Страховий поліс", en: "Insurance policy" },
 };
 
 export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
+  const { t } = useI18n();
   if (!loggedIn) {
     return (
       <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/40">
           <ShieldCheck className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
         </div>
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Увійдіть, щоб побачити свої поліси</h2>
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Увійдіть, щоб побачити свої поліси", en: "Sign in to see your policies" })}</h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-          Поліси привʼязані до email. Увійдіть через Google з тим самим email, на який оформляли страховку.
+          {t({ uk: "Поліси привʼязані до email. Увійдіть через Google з тим самим email, на який оформляли страховку.", en: "Policies are linked to your email. Sign in with Google using the same email you used to buy the insurance." })}
         </p>
         <Button variant="primary" size="lg" className="mx-auto mt-6 flex items-center gap-2" onClick={() => signIn("google")}>
           <LogIn className="h-4 w-4" />
-          Увійти через Google
+          {t({ uk: "Увійти через Google", en: "Sign in with Google" })}
         </Button>
       </div>
     );
@@ -42,10 +44,9 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800">
           <FileText className="h-7 w-7 text-zinc-400 dark:text-zinc-500" />
         </div>
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Полісів поки немає</h2>
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Полісів поки немає", en: "No policies yet" })}</h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-          На акаунті <span className="font-medium text-zinc-700 dark:text-zinc-200">{email}</span> ще немає полісів.
-          Оформлені у нас зʼявляться тут автоматично.
+          {t({ uk: "На акаунті", en: "Account" })} <span className="font-medium text-zinc-700 dark:text-zinc-200">{email}</span> {t({ uk: "ще немає полісів. Оформлені у нас зʼявляться тут автоматично.", en: "has no policies yet. Those you buy from us will appear here automatically." })}
         </p>
       </div>
     );
@@ -61,6 +62,7 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
 }
 
 function PolicyCard({ policy }: { policy: PolicyRecord }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -71,7 +73,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
 
   const handleDownload = async () => {
     if (!policy.contractId) {
-      setError("Договір ще обробляється. Спробуйте трохи пізніше.");
+      setError(t({ uk: "Договір ще обробляється. Спробуйте трохи пізніше.", en: "The contract is still being processed. Please try again a little later." }));
       return;
     }
     setLoading(true);
@@ -86,9 +88,9 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
       if (!json.success) throw new Error(json.error);
       if (json.data?.mtsbuLink) setMtsbuLink(json.data.mtsbuLink);
       if (json.data?.contract) window.open(json.data.contract, "_blank");
-      else setError("Договір недоступний для завантаження.");
+      else setError(t({ uk: "Договір недоступний для завантаження.", en: "The contract is not available for download." }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Помилка завантаження");
+      setError(e instanceof Error ? e.message : t({ uk: "Помилка завантаження", en: "Download error" }));
     } finally {
       setLoading(false);
     }
@@ -104,16 +106,16 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
         body: JSON.stringify({ id: policy.id }),
       });
       const json = await res.json();
-      if (!json.success) throw new Error("Не вдалося видалити");
+      if (!json.success) throw new Error(t({ uk: "Не вдалося видалити", en: "Could not delete" }));
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Помилка");
+      setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" }));
       setDeleting(false);
     }
   };
 
   const v = policy.vehicle;
-  const productLabel = policy.product ? PRODUCT_LABELS[policy.product] ?? "Страховий поліс" : "Автоцивілка";
+  const productLabel = policy.product ? t(PRODUCT_LABELS[policy.product] ?? PRODUCT_LABELS.other) : t(PRODUCT_LABELS.osago);
   const title = [v.mark, v.model].filter(Boolean).join(" ") || productLabel;
   const subtitle = [v.plate, v.year].filter(Boolean).join(" · ");
 
@@ -129,7 +131,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
               <p className="font-semibold text-zinc-900 dark:text-zinc-100">{title}</p>
               {isManual && (
                 <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  додано вручну
+                  {t({ uk: "додано вручну", en: "added manually" })}
                 </span>
               )}
             </div>
@@ -144,7 +146,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
         </div>
         {policy.price != null && (
           <div className="shrink-0 text-right">
-            <div className="font-bold text-zinc-900 dark:text-zinc-100">{policy.price} грн</div>
+            <div className="font-bold text-zinc-900 dark:text-zinc-100">{policy.price} {t({ uk: "грн", en: "UAH" })}</div>
           </div>
         )}
       </div>
@@ -155,7 +157,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
             <a href="https://policy.mtsbu.ua" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <ExternalLink className="h-4 w-4" />
-                Перевірити в МТСБУ
+                {t({ uk: "Перевірити в МТСБУ", en: "Check on MTSBU" })}
               </Button>
             </a>
             <button
@@ -165,20 +167,20 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
             >
               {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              Видалити
+              {t({ uk: "Видалити", en: "Delete" })}
             </button>
           </>
         ) : (
           <>
             <Button variant="primary" size="sm" loading={loading} onClick={handleDownload} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
-              Завантажити (PDF)
+              {t({ uk: "Завантажити (PDF)", en: "Download (PDF)" })}
             </Button>
             {mtsbuLink && (
               <a href={mtsbuLink} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <ExternalLink className="h-4 w-4" />
-                  Реєстр МТСБУ
+                  {t({ uk: "Реєстр МТСБУ", en: "MTSBU registry" })}
                 </Button>
               </a>
             )}

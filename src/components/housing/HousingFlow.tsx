@@ -11,6 +11,7 @@ import { OfferCard } from "@/components/insurance/OfferCard";
 import { HousingCheckout, type HousingContext } from "./HousingCheckout";
 import type { HomeOffer, InsuranceOffer } from "@/types/api";
 import { trackEvent } from "@/lib/analytics";
+import { useI18n, type Tr } from "@/lib/i18n";
 
 // Страхування житла — потік як у Зеленій карти: темний герой (параметри) → світлий
 // екран пропозицій. Ціна залежить від типу житла, суми покриття та строку.
@@ -20,13 +21,17 @@ const HOME_INSURERS = ["ВУСО", "ТАС", "ОРАНТА", "УНІКА", "УС
 const AMOUNTS = [500000, 700000, 1000000, 1500000, 2000000, 2500000, 3000000, 4000000, 5000000];
 const PERIODS = ["5m", "6m", "7m", "8m", "9m", "10m", "11m", "12m"];
 
-function fmtAmount(v: number): string {
-  if (v >= 1000000) return `${(v / 1000000).toLocaleString("uk-UA")} млн грн`;
-  return `${(v / 1000).toLocaleString("uk-UA")} тис. грн`;
+function fmtAmount(v: number, t: (tr: Tr) => string): string {
+  if (v >= 1000000) return `${(v / 1000000).toLocaleString("uk-UA")} ${t({ uk: "млн грн", en: "M UAH" })}`;
+  return `${(v / 1000).toLocaleString("uk-UA")} ${t({ uk: "тис. грн", en: "K UAH" })}`;
 }
-function fmtPeriod(p: string): string {
+function fmtPeriod(p: string, t: (tr: Tr) => string): string {
   const n = parseInt(p, 10);
-  const word = n === 1 ? "місяць" : n < 5 ? "місяці" : "місяців";
+  const word = n === 1
+    ? t({ uk: "місяць", en: n === 1 ? "month" : "months" })
+    : n < 5
+    ? t({ uk: "місяці", en: "months" })
+    : t({ uk: "місяців", en: "months" });
   return `${n} ${word}`;
 }
 
@@ -34,6 +39,7 @@ const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
 
 export function HousingFlow() {
+  const { t } = useI18n();
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
 
   const [homeType, setHomeType] = useState<"flat" | "house">("flat");
@@ -79,11 +85,11 @@ export function HousingFlow() {
         body: JSON.stringify({ homeType: ht, insuranceAmount: amt, insurancePeriod: per, startFrom: iso }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.success) throw new Error(data?.error ?? "Не вдалося отримати пропозиції");
+      if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Failed to fetch offers" }));
       const list = ((data.offers ?? []) as HomeOffer[]).sort((a, b) => a.price - b.price);
       setOffers(list);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не вдалося отримати пропозиції.");
+      setError(err instanceof Error ? err.message : t({ uk: "Не вдалося отримати пропозиції.", en: "Failed to fetch offers." }));
     } finally {
       setOffersLoading(false);
     }
@@ -91,7 +97,7 @@ export function HousingFlow() {
 
   const calc = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!startD) { setError("Вкажіть дату початку"); return; }
+    if (!startD) { setError(t({ uk: "Вкажіть дату початку", en: "Enter the start date" })); return; }
     void runCalc(homeType, amount, period, startDate);
   };
 
@@ -121,7 +127,7 @@ export function HousingFlow() {
     offer, homeType, insuranceAmount: amount, insurancePeriod: period, startDate,
   });
 
-  const summary = [homeType === "flat" ? "Квартира" : "Будинок", fmtAmount(amount), fmtPeriod(period)].join(" · ");
+  const summary = [homeType === "flat" ? t({ uk: "Квартира", en: "Apartment" }) : t({ uk: "Будинок", en: "House" }), fmtAmount(amount, t), fmtPeriod(period, t)].join(" · ");
 
   if (step === "offers" || step === "checkout") {
     return (
@@ -160,18 +166,18 @@ export function HousingFlow() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
             <div className="space-y-4">
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
-                Страхування житла
+                {t({ uk: "Страхування житла", en: "Property insurance" })}
                 <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-                  квартира або будинок
+                  {t({ uk: "квартира або будинок", en: "apartment or house" })}
                 </span>
               </h1>
-              <p className="mx-auto max-w-xl text-base text-zinc-300">Захист від пожежі, затоплення, стихії та інших ризиків. Оберіть параметри — і побачите ціни страхових.</p>
+              <p className="mx-auto max-w-xl text-base text-zinc-300">{t({ uk: "Захист від пожежі, затоплення, стихії та інших ризиків. Оберіть параметри — і побачите ціни страхових.", en: "Protection against fire, flooding, natural disasters and other risks. Choose the parameters — and see insurers' prices." })}</p>
             </div>
 
             <form onSubmit={calc} className="mx-auto max-w-2xl rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
               {/* Тип житла */}
               <div className="mb-4 grid grid-cols-2 gap-2">
-                {([{ v: "flat", label: "Квартира", Icon: Building2 }, { v: "house", label: "Будинок", Icon: HomeIcon }] as const).map(({ v, label, Icon }) => (
+                {([{ v: "flat", label: t({ uk: "Квартира", en: "Apartment" }), Icon: Building2 }, { v: "house", label: t({ uk: "Будинок", en: "House" }), Icon: HomeIcon }] as const).map(({ v, label, Icon }) => (
                   <button key={v} type="button" onClick={() => setHomeType(v)}
                     className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
                       homeType === v ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
@@ -183,19 +189,19 @@ export function HousingFlow() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> Сума покриття</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><ShieldCheck className="h-3.5 w-3.5" /> {t({ uk: "Сума покриття", en: "Coverage amount" })}</label>
                   <select value={amount} onChange={(e) => setAmount(Number(e.target.value))} className={selectClass}>
-                    {AMOUNTS.map((a) => <option key={a} value={a}>{fmtAmount(a)}</option>)}
+                    {AMOUNTS.map((a) => <option key={a} value={a}>{fmtAmount(a, t)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Строк</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Строк", en: "Term" })}</label>
                   <select value={period} onChange={(e) => setPeriod(e.target.value)} className={selectClass}>
-                    {PERIODS.map((p) => <option key={p} value={p}>{fmtPeriod(p)}</option>)}
+                    {PERIODS.map((p) => <option key={p} value={p}>{fmtPeriod(p, t)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> Дата початку</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Дата початку", en: "Start date" })}</label>
                   <DateInput label="" value={startDate} onChange={setStartDate} minDate={minStart} maxDate={maxStart} required />
                 </div>
               </div>
@@ -203,7 +209,7 @@ export function HousingFlow() {
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
               <Button type="submit" variant="primary" size="lg" disabled={!startD} className="mt-5 w-full">
-                <span className="flex items-center gap-2">Розрахувати вартість <ArrowRight className="h-5 w-5" /></span>
+                <span className="flex items-center gap-2">{t({ uk: "Розрахувати вартість", en: "Calculate cost" })} <ArrowRight className="h-5 w-5" /></span>
               </Button>
             </form>
           </motion.div>
@@ -223,17 +229,18 @@ function HousingOffers({
   onBack: () => void;
   onSelect: (o: HomeOffer) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="mx-auto max-w-[1200px]">
       <div className="flex flex-col items-start gap-6 lg:flex-row">
         <div className="min-w-0 flex-1">
           <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">
             <div className="mb-3 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-              <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label="Змінити параметри">
+              <button type="button" onClick={onBack} className="transition-colors hover:text-indigo-500" aria-label={t({ uk: "Змінити параметри", en: "Change parameters" })}>
                 <HomeIcon className="h-3.5 w-3.5" />
               </button>
               <ChevronRight className="h-3 w-3" />
-              <span className="font-medium text-zinc-600 dark:text-zinc-300">Страхування житла</span>
+              <span className="font-medium text-zinc-600 dark:text-zinc-300">{t({ uk: "Страхування житла", en: "Property insurance" })}</span>
             </div>
             <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
           </div>
@@ -245,9 +252,9 @@ function HousingOffers({
             </>
           ) : error || offers.length === 0 ? (
             <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
-              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? "Не вдалося отримати пропозиції" : "Пропозицій не знайдено"}</p>
-              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? "Спробуйте ще раз або змініть параметри." : "Спробуйте інші параметри."}</p>
-              <Button variant="secondary" size="md" onClick={onBack} className="mt-5">Змінити параметри</Button>
+              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? t({ uk: "Не вдалося отримати пропозиції", en: "Failed to fetch offers" }) : t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? t({ uk: "Спробуйте ще раз або змініть параметри.", en: "Try again or change the parameters." }) : t({ uk: "Спробуйте інші параметри.", en: "Try other parameters." })}</p>
+              <Button variant="secondary" size="md" onClick={onBack} className="mt-5">{t({ uk: "Змінити параметри", en: "Change parameters" })}</Button>
             </div>
           ) : (
             <div className="space-y-3">

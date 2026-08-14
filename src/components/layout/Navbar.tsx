@@ -10,23 +10,24 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
 import { useLogin } from "@/components/auth/LoginProvider";
+import { useI18n } from "@/lib/i18n";
 
-type NavItem = { label: string; href: string; icon: LucideIcon; desc: string; badge?: string; soon?: boolean };
+type NavItem = { label: string; labelEn: string; href: string; icon: LucideIcon; desc: string; descEn: string; badge?: string; soon?: boolean };
 
 // Продукти згруповані у два дропдауни за типом страхування (майнове / особисте),
 // щоб меню не розтягувалось і кожен підпункт мав зрозумілий опис.
 // «Матеріальне» — авто + житло (майно).
 const MATERIAL_LINKS: NavItem[] = [
-  { label: "Автоцивілка", href: "/osago", icon: ShieldCheck, desc: "ОСЦПВ онлайн" },
-  { label: "КАСКО", href: "/kasko", icon: Car, desc: "Повний захист авто" },
-  { label: "Міні-КАСКО", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше" },
-  { label: "Зелена карта", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон" },
-  { label: "Житло", href: "/housing", icon: Home, desc: "Захист квартири чи будинку" },
+  { label: "Автоцивілка", labelEn: "Car insurance (OSAGO)", href: "/osago", icon: ShieldCheck, desc: "ОСЦПВ онлайн", descEn: "OSAGO online" },
+  { label: "КАСКО", labelEn: "CASCO", href: "/kasko", icon: Car, desc: "Повний захист авто", descEn: "Full protection for your car" },
+  { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше", descEn: "Key risks, for less" },
+  { label: "Зелена карта", labelEn: "Green Card", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон", descEn: "For trips abroad" },
+  { label: "Житло", labelEn: "Property", href: "/housing", icon: Home, desc: "Захист квартири чи будинку", descEn: "Protection for your flat or house" },
 ];
 // «Особисте» — здоровʼя/подорожі/улюбленці.
 const PERSONAL_LINKS: NavItem[] = [
-  { label: "Туристичне", href: "/tourism", icon: Plane, desc: "Медичне для подорожей за кордон" },
-  { label: "Тварини", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак" },
+  { label: "Туристичне", labelEn: "Travel", href: "/tourism", icon: Plane, desc: "Медичне для подорожей за кордон", descEn: "Medical cover for trips abroad" },
+  { label: "Тварини", labelEn: "Pets", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак", descEn: "Insurance for cats and dogs" },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];
@@ -34,6 +35,7 @@ const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];
 // Дропдаун меню з підпунктами-описами. Керований клік/тап + hover (на планшетах
 // hover нема, тож потрібен клік), закривається по кліку поза ним і по Escape.
 function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]; opaque: boolean }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
@@ -70,7 +72,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
         )}
       >
         <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03] dark:ring-white/10">
-          {links.map(({ href, label, icon: Icon, desc, badge, soon }) => {
+          {links.map(({ href, label, labelEn, icon: Icon, desc, descEn, badge, soon }) => {
             const row = (
               <>
                 <span className={cn(
@@ -81,12 +83,12 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
                 </span>
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                    {label}
+                    {t({ uk: label, en: labelEn })}
                     {badge && (
                       <span className="rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">{badge}</span>
                     )}
                   </span>
-                  <span className="block truncate text-xs text-zinc-400 dark:text-zinc-500">{desc}</span>
+                  <span className="block truncate text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: desc, en: descEn })}</span>
                 </span>
               </>
             );
@@ -112,6 +114,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
 }
 
 export function Navbar({ solid = false }: { solid?: boolean }) {
+  const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { data: session, status } = useSession();
@@ -153,8 +156,8 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         </Link>
 
         <ul className="hidden items-center gap-0.5 md:flex">
-          <NavDropdown title="Матеріальне страхування" links={MATERIAL_LINKS} opaque={opaque} />
-          <NavDropdown title="Особисте страхування" links={PERSONAL_LINKS} opaque={opaque} />
+          <NavDropdown title={t({ uk: "Матеріальне страхування", en: "Property insurance" })} links={MATERIAL_LINKS} opaque={opaque} />
+          <NavDropdown title={t({ uk: "Особисте страхування", en: "Personal insurance" })} links={PERSONAL_LINKS} opaque={opaque} />
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -173,7 +176,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
               onClick={() => openLogin()}
             >
               <LogIn className="h-4 w-4" />
-              Увійти
+              {t({ uk: "Увійти", en: "Sign in" })}
             </Button>
           )}
         </div>
@@ -186,7 +189,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
               : "border-white/20 text-white hover:bg-white/10"
           )}
           onClick={() => setMobileOpen((o) => !o)}
-          aria-label="Меню"
+          aria-label={t({ uk: "Меню", en: "Menu" })}
           aria-expanded={mobileOpen}
           aria-haspopup="menu"
         >
@@ -209,7 +212,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                 const soon = (link as { soon?: boolean }).soon;
                 const label = (
                   <>
-                    {link.label}
+                    {t({ uk: link.label, en: link.labelEn })}
                     {badge && (
                       <span className="rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">{badge}</span>
                     )}
@@ -251,7 +254,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                       className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                     >
                       <FileText className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                      Мої поліси
+                      {t({ uk: "Мої поліси", en: "My policies" })}
                     </Link>
                     <Button
                       size="md"
@@ -260,7 +263,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                       onClick={() => signOut()}
                     >
                       <LogOut className="h-4 w-4" />
-                      Вийти
+                      {t({ uk: "Вийти", en: "Sign out" })}
                     </Button>
                   </div>
                 ) : (
@@ -271,7 +274,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                     onClick={() => { setMobileOpen(false); openLogin(); }}
                   >
                     <LogIn className="h-4 w-4" />
-                    Увійти
+                    {t({ uk: "Увійти", en: "Sign in" })}
                   </Button>
                 )}
               </div>
@@ -290,6 +293,7 @@ function UserMenu({
   scrolled: boolean;
   user: { name?: string | null; image?: string | null; email?: string | null };
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   return (
@@ -345,14 +349,14 @@ function UserMenu({
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
               >
                 <FileText className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                Мої поліси
+                {t({ uk: "Мої поліси", en: "My policies" })}
               </Link>
               <button
                 onClick={() => { setOpen(false); signOut(); }}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
               >
                 <LogOut className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                Вийти
+                {t({ uk: "Вийти", en: "Sign out" })}
               </button>
             </motion.div>
           </>

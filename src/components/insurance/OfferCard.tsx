@@ -8,6 +8,7 @@ import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
 import { BONUS_RATE } from "@/lib/constants";
 import { logoSrc } from "@/lib/logos";
+import { useI18n } from "@/lib/i18n";
 import type { InsuranceCompany, InsuranceOffer } from "@/types/api";
 
 interface OfferCardProps {
@@ -121,6 +122,7 @@ export function OfferCard({
   productDescription,
   coverageTags,
 }: OfferCardProps) {
+  const { t } = useI18n();
   // Розгортання «Детальніше» — через спільний стор (акордеон): відкрита лише одна.
   const cardKey = offer.offerId ?? `idx-${index}`;
   const openKey = useSyncExternalStore(subscribeAccordion, () => accordionOpenKey, () => null);
@@ -162,11 +164,11 @@ export function OfferCard({
 
   // Обов'язкові інформаційні документи продукту (показуємо ті, що прийшли з API).
   const docs = [
-    { label: "Інформація про страховий продукт", url: offer.company.docProduct },
-    { label: "Інформація про страхову компанію", url: offer.company.docCompany },
-    { label: "Інформація про страхового посередника", url: offer.company.docAgent },
-    { label: "Загальні умови страхового продукту", url: offer.company.docZusp },
-  ].filter((d): d is { label: string; url: string } => !!d.url && d.url.trim().length > 0);
+    { label: "Інформація про страховий продукт", en: "Insurance product information", url: offer.company.docProduct },
+    { label: "Інформація про страхову компанію", en: "Insurance company information", url: offer.company.docCompany },
+    { label: "Інформація про страхового посередника", en: "Insurance intermediary information", url: offer.company.docAgent },
+    { label: "Загальні умови страхового продукту", en: "General insurance product terms", url: offer.company.docZusp },
+  ].filter((d): d is { label: string; en: string; url: string } => !!d.url && d.url.trim().length > 0);
   const hasDocs = docs.length > 0;
   const hasFacts = offer.company.directSettlement === 1 || offer.company.compensationDays > 0;
 
@@ -198,11 +200,11 @@ export function OfferCard({
       {autolawyer && (
         <button type="button" onClick={() => onSelectAutolawyer(selectedAutolawyerId === autolawyer.id ? null : autolawyer.id)} className={rowClass(selectedAutolawyerId === autolawyer.id)}>
           <span className="flex min-w-0 flex-col">
-            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Автоюрист</span>
-            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">Додаткова опція</span>
+            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t({ uk: "Автоюрист", en: "Auto lawyer" })}</span>
+            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{t({ uk: "Додаткова опція", en: "Additional option" })}</span>
           </span>
           <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-            {autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : "Безкоштовно"}
+            {autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : t({ uk: "Безкоштовно", en: "Free" })}
           </span>
         </button>
       )}
@@ -211,7 +213,7 @@ export function OfferCard({
       {dgoList.length > 0 && (
         <div className="relative w-full">
           <select
-            aria-label="Додаткове покриття"
+            aria-label={t({ uk: "Додаткове покриття", en: "Additional coverage" })}
             value={selectedDgoId || ""}
             onChange={(e) => onSelectDgo(e.target.value || null)}
             className={cn(
@@ -221,10 +223,10 @@ export function OfferCard({
                 : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
             )}
           >
-            <option value="">Додаткове покриття</option>
+            <option value="">{t({ uk: "Додаткове покриття", en: "Additional coverage" })}</option>
             {dgoList.map((dgo) => (
               <option key={dgo.id} value={dgo.id}>
-                +{Number(dgo.coverage).toLocaleString()} грн — {formatPrice(Number(dgo.cost))}
+                +{Number(dgo.coverage).toLocaleString()} {t({ uk: "грн", en: "UAH" })} — {formatPrice(Number(dgo.cost))}
               </option>
             ))}
           </select>
@@ -247,7 +249,7 @@ export function OfferCard({
     >
       {specialOffer && (
         <span className="absolute left-0 top-0 z-10 inline-flex items-center rounded-br-xl rounded-tl-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
-          Спеціальна пропозиція від VOLYA.FINANCE
+          {t({ uk: "Спеціальна пропозиція від VOLYA.FINANCE", en: "Special offer from VOLYA.FINANCE" })}
         </span>
       )}
       {cornerBadge && !specialOffer && (
@@ -282,8 +284,8 @@ export function OfferCard({
               {formatPrice(totalPrice)}
             </span>
             {bonus > 0 && (
-              <span title="1% від вартості полісу на бонусний рахунок" className="mt-0.5 whitespace-nowrap text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                +{formatPrice(bonus)} бонус
+              <span title={t({ uk: "1% від вартості полісу на бонусний рахунок", en: "1% of the policy price to your bonus account" })} className="mt-0.5 whitespace-nowrap text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
               </span>
             )}
           </div>
@@ -311,7 +313,7 @@ export function OfferCard({
             onClick={() => { onSelect(); onBuy(); }}
             className="w-full"
           >
-            Купити
+            {t({ uk: "Купити", en: "Buy" })}
           </Button>
           {canExpand && (
             <button
@@ -319,7 +321,7 @@ export function OfferCard({
               className="flex items-center justify-center gap-0.5 text-xs text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-              Детальніше
+              {t({ uk: "Детальніше", en: "Details" })}
             </button>
           )}
         </div>
@@ -349,7 +351,7 @@ export function OfferCard({
                   <span className="text-3xl text-zinc-900 dark:text-zinc-100">
                     {(dgoList.length ? 1 : 0) + (lawyerList.length ? 1 : 0)}
                   </span>
-                  <span className="text-xs text-zinc-400 font-medium dark:text-zinc-500">опції</span>
+                  <span className="text-xs text-zinc-400 font-medium dark:text-zinc-500">{t({ uk: "опції", en: "options" })}</span>
                 </>
               )}
             </div>
@@ -358,7 +360,7 @@ export function OfferCard({
               className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors mt-auto dark:text-zinc-500 dark:hover:text-indigo-400"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-              Додатково
+              {t({ uk: "Додатково", en: "More" })}
             </button>
           </div>
         )}
@@ -382,8 +384,8 @@ export function OfferCard({
               {formatPrice(totalPrice)}
             </div>
             {bonus > 0 && (
-              <span title="1% від вартості полісу на бонусний рахунок" className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-                +{formatPrice(bonus)} бонус
+              <span title={t({ uk: "1% від вартості полісу на бонусний рахунок", en: "1% of the policy price to your bonus account" })} className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
               </span>
             )}
           </div>
@@ -393,7 +395,7 @@ export function OfferCard({
             onClick={() => { onSelect(); onBuy(); }}
             className="w-full"
           >
-            Купити
+            {t({ uk: "Купити", en: "Buy" })}
           </Button>
         </div>
       </div>
@@ -404,14 +406,14 @@ export function OfferCard({
         <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4 dark:border-zinc-800">
           {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + пряме врегулювання */}
           {(productDescription || offer.company.directSettlement === 1) && (
-            <DetailsDropdown label="Базові опції" open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
+            <DetailsDropdown label={t({ uk: "Базові опції", en: "Basic options" })} open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
               {productDescription}
               {offer.company.directSettlement === 1 && (
                 <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">Пряме врегулювання</span>
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Пряме врегулювання", en: "Direct settlement" })}</span>
                     <span
-                      title="Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП."
+                      title={t({ uk: "Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.", en: "The injured party can claim insurance compensation directly from their own insurance company, which pays out and then settles accounts with the insurer of the party at fault in the accident." })}
                       className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
                     >
                       <Info className="h-3.5 w-3.5" />
@@ -424,10 +426,10 @@ export function OfferCard({
 
           {/* «Умови виплат» — окремий dropdown (між Базові опції та Документи) */}
           {offer.company.compensationDays > 0 && (
-            <DetailsDropdown label="Умови виплат" open={openDetail === "term"} onToggle={() => toggleDetail("term")}>
+            <DetailsDropdown label={t({ uk: "Умови виплат", en: "Payout terms" })} open={openDetail === "term"} onToggle={() => toggleDetail("term")}>
               <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
                 <span className="text-xs text-zinc-700 dark:text-zinc-200">
-                  Виплата до {offer.company.compensationDays} днів
+                  {t({ uk: `Виплата до ${offer.company.compensationDays} днів`, en: `Payout within ${offer.company.compensationDays} days` })}
                 </span>
               </div>
             </DetailsDropdown>
@@ -435,7 +437,7 @@ export function OfferCard({
 
           {/* Документи — окремий dropdown */}
           {hasDocs && (
-            <DetailsDropdown label="Документи страхового продукту" open={openDetail === "docs"} onToggle={() => toggleDetail("docs")} bodyClassName="px-2 py-2">
+            <DetailsDropdown label={t({ uk: "Документи страхового продукту", en: "Insurance product documents" })} open={openDetail === "docs"} onToggle={() => toggleDetail("docs")} bodyClassName="px-2 py-2">
               <div className="flex flex-col gap-2">
                 {docs.map((d) => (
                   <a
@@ -447,7 +449,7 @@ export function OfferCard({
                   >
                     <span className="flex min-w-0 items-start gap-2">
                       <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-500" />
-                      <span className="leading-snug">{d.label}</span>
+                      <span className="leading-snug">{t({ uk: d.label, en: d.en })}</span>
                     </span>
                     <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
                   </a>

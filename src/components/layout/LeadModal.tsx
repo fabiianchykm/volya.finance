@@ -5,6 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { trackEvent } from "@/lib/analytics";
+import { useI18n } from "@/lib/i18n";
 
 // Спільне віконце заявки на звʼязок (телефон/email). Використовують і футер, і
 // плаваюча кнопка. Керується через mode: "phone" | "email" | null (закрито).
@@ -19,6 +20,7 @@ function formatUaPhone(digits: string): string {
 }
 
 export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: string; onClose: () => void }) {
+  const { t } = useI18n();
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -61,35 +63,35 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
         body: JSON.stringify(body),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.success) throw new Error(json.error ?? "Не вдалося надіслати. Спробуйте ще раз.");
+      if (!res.ok || !json.success) throw new Error(json.error ?? t({ uk: "Не вдалося надіслати. Спробуйте ще раз.", en: "Failed to send. Please try again." }));
       trackEvent("generate_lead", { form: "callback", method: mode ?? "phone", source });
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Сталася помилка. Спробуйте ще раз.");
+      setError(err instanceof Error ? err.message : t({ uk: "Сталася помилка. Спробуйте ще раз.", en: "An error occurred. Please try again." }));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal open={mode !== null} onClose={close} title={mode === "email" ? "Написати нам" : "Замовити дзвінок"} size="sm">
+    <Modal open={mode !== null} onClose={close} title={mode === "email" ? t({ uk: "Написати нам", en: "Write to us" }) : t({ uk: "Замовити дзвінок", en: "Order a call" })} size="sm">
       {done ? (
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Дякуємо! Заявку прийнято.</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Дякуємо! Заявку прийнято.", en: "Thank you! Your request has been received." })}</p>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {mode === "email" ? "Ми напишемо вам найближчим часом." : "Наш менеджер зателефонує вам найближчим часом."}
+            {mode === "email" ? t({ uk: "Ми напишемо вам найближчим часом.", en: "We'll write to you shortly." }) : t({ uk: "Наш менеджер зателефонує вам найближчим часом.", en: "Our manager will call you shortly." })}
           </p>
           <Button variant="outline" size="md" className="mt-2 w-full" onClick={close}>
-            Готово
+            {t({ uk: "Готово", en: "Done" })}
           </Button>
         </div>
       ) : (
         <form onSubmit={submit} className="space-y-4">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {mode === "email"
-              ? "Залиште свій email — ми напишемо вам."
-              : "Залиште свій номер — ми зателефонуємо вам."}
+              ? t({ uk: "Залиште свій email — ми напишемо вам.", en: "Leave your email — we'll write to you." })
+              : t({ uk: "Залиште свій номер — ми зателефонуємо вам.", en: "Leave your number — we'll call you." })}
           </p>
 
           {mode === "phone" ? (
@@ -99,7 +101,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
                 type="tel"
                 inputMode="numeric"
                 autoFocus
-                aria-label="Номер телефону"
+                aria-label={t({ uk: "Номер телефону", en: "Phone number" })}
                 placeholder="67 123 45 67"
                 value={formatUaPhone(phone)}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
@@ -110,7 +112,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
             <input
               type="email"
               autoFocus
-              aria-label="Електронна пошта"
+              aria-label={t({ uk: "Електронна пошта", en: "Email" })}
               placeholder="email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -121,7 +123,7 @@ export function LeadModal({ mode, source, onClose }: { mode: LeadMode; source: s
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
 
           <Button type="submit" variant="primary" size="lg" loading={submitting} disabled={!valid || submitting} className="w-full">
-            {mode === "email" ? "Надіслати" : "Передзвоніть мені"}
+            {mode === "email" ? t({ uk: "Надіслати", en: "Send" }) : t({ uk: "Передзвоніть мені", en: "Call me back" })}
           </Button>
         </form>
       )}

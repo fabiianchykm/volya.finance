@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Accessibility, Minus, Plus, RotateCcw } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 // Кнопка «Доступність» із popover-панеллю (поряд із перемикачем теми у футері):
 // розмір шрифту, високий контраст, збільшені інтервали, підкреслення посилань,
@@ -28,6 +29,7 @@ function apply(s: A11y) {
 }
 
 export function AccessibilityControls() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [s, setS] = useState<A11y>(DEFAULTS);
   const [mounted, setMounted] = useState(false);
@@ -95,10 +97,10 @@ export function AccessibilityControls() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Доступність"
+        aria-label={t({ uk: "Доступність", en: "Accessibility" })}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title="Доступність"
+        title={t({ uk: "Доступність", en: "Accessibility" })}
         className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-indigo-600 shadow-sm transition-colors hover:bg-indigo-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-indigo-400 dark:hover:bg-zinc-700"
       >
         <Accessibility className="h-5 w-5" aria-hidden="true" />
@@ -107,33 +109,33 @@ export function AccessibilityControls() {
       {open && (
         <div
           role="dialog"
-          aria-label="Налаштування доступності"
+          aria-label={t({ uk: "Налаштування доступності", en: "Accessibility settings" })}
           className="absolute bottom-full right-0 z-40 mb-2 w-72 rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
         >
           <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-            Доступність
+            {t({ uk: "Доступність", en: "Accessibility" })}
           </p>
 
           {/* Розмір шрифту */}
           <div className="flex items-center justify-between gap-3 rounded-lg px-2 py-2">
-            <span className="text-sm text-zinc-700 dark:text-zinc-200">Розмір тексту</span>
+            <span className="text-sm text-zinc-700 dark:text-zinc-200">{t({ uk: "Розмір тексту", en: "Text size" })}</span>
             <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-1 dark:border-zinc-700 dark:bg-zinc-800">
-              <button type="button" onClick={() => setFont(-1)} disabled={idx <= 0} aria-label="Зменшити розмір тексту" className={stepBtn}>
+              <button type="button" onClick={() => setFont(-1)} disabled={idx <= 0} aria-label={t({ uk: "Зменшити розмір тексту", en: "Decrease text size" })} className={stepBtn}>
                 <Minus className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
               <span className="min-w-[2.6rem] text-center text-[11px] font-medium tabular-nums text-zinc-500 dark:text-zinc-400" aria-hidden="true">
                 {Math.round((mounted ? s.fontScale : 1) * 100)}%
               </span>
-              <button type="button" onClick={() => setFont(1)} disabled={idx >= SCALES.length - 1} aria-label="Збільшити розмір тексту" className={stepBtn}>
+              <button type="button" onClick={() => setFont(1)} disabled={idx >= SCALES.length - 1} aria-label={t({ uk: "Збільшити розмір тексту", en: "Increase text size" })} className={stepBtn}>
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          <Toggle label="Високий контраст" active={on(s.contrast)} onClick={() => update({ contrast: !s.contrast })} />
-          <Toggle label="Збільшені інтервали" active={on(s.spacing)} onClick={() => update({ spacing: !s.spacing })} />
-          <Toggle label="Підкреслювати посилання" active={on(s.underline)} onClick={() => update({ underline: !s.underline })} />
-          <Toggle label="Без анімації" active={on(s.motion)} onClick={() => update({ motion: !s.motion })} />
+          <Toggle label={t({ uk: "Високий контраст", en: "High contrast" })} active={on(s.contrast)} onClick={() => update({ contrast: !s.contrast })} />
+          <Toggle label={t({ uk: "Збільшені інтервали", en: "Increased spacing" })} active={on(s.spacing)} onClick={() => update({ spacing: !s.spacing })} />
+          <Toggle label={t({ uk: "Підкреслювати посилання", en: "Underline links" })} active={on(s.underline)} onClick={() => update({ underline: !s.underline })} />
+          <Toggle label={t({ uk: "Без анімації", en: "No animation" })} active={on(s.motion)} onClick={() => update({ motion: !s.motion })} />
 
           <div className="mt-1 border-t border-zinc-100 pt-2 dark:border-zinc-800">
             <button
@@ -141,7 +143,7 @@ export function AccessibilityControls() {
               onClick={reset}
               className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-zinc-500 transition-colors hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400"
             >
-              <RotateCcw className="h-3 w-3" aria-hidden="true" /> Скинути налаштування
+              <RotateCcw className="h-3 w-3" aria-hidden="true" /> {t({ uk: "Скинути налаштування", en: "Reset settings" })}
             </button>
           </div>
         </div>

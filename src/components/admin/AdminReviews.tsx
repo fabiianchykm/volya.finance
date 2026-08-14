@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Star, Trash2, Loader2 } from "lucide-react";
 import { getInsurer } from "@/lib/insurers";
+import { useI18n } from "@/lib/i18n";
 
 interface AdminReview {
   id: number;
@@ -20,6 +21,7 @@ export function AdminReviews() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     (async () => {
@@ -27,17 +29,18 @@ export function AdminReviews() {
         const res = await fetch("/api/admin/reviews");
         const json = await res.json();
         if (json.success) setReviews(json.reviews);
-        else setError(json.error ?? "Помилка");
+        else setError(json.error ?? t({ uk: "Помилка", en: "Error" }));
       } catch {
-        setError("Помилка завантаження");
+        setError(t({ uk: "Помилка завантаження", en: "Loading error" }));
       } finally {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const remove = async (id: number) => {
-    if (!confirm("Видалити цей відгук?")) return;
+    if (!confirm(t({ uk: "Видалити цей відгук?", en: "Delete this review?" }))) return;
     setDeleting(id);
     try {
       const res = await fetch(`/api/admin/reviews?id=${id}`, { method: "DELETE" });
@@ -48,13 +51,13 @@ export function AdminReviews() {
     }
   };
 
-  if (loading) return <div className="flex items-center gap-2 text-sm text-zinc-400 dark:text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> Завантаження…</div>;
+  if (loading) return <div className="flex items-center gap-2 text-sm text-zinc-400 dark:text-zinc-500"><Loader2 className="h-4 w-4 animate-spin" /> {t({ uk: "Завантаження…", en: "Loading…" })}</div>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (reviews.length === 0) return <p className="text-sm text-zinc-500 dark:text-zinc-400">Відгуків ще немає.</p>;
+  if (reviews.length === 0) return <p className="text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Відгуків ще немає.", en: "No reviews yet." })}</p>;
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Усього відгуків: {reviews.length}</p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Усього відгуків:", en: "Total reviews:" })} {reviews.length}</p>
       {reviews.map((r) => (
         <div key={r.id} className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm">
           <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
@@ -75,7 +78,7 @@ export function AdminReviews() {
               className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
             >
               {deleting === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-              Видалити
+              {t({ uk: "Видалити", en: "Delete" })}
             </button>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">{r.text}</p>

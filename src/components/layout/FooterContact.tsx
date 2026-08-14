@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Phone, Mail } from "lucide-react";
 import { LeadModal, type LeadMode } from "./LeadModal";
+import { useI18n } from "@/lib/i18n";
 
 function ViberIcon({ className }: { className?: string }) {
   return (
@@ -86,6 +87,7 @@ const SOCIALS = [
 ];
 
 export function FooterContact() {
+  const { t } = useI18n();
   const [mode, setMode] = useState<LeadMode>(null);
 
   const btn =
@@ -101,16 +103,16 @@ export function FooterContact() {
         {/* Підтримка — способи звʼязку */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-            Підтримка
+            {t({ uk: "Підтримка", en: "Support" })}
           </p>
           <div className="flex items-center gap-3">
-            <button type="button" aria-label="Замовити дзвінок" title="Замовити дзвінок" className={btn} onClick={() => setMode("phone")}>
+            <button type="button" aria-label={t({ uk: "Замовити дзвінок", en: "Order a call" })} title={t({ uk: "Замовити дзвінок", en: "Order a call" })} className={btn} onClick={() => setMode("phone")}>
               <Phone className="h-5 w-5" />
             </button>
-            <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Написати в Telegram" title="Написати в Telegram" className={btn}>
+            <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label={t({ uk: "Написати в Telegram", en: "Message us on Telegram" })} title={t({ uk: "Написати в Telegram", en: "Message us on Telegram" })} className={btn}>
               <TelegramIcon className="h-5 w-5" />
             </a>
-            <a href="mailto:volya.finance.team@gmail.com" aria-label="Написати на email" title="Написати на email" className={btn}>
+            <a href="mailto:volya.finance.team@gmail.com" aria-label={t({ uk: "Написати на email", en: "Write to us by email" })} title={t({ uk: "Написати на email", en: "Write to us by email" })} className={btn}>
               <Mail className="h-5 w-5" />
             </a>
             {/* Viber — заморожено (некликабельно): бот ще не готовий */}
@@ -123,7 +125,7 @@ export function FooterContact() {
         {/* Соцмережі — паралельно від підтримки */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-            Соцмережі
+            {t({ uk: "Соцмережі", en: "Social media" })}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             {SOCIALS.map(({ label, href, Icon, live }) =>

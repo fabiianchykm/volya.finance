@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FAQ_ITEMS, type FaqItem } from "@/lib/faq";
+import { useI18n } from "@/lib/i18n";
 
 function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -61,20 +62,21 @@ function FAQItem({ question, answer, index }: { question: string; answer: string
 
 export function FAQSection({
   items = FAQ_ITEMS,
-  subtitle = "Усе, що потрібно знати про електронну автоцивілку",
+  subtitle,
 }: {
   items?: FaqItem[];
   subtitle?: string;
 }) {
+  const { t } = useI18n();
   return (
     <section id="faq" className="bg-[#FAFAFA] dark:bg-[#0f0f11] py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
         <div className="mb-14 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">
-            Поширені запитання
+            {t({ uk: "Поширені запитання", en: "Frequently asked questions" })}
           </h2>
           <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-300">
-            {subtitle}
+            {subtitle ?? t({ uk: "Усе, що потрібно знати про електронну автоцивілку", en: "Everything you need to know about the electronic OSAGO policy" })}
           </p>
         </div>
 

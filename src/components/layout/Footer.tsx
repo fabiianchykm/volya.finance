@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { AccessibilityControls } from "./AccessibilityControls";
 import { LanguageToggle } from "./LanguageToggle";
+import { useI18n } from "@/lib/i18n";
 
 function AppleLogo({ className }: { className?: string }) {
   return (
@@ -23,6 +26,7 @@ function GooglePlayLogo({ className }: { className?: string }) {
 
 // Бейдж застосунку з кутовою позначкою «Скоро» (магазини ще не активні).
 function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: string }) {
+  const { t } = useI18n();
   return (
     <div className="relative flex w-full cursor-default items-center gap-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-300 bg-white dark:bg-zinc-100 px-6 py-3.5">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center text-zinc-900">{logo}</span>
@@ -30,39 +34,40 @@ function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: s
         <span className="text-xs text-zinc-500">{top}</span>
         <span className="text-lg font-semibold text-zinc-900">{name}</span>
       </span>
-      <span className="absolute -right-2 -top-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm">Скоро</span>
+      <span className="absolute -right-2 -top-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm">{t({ uk: "Скоро", en: "Soon" })}</span>
     </div>
   );
 }
 import { FooterContact } from "./FooterContact";
 
-type FooterLink = { label: string; href: string; frozen?: boolean };
+type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean };
 
 const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
   products: [
-    { label: "Автоцивілка", href: "/osago" },
-    { label: "КАСКО", href: "/kasko" },
-    { label: "Міні-КАСКО", href: "/mini-kasko" },
-    { label: "Зелена карта", href: "/green-card" },
-    { label: "Туристичне", href: "/tourism" },
-    { label: "Тварини", href: "/pets" },
-    { label: "Житло", href: "/housing" },
+    { label: "Автоцивілка", labelEn: "Car insurance (OSAGO)", href: "/osago" },
+    { label: "КАСКО", labelEn: "CASCO", href: "/kasko" },
+    { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko" },
+    { label: "Зелена карта", labelEn: "Green Card", href: "/green-card" },
+    { label: "Туристичне", labelEn: "Travel", href: "/tourism" },
+    { label: "Тварини", labelEn: "Pets", href: "/pets" },
+    { label: "Житло", labelEn: "Property", href: "/housing" },
   ],
   media: [
     // Заморожені (порожні, контент готується) — некликабельні.
-    { label: "Блог", href: "/blog", frozen: true },
-    { label: "Новини", href: "/news", frozen: true },
-    { label: "Статистика", href: "/statistics", frozen: true },
+    { label: "Блог", labelEn: "Blog", href: "/blog", frozen: true },
+    { label: "Новини", labelEn: "News", href: "/news", frozen: true },
+    { label: "Статистика", labelEn: "Statistics", href: "/statistics", frozen: true },
   ],
   legal: [
-    { label: "Інформація про Субагента", href: "/subagent" },
+    { label: "Інформація про Субагента", labelEn: "Sub-agent information", href: "/subagent" },
     // Заморожені (документи ще не опубліковані) — некликабельні.
-    { label: "Публічна оферта", href: "#", frozen: true },
-    { label: "Політика конфіденційності", href: "#", frozen: true },
+    { label: "Публічна оферта", labelEn: "Public offer", href: "#", frozen: true },
+    { label: "Політика конфіденційності", labelEn: "Privacy policy", href: "#", frozen: true },
   ],
 };
 
 function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
+  const { t } = useI18n();
   return (
     <div>
       <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
@@ -72,13 +77,13 @@ function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
         {links.map((link) => (
           <li key={link.label}>
             {link.frozen ? (
-              <span className="cursor-default text-[13px] text-zinc-400 dark:text-zinc-500">{link.label}</span>
+              <span className="cursor-default text-[13px] text-zinc-400 dark:text-zinc-500">{t({ uk: link.label, en: link.labelEn })}</span>
             ) : (
               <Link
                 href={link.href}
                 className="text-[13px] text-zinc-600 dark:text-zinc-300 transition-colors hover:text-indigo-600 dark:hover:text-indigo-400"
               >
-                {link.label}
+                {t({ uk: link.label, en: link.labelEn })}
               </Link>
             )}
           </li>
@@ -89,6 +94,7 @@ function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
 }
 
 export function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-[#F5F5F7] dark:bg-[#0a0a0b] text-zinc-600 dark:text-zinc-300">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
@@ -98,18 +104,18 @@ export function Footer() {
 
           {/* Застосунки (iOS + Android) — «Скоро» у правому верхньому куті рамок */}
           <div className="mt-7">
-            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">Застосунок</p>
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Застосунок", en: "App" })}</p>
             <div className="grid max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
-              <StoreBadge logo={<AppleLogo className="h-6 w-6" />} top="Завантажити в" name="App Store" />
-              <StoreBadge logo={<GooglePlayLogo className="h-6 w-6" />} top="Завантажити в" name="Google Play" />
+              <StoreBadge logo={<AppleLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Download on" })} name="App Store" />
+              <StoreBadge logo={<GooglePlayLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Get it on" })} name="Google Play" />
             </div>
           </div>
 
           {/* Колонки посилань — компактні, під підтримкою й застосунком */}
           <div className="mt-10 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-3">
-            <LinkColumn title="Продукти" links={footerLinks.products} />
-            <LinkColumn title="Медіа" links={footerLinks.media} />
-            <LinkColumn title="Документи" links={footerLinks.legal} />
+            <LinkColumn title={t({ uk: "Продукти", en: "Products" })} links={footerLinks.products} />
+            <LinkColumn title={t({ uk: "Медіа", en: "Media" })} links={footerLinks.media} />
+            <LinkColumn title={t({ uk: "Документи", en: "Documents" })} links={footerLinks.legal} />
           </div>
         </div>
 
@@ -119,13 +125,13 @@ export function Footer() {
             href="https://policy.mtsbu.ua"
             target="_blank"
             rel="noopener noreferrer"
-            title="Перевірити поліс у реєстрі МТСБУ"
+            title={t({ uk: "Перевірити поліс у реєстрі МТСБУ", en: "Check a policy in the MTSBU register" })}
             className="inline-flex items-center gap-2.5 rounded-full bg-white px-4 py-2 ring-1 ring-black/5 transition-transform hover:scale-[1.03] dark:bg-zinc-800 dark:ring-white/10"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/mtsbu-logo.svg"
-              alt="МТСБУ — Моторне (транспортне) страхове бюро України"
+              alt={t({ uk: "МТСБУ — Моторне (транспортне) страхове бюро України", en: "MTSBU — Motor (Transport) Insurance Bureau of Ukraine" })}
               className="h-5 w-auto opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0 dark:invert"
             />
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -134,7 +140,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-end gap-3">
             <LanguageToggle />
             <AccessibilityControls />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">Тема</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Тема", en: "Theme" })}</span>
             <ThemeToggle />
           </div>
         </div>
@@ -143,16 +149,13 @@ export function Footer() {
             вплетеними органічно (без keyword-stuffing, щоб не отримати штраф Google). */}
         <div className="border-t border-zinc-200 dark:border-zinc-800 py-6">
           <p className="text-justify text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Воля Фінанс (VOLYA.FINANCE) — сервіс онлайн-страхування в Україні.
-            У нас можна оформити автоцивілку (ОСЦПВ / ОСАГО), КАСКО та міні-КАСКО, Зелену карту для виїзду за кордон,
-            туристичне страхування для подорожей і страхування домашніх тварин. Ми порівнюємо ціни від 18+ провідних
-            страхових компаній і показуємо найвигідніші пропозиції, а всі поліси електронні та офіційно зареєстровані
-            в МТСБУ. Розрахуйте вартість і купіть страховку на авто онлайн за кілька хвилин — без черг, візитів до
-            офісу та зайвих документів, з готовим полісом на email. Оформлення доступне по всій Україні: Київ, Львів,
-            Одеса, Харків, Дніпро та інші міста.
+            {t({
+              uk: "Воля Фінанс (VOLYA.FINANCE) — сервіс онлайн-страхування в Україні. У нас можна оформити автоцивілку (ОСЦПВ / ОСАГО), КАСКО та міні-КАСКО, Зелену карту для виїзду за кордон, туристичне страхування для подорожей і страхування домашніх тварин. Ми порівнюємо ціни від 18+ провідних страхових компаній і показуємо найвигідніші пропозиції, а всі поліси електронні та офіційно зареєстровані в МТСБУ. Розрахуйте вартість і купіть страховку на авто онлайн за кілька хвилин — без черг, візитів до офісу та зайвих документів, з готовим полісом на email. Оформлення доступне по всій Україні: Київ, Львів, Одеса, Харків, Дніпро та інші міста.",
+              en: "Volya Finance (VOLYA.FINANCE) is an online insurance service in Ukraine. Here you can arrange car insurance (OSAGO), CASCO and Mini-CASCO, a Green Card for trips abroad, travel insurance for your journeys and pet insurance. We compare prices from 18+ leading insurance companies and show the best offers, and all policies are electronic and officially registered with MTSBU. Calculate the cost and buy car insurance online in just a few minutes — no queues, office visits or extra paperwork, with a ready policy sent to your email. Available across Ukraine: Kyiv, Lviv, Odesa, Kharkiv, Dnipro and other cities.",
+            })}
           </p>
           <p className="mt-3 text-[11px] text-zinc-500 dark:text-zinc-400">
-            © {new Date().getFullYear()} VOLYA.FINANCE. Усі права захищені.
+            © {new Date().getFullYear()} VOLYA.FINANCE. {t({ uk: "Усі права захищені.", en: "All rights reserved." })}
           </p>
         </div>
       </div>

@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Gift, ChevronRight, Copy, Check, Loader2 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 // Широкий банер реферальної програми для маркетингового блоку (головна + продукти).
 // За кліком тягне реферальне посилання залогіненого користувача; гостю пропонує
 // вхід через Google (без нього нема кому нараховувати бонус). Логіка — як у
 // InviteFriendCard (сайдбар пропозицій), лише в горизонтальному банер-форматі.
 export function ReferralBanner() {
+  const { t } = useI18n();
   const [refLink, setRefLink] = useState<string | null>(null);
   const [refLoading, setRefLoading] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
@@ -53,10 +55,10 @@ export function ReferralBanner() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
-                  Запрошуй друзів — отримуй 5% бонус
+                  {t({ uk: "Запрошуй друзів — отримуй 5% бонус", en: "Invite friends — get a 5% bonus" })}
                 </h2>
                 <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-indigo-100">
-                  Ділися своїм посиланням: друг оформлює поліс — ти отримуєш 5% від його вартості на рахунок.
+                  {t({ uk: "Ділися своїм посиланням: друг оформлює поліс — ти отримуєш 5% від його вартості на рахунок.", en: "Share your link: a friend buys a policy — you receive 5% of its value to your account." })}
                 </p>
               </div>
             </div>
@@ -76,7 +78,7 @@ export function ReferralBanner() {
                     className="flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
                   >
                     {refCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    {refCopied ? "Готово" : "Копіювати"}
+                    {refCopied ? t({ uk: "Готово", en: "Done" }) : t({ uk: "Копіювати", en: "Copy" })}
                   </button>
                 </div>
               ) : (
@@ -86,9 +88,9 @@ export function ReferralBanner() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-indigo-700 shadow-sm transition-all hover:bg-indigo-50 active:scale-[0.98] disabled:opacity-70 sm:w-auto"
                 >
                   {refLoading ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Отримуємо…</>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t({ uk: "Отримуємо…", en: "Getting it…" })}</>
                   ) : (
-                    <>Отримати посилання <ChevronRight className="h-4 w-4" /></>
+                    <>{t({ uk: "Отримати посилання", en: "Get link" })} <ChevronRight className="h-4 w-4" /></>
                   )}
                 </button>
               )}

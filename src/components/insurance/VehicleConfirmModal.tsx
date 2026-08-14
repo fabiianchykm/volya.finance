@@ -12,6 +12,7 @@ import type { VehicleData } from "@/types/insurance";
 import { AUTO_CATEGORIES } from "@/lib/constants";
 import { searchMarks, searchModels } from "@/lib/car-catalog";
 import { cityShort } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface VehicleConfirmModalProps {
   open: boolean;
@@ -27,20 +28,20 @@ interface VehicleConfirmModalProps {
   periodId?: number;
 }
 
-const categoryLabels: Record<string, string> = {
-  B1: "до 1600 см³ (Легковий)",
-  B2: "1601–2000 см³ (Легковий)",
-  B3: "2001–3000 см³ (Легковий)",
-  B4: "більше 3001 см³ (Легковий)",
-  B5: "Електромобіль",
-  A1: "Мотоцикл до 300 см³",
-  A2: "Мотоцикл більше 300 см³",
-  D1: "Автобус до 20 місць",
-  D2: "Автобус більше 20 місць",
-  C1: "Вантажний до 20 т",
-  C2: "Вантажний більше 20 т",
-  E: "Причіп до вантажних",
-  F: "Причіп до легкових",
+const categoryLabels: Record<string, { uk: string; en: string }> = {
+  B1: { uk: "до 1600 см³ (Легковий)", en: "up to 1600 cm³ (Car)" },
+  B2: { uk: "1601–2000 см³ (Легковий)", en: "1601–2000 cm³ (Car)" },
+  B3: { uk: "2001–3000 см³ (Легковий)", en: "2001–3000 cm³ (Car)" },
+  B4: { uk: "більше 3001 см³ (Легковий)", en: "over 3001 cm³ (Car)" },
+  B5: { uk: "Електромобіль", en: "Electric vehicle" },
+  A1: { uk: "Мотоцикл до 300 см³", en: "Motorcycle up to 300 cm³" },
+  A2: { uk: "Мотоцикл більше 300 см³", en: "Motorcycle over 300 cm³" },
+  D1: { uk: "Автобус до 20 місць", en: "Bus up to 20 seats" },
+  D2: { uk: "Автобус більше 20 місць", en: "Bus over 20 seats" },
+  C1: { uk: "Вантажний до 20 т", en: "Truck up to 20 t" },
+  C2: { uk: "Вантажний більше 20 т", en: "Truck over 20 t" },
+  E: { uk: "Причіп до вантажних", en: "Trailer for trucks" },
+  F: { uk: "Причіп до легкових", en: "Trailer for cars" },
 };
 
 const currentYear = new Date().getFullYear();
@@ -63,6 +64,7 @@ export function VehicleConfirmModal({
   editMode,
   periodId,
 }: VehicleConfirmModalProps) {
+  const { t } = useI18n();
   const [manualMode, setManualMode] = useState(true);
   const [period, setPeriod] = useState(periodId ?? 12);
   const [form, setForm] = useState({
@@ -153,19 +155,19 @@ export function VehicleConfirmModal({
   const cityField = (
     <div className="relative" ref={cityRef}>
       <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-        Місто реєстрації ТЗ
+        {t({ uk: "Місто реєстрації ТЗ", en: "Vehicle registration city" })}
       </label>
       <input
         type="text"
         value={cityQuery}
         onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
-        placeholder="Введіть місто..."
+        placeholder={t({ uk: "Введіть місто...", en: "Enter city..." })}
         spellCheck={false}
         className={`h-10 w-full rounded-xl border bg-white px-3 text-sm text-zinc-900 outline-none transition-colors dark:bg-zinc-900 dark:text-zinc-100 ${selectedCity ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : "border-zinc-200 focus:border-indigo-400 dark:border-zinc-700"}`}
       />
       {!selectedCity && (
         <p className="mt-1 text-xs text-amber-600 font-medium">
-          Оберіть місто реєстрації зі списку
+          {t({ uk: "Оберіть місто реєстрації зі списку", en: "Select the registration city from the list" })}
         </p>
       )}
       {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
@@ -189,7 +191,7 @@ export function VehicleConfirmModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={manualMode ? (vehicleComplete ? "Змінити дані авто" : "Введіть дані авто вручну") : undefined}
+      title={manualMode ? (vehicleComplete ? t({ uk: "Змінити дані авто", en: "Edit vehicle data" }) : t({ uk: "Введіть дані авто вручну", en: "Enter vehicle data manually" })) : undefined}
       size="md"
       className={isFound ? "bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-900" : ""}
     >
@@ -201,10 +203,10 @@ export function VehicleConfirmModal({
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <div>
               <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Авто не знайдено в реєстрі
+                {t({ uk: "Авто не знайдено в реєстрі", en: "Vehicle not found in the registry" })}
               </p>
               <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-300">
-                Перевірте номер або введіть дані вручну — це займе 30 секунд
+                {t({ uk: "Перевірте номер або введіть дані вручну — це займе 30 секунд", en: "Check the plate number or enter the details manually — it takes 30 seconds" })}
               </p>
             </div>
           </div>
@@ -243,7 +245,7 @@ export function VehicleConfirmModal({
             {/* Місце реєстрації */}
             <div className="text-center">
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                <span className="font-medium text-zinc-700 dark:text-zinc-200">Місце реєстрації: </span>
+                <span className="font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Місце реєстрації: ", en: "Place of registration: " })}</span>
                 {vehicle.cityName?.replace(/,?\s*Україна$/i, '')}
               </p>
             </div>
@@ -255,8 +257,8 @@ export function VehicleConfirmModal({
                 {vehicle.vin || '—'}
               </p>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                <span className="font-medium text-zinc-700 dark:text-zinc-200">Категорія: </span>
-                {vehicle.autoCategory} · {categoryLabels[vehicle.autoCategory] ?? vehicle.autoCategory}
+                <span className="font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Категорія: ", en: "Category: " })}</span>
+                {vehicle.autoCategory} · {t(categoryLabels[vehicle.autoCategory] ?? { uk: vehicle.autoCategory })}
               </p>
             </div>
 
@@ -267,7 +269,7 @@ export function VehicleConfirmModal({
                 className="w-full flex items-center justify-center gap-1.5 text-sm text-zinc-400 hover:text-indigo-600 transition-colors py-2 dark:text-zinc-500 dark:hover:text-indigo-400"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                Дані невірні?
+                {t({ uk: "Дані невірні?", en: "Data incorrect?" })}
               </button>
             </div>
           </div>
@@ -284,7 +286,7 @@ export function VehicleConfirmModal({
 
             <div className="grid grid-cols-2 gap-3">
               <AutocompleteInput
-                label="Марка авто"
+                label={t({ uk: "Марка авто", en: "Vehicle make" })}
                 placeholder="Toyota"
                 value={form.mark}
                 onChange={(v) => setForm((f) => ({ ...f, mark: v }))}
@@ -292,7 +294,7 @@ export function VehicleConfirmModal({
                 required
               />
               <AutocompleteInput
-                label="Модель"
+                label={t({ uk: "Модель", en: "Model" })}
                 placeholder="Camry"
                 value={form.model}
                 onChange={(v) => setForm((f) => ({ ...f, model: v }))}
@@ -304,7 +306,7 @@ export function VehicleConfirmModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                  Рік випуску
+                  {t({ uk: "Рік випуску", en: "Year of manufacture" })}
                 </label>
                 <select
                   value={form.year}
@@ -321,7 +323,7 @@ export function VehicleConfirmModal({
 
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                  Категорія ТЗ
+                  {t({ uk: "Категорія ТЗ", en: "Vehicle category" })}
                 </label>
                 <select
                   value={form.autoCategory}
@@ -338,7 +340,7 @@ export function VehicleConfirmModal({
             </div>
 
             <Input
-              label="VIN-код (якщо є)"
+              label={t({ uk: "VIN-код (якщо є)", en: "VIN code (if any)" })}
               placeholder="KNEDE221266086429"
               value={form.vin}
               onChange={set("vin")}
@@ -352,7 +354,7 @@ export function VehicleConfirmModal({
                 onClick={() => setManualMode(false)}
                 className="text-xs text-indigo-600 hover:underline dark:text-indigo-400"
               >
-                ← Повернутись до автоматичних даних
+                {t({ uk: "← Повернутись до автоматичних даних", en: "← Back to automatic data" })}
               </button>
             )}
           </div>
@@ -361,7 +363,7 @@ export function VehicleConfirmModal({
         {/* Період дії поліса — рік (за замовч.) або пів року. Лише ОСЦПВ. */}
         {periodId !== undefined && (
           <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Період страхування</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Період страхування", en: "Insurance period" })}</label>
             <PeriodSelect value={period} onChange={setPeriod} />
           </div>
         )}
@@ -375,7 +377,7 @@ export function VehicleConfirmModal({
             className="w-full"
             disabled={manualMode && (!form.mark || !form.model)}
           >
-            Підтвердити
+            {t({ uk: "Підтвердити", en: "Confirm" })}
           </Button>
         </div>
       </div>
@@ -385,11 +387,12 @@ export function VehicleConfirmModal({
 
 // Гарний кастомний dropdown вибору періоду поліса (замість нативного select).
 const PERIOD_OPTIONS = [
-  { v: 12, l: "1 рік" },
-  { v: 6, l: "Пів року" },
+  { v: 12, l: "1 рік", en: "1 year" },
+  { v: 6, l: "Пів року", en: "6 months" },
 ];
 
 function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -418,7 +421,7 @@ function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
             <CalendarRange className="h-4 w-4" />
           </span>
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{cur.l}</span>
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: cur.l, en: cur.en })}</span>
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500 ${open ? "rotate-180" : ""}`} />
       </button>
@@ -436,7 +439,7 @@ function PeriodSelect({ value, onChange }: { value: number; onChange: (v: number
                   active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                 }`}
               >
-                <span className={`text-sm font-semibold ${active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-200"}`}>{o.l}</span>
+                <span className={`text-sm font-semibold ${active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-200"}`}>{t({ uk: o.l, en: o.en })}</span>
                 {active && <Check className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />}
               </button>
             );
