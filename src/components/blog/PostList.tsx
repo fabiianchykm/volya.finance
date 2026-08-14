@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { formatPostDate, CATEGORY_LABEL, type Post } from "@/lib/blog";
+import { T } from "@/components/i18n/T";
 
 // Спільний список дописів (для /blog і /news).
-export function PostList({ posts, empty }: { posts: Post[]; empty?: string }) {
+export function PostList({ posts, empty }: { posts: Post[]; empty?: ReactNode }) {
   if (posts.length === 0) {
-    return <p className="text-sm text-zinc-500 dark:text-zinc-400">{empty ?? "Поки немає дописів."}</p>;
+    return <p className="text-sm text-zinc-500 dark:text-zinc-400">{empty ?? <T uk="Поки немає дописів." en="No posts yet." />}</p>;
   }
   return (
     <div className="space-y-4">
@@ -26,7 +28,7 @@ export function PostList({ posts, empty }: { posts: Post[]; empty?: string }) {
           <h2 className="text-lg font-bold leading-snug text-zinc-900 dark:text-zinc-100">{p.title}</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{p.excerpt}</p>
           <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-            Читати <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <T uk="Читати" en="Read" /> <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </span>
         </Link>
       ))}
