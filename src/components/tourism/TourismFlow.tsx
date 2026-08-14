@@ -27,12 +27,12 @@ const coverageOf = (o: TourismOffer) => Number(o.coverage ?? o.limit ?? 0);
 
 // Зони покриття (id + точна назва з довідника Ukasko).
 const ZONES = [
-  { id: 60, name: "Географічна Європа", label: "Європа (географічна)", en: "Europe (geographic)" },
-  { id: 204, name: "Європа Шенген", label: "Європа (Шенген)", en: "Europe (Schengen)" },
-  { id: 34, name: "Всі країни світу (крім України)", label: "Весь світ", en: "Worldwide" },
-  { id: 208, name: "Всі країни світу (крім США та Канади)", label: "Весь світ (крім США/Канади)", en: "Worldwide (except USA/Canada)" },
-  { id: 169, name: "Країни СНД", label: "Країни СНД", en: "CIS countries" },
-  { id: 199, name: "Чехія", label: "Чехія", en: "Czechia" },
+  { id: 60, name: "Географічна Європа", label: "Європа (географічна)", en: "Europe (geographic)", desc: "Уся географічна Європа, а також Туреччина, Єгипет, Ізраїль, Марокко, Туніс, Алжир.", descEn: "All of geographic Europe, plus Turkey, Egypt, Israel, Morocco, Tunisia, Algeria." },
+  { id: 204, name: "Європа Шенген", label: "Європа (Шенген)", en: "Europe (Schengen)", desc: "Країни Шенгенської зони — підходить для шенгенської візи.", descEn: "Schengen area countries — suitable for a Schengen visa." },
+  { id: 34, name: "Всі країни світу (крім України)", label: "Весь світ", en: "Worldwide", desc: "Усі країни світу, крім України.", descEn: "All countries worldwide, except Ukraine." },
+  { id: 208, name: "Всі країни світу (крім США та Канади)", label: "Весь світ (крім США/Канади)", en: "Worldwide (except USA/Canada)", desc: "Усі країни світу, крім України, США та Канади.", descEn: "All countries worldwide, except Ukraine, the USA and Canada." },
+  { id: 169, name: "Країни СНД", label: "Країни СНД", en: "CIS countries", desc: "Країни Співдружності Незалежних Держав.", descEn: "Countries of the Commonwealth of Independent States." },
+  { id: 199, name: "Чехія", label: "Чехія", en: "Czechia", desc: "Покриття лише для Чехії.", descEn: "Coverage for Czechia only." },
 ];
 
 // Той самий вигляд, що й тригер DateRangeInput (щоб «Куди прямуєте?» і «Дати поїздки»
@@ -212,6 +212,10 @@ export function TourismFlow() {
                     </select>
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                   </div>
+                  {(() => {
+                    const z = ZONES.find((z) => String(z.id) === zoneId);
+                    return z ? <p className="mt-1.5 text-xs leading-snug text-zinc-400 dark:text-zinc-500">{t({ uk: z.desc, en: z.descEn })}</p> : null;
+                  })()}
                 </div>
                 {multiVisa ? (
                   <div>
