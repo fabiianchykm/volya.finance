@@ -43,14 +43,15 @@ import { FooterContact } from "./FooterContact";
 type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean };
 
 const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
+  // За абеткою (українські назви).
   products: [
     { label: "Автоцивілка", labelEn: "Car insurance (OSAGO)", href: "/osago" },
+    { label: "Житло", labelEn: "Property", href: "/housing" },
+    { label: "Зелена карта", labelEn: "Green Card", href: "/green-card" },
     { label: "КАСКО", labelEn: "CASCO", href: "/kasko" },
     { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko" },
-    { label: "Зелена карта", labelEn: "Green Card", href: "/green-card" },
-    { label: "Туристичне", labelEn: "Travel", href: "/tourism" },
     { label: "Тварини", labelEn: "Pets", href: "/pets" },
-    { label: "Житло", labelEn: "Property", href: "/housing" },
+    { label: "Туристичне", labelEn: "Travel", href: "/tourism" },
   ],
   media: [
     // Заморожені (порожні, контент готується) — некликабельні.
