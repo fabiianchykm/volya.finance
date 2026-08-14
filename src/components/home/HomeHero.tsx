@@ -40,9 +40,6 @@ export function HomeHero() {
             {t({ uk: "Страхування", en: "Insurance" })}{" "}
             <span className="bg-gradient-to-r from-indigo-200 to-violet-200 bg-clip-text text-transparent">{t({ uk: "онлайн", en: "online" })}</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-indigo-100 sm:text-lg">
-            {t({ uk: "Авто, подорожі та улюбленці — усі поліси в одному місці. Оберіть продукт і оформіть за кілька хвилин.", en: "Cars, travel and pets — all policies in one place. Choose a product and get it in a few minutes." })}
-          </p>
         </div>
       </div>
 
