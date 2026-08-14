@@ -319,6 +319,11 @@ export interface TourismOffer {
   limit?: number;
   limit_currency?: string;     // EUR | USD
   covid_help?: boolean;
+  franchise?: number | string;
+  // Набір опцій/ризиків, що покриває поліс (medicine_help, dentistry, baggage_loss,
+  // trip_impossible, visa_impossible, avia_await, cv…) — {status, value}. Саме цим
+  // оффери відрізняються між собою.
+  options?: Record<string, { status?: boolean; value?: number } | boolean | number | string | null | undefined>;
 }
 
 // Страхування тварин (POST /insurance/pets/calculator).

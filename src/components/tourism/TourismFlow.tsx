@@ -22,6 +22,42 @@ const PROGRAM_LABELS_EN: Record<string, string> = {
 
 const coverageOf = (o: TourismOffer) => Number(o.coverage ?? o.limit ?? 0);
 
+// Опції, що покриває поліс (крім медичних витрат — їх показуємо окремо із сумою).
+const OPT_LABELS: Record<string, { uk: string; en: string }> = {
+  dentistry: { uk: "Стоматологія", en: "Dentistry" },
+  baggage_loss: { uk: "Багаж", en: "Baggage" },
+  trip_impossible: { uk: "Скасування поїздки", en: "Trip cancellation" },
+  visa_impossible: { uk: "Відмова у візі", en: "Visa refusal" },
+  avia_await: { uk: "Затримка рейсу", en: "Flight delay" },
+  cv: { uk: "COVID-19", en: "COVID-19" },
+  covid_help: { uk: "COVID-19", en: "COVID-19" },
+  fr: { uk: "Форс-мажор", en: "Force majeure" },
+  sm: { uk: "Спорт", en: "Sport" },
+  med: { uk: "Медикаменти", en: "Medication" },
+};
+function isActive(v: unknown): boolean {
+  if (v === true) return true;
+  if (v && typeof v === "object") return (v as { status?: boolean }).status === true;
+  return false;
+}
+// Чипи «що покриває» — щоб оффери було легко розрізнити.
+function optionTags(o: TourismOffer, t: (tr: { uk: string; en?: string }) => string): string[] {
+  const opts = o.options ?? {};
+  const cur = currencySymbol(o.limit_currency);
+  const tags: string[] = [];
+  const med = opts.medicine_help;
+  const medVal = med && typeof med === "object" ? (med as { value?: number }).value : undefined;
+  if (isActive(med) || medVal || coverageOf(o)) {
+    const val = medVal ?? coverageOf(o);
+    tags.push(t({ uk: `Медицина ${new Intl.NumberFormat("uk-UA").format(val)} ${cur}`, en: `Medical ${new Intl.NumberFormat("en-US").format(val)} ${cur}` }));
+  }
+  const seen = new Set<string>();
+  for (const [key, lbl] of Object.entries(OPT_LABELS)) {
+    if (isActive(opts[key]) && !seen.has(lbl.uk)) { seen.add(lbl.uk); tags.push(t(lbl)); }
+  }
+  return tags;
+}
+
 // Туристичне страхування — калькулятор Ukasko (POST /insurance/calculator/tourism)
 // повертає реальні пропозиції з покриттям і цінами. Зони — з /api/countries/list.
 
@@ -477,6 +513,7 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
               onSelectAutolawyer={() => {}}
               onBuy={() => onSelect(o)}
               hideExtras
+              coverageTags={optionTags(o, t)}
               cornerBadge={o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined}
             />
           ))}
