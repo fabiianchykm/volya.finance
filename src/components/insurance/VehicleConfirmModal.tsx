@@ -286,20 +286,18 @@ export function VehicleConfirmModal({
 
             <div className="grid grid-cols-2 gap-3">
               <AutocompleteInput
-                label={t({ uk: "Марка авто", en: "Vehicle make" })}
+                label={t({ uk: "Марка авто (необовʼязково)", en: "Vehicle make (optional)" })}
                 placeholder="Toyota"
                 value={form.mark}
                 onChange={(v) => setForm((f) => ({ ...f, mark: v }))}
                 options={searchMarks(form.mark)}
-                required
               />
               <AutocompleteInput
-                label={t({ uk: "Модель", en: "Model" })}
+                label={t({ uk: "Модель (необовʼязково)", en: "Model (optional)" })}
                 placeholder="Camry"
                 value={form.model}
                 onChange={(v) => setForm((f) => ({ ...f, model: v }))}
                 options={searchModels(form.mark, form.model)}
-                required
               />
             </div>
 
@@ -375,7 +373,7 @@ export function VehicleConfirmModal({
             onClick={handleConfirm}
             loading={loading}
             className="w-full"
-            disabled={manualMode && (!form.mark || !form.model)}
+            disabled={manualMode && !selectedCity}
           >
             {t({ uk: "Підтвердити", en: "Confirm" })}
           </Button>
