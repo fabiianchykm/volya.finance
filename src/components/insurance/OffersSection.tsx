@@ -29,14 +29,12 @@ function OsagoInfo() {
   const { t } = useI18n();
   return (
   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-    <div className="mb-2 flex items-center gap-1.5">
+    <div
+      title={t({ uk: "Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.", en: "Covers the damage you caused to other participants in an accident." })}
+      className="mb-2 inline-flex cursor-help items-center gap-1.5 text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
+    >
       <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Ліміти", en: "Limits" })}</p>
-      <span
-        title={t({ uk: "Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.", en: "Covers the damage you caused to other participants in an accident." })}
-        className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
-      >
-        <Info className="h-3.5 w-3.5" />
-      </span>
+      <Info className="h-3.5 w-3.5" />
     </div>
     {/* Ліміти виплат — простим текстом, без іконок */}
     <div className="flex flex-col gap-2">
