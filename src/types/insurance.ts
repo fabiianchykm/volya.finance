@@ -40,4 +40,8 @@ export interface VehicleDetails {
   ownWeight: string;
   totalWeight: string;
   birthdayAt: string;
+  // Ідентифікація авто — заповнюється на кроці оформлення (не потрібна для розрахунку).
+  mark?: string;
+  model?: string;
+  vin?: string;
 }

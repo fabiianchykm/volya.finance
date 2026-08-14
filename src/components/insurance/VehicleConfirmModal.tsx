@@ -6,11 +6,8 @@ import { AlertCircle, Pencil, ChevronDown, Check, CalendarRange } from "lucide-r
 interface City { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import type { VehicleData } from "@/types/insurance";
 import { AUTO_CATEGORIES } from "@/lib/constants";
-import { searchMarks, searchModels } from "@/lib/car-catalog";
 import { cityShort } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
@@ -284,22 +281,9 @@ export function VehicleConfirmModal({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <AutocompleteInput
-                label={t({ uk: "Марка авто (необовʼязково)", en: "Vehicle make (optional)" })}
-                placeholder="Toyota"
-                value={form.mark}
-                onChange={(v) => setForm((f) => ({ ...f, mark: v }))}
-                options={searchMarks(form.mark)}
-              />
-              <AutocompleteInput
-                label={t({ uk: "Модель (необовʼязково)", en: "Model (optional)" })}
-                placeholder="Camry"
-                value={form.model}
-                onChange={(v) => setForm((f) => ({ ...f, model: v }))}
-                options={searchModels(form.mark, form.model)}
-              />
-            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {t({ uk: "Марку, модель і VIN вкажете на кроці оформлення — для розрахунку ціни вони не потрібні.", en: "You'll enter make, model and VIN at checkout — they aren't needed to calculate the price." })}
+            </p>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -336,13 +320,6 @@ export function VehicleConfirmModal({
                 </select>
               </div>
             </div>
-
-            <Input
-              label={t({ uk: "VIN-код (якщо є)", en: "VIN code (if any)" })}
-              placeholder="KNEDE221266086429"
-              value={form.vin}
-              onChange={set("vin")}
-            />
 
             {/* Пошук міста реєстрації */}
             {cityField}

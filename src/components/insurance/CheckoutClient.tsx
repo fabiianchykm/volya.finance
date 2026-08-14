@@ -8,6 +8,8 @@ import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
+import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
+import { searchMarks, searchModels } from "@/lib/car-catalog";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 
 // Локальні числові коди документів ОСЦПВ → канонічний тип-сутність.
@@ -176,7 +178,16 @@ export function CheckoutClient() {
   };
 
   const handleVehicleSubmit = async (details: VehicleDetails) => {
-    if (!customer) return;
+    if (!customer || !vehicle) return;
+    // Марку/модель/VIN користувач заповнює саме тут (на розрахунок не впливають) —
+    // вливаємо їх у vehicle для замовлення й подальших екранів.
+    const mergedVehicle: VehicleData = {
+      ...vehicle,
+      mark: details.mark?.trim() || vehicle.mark || "",
+      model: details.model?.trim() || vehicle.model || "",
+      vin: details.vin?.trim() || vehicle.vin || "",
+    };
+    setVehicle(mergedVehicle);
     setLoading(true);
     setError(null);
     setPriceNotice(null);
@@ -206,7 +217,7 @@ export function CheckoutClient() {
       }
 
       const payload = buildOrderPayload(
-        vehicle,
+        mergedVehicle,
         fresh ?? offer,
         periodId,
         selectedDgoId,
@@ -249,7 +260,7 @@ export function CheckoutClient() {
         name: [customer?.surname, customer?.name, customer?.patronymic].filter(Boolean).join(" "),
         company: offer?.companyNamePublic || offer?.companyName,
         price: offer?.price,
-        car: [vehicle?.mark, vehicle?.model].filter(Boolean).join(" "),
+        car: [mergedVehicle.mark, mergedVehicle.model].filter(Boolean).join(" "),
         phone: customer?.phone,
         email: customer?.email,
       });
@@ -912,6 +923,10 @@ function CheckoutVehicleForm({
     ownWeight: vehicle.ownWeight ? String(vehicle.ownWeight) : "",
     totalWeight: vehicle.totalWeight ? String(vehicle.totalWeight) : "",
     birthdayAt: customerBirthDate,
+    // Ідентифікація авто — заповнюється тут (не потрібна для розрахунку ціни).
+    mark: vehicle.mark ?? "",
+    model: vehicle.model ?? "",
+    vin: vehicle.vin ?? "",
   });
 
   const set = (key: keyof VehicleDetails) =>
@@ -930,18 +945,15 @@ function CheckoutVehicleForm({
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Дані транспортного засобу", en: "Vehicle details" })}</h2>
 
       <div className="space-y-5">
-        {/* Дані з API — тільки для перегляду */}
+        {/* Дані з розрахунку — тільки для перегляду */}
         <div className="rounded-xl bg-zinc-50 border border-zinc-100 px-5 py-4 space-y-3 dark:bg-zinc-800/50 dark:border-zinc-800">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2 dark:text-zinc-400">
-            {t({ uk: "Дані з реєстру", en: "Registry data" })}
+            {t({ uk: "З розрахунку", en: "From the quote" })}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
             {[
-              { label: t({ uk: "Марка", en: "Make" }), value: vehicle.mark },
-              { label: t({ uk: "Модель", en: "Model" }), value: vehicle.model },
               { label: t({ uk: "Рік", en: "Year" }), value: vehicle.year },
               { label: t({ uk: "Номер", en: "Plate" }), value: vehicle.number },
-              { label: "VIN", value: vehicle.vin || "—" },
               { label: t({ uk: "Категорія", en: "Category" }), value: vehicle.autoCategory },
             ].map(({ label, value }) => (
               <div key={label} className="flex flex-col">
@@ -949,6 +961,39 @@ function CheckoutVehicleForm({
                 <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{value}</span>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Ідентифікація авто — заповнюється тут (для розрахунку не потрібна) */}
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            {t({ uk: "Дані авто", en: "Vehicle" })}
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <AutocompleteInput
+              label={t({ uk: "Марка авто", en: "Vehicle make" })}
+              placeholder="Toyota"
+              value={form.mark ?? ""}
+              onChange={(v) => setForm((f) => ({ ...f, mark: v }))}
+              options={searchMarks(form.mark ?? "")}
+              required
+            />
+            <AutocompleteInput
+              label={t({ uk: "Модель", en: "Model" })}
+              placeholder="Camry"
+              value={form.model ?? ""}
+              onChange={(v) => setForm((f) => ({ ...f, model: v }))}
+              options={searchModels(form.mark ?? "", form.model ?? "")}
+              required
+            />
+          </div>
+          <div className="mt-4">
+            <Input
+              label={t({ uk: "VIN-код (якщо є)", en: "VIN code (if any)" })}
+              placeholder="KNEDE221266086429"
+              value={form.vin ?? ""}
+              onChange={set("vin")}
+            />
           </div>
         </div>
 
@@ -1016,7 +1061,7 @@ function CheckoutVehicleForm({
       </div>
 
       <div className="flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
-        <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full sm:w-auto px-8">
+        <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!form.mark?.trim() || !form.model?.trim()} className="w-full sm:w-auto px-8">
           {t({ uk: "Продовжити", en: "Continue" })}
         </Button>
       </div>
