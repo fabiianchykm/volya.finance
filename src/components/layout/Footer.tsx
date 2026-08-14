@@ -24,17 +24,17 @@ function GooglePlayLogo({ className }: { className?: string }) {
   );
 }
 
-// Бейдж застосунку з кутовою позначкою «Скоро» (магазини ще не активні).
+// Бейдж застосунку в стилі офіційних (чорний, компактний) з позначкою «Скоро».
 function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: string }) {
   const { t } = useI18n();
   return (
-    <div className="relative flex w-full cursor-default items-center gap-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-300 bg-white dark:bg-zinc-100 px-6 py-3.5">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-zinc-900">{logo}</span>
+    <div className="relative inline-flex cursor-default items-center gap-2.5 rounded-xl bg-zinc-900 px-4 py-2.5 ring-1 ring-white/10 dark:bg-black">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center text-white">{logo}</span>
       <span className="flex flex-col leading-tight">
-        <span className="text-xs text-zinc-500">{top}</span>
-        <span className="text-lg font-semibold text-zinc-900">{name}</span>
+        <span className="text-[10px] text-zinc-300">{top}</span>
+        <span className="text-base font-semibold text-white">{name}</span>
       </span>
-      <span className="absolute -right-2 -top-2 rounded-full bg-indigo-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm">{t({ uk: "Скоро", en: "Soon" })}</span>
+      <span className="absolute -right-2 -top-2 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm">{t({ uk: "Скоро", en: "Soon" })}</span>
     </div>
   );
 }
@@ -105,7 +105,7 @@ export function Footer() {
           {/* Застосунки (iOS + Android) — «Скоро» у правому верхньому куті рамок */}
           <div className="mt-7">
             <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Застосунок", en: "App" })}</p>
-            <div className="grid max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-wrap gap-3">
               <StoreBadge logo={<AppleLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Download on" })} name="App Store" />
               <StoreBadge logo={<GooglePlayLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Get it on" })} name="Google Play" />
             </div>
