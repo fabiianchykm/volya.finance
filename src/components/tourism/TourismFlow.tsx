@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown } from "lucide-react";
+import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -363,6 +363,12 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
   const coverages = Array.from(new Set(offers.map(coverageOf).filter((c) => c > 0))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
+  const [sortOpen, setSortOpen] = useState(false);
+  const SORT_OPTIONS = [
+    { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
+    { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
+  ] as const;
+  const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
 
   // За обраним покриттям — найдешевший варіант для кожної пари «страхова + програма».
   const best = new Map<string, TourismOffer>();
@@ -411,19 +417,42 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
         )}
       </div>
 
-      {/* Сортування — випадний список */}
+      {/* Сортування — кастомний dropdown (як у ОСЦПВ) */}
       {cards.length > 0 && (
-        <div className="mb-5 flex items-center justify-end gap-2">
-          <label htmlFor="tour-sort" className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</label>
-          <select
-            id="tour-sort"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as "price_asc" | "price_desc")}
-            className="h-10 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs font-semibold text-zinc-700 dark:text-zinc-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="price_asc">{t({ uk: "Спершу дешевші", en: "Cheapest first" })}</option>
-            <option value="price_desc">{t({ uk: "Спершу дорожчі", en: "Most expensive first" })}</option>
-          </select>
+        <div className="mb-5 flex items-center justify-end gap-3">
+          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSortOpen((o) => !o)}
+              aria-expanded={sortOpen}
+              aria-haspopup="menu"
+              className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition-colors hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+            >
+              <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />{t({ uk: activeSort.label, en: activeSort.en })}</span>
+              <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform dark:text-zinc-500 ${sortOpen ? "rotate-180" : ""}`} />
+            </button>
+            {sortOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+                <div className="absolute right-0 top-full z-20 mt-2 w-[220px] overflow-hidden rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                  {SORT_OPTIONS.map(({ k, label, en, Icon }) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => { setSortBy(k); setSortOpen(false); }}
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                        sortBy === k ? "bg-indigo-50 font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300" : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800/60"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                      {t({ uk: label, en })}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
