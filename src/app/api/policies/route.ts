@@ -4,9 +4,7 @@ import { auth } from "@/auth";
 import { savePolicy, getPoliciesByIdentities } from "@/lib/policies";
 import { resolveIdentities } from "@/lib/identity";
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
-import { resolveReferrerByCode, recordReferralConversion } from "@/lib/referral";
-import { creditBonus } from "@/lib/bonus";
-import { BONUS_RATE } from "@/lib/constants";
+import { creditPolicyRewards } from "@/lib/referral";
 
 // POST — зберегти оформлений поліс під email клієнта (логін не обовʼязковий:
 // купити можна гостем, у кабінеті поліс зʼявиться після входу з тим же email).
@@ -53,33 +51,14 @@ export async function POST(req: NextRequest) {
     ].filter(Boolean);
     await trySendTelegram("sales", saleLines.join("\n"));
 
-    // Бонус за покупку: 1% від вартості полісу на бонусний рахунок покупця.
-    if (typeof price === "number" && price > 0) {
-      try {
-        await creditBonus({ email: String(email), kind: "purchase", policyId: String(id), amount: Math.round(price * BONUS_RATE) });
-      } catch (e) {
-        console.error("[policies] purchase bonus error:", e instanceof Error ? e.message : e);
-      }
-    }
-
-    // Реферальна атрибуція: якщо покупець прийшов за чиїмось посиланням (cookie ref),
-    // нараховуємо реферу бонус 5%. Не має ламати відповідь клієнту.
-    const ref = req.cookies.get("ref")?.value;
-    if (ref) {
-      try {
-        const referrer = await resolveReferrerByCode(ref);
-        if (referrer) {
-          await recordReferralConversion({
-            referrerEmail: referrer,
-            referredEmail: String(email),
-            policyId: String(id),
-            price: typeof price === "number" ? price : null,
-          });
-        }
-      } catch (e) {
-        console.error("[policies] referral attribution error:", e instanceof Error ? e.message : e);
-      }
-    }
+    // Бонуси за поліс: 1% покупцю + 5% реферу (ref-cookie). Спільна логіка з
+    // /api/finalize; ідемпотентно за policyId, тож дублю не буде.
+    await creditPolicyRewards({
+      email: String(email),
+      policyId: String(id),
+      price: typeof price === "number" ? price : null,
+      refCode: req.cookies.get("ref")?.value ?? null,
+    });
 
     return NextResponse.json({ success: true });
   } catch (e) {

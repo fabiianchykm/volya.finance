@@ -4,6 +4,7 @@ import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
 import { getPendingOrder, markPendingFinalized } from "@/lib/pending-orders";
 import { savePolicy } from "@/lib/policies";
+import { creditPolicyRewards } from "@/lib/referral";
 import { notifyDevError } from "@/lib/telegram";
 
 // Продукт-незалежна фіналізація після оплати. LiqPay редіректить клієнта на
@@ -89,6 +90,18 @@ export async function POST(req: NextRequest) {
           });
         } catch (e) {
           await notifyDevError("finalize savePolicy", e);
+        }
+        // Бонуси за поліс: 1% покупцю + 5% реферу (ref-cookie). Раніше нараховувались
+        // лише на /api/policies (in-page модалка) — на редіректному шляху губились.
+        try {
+          await creditPolicyRewards({
+            email: String(meta.email),
+            policyId: contractId || id,
+            price: typeof meta.price === "number" ? meta.price : null,
+            refCode: req.cookies.get("ref")?.value ?? null,
+          });
+        } catch (e) {
+          await notifyDevError("finalize rewards", e);
         }
       }
 

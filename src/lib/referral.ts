@@ -3,6 +3,7 @@ import { sql } from "./db";
 import { SITE_URL } from "./seo";
 import { creditBonus, getBonusBreakdown, getBonusBreakdownMulti } from "./bonus";
 import { resolveIdentities } from "./identity";
+import { BONUS_RATE as PURCHASE_RATE } from "./constants";
 
 // Реферальна програма. Кожен залогінений користувач (email) має унікальний код
 // і посилання ?ref=КОД. Коли друг за цим посиланням оформлює поліс, тому, хто
@@ -108,6 +109,38 @@ export async function recordReferralConversion(input: {
   `;
   // Нараховуємо реферальний бонус на СПІЛЬНИЙ бонусний рахунок рефера.
   await creditBonus({ email: referrer, kind: "referral", policyId: input.policyId, amount: bonus });
+}
+
+// Єдина точка нарахування бонусів за оформлений поліс: 1% покупцю + 5% реферу
+// (якщо є ref-код). Викликається з УСІХ шляхів збереження поліса (/api/policies
+// для in-page-модалки та /api/finalize для редіректу після оплати). Ідемпотентно
+// за policyId, тож повторний виклик тим самим полісом бонус не дублює.
+export async function creditPolicyRewards(input: {
+  email: string;
+  policyId: string;
+  price: number | null;
+  refCode?: string | null;
+}): Promise<void> {
+  const price = typeof input.price === "number" && input.price > 0 ? input.price : 0;
+  // 1% покупцю.
+  if (price > 0) {
+    try {
+      await creditBonus({ email: input.email, kind: "purchase", policyId: input.policyId, amount: Math.round(price * PURCHASE_RATE) });
+    } catch (e) {
+      console.error("[rewards] purchase bonus error:", e instanceof Error ? e.message : e);
+    }
+  }
+  // 5% реферу (якщо покупець прийшов за ref-посиланням).
+  if (input.refCode) {
+    try {
+      const referrer = await resolveReferrerByCode(input.refCode);
+      if (referrer) {
+        await recordReferralConversion({ referrerEmail: referrer, referredEmail: input.email, policyId: input.policyId, price: input.price });
+      }
+    } catch (e) {
+      console.error("[rewards] referral attribution error:", e instanceof Error ? e.message : e);
+    }
+  }
 }
 
 export interface ReferralItem {
