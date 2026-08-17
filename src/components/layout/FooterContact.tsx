@@ -79,7 +79,7 @@ const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 const SOCIALS = [
   { label: "Threads", href: "https://www.threads.net/@volya.finance", Icon: ThreadsIcon },
   { label: "Telegram", href: TELEGRAM_URL, Icon: TelegramIcon },
-  { label: "Instagram", href: "https://www.instagram.com/volya_finance", Icon: InstagramIcon, live: true },
+  { label: "Instagram", href: "https://www.instagram.com/volya.finance", Icon: InstagramIcon, live: true },
   { label: "Facebook", href: "https://www.facebook.com/volya.finance", Icon: FacebookIcon },
   { label: "TikTok", href: "https://www.tiktok.com/@volya.finance", Icon: TikTokIcon },
   { label: "YouTube", href: "https://www.youtube.com/@volya.finance", Icon: YouTubeIcon },
