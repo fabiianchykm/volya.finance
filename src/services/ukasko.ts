@@ -506,6 +506,31 @@ export class UkaskoService {
     const data = raw as { data?: Array<{ id: string; status?: string; mtsbuLink?: string }> };
     const first = data.data?.[0];
     if (!first?.id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+
+    // КРОК 2 — «заявити поліс» (statusId:null). Обовʼязковий: без нього замовлення
+    // лишається чернеткою (statusId:-1) і send-otp падає 500 «помилка перевірки коду
+    // ОТП». Крок 2 робить ПОВНУ валідацію (VIN/номер кузова, ІПН тощо). Особливість
+    // Ukasko: невдале заявлення повертає status:"success", АЛЕ data:[] і message =
+    // текст помилки (напр. «Некорректный ИНН», «Не заповнено номер кузова»). Тому
+    // виявляємо «тиху» помилку за порожнім data + message і показуємо її клієнту.
+    const declarePayload = { ...orderData, orderId: first.id, isDP: false, params: { type: "declare", statusId: null } };
+    const decRaw = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/greencard/order/create`,
+      declarePayload,
+      token
+    )) as Record<string, unknown>;
+    const decMsg = (decRaw.message as string | undefined) ?? "";
+    const decData = decRaw.data;
+    const declared = Array.isArray(decData) && decData.length > 0;
+    if (decRaw.status === "error" || decRaw.status === "validation") {
+      console.error("[greencard declare step2] rejected. raw:", JSON.stringify(decRaw).slice(0, 800));
+      throw new Error(decMsg || "Не вдалося заявити поліс. Перевірте дані.");
+    }
+    // «Тиха» відмова: success, але нічого не заявлено (data порожній) + є текст помилки.
+    if (!declared && decMsg && decMsg.toUpperCase() !== "OK") {
+      console.error("[greencard declare step2] soft-reject:", decMsg);
+      throw new Error(decMsg);
+    }
     return first;
   }
 
