@@ -109,7 +109,8 @@ export function GreenCardFlow() {
           startDate: iso,
           periodOption: per.value,
           carType: ct,
-          carNumber: "AA1234BB",
+          // carNumber на калькуляторі не шлемо — ціна ЗК від номера не залежить
+          // (лише тип авто + країна + період). Реальний номер збираємо на оформленні.
         }),
       });
       const data = await res.json().catch(() => ({}));
