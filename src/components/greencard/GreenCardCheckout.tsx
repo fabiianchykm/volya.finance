@@ -495,7 +495,15 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         <>
         {/* Авто */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Транспортний засіб", en: "Vehicle" })}</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Транспортний засіб", en: "Vehicle" })}</p>
+          {/* Підказка про автозаповнення — зверху, біля поля номера авто */}
+          {plateLoading ? (
+            <p className="mb-3 text-xs font-medium text-indigo-500">{t({ uk: "Підтягуємо дані авто за номером…", en: "Fetching vehicle details by plate…" })}</p>
+          ) : plateError ? (
+            <p className="mb-3 text-xs font-medium text-amber-600">{plateError}</p>
+          ) : (
+            <p className="mb-3 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Введіть держ. номер — марка, модель і решта підтягнуться автоматично.", en: "Enter the plate number — make, model and the rest will fill in automatically." })}</p>
+          )}
 
           {/* Держ. номер — така сама комірка в сітці, як решта; підтягує дані авто. */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -516,13 +524,6 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
             <Input label={t({ uk: "Маса без навантаження (кг)", en: "Curb weight (kg)" })} value={f.ownWeight} onChange={set("ownWeight")} placeholder="1200" />
             <Input label={t({ uk: "Повна маса (кг)", en: "Gross weight (kg)" })} value={f.totalWeight} onChange={set("totalWeight")} placeholder="1600" />
           </div>
-          {plateLoading ? (
-            <p className="mt-2 text-xs font-medium text-indigo-500">{t({ uk: "Підтягуємо дані авто за номером…", en: "Fetching vehicle details by plate…" })}</p>
-          ) : plateError ? (
-            <p className="mt-2 text-xs font-medium text-amber-600">{plateError}</p>
-          ) : (
-            <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Введіть держ. номер — марка, модель і решта підтягнуться автоматично.", en: "Enter the plate number — make, model and the rest will fill in automatically." })}</p>
-          )}
         </div>
 
         <div className="flex justify-end border-t border-zinc-100 dark:border-zinc-800 pt-4">
