@@ -101,6 +101,13 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
 
+  // Актуальний оффер: спершу обраний, але на кроці оформлення ПЕРЕРАХОВУЄМО ціну з
+  // реальним номером авто. АРКС/УТСК ціноутворюють за номером (визначають, чи ТЗ
+  // збитковий), тож без перерахунку declare-ціна не збіглась би з калк → помилка при
+  // укладанні. Повідомлення показуємо, якщо ціна змінилась.
+  const [gcOffer, setGcOffer] = useState<GreenCardOffer>(ctx.offer);
+  const [priceNotice, setPriceNotice] = useState<string | null>(null);
+
   // Авто-підтягування даних авто за держ. номером — БЕЗ кнопки: щойно введено
   // повний номер (дебаунс) або при виході з поля. lastPlate захищає від повторних
   // запитів того самого номера (у т.ч. після setF нормалізованого номера).
@@ -245,8 +252,9 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     return {
       action: "declare",
       // За схемою достатньо offerId — решту (тариф/компанія/модуль) бекенд бере з бази.
-      offerInfo: { offerId: ctx.offer.offerId },
-      price: ctx.offer.price,
+      // gcOffer — перерахований за реальним номером (див. handleSubmit).
+      offerInfo: { offerId: gcOffer.offerId },
+      price: gcOffer.price,
       startDate: toDMY(ctx.startDate),          // d-m-Y
       periodOptionId: ctx.periodOption,
       userTypeId: 1,
@@ -320,6 +328,39 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     setLoading(true);
     setError(null);
     try {
+      // Перерахунок ціни з РЕАЛЬНИМ номером авто. АРКС/УТСК ціноутворюють за номером,
+      // тож declare-ціна має відповідати калк ІЗ ЦИМ номером — інакше страхова
+      // відхилить укладання. Якщо ціна змінилась — показуємо й НЕ заявляємо одразу,
+      // щоб клієнт бачив актуальну суму перед оплатою.
+      const plate = f.number.replace(/\s/g, "");
+      const sD = parseUaDate(ctx.startDate);
+      if (plate && sD) {
+        const iso = `${sD.getFullYear()}-${String(sD.getMonth() + 1).padStart(2, "0")}-${String(sD.getDate()).padStart(2, "0")}`;
+        try {
+          const rc = await fetch("/api/greencard", {
+            method: "POST", headers: { "content-type": "application/json" },
+            body: JSON.stringify({ country: ctx.country, userType: 1, startDate: iso, periodOption: ctx.periodOption, carType: ctx.carType, carNumber: plate }),
+          });
+          const rcj = await rc.json();
+          if (rcj.success && Array.isArray(rcj.offers)) {
+            const fresh: GreenCardOffer | undefined =
+              rcj.offers.find((o: GreenCardOffer) => o.offerId === gcOffer.offerId)
+              ?? rcj.offers.find((o: GreenCardOffer) => o.moduleId === gcOffer.moduleId);
+            if (fresh && fresh.price > 0 && fresh.price !== gcOffer.price) {
+              setGcOffer(fresh);
+              setPriceNotice(t({
+                uk: `Страхова перерахувала вартість за номером авто: ${fresh.price} грн (у пропозиції — ${gcOffer.price} грн). Перевірте суму й натисніть «Продовжити до оплати».`,
+                en: `The insurer recalculated the price by plate: ${fresh.price} UAH (in the offer — ${gcOffer.price} UAH). Check the amount and click "Continue to payment".`,
+              }));
+              setLoading(false);
+              return;
+            }
+            if (fresh) setGcOffer(fresh); // ціна та сама — фіксуємо валідний offerId
+          }
+        } catch { /* перерахунок недоступний — заявляємо з обраним оффером */ }
+      }
+      setPriceNotice(null);
+
       const idem = crypto.randomUUID();
       const res = await fetch("/api/greencard/order", {
         method: "POST",
@@ -335,8 +376,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         meta: {
           email: f.email, phone: `+380${f.phone.replace(/\D/g, "")}`,
           customerName: [f.surnameUa, f.nameUa, f.patronymicUa].filter(Boolean).join(" "),
-          company: ctx.offer.companyNamePublic || ctx.offer.companyName,
-          price: ctx.offer.price, productLabel: "Зелена карта",
+          company: gcOffer.companyNamePublic || gcOffer.companyName,
+          price: gcOffer.price, productLabel: "Зелена карта",
         },
       });
       // Надсилаємо OTP на email (спільний ендпоінт з ОСЦПВ).
@@ -347,8 +388,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       trackCheckoutStarted({
         product: "Зелена карта",
         name: [f.surnameUa, f.nameUa, f.patronymicUa].filter(Boolean).join(" "),
-        company: ctx.offer.companyNamePublic || ctx.offer.companyName,
-        price: ctx.offer.price,
+        company: gcOffer.companyNamePublic || gcOffer.companyName,
+        price: gcOffer.price,
         phone: `+380${f.phone.replace(/\D/g, "")}`,
         email: f.email,
       });
@@ -372,7 +413,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       if (!json.success) throw new Error(json.error);
       if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
       setStep("payment");
-      trackEvent("begin_checkout", { product: "greencard", currency: "UAH", value: ctx.offer.price });
+      trackEvent("begin_checkout", { product: "greencard", currency: "UAH", value: gcOffer.price });
     } catch (err) {
       setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
@@ -400,12 +441,13 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         <div>
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Оформлення Зеленої карти", en: "Green Card checkout" })}</h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {t({ uk: "Крок", en: "Step" })} {formStep === "customer" ? 1 : 2} {t({ uk: "з 2 ·", en: "of 2 ·" })} <span className="font-semibold text-zinc-900 dark:text-zinc-100">{ctx.offer.price} {t({ uk: "грн", en: "UAH" })}</span>
+            {t({ uk: "Крок", en: "Step" })} {formStep === "customer" ? 1 : 2} {t({ uk: "з 2 ·", en: "of 2 ·" })} <span className="font-semibold text-zinc-900 dark:text-zinc-100">{gcOffer.price} {t({ uk: "грн", en: "UAH" })}</span>
           </p>
         </div>
       </div>
 
       {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}</div>}
+      {priceNotice && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">{priceNotice}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {formStep === "customer" && (
@@ -551,10 +593,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
           open={step === "payment"}
           onClose={() => setStep("form")}
           orderId={orderId}
-          amount={ctx.offer.price}
+          amount={gcOffer.price}
           confirmEndpoint="/api/greencard/order"
           onPaid={(cId) => {
-            trackEvent("purchase", { product: "greencard", currency: "UAH", value: ctx.offer.price, transaction_id: cId });
+            trackEvent("purchase", { product: "greencard", currency: "UAH", value: gcOffer.price, transaction_id: cId });
             setContractId(cId);
             setStep("success");
           }}
