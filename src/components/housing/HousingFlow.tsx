@@ -10,7 +10,7 @@ import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { OfferCard } from "@/components/insurance/OfferCard";
 import { HousingCheckout, type HousingContext } from "./HousingCheckout";
 import type { HomeOffer, InsuranceOffer } from "@/types/api";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n, type Tr } from "@/lib/i18n";
 
 // Страхування житла — потік як у Зеленій карти: темний герой (параметри) → світлий
@@ -77,6 +77,7 @@ export function HousingFlow() {
     setStep("offers");
     window.history.replaceState(null, "", `?step=offers&homeType=${ht}&amount=${amt}&period=${per}&start=${encodeURIComponent(sUa)}`);
     trackEvent("calculate_cost", { product: "housing" });
+    trackCalc("housing", { homeType: ht, amount: amt, period: per, start: sUa });
     try {
       const iso = `${sD.getFullYear()}-${String(sD.getMonth() + 1).padStart(2, "0")}-${String(sD.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/home", {

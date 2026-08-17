@@ -112,6 +112,23 @@ export function ensureSchema(): Promise<void> {
           created_at    timestamptz NOT NULL DEFAULT now()
         )
       `;
+      // Прорахунки на калькуляторі (до оформлення). Дає бачити попит навіть коли
+      // людина порахувала й пішла. Дедуп за (visitor, product, param_key): повторний
+      // прорахунок тими ж параметрами лише піднімає count + updated_at.
+      await sql`
+        CREATE TABLE IF NOT EXISTS calc_leads (
+          id         bigserial PRIMARY KEY,
+          product    text NOT NULL,
+          param_key  text NOT NULL,
+          params     jsonb,
+          visitor    text NOT NULL DEFAULT '',
+          count      integer NOT NULL DEFAULT 1,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          updated_at timestamptz NOT NULL DEFAULT now(),
+          UNIQUE (visitor, product, param_key)
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS calc_leads_updated_idx ON calc_leads (updated_at DESC)`;
     })().catch((e) => {
       schemaPromise = null;
       throw e;

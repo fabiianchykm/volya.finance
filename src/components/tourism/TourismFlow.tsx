@@ -10,7 +10,7 @@ import { OfferCard } from "@/components/insurance/OfferCard";
 import { Navbar } from "@/components/layout/Navbar";
 import { TourismCheckout, type TourismCheckoutCtx } from "./TourismCheckout";
 import type { TourismOffer, InsuranceOffer } from "@/types/api";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n } from "@/lib/i18n";
 
 const PROGRAM_LABELS: Record<string, string> = {
@@ -199,6 +199,7 @@ export function TourismFlow() {
     const qs = `?step=offers&zone=${zid}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}&multi=${multi ? 1 : 0}&tripDays=${tDays}&births=${encodeURIComponent(births.join(","))}`;
     window.history.replaceState(null, "", qs);
     trackEvent("calculate_cost", { product: "tourism" });
+    trackCalc("tourism", { zone: ZONES.find((z) => String(z.id) === zid)?.label ?? zid, start: sUa, end: eUa, days: d, tourists: births.length, multiVisa: multi });
     try {
       const zone = ZONES.find((z) => String(z.id) === zid)!;
       const res = await fetch("/api/tourism", {

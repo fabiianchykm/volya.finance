@@ -53,3 +53,29 @@ export function trackCheckoutStarted(context: CheckoutLead): void {
     }).catch(() => { /* воронка не має ламати оформлення */ });
   } catch { /* ignore */ }
 }
+
+// Анонімний ID відвідувача (localStorage) — щоб групувати прорахунки однієї людини
+// й дедуплікувати повтори. Не персональні дані, лише випадковий ключ.
+function visitorId(): string {
+  try {
+    let v = localStorage.getItem("vid");
+    if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("vid", v); }
+    return v;
+  } catch { return ""; }
+}
+
+// Прорахунок на калькуляторі → зберігаємо в БД (/admin/calculations). Параметри —
+// продукт-специфічні (номер авто, країна/дати тощо). Не блокує калькулятор.
+export function trackCalc(product: string, params: Record<string, string | number | boolean | undefined> = {}): void {
+  if (typeof window === "undefined") return;
+  const clean: Record<string, string | number | boolean> = {};
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "") clean[k] = v;
+  try {
+    void fetch("/api/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ event: "calculate", product, params: clean, visitor: visitorId() }),
+      keepalive: true,
+    }).catch(() => { /* аналітика не має ламати калькулятор */ });
+  } catch { /* ignore */ }
+}

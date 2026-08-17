@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { guardRequest } from "@/lib/api-guard";
 import { trySendTelegram, escapeHtml } from "@/lib/telegram";
 import { saveLead } from "@/lib/leads";
+import { saveCalcLead } from "@/lib/calc-leads";
 
 // Клієнтські події воронки → Telegram (+ БД для лідів):
 //   checkout_started → лід у БД (/admin/leads) + пінг у sales («почав оформлення»)
@@ -35,13 +36,26 @@ export async function POST(req: NextRequest) {
   let event: string;
   let step: string;
   let ctx: TrackContext;
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
+    body = await req.json();
     event = String(body?.event ?? "");
     step = String(body?.step ?? "");
     ctx = (body?.context ?? {}) as TrackContext;
   } catch {
     return NextResponse.json({ success: false }, { status: 400 });
+  }
+
+  // Прорахунок на калькуляторі → лід у БД (/admin/calculations). Тихо, без Telegram.
+  if (event === "calculate") {
+    try {
+      await saveCalcLead({
+        product: String(body?.product ?? ""),
+        params: (body?.params ?? {}) as Record<string, unknown>,
+        visitor: typeof body?.visitor === "string" ? body.visitor : null,
+      });
+    } catch { /* аналітика не має ламати відповідь */ }
+    return NextResponse.json({ success: true });
   }
 
   const car = ctx.car ? `🚙 Авто: ${s(ctx.car)}` : null;

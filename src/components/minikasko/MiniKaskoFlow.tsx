@@ -13,7 +13,7 @@ import { LeadModal, type LeadMode } from "@/components/layout/LeadModal";
 import { MiniKaskoCheckout, type MiniKaskoContext } from "./MiniKaskoCheckout";
 import { cityShort, cityLong } from "@/lib/utils";
 import type { MiniKaskoOffer, InsuranceOffer } from "@/types/api";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n, type Tr } from "@/lib/i18n";
 
 // Міні-КАСКО — потік як у Зеленій карти: темний герой (місто + дата) → світлий
@@ -91,6 +91,7 @@ export function MiniKaskoFlow() {
     const cn = cityShort(city.name_full_name_ua || city.name_ua);
     window.history.replaceState(null, "", `?step=offers&cityId=${city.id}&cityName=${encodeURIComponent(cn)}`);
     trackEvent("calculate_cost", { product: "mini-kasko" });
+    trackCalc("mini-kasko", { cityId: city.id, city: cn });
     try {
       const d = startD ?? new Date();
       const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

@@ -8,7 +8,7 @@ import { PhoneModal } from "./PhoneModal";
 import { KASKO_PRODUCTS, type KaskoProduct } from "./products";
 import { Button } from "@/components/ui/Button";
 import type { VehicleData } from "@/types/insurance";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n } from "@/lib/i18n";
 
 const VehicleConfirmModal = dynamic(
@@ -37,6 +37,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
     setLoading(true);
     setLookupError(null);
     trackEvent("calculate_cost", { product });
+    trackCalc(product, { plate: p });
     try {
       const res = await fetch(`/api/vehicle/${encodeURIComponent(p)}`);
       const json = await res.json();
