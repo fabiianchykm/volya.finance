@@ -367,10 +367,19 @@ function GreenCardOffers({
 // Мапимо офер Зеленої карти у форму InsuranceOffer, щоб переюзати OSAGO OfferCard
 // (той самий дизайн: лого+назва, ціна, бонус, кнопка). Опцій ЗК не має.
 function toInsuranceOffer(o: GreenCardOffer): InsuranceOffer {
+  // PDF «Інформаційний документ про страховий продукт» у ЗК приходить у company.companyLink
+  // — мапимо в docProduct, щоб наявний блок «Документи страхового продукту» в картці
+  // показав його (як в ОСЦПВ).
+  const companyLink = (o.company as { companyLink?: string } | undefined)?.companyLink;
   return {
     offerId: o.offerId,
     price: o.price,
-    company: { ...(o.company ?? {}), publicName: o.companyNamePublic || o.companyName, logo: o.company?.logo ?? null },
+    company: {
+      ...(o.company ?? {}),
+      publicName: o.companyNamePublic || o.companyName,
+      logo: o.company?.logo ?? null,
+      ...(companyLink ? { docProduct: companyLink } : {}),
+    },
     listDgo: [],
     listAutolawyer: [],
   } as unknown as InsuranceOffer;
