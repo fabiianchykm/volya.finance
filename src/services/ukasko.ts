@@ -880,14 +880,23 @@ export class UkaskoService {
         try {
           const raw = await getJson(url, token) as Record<string, unknown>;
           const d = (raw.data ?? raw) as Record<string, unknown>;
-          const inv = (d.invoice ?? d) as Record<string, unknown>;
-          // Ukasko віддає статус у полі `statusId` (camelCase) у get-invoice; у деяких
-          // ендпоінтів — `status_id`. Читаємо обидва варіанти. statusId=2 → оплачено.
-          const statusId = Number(inv.statusId ?? inv.status_id ?? d.statusId ?? d.status_id ?? 0) || 0;
-          const payedAt = (inv.payed_at ?? inv.payedAt ?? d.payed_at ?? d.payedAt ?? null) as string | null;
-          console.error(`[ukasko check-invoice] ${url} → status_id=${statusId} payed_at=${payedAt} raw=${JSON.stringify(raw).slice(0, 300)}`);
-          // Знайшли підтвердження оплати — повертаємо одразу.
-          if (statusId === 2 || payedAt) return { status_id: 2, payed_at: payedAt };
+          // ВАЖЛИВО: статус ОПЛАТИ ≠ статус замовлення. Для ОСЦПВ order.statusId=2 при
+          // оплаті, а для ЗК/туризму order.statusId=5/1 (заявлено), а оплата — в
+          // d.isPaid + payments[].invoice.status_id/payed_at. Тому визначаємо оплату
+          // за цими полями, а не за statusId замовлення.
+          let payedAt: string | null = null;
+          let paidByInvoice = false;
+          const payments = Array.isArray(d.payments) ? d.payments as Array<Record<string, unknown>> : [];
+          for (const p of payments) {
+            const pinv = (p && typeof p === "object" ? (p.invoice as Record<string, unknown> | undefined) : undefined) ?? {};
+            const s = Number(pinv.status_id ?? pinv.statusId ?? 0);
+            const pa = (pinv.payed_at ?? pinv.payedAt ?? null) as string | null;
+            if (s === 2 || pa) { paidByInvoice = true; payedAt = pa ?? payedAt; }
+          }
+          const orderStatus = Number(d.statusId ?? d.status_id ?? 0) || 0;
+          const paid = d.isPaid === true || paidByInvoice || orderStatus === 2;
+          console.error(`[ukasko check-invoice] ${url} → isPaid=${d.isPaid} orderStatus=${orderStatus} paidByInvoice=${paidByInvoice} payed_at=${payedAt}`);
+          if (paid) return { status_id: 2, payed_at: payedAt };
         } catch (e) {
           if (e instanceof HttpError && e.status === 401) throw e; // токен протух — withAuth перевипустить
           console.error(`[ukasko check-invoice] ${url} — error:`, e instanceof Error ? e.message.slice(0, 200) : String(e));
