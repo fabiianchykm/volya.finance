@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, type LucideIcon } from "lucide-react";
+import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, LayoutDashboard, type LucideIcon } from "lucide-react";
+import { isAdminClient } from "@/lib/admin";
 import { VMark, BarlessA } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -256,6 +257,16 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                       <FileText className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                       {t({ uk: "Мої поліси", en: "My policies" })}
                     </Link>
+                    {isAdminClient(session?.user?.email) && (
+                      <Link
+                        href="/admin/calculations"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        {t({ uk: "Адмінка", en: "Admin" })}
+                      </Link>
+                    )}
                     <Button
                       size="md"
                       variant="outline"
@@ -351,6 +362,16 @@ function UserMenu({
                 <FileText className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                 {t({ uk: "Мої поліси", en: "My policies" })}
               </Link>
+              {isAdminClient(user.email) && (
+                <Link
+                  href="/admin/calculations"
+                  onClick={() => setOpen(false)}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  {t({ uk: "Адмінка", en: "Admin" })}
+                </Link>
+              )}
               <button
                 onClick={() => { setOpen(false); signOut(); }}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
