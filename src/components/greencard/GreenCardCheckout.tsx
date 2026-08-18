@@ -249,6 +249,19 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       name: selectedCity?.name_ua ?? cityName,
       name_full_name_ua: cityName || (selectedCity?.name_ua ?? ""),
     };
+    // ТАС (moduleId 11) на заявленні індексує тип ТЗ за ОСЦПВ-категорією («B1»..«B5»),
+    // а не за стандартним GC-типом «B» (решта страхових приймають «B»). Тож для ТАС
+    // мапимо «B» → категорію за обʼємом двигуна; інші carTypes — з суфіксом «1».
+    const carTypeDeclare = (() => {
+      if (gcOffer.moduleId !== 11) return ctx.carType;
+      if (ctx.carType !== "B") return `${ctx.carType}1`;
+      const cc = Number(f.engineSize) || 0;
+      if (cc && cc <= 1600) return "B1";
+      if (cc && cc <= 2000) return "B2";
+      if (cc && cc <= 3000) return "B3";
+      if (cc > 3000) return "B4";
+      return "B1"; // нема обʼєму — безпечний дефолт (ціна ЗК від категорії не залежить)
+    })();
     return {
       action: "declare",
       // За схемою достатньо offerId — решту (тариф/компанія/модуль) бекенд бере з бази.
@@ -258,7 +271,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       startDate: toDMY(ctx.startDate),          // d-m-Y
       periodOptionId: ctx.periodOption,
       userTypeId: 1,
-      carTypeExternalId: ctx.carType,
+      carTypeExternalId: carTypeDeclare,
       countryId: ctx.country,
       info: {
         surname: f.surnameLat, name: f.nameLat,
@@ -284,7 +297,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       carInfo: {
         brand: f.brand, model: f.model, number: f.number.replace(/\s/g, ""),
         vin: f.vin.trim(), withoutVin: false, year: f.year || null,   // VIN обовʼязковий для ЗК (заявлення вимагає «номер кузова»)
-        autoCategory: ctx.carType,
+        autoCategory: carTypeDeclare,
         ownWeight: Number(f.ownWeight) || null, totalWeight: Number(f.totalWeight) || null,
         nSeating: Number(f.nSeating) || null, engineSize: Number(f.engineSize) || null,
         city: cityObj,                          // об'єкт, НЕ рядок
