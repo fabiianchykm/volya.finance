@@ -72,7 +72,10 @@ export function GreenCardFlow() {
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const today = new Date();
+  // Дата початку ЗК — мінімум ЗАВТРА: страхові вимагають, щоб початок дії був не
+  // раніше ніж дата укладання + 1 день (інакше «BeginningDate…» при заявленні).
+  const minStart = new Date();
+  minStart.setDate(minStart.getDate() + 1);
   const maxStart = new Date();
   maxStart.setFullYear(maxStart.getFullYear() + 1);
 
@@ -221,7 +224,7 @@ export function GreenCardFlow() {
                   </div>
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Дати поїздки", en: "Trip dates" })}</label>
-                    <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
+                    <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={minStart} maxDate={maxStart} />
                   </div>
                 </div>
 
