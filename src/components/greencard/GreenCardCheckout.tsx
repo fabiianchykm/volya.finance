@@ -338,6 +338,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     if (!parseUaDate(f.dateBirth)) { setError(t({ uk: "Вкажіть коректну дату народження", en: "Enter a valid date of birth" })); return; }
     if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
     if (!f.vin.trim()) { setError(t({ uk: "Вкажіть VIN (номер кузова) — він обовʼязковий для Зеленої карти", en: "Enter the VIN (chassis number) — it's required for the Green Card" })); return; }
+    if (!Number(f.engineSize) || !Number(f.nSeating) || !Number(f.ownWeight) || !Number(f.totalWeight)) {
+      setError(t({ uk: "Заповніть технічні дані авто: обʼєм двигуна, кількість місць, масу без навантаження та повну масу (потрібні для оформлення).", en: "Fill in the vehicle's technical details: engine size, number of seats, curb weight and gross weight (required for issuance)." }));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -575,10 +579,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
             <Input label={t({ uk: "Модель", en: "Model" })} value={f.model} onChange={set("model")} placeholder="A4" required />
             <Input label={t({ uk: "VIN (номер кузова)", en: "VIN (chassis number)" })} value={f.vin} onChange={set("vin")} placeholder="WBA...123456" required />
             <Input label={t({ uk: "Рік випуску", en: "Year" })} value={f.year} onChange={set("year")} placeholder="2015" required />
-            <Input label={t({ uk: "Обʼєм двигуна (см³)", en: "Engine size (cc)" })} value={f.engineSize} onChange={set("engineSize")} placeholder="1600" />
-            <Input label={t({ uk: "Кількість місць", en: "Number of seats" })} value={f.nSeating} onChange={set("nSeating")} placeholder="5" />
-            <Input label={t({ uk: "Маса без навантаження (кг)", en: "Curb weight (kg)" })} value={f.ownWeight} onChange={set("ownWeight")} placeholder="1200" />
-            <Input label={t({ uk: "Повна маса (кг)", en: "Gross weight (kg)" })} value={f.totalWeight} onChange={set("totalWeight")} placeholder="1600" />
+            <Input label={t({ uk: "Обʼєм двигуна (см³)", en: "Engine size (cc)" })} value={f.engineSize} onChange={set("engineSize")} placeholder="1600" required />
+            <Input label={t({ uk: "Кількість місць", en: "Number of seats" })} value={f.nSeating} onChange={set("nSeating")} placeholder="5" required />
+            <Input label={t({ uk: "Маса без навантаження (кг)", en: "Curb weight (kg)" })} value={f.ownWeight} onChange={set("ownWeight")} placeholder="1200" required />
+            <Input label={t({ uk: "Повна маса (кг)", en: "Gross weight (kg)" })} value={f.totalWeight} onChange={set("totalWeight")} placeholder="1600" required />
           </div>
         </div>
 
