@@ -347,9 +347,14 @@ export function OfferCard({
               {t({ uk: "Детальніше", en: "Details" })}
             </button>
           )}
-          <p className="text-center text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
-            {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
-          </p>
+          <Tooltip
+            className="cursor-help self-center"
+            content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
+          >
+            <span className="text-center text-[11px] leading-snug text-zinc-400 underline decoration-dotted underline-offset-2 dark:text-zinc-500">
+              {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
+            </span>
+          </Tooltip>
         </div>
       </div>
 
@@ -372,9 +377,14 @@ export function OfferCard({
         {canExpand && (
           <div className="flex w-[280px] flex-col items-center shrink-0">
             <div className="flex flex-1 items-center justify-center px-3">
-              <p className="text-center text-xs leading-snug text-zinc-500 dark:text-zinc-400">
-                {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
-              </p>
+              <Tooltip
+                className="cursor-help"
+                content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
+              >
+                <span className="text-center text-xs leading-snug text-zinc-500 underline decoration-dotted underline-offset-2 dark:text-zinc-400">
+                  {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
+                </span>
+              </Tooltip>
             </div>
             <button
               onClick={() => setExpanded(v => !v)}
