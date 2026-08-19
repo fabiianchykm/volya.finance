@@ -370,8 +370,8 @@ export function OfferCard({
             className="cursor-help self-center"
             content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
           >
-            <span className="inline-flex items-center gap-1.5 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
-              <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium leading-snug text-zinc-500 dark:text-zinc-400">
+              <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
               <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
             </span>
           </Tooltip>
@@ -401,8 +401,8 @@ export function OfferCard({
                 className="cursor-help"
                 content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
               >
-                <span className="inline-flex items-center gap-1.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400">
-                  <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-300">
+                  <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
                   <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
                 </span>
               </Tooltip>
