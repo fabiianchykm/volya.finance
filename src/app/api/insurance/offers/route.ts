@@ -42,10 +42,13 @@ export async function GET(req: NextRequest) {
       "car[birthdayAt]": dob,
     };
 
+    // nocache=1 — обхід кешу (напр. перед оформленням: потрібен СВІЖИЙ offerId, бо
+    // застарілий Ukasko відхиляє з 422 «offer id не коректне»).
+    const noCache = searchParams.get("nocache") === "1";
     const cacheKey = JSON.stringify(params);
     const now = Date.now();
     const hit = offersCache.get(cacheKey);
-    if (hit && hit.expires > now) {
+    if (!noCache && hit && hit.expires > now) {
       return NextResponse.json({ success: true, data: hit.data, cached: true });
     }
 

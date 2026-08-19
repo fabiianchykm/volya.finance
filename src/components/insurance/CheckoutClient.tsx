@@ -168,7 +168,8 @@ export function CheckoutClient() {
     const matches = (o: InsuranceOffer) => o.companyId === offer.companyId;
 
     for (let attempt = 0; attempt < 3; attempt++) {
-      const res = await fetch(`/api/insurance/offers?${new URLSearchParams(paramsObj)}`);
+      // nocache — щоб отримати СВІЖИЙ offerId (кешований міг протухнути → 422).
+      const res = await fetch(`/api/insurance/offers?${new URLSearchParams({ ...paramsObj, nocache: "1" })}`);
       const json = await res.json();
       if (!json.success) continue; // тимчасовий збій — пробуємо ще раз
       const list: InsuranceOffer[] = Array.isArray(json.data?.data) ? json.data.data : [];
@@ -196,11 +197,19 @@ export function CheckoutClient() {
     // дублів при подвійному кліку чи ретраї мережі.
     const idemKey = crypto.randomUUID();
     try {
-      // Best-effort звірка ціни/свіжого offerId. Якщо Ukasko не повернув обраний оффер
-      // (буває через інтермітентну видачу) — НЕ блокуємо покупку, оформлюємо з обраним;
-      // фінальну валідацію зробить draft/declare на боці Ukasko.
+      // Обовʼязково беремо СВІЖИЙ offerId: пропозиції ОСЦПВ мають короткий термін
+      // життя, і застарілий offerId Ukasko відхиляє з 422 «offer id не коректне».
+      // Тож НЕ declare-имось зі старим — якщо свіжого нема, просимо повторити.
       const fresh = await revalidateOffer();
-      if (fresh && fresh.price !== offer.price) {
+      if (!fresh) {
+        setError(t({
+          uk: "Пропозиція застаріла або страхова тимчасово недоступна. Натисніть «Продовжити» ще раз, а якщо не спрацює — поверніться до пропозицій і перерахуйте вартість.",
+          en: "The offer has expired or the insurer is temporarily unavailable. Click \"Continue\" again; if it doesn't work, go back to the offers and recalculate.",
+        }));
+        setLoading(false);
+        return;
+      }
+      if (fresh.price !== offer.price) {
         setOffer(fresh);
         setPriceNotice(
           t({
@@ -219,7 +228,7 @@ export function CheckoutClient() {
 
       const payload = buildOrderPayload(
         mergedVehicle,
-        fresh ?? offer,
+        fresh, // гарантовано свіжий оффер (див. перевірку !fresh вище)
         periodId,
         selectedDgoId,
         selectedAutolawyerId,
