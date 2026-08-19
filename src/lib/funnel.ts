@@ -33,19 +33,25 @@ function leadKey(product: string | null): string {
   return KEY_BY_LABEL[p] ?? p;
 }
 
-export async function getFunnel(): Promise<{ rows: FunnelRow[]; totals: FunnelTotals }> {
+// days — за скільки останніх днів рахувати (null → весь час). Фільтруємо за
+// created_at (коли запис зʼявився) в усіх трьох таблицях.
+export async function getFunnel(days?: number | null): Promise<{ rows: FunnelRow[]; totals: FunnelTotals }> {
   const empty = { rows: [], totals: { calc: 0, leads: 0, policies: 0 } };
   if (!sql) return empty;
   await ensureSchema();
 
+  const d = days && days > 0 ? Math.floor(days) : null;
+  // Умова періоду (або TRUE — весь час). d безпечне (ціле), інтерполюємо в інтервал.
+  const since = d ? sql`created_at >= now() - (${d} || ' days')::interval` : sql`true`;
+
   const [calc, leads, policies] = await Promise.all([
     sql<{ product: string; runs: string; visitors: string }[]>`
       SELECT product, COALESCE(SUM(count),0) AS runs, COUNT(DISTINCT NULLIF(visitor,'')) AS visitors
-      FROM calc_leads GROUP BY product`,
+      FROM calc_leads WHERE ${since} GROUP BY product`,
     sql<{ product: string | null; n: string }[]>`
-      SELECT product, COUNT(*) AS n FROM leads GROUP BY product`,
+      SELECT product, COUNT(*) AS n FROM leads WHERE ${since} GROUP BY product`,
     sql<{ product: string | null; n: string }[]>`
-      SELECT product, COUNT(*) AS n FROM policies GROUP BY product`,
+      SELECT product, COUNT(*) AS n FROM policies WHERE ${since} GROUP BY product`,
   ]);
 
   const map = new Map<string, FunnelRow>();

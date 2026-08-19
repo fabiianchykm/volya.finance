@@ -11,30 +11,61 @@ interface Totals { calc: number; leads: number; policies: number }
 
 const pct = (a: number, b: number) => (b > 0 ? `${((a / b) * 100).toFixed(1)}%` : "—");
 
+const PERIODS = [
+  { label: "Сьогодні", days: 1 },
+  { label: "7 днів", days: 7 },
+  { label: "30 днів", days: 30 },
+  { label: "Весь час", days: 0 },
+];
+
 export function AdminFunnel() {
   const [rows, setRows] = useState<FunnelRow[]>([]);
   const [totals, setTotals] = useState<Totals>({ calc: 0, leads: 0, policies: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [days, setDays] = useState(0); // 0 = весь час
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
     (async () => {
       try {
-        const res = await fetch("/api/admin/funnel");
+        const qs = days > 0 ? `?days=${days}` : "";
+        const res = await fetch(`/api/admin/funnel${qs}`);
         const json = await res.json();
+        if (!active) return;
         if (!json.success) throw new Error(json.error ?? "Помилка");
         setRows(json.rows ?? []);
         setTotals(json.totals ?? { calc: 0, leads: 0, policies: 0 });
+        setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Помилка");
+        if (active) setError(e instanceof Error ? e.message : "Помилка");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
-  }, []);
+    return () => { active = false; };
+  }, [days]);
 
-  if (loading) return <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400"><Loader2 className="h-4 w-4 animate-spin" /> Завантаження…</div>;
-  if (error) return <p className="text-sm text-red-500">{error}</p>;
+  const periodBar = (
+    <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-900">
+      {PERIODS.map((p) => (
+        <button
+          key={p.days}
+          type="button"
+          onClick={() => setDays(p.days)}
+          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+            days === p.days ? "bg-indigo-600 text-white" : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (loading) return <div className="space-y-4">{periodBar}<div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400"><Loader2 className="h-4 w-4 animate-spin" /> Завантаження…</div></div>;
+  if (error) return <div className="space-y-4">{periodBar}<p className="text-sm text-red-500">{error}</p></div>;
 
   const stages = [
     { key: "calc", label: "Прорахунки", value: totals.calc, Icon: Calculator, hint: "натиснули «Розрахувати»" },
@@ -44,6 +75,7 @@ export function AdminFunnel() {
 
   return (
     <div className="space-y-6">
+      {periodBar}
       {/* Загальна воронка */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {stages.map((s, i) => {
