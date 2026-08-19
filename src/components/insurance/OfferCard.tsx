@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, FileText, ExternalLink, Info } from "lucide-rea
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
+import { osagoAgeBasis } from "@/lib/osago-age-basis";
 import { BONUS_RATE } from "@/lib/constants";
 import { logoSrc } from "@/lib/logos";
 import { useI18n } from "@/lib/i18n";
@@ -31,6 +32,8 @@ interface OfferCardProps {
   discountEligible?: boolean;
   /** Опис продукту в «Детальніше» (напр. пояснення ОСЦПВ). Передається лише де треба. */
   productDescription?: ReactNode;
+  /** ОСЦПВ: показати, за віком чиєї особи ця СК рахує ціну (власник/водій/страхувальник). */
+  showAgeBasis?: boolean;
   /** Що покриває — короткі теги по центру картки (напр. міні-КАСКО: «Воєнні ризики», «З вини»). */
   coverageTags?: string[];
 }
@@ -120,6 +123,7 @@ export function OfferCard({
   cornerBadge,
   discountEligible,
   productDescription,
+  showAgeBasis,
   coverageTags,
 }: OfferCardProps) {
   const { t } = useI18n();
@@ -153,6 +157,7 @@ export function OfferCard({
 
   // «Стара» ціна (до знижки) + відсоток — лише для ОСЦПВ (discountEligible).
   const companyMatchName = [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" ");
+  const ageBasis = showAgeBasis ? osagoAgeBasis(companyMatchName) : null;
   const strikePrice = discountEligible ? osagoStrikePrice(companyMatchName, totalPrice) : null;
   const discountPct = discountEligible ? osagoDiscountPct(companyMatchName) : null;
   // Спецпропозиція VOLYA.FINANCE — коли знижка перевищує 25%.
@@ -405,9 +410,17 @@ export function OfferCard({
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4 dark:border-zinc-800">
           {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + пряме врегулювання */}
-          {(productDescription || offer.company.directSettlement === 1) && (
+          {(productDescription || offer.company.directSettlement === 1 || ageBasis) && (
             <DetailsDropdown label={t({ uk: "Базові опції", en: "Basic options" })} open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
               {productDescription}
+              {ageBasis && (
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-300">
+                    {t({ uk: "Ціна рахується за віком ", en: "Price is based on the age of " })}
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t(ageBasis)}</span>.
+                  </p>
+                </div>
+              )}
               {offer.company.directSettlement === 1 && (
                 <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
                   <div

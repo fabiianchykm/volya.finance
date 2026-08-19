@@ -227,6 +227,7 @@ export function OffersSection({
                 index={i}
                 selected={selectedOfferId === offer.offerId}
                 discountEligible
+                showAgeBasis
                 productDescription={<OsagoInfo />}
                 selectedDgoId={dgoMap[offer.offerId] ?? null}
                 selectedAutolawyerId={autolawyerMap[offer.offerId] ?? null}
