@@ -51,6 +51,17 @@ export function InsuranceFlow() {
   // Клік по «Автоцивілка» в меню, коли вже показані пропозиції → на перший екран.
   useFlowReset(() => setState((s) => ({ ...s, step: "hero" })));
 
+  // URL екрана пропозицій: номер + введені дати народження (страхувальник / наймолодший
+  // водій / власник). Тримаємо їх у URL, щоб при перезавантаженні/поверненні дані бралися
+  // саме звідси, а не з дефолтів/кукі. Порожні — не додаємо.
+  const buildOffersUrl = (vehicle: VehicleData, buyer: BuyerData, plateFallback: string) => {
+    const sp = new URLSearchParams({ step: "offers", plate: vehicle.number || plateFallback });
+    if (buyer.policyholderBirthDate) sp.set("ph", buyer.policyholderBirthDate);
+    if (buyer.youngestBirthDate) sp.set("yd", buyer.youngestBirthDate);
+    if (buyer.birthDate) sp.set("ob", buyer.birthDate);
+    return `${pathname}?${sp.toString()}`;
+  };
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -168,7 +179,7 @@ export function InsuranceFlow() {
     setState((s) => ({ ...s, step: "offers", vehicle, buyer, periodId: period, offers: [], offersLoading: true }));
     // Номер авто (напівпублічний) — у URL через РОУТЕР (не replaceState), щоб клік по
     // меню на /osago розпізнавався як навігація й повертав на головний екран.
-    router.replace(`${pathname}?step=offers&plate=${encodeURIComponent(vehicle.number || state.plate)}`, { scroll: false });
+    router.replace(buildOffersUrl(vehicle, buyer, state.plate), { scroll: false });
 
     // Fetch offers without blocking the UI transition (period передаємо явно).
     void fetchOffers(vehicle, buyer, period);
@@ -182,6 +193,7 @@ export function InsuranceFlow() {
     // та наймолодшого водія. Мержимо поверх поточного (ДН власника з реєстру лишається).
     const merged: BuyerData = { ...state.buyer, ...buyer };
     setState((s) => ({ ...s, buyer: merged, offers: [], offersLoading: true }));
+    router.replace(buildOffersUrl(state.vehicle, merged, state.plate), { scroll: false });
     void fetchOffers(state.vehicle, merged, state.periodId);
   };
 
@@ -267,7 +279,13 @@ export function InsuranceFlow() {
           ? car.birthDateOwner.slice(0, 4)
           : "";
         const ownerDob = ownerYear ? `01.01.${ownerYear}` : "";
-        const restoredBuyer = { ...DEFAULT_BUYER, birthDate: ownerDob };
+        // Дати з URL — авторитетні (введені користувачем), а не з реєстру/дефолтів/кукі.
+        const restoredBuyer: BuyerData = {
+          ...DEFAULT_BUYER,
+          birthDate: sp.get("ob") || ownerDob,
+          policyholderBirthDate: sp.get("ph") || "",
+          youngestBirthDate: sp.get("yd") || "",
+        };
         setState((s) => ({ ...s, plate, vehicle, buyer: restoredBuyer, step: "offers", offers: [], offersLoading: true }));
         void fetchOffers(vehicle, restoredBuyer, 12);
       } catch {
@@ -281,11 +299,11 @@ export function InsuranceFlow() {
   // повертаємось на головний екран (введення номера). stepRef (синхронізуємо ефектом,
   // не в рендері) — щоб не залежати від state.step у deps, інакше скидання спрацьовувало
   // б у момент самого показу оферів (гонка).
-  const stepRef = useRef(state.step);
-  useEffect(() => { stepRef.current = state.step; });
   useEffect(() => {
-    if (searchParams.get("step") !== "offers" && stepRef.current === "offers") {
-      setState((s) => ({ ...s, step: "hero" }));
+    if (searchParams.get("step") !== "offers") {
+      // URL без «?step=offers» (клік по меню на /osago) → повертаємось на перший екран.
+      // Функціональний сет — читаємо актуальний крок без stepRef (без гонок при показі).
+      setState((s) => (s.step === "offers" ? { ...s, step: "hero" } : s));
     }
   }, [searchParams]);
 

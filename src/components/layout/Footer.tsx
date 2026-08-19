@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { emitNavReset } from "@/lib/nav-reset";
 import { type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -68,6 +70,8 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
 
 function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
   const { t } = useI18n();
+  const pathname = usePathname();
+  const router = useRouter();
   return (
     <div>
       <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
@@ -81,6 +85,10 @@ function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
             ) : (
               <Link
                 href={link.href}
+                onClick={(e) => {
+                  // Клік по продукту, коли вже на його сторінці → скидаємо флоу на 1-й екран.
+                  if (link.href === pathname) { e.preventDefault(); emitNavReset(); router.replace(link.href, { scroll: true }); }
+                }}
                 className="text-[13px] text-zinc-600 dark:text-zinc-300 transition-colors hover:text-indigo-600 dark:hover:text-indigo-400"
               >
                 {t({ uk: link.label, en: link.labelEn })}

@@ -108,10 +108,9 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
                 onClick={(e) => {
                   setOpen(false);
                   // Вже на цій сторінці (напр. показані пропозиції з ?step=offers у URL) —
-                  // Link зі співпадаючим pathname не завжди очищає query. Примусово
-                  // переходимо на чисту адресу (скидає URL-driven флоу, як ОСЦПВ) + шлемо
-                  // подію для флоу, що тримають крок у стані (ЗК, туризм, тварини, житло…).
-                  if (href === pathname) { e.preventDefault(); router.replace(href, { scroll: true }); emitNavReset(); }
+                  // Link зі співпадаючим pathname не завжди очищає query. Шлемо подію скидання
+                  // ПЕРШОЮ (надійно, не залежить від навігації), потім чистимо URL.
+                  if (href === pathname) { e.preventDefault(); emitNavReset(); router.replace(href, { scroll: true }); }
                 }}
                 className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70 dark:hover:bg-indigo-950/30"
               >
@@ -243,8 +242,8 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                     className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                     onClick={(e) => {
                       setMobileOpen(false);
-                      // Той самий pathname → чистимо query + шлемо подію скидання флоу на 1-й екран.
-                      if (link.href === pathname) { e.preventDefault(); router.replace(link.href, { scroll: true }); emitNavReset(); }
+                      // Той самий pathname → подія скидання ПЕРШОЮ, потім чистимо query.
+                      if (link.href === pathname) { e.preventDefault(); emitNavReset(); router.replace(link.href, { scroll: true }); }
                     }}
                   >
                     {label}
