@@ -11,6 +11,8 @@ import { osagoAgeBasis } from "@/lib/osago-age-basis";
 import { BONUS_RATE } from "@/lib/constants";
 import { logoSrc } from "@/lib/logos";
 import { useI18n } from "@/lib/i18n";
+import { useSession } from "next-auth/react";
+import { isAdminClient } from "@/lib/admin";
 import type { InsuranceCompany, InsuranceOffer } from "@/types/api";
 
 interface OfferCardProps {
@@ -163,6 +165,11 @@ export function OfferCard({
   // «Стара» ціна (до знижки) + відсоток — лише для ОСЦПВ (discountEligible).
   const companyMatchName = [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" ");
   const ageBasis = showAgeBasis ? osagoAgeBasis(companyMatchName) : null;
+  // Для адміна підсвічуємо СК, для яких основа розрахунку ще НЕ задана (немає правила
+  // в osago-age-basis) — щоб було видно, де бракує даних. Клієнти цього не бачать.
+  const { data: session } = useSession();
+  const admin = isAdminClient(session?.user?.email);
+  const ageBasisMissing = showAgeBasis && !ageBasis && admin;
   const strikePrice = discountEligible ? osagoStrikePrice(companyMatchName, totalPrice) : null;
   const discountPct = discountEligible ? osagoDiscountPct(companyMatchName) : null;
   // Спецпропозиція VOLYA.FINANCE — коли знижка перевищує 25%.
@@ -425,6 +432,17 @@ export function OfferCard({
               <p className="text-xs text-zinc-600 dark:text-zinc-300">
                 {t({ uk: "Ціна рахується за віком ", en: "Price is based on the age of " })}
                 <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t(ageBasis)}</span>.
+              </p>
+            </div>
+          )}
+          {/* Лише для адміна: видно, для яких СК основа розрахунку ще не задана. */}
+          {ageBasisMissing && (
+            <div className="flex w-full max-w-[280px] items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                {t({ uk: "Основа розрахунку не задана", en: "Pricing basis not set" })}
+                {" — "}<span className="font-semibold">{offer.companyNamePublic || offer.companyName || companyMatchName}</span>.
+                {" "}{t({ uk: "(видно лише адміну — додайте правило в osago-age-basis)", en: "(admin only — add a rule in osago-age-basis)" })}
               </p>
             </div>
           )}
