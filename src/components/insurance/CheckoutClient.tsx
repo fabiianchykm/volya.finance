@@ -622,6 +622,9 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
       docDate: active?.date ?? "",
     });
     setDocType(dt);
+    // ДН наймолодшого водія — окремо від form (у профілі зберігається). Не затираємо
+    // значення з калькулятора порожнім: підставляємо лише якщо в профілі щось є.
+    if (p.youngestBirthDate) setYoungestBirth(p.youngestBirthDate);
     if (p.city) {
       setSelectedCity(p.city);
       setCityQuery(cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua));
@@ -708,6 +711,7 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
       email: form.email,
       identificationCode: form.identificationCode,
       dateBirth: form.dateBirth,
+      youngestBirthDate: youngestBirth,
       street: form.street,
       house: form.house,
       docType,

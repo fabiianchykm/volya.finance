@@ -29,7 +29,9 @@ export interface CustomerProfile {
   phone: string;            // 9 цифр без +380
   email: string;
   identificationCode: string;
-  dateBirth: string;        // "дд.мм.рррр"
+  dateBirth: string;        // ДН страхувальника, "дд.мм.рррр"
+  /** ОСЦПВ: ДН наймолодшого водія (впливає на ціну частини СК). "дд.мм.рррр". */
+  youngestBirthDate?: string;
   street: string;
   house: string;
   docType: 1 | 2 | 3 | 4;  // локальний числовий код продукту, що зберігав (для сумісності)
@@ -120,6 +122,7 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
       email,
       identificationCode: p.identificationCode ?? prev.identificationCode ?? "",
       dateBirth: p.dateBirth ?? prev.dateBirth ?? "",
+      youngestBirthDate: p.youngestBirthDate ?? prev.youngestBirthDate ?? "",
       street: p.street ?? prev.street ?? "",
       house: p.house ?? prev.house ?? "",
       docType: activeType,
