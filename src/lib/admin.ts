@@ -1,6 +1,6 @@
 // Хто має доступ до адмінки. За замовчуванням — власник; можна розширити через
 // env ADMIN_EMAILS (через кому). Порівняння без регістру.
-const DEFAULT_ADMINS = ["fabiianchykm@gmail.com"];
+const DEFAULT_ADMINS = ["fabiianchykm@gmail.com", "volya.finance.team@gmail.com"];
 
 export function adminEmails(): string[] {
   const fromEnv = (process.env.ADMIN_EMAILS ?? "")
