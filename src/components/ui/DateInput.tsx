@@ -14,12 +14,13 @@ const MONTHS = [
 ];
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
-/** Вставляє крапки по ходу вводу: 01011990 → 01.01.1990 (максимум 8 цифр). */
+/** Вставляє крапки по ходу вводу: 01011990 → 01.01.1990 (максимум 8 цифр).
+    Крапка ставиться ОДРАЗУ після 2-ї та 4-ї цифри (трейлінг-крапка), а не з 3-ю. */
 function maskDate(raw: string): string {
   const d = raw.replace(/\D/g, "").slice(0, 8);
   let out = d.slice(0, 2);
-  if (d.length > 2) out += "." + d.slice(2, 4);
-  if (d.length > 4) out += "." + d.slice(4, 8);
+  if (d.length >= 2) out += "." + d.slice(2, 4);
+  if (d.length >= 4) out += "." + d.slice(4, 8);
   return out;
 }
 
@@ -157,7 +158,14 @@ export function DateInput({ label, value, onChange, required, className, error, 
           placeholder="ДД.ММ.РРРР"
           value={value}
           required={required}
-          onChange={(e) => onChange(maskDate(e.target.value))}
+          onChange={(e) => {
+            const raw = e.target.value;
+            const masked = maskDate(raw);
+            // Backspace на межі з трейлінг-крапкою: якщо маскування одразу повернуло
+            // крапку назад, прибираємо її, щоб можна було стирати далі (не «залипало»).
+            if (masked === value && raw.length < value.length) onChange(raw.replace(/\.$/, ""));
+            else onChange(masked);
+          }}
           className="h-11 w-full rounded-xl bg-transparent px-4 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none"
         />
         <button

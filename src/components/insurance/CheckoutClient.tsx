@@ -29,6 +29,13 @@ function formatUaPhone(digits: string): string {
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(" ");
 }
 
+// Запис № (УНЗР) ID-картки: 8 цифр (дата) + "-" + 5 цифр → "19860427-09718".
+// Рисочку ставимо автоматично після 8-ї цифри (коли введено 9-ту).
+function maskUnzr(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 13);
+  return d.length > 8 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;
+}
+
 // Unix-секунди → "DD.MM.YYYY" (формат carBirthdayAt для калькулятора ОСЦПВ).
 function unixToUaDate(sec: number): string {
   const d = new Date(sec * 1000);
@@ -870,7 +877,9 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
             <Input
               label={docFields.serial}
               value={form.docSerial}
-              onChange={set("docSerial")}
+              onChange={docType === 3
+                ? (e) => setForm((f) => ({ ...f, docSerial: maskUnzr(e.target.value) }))
+                : set("docSerial")}
               placeholder={docFields.serialPh}
               required
             />

@@ -15,7 +15,7 @@ import { logoSrc } from "@/lib/logos";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "next-auth/react";
 import { isAdminClient } from "@/lib/admin";
-import type { InsuranceCompany, InsuranceOffer } from "@/types/api";
+import type { InsuranceCompany, InsuranceOffer, AutolawyerOffer } from "@/types/api";
 
 interface OfferCardProps {
   offer: InsuranceOffer;
@@ -209,7 +209,13 @@ export function OfferCard({
     </div>
   ) : null;
 
-  const autolawyer = lawyerList[0] ?? null;
+  // Автоюрист має 3 рівні (program 2/3 — вищі); назв API не дає, тож підписуємо
+  // за номером програми. Показуємо всі як вибір (dropdown), відсортовані за ціною.
+  const lawyerTier = (a: AutolawyerOffer): { uk: string; en: string } =>
+    a.program === 3 ? { uk: "преміум", en: "premium" }
+    : a.program === 2 ? { uk: "розширений", en: "extended" }
+    : { uk: "базовий", en: "basic" };
+  const lawyers = [...lawyerList].sort((a, b) => a.price - b.price);
   const rowClass = (active: boolean) =>
     cn(
       "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all",
@@ -218,16 +224,29 @@ export function OfferCard({
 
   const optionsBlock = (
     <div className="flex w-full max-w-[240px] flex-col gap-2">
-      {autolawyer && (
-        <button type="button" onClick={() => onSelectAutolawyer(selectedAutolawyerId === autolawyer.id ? null : autolawyer.id)} className={rowClass(selectedAutolawyerId === autolawyer.id)}>
-          <span className="flex min-w-0 flex-col">
-            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t({ uk: "Автоюрист", en: "Auto lawyer" })}</span>
-            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{t({ uk: "Додаткова опція", en: "Additional option" })}</span>
-          </span>
-          <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-            {autolawyer.price > 0 ? `+${formatPrice(autolawyer.price)}` : t({ uk: "Безкоштовно", en: "Free" })}
-          </span>
-        </button>
+      {/* Автоюрист — вибір рівня (базовий / розширений / преміум). */}
+      {lawyers.length > 0 && (
+        <div className="relative w-full">
+          <select
+            aria-label={t({ uk: "Автоюрист", en: "Auto lawyer" })}
+            value={selectedAutolawyerId || ""}
+            onChange={(e) => onSelectAutolawyer(e.target.value || null)}
+            className={cn(
+              "w-full cursor-pointer appearance-none rounded-xl border py-2.5 pl-3.5 pr-9 text-sm font-medium outline-none transition-all",
+              selectedAutolawyerId
+                ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-zinc-200 dark:ring-indigo-800"
+                : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+            )}
+          >
+            <option value="">{t({ uk: "Автоюрист", en: "Auto lawyer" })}</option>
+            {lawyers.map((a) => (
+              <option key={a.id} value={a.id}>
+                {t({ uk: "Автоюрист", en: "Auto lawyer" })} ({t(lawyerTier(a))}) — {a.price > 0 ? `+${formatPrice(a.price)}` : t({ uk: "безкоштовно", en: "free" })}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
+        </div>
       )}
 
       {/* «Додаткове покриття» — єдиний dropdown: перший пункт-плейсхолдер, далі варіанти. */}
@@ -445,7 +464,7 @@ export function OfferCard({
               <Link
                 href={`/insurers/${insurerSlug}`}
                 onClick={(e) => e.stopPropagation()}
-                className="group/rev inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-indigo-700 dark:hover:text-indigo-300"
+                className="group/rev inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:border-indigo-300 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-indigo-700 dark:hover:text-indigo-300"
               >
                 {t({ uk: "Відгуки про компанію", en: "Company reviews" })}
                 <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300 transition-transform group-hover/rev:translate-x-0.5 dark:text-zinc-600" />
