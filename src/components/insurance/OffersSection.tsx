@@ -134,7 +134,10 @@ export function OffersSection({
                 <Percent className="h-4 w-4" />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })}</span>
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })}</span>
+                  <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{t({ uk: "Знижка до 42%", en: "Up to 42% off" })}</span>
+                </span>
                 {/* Дані, введені на попередньому кроці (впливають на ціну по кожній СК).
                     З реєстру приходить лише ВІК власника (день/місяць фейкові) → рік. */}
                 <span className="mt-0.5 block space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
