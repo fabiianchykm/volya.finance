@@ -79,42 +79,51 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
               <span className="font-extrabold">42%</span>
             </p>
             <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
-              {t({
-                uk: "Заповніть пільгу та дати народження страхувальника й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
-                en: "Fill in your benefit and the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
-              })}
+              {required
+                ? t({
+                    uk: "Вкажіть дати народження страхувальника й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
+                    en: "Enter the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
+                  })
+                : t({
+                    uk: "Заповніть пільгу та дати народження страхувальника й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
+                    en: "Fill in your benefit and the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
+                  })}
             </p>
           </div>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Пільгова категорія", en: "Benefit category" })}</label>
-          <div className="flex items-center gap-2">
-            <select
-              value={privilegeId}
-              onChange={(e) => setPrivilegeId(Number(e.target.value))}
-              className={`h-11 flex-1 rounded-xl border bg-white px-3 text-sm outline-none transition-colors focus:border-indigo-400 dark:bg-zinc-900 ${
-                privilegeId !== DEFAULT_PRIVILEGE
-                  ? "border-indigo-300 font-medium text-zinc-900 dark:border-indigo-800 dark:text-zinc-100"
-                  : "border-zinc-200 text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
-              }`}
-            >
-              {PRIVILEGES.map((p) => (
-                <option key={p.id} value={p.id}>{t({ uk: p.label, en: p.labelEn })}</option>
-              ))}
-            </select>
-            {privilegeId !== DEFAULT_PRIVILEGE && (
-              <button
-                type="button"
-                onClick={() => setPrivilegeId(DEFAULT_PRIVILEGE)}
-                aria-label={t({ uk: "Скасувати вибір пільги", en: "Clear benefit selection" })}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-zinc-400 transition-colors hover:border-rose-300 hover:text-rose-500 dark:border-zinc-700 dark:hover:border-rose-800"
+        {/* Пільга — лише при редагуванні (не в обовʼязковому діалозі після підтвердження
+            авто, де просимо тільки дати народження). */}
+        {!required && (
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Пільгова категорія", en: "Benefit category" })}</label>
+            <div className="flex items-center gap-2">
+              <select
+                value={privilegeId}
+                onChange={(e) => setPrivilegeId(Number(e.target.value))}
+                className={`h-11 flex-1 rounded-xl border bg-white px-3 text-sm outline-none transition-colors focus:border-indigo-400 dark:bg-zinc-900 ${
+                  privilegeId !== DEFAULT_PRIVILEGE
+                    ? "border-indigo-300 font-medium text-zinc-900 dark:border-indigo-800 dark:text-zinc-100"
+                    : "border-zinc-200 text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
+                }`}
               >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+                {PRIVILEGES.map((p) => (
+                  <option key={p.id} value={p.id}>{t({ uk: p.label, en: p.labelEn })}</option>
+                ))}
+              </select>
+              {privilegeId !== DEFAULT_PRIVILEGE && (
+                <button
+                  type="button"
+                  onClick={() => setPrivilegeId(DEFAULT_PRIVILEGE)}
+                  aria-label={t({ uk: "Скасувати вибір пільги", en: "Clear benefit selection" })}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-zinc-400 transition-colors hover:border-rose-300 hover:text-rose-500 dark:border-zinc-700 dark:hover:border-rose-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}</label>
