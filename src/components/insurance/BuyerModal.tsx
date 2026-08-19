@@ -69,13 +69,22 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
   return (
     <Modal open={open} onClose={handleClose} title={t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })} size="md" preventOutsideClose={required && !datesValid} hideClose={required && !datesValid}>
       <div className="space-y-4">
-        <div className="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
-          <BadgePercent className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
-          <p className="text-sm text-indigo-800 dark:text-indigo-200">
-            {t({ uk: "Вкажіть пільгу та дати народження — і отримайте персональну ціну зі знижкою ", en: "Enter your benefit and birth dates to get a personalised price with a discount " })}
-            <span className="font-bold">{t({ uk: "до 42%", en: "of up to 42%" })}</span>
-            {t({ uk: ". Кожна страхова рахує ціну за віком різної особи.", en: ". Each insurer prices by a different person's age." })}
-          </p>
+        <div className="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3.5 dark:border-indigo-900 dark:bg-indigo-950/40">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
+            <BadgePercent className="h-4 w-4" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
+              {t({ uk: "Персональна ціна — вигідніше до ", en: "A personalised price — save up to " })}
+              <span className="font-extrabold">42%</span>
+            </p>
+            <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
+              {t({
+                uk: "Заповніть пільгу та дати народження страхувальника й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
+                en: "Fill in your benefit and the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
+              })}
+            </p>
+          </div>
         </div>
 
         <div>
