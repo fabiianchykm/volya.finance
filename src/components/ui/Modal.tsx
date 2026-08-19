@@ -14,9 +14,11 @@ interface ModalProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "full";
   className?: string;
   preventOutsideClose?: boolean;
+  /** Сховати хрестик закриття (для обовʼязкових діалогів — вийти лише через дію). */
+  hideClose?: boolean;
 }
 
-export function Modal({ open, onClose, title, children, size = "md", className, preventOutsideClose }: ModalProps) {
+export function Modal({ open, onClose, title, children, size = "md", className, preventOutsideClose, hideClose }: ModalProps) {
   const { t } = useI18n();
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -94,17 +96,19 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
             {title && (
               <div className={cn("flex shrink-0 items-center justify-between border-b px-6 py-4", className?.includes("emerald") ? "border-emerald-100 dark:border-emerald-900/40" : "border-zinc-100 dark:border-zinc-800")}>
                 <h2 id={titleId} className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
-                <button
-                  onClick={onClose}
-                  aria-label={t({ uk: "Закрити", en: "Close" })}
-                  className="ml-auto rounded-lg p-1.5 text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 dark:hover:text-zinc-300"
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
+                {!hideClose && (
+                  <button
+                    onClick={onClose}
+                    aria-label={t({ uk: "Закрити", en: "Close" })}
+                    className="ml-auto rounded-lg p-1.5 text-zinc-400 dark:text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                )}
               </div>
             )}
             <div className="overflow-y-auto p-6">{children}</div>
-            {!title && (
+            {!title && !hideClose && (
               <button
                 onClick={onClose}
                 aria-label={t({ uk: "Закрити", en: "Close" })}

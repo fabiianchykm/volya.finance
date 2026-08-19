@@ -381,6 +381,8 @@ export function InsuranceFlow() {
           buyer={state.buyer}
           onConfirm={handleBuyerConfirm}
           loading={state.offersLoading}
+          // Обовʼязково заповнити, поки ДН ще не введені (не можна пропустити крок).
+          required={!state.buyer.policyholderBirthDate || !state.buyer.youngestBirthDate}
         />
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
       </>

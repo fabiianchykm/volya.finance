@@ -18,15 +18,18 @@ interface BuyerModalProps {
   buyer: BuyerData;
   onConfirm: (buyer: BuyerData) => void;
   loading?: boolean;
+  /** Обовʼязковий діалог: дати ДН треба заповнити, вікно не закрити без них. */
+  required?: boolean;
 }
 
-export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerModalProps) {
+export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required }: BuyerModalProps) {
   const { t } = useI18n();
   const [privilegeId, setPrivilegeId] = useState(buyer.privilegeId);
   // Дати з попереднього кроку (VehicleConfirmModal) — підтягуємо й даємо редагувати:
   // різні СК рахують ціну за віком різної особи (osago-age-basis).
   const [policyholderBirth, setPolicyholderBirth] = useState(buyer.policyholderBirthDate ?? "");
   const [youngestBirth, setYoungestBirth] = useState(buyer.youngestBirthDate ?? "");
+  const [ageError, setAgeError] = useState(false);
   const [wasOpen, setWasOpen] = useState(false);
 
   // Засіваємо форму поточними даними в момент відкриття (як у VehicleConfirmModal).
@@ -35,11 +38,22 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
     setPrivilegeId(buyer.privilegeId);
     setPolicyholderBirth(buyer.policyholderBirthDate ?? "");
     setYoungestBirth(buyer.youngestBirthDate ?? "");
+    setAgeError(false);
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
 
+  // Валідна ДН = реальна дата з розумним віком (18–99).
+  const dobOk = (v: string) => {
+    const d = parseUaDate(v);
+    if (!d) return false;
+    const age = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
+    return age >= 18 && age <= 99;
+  };
+  const datesValid = dobOk(policyholderBirth) && dobOk(youngestBirth);
+
   const handleConfirm = () => {
+    if (required && !datesValid) { setAgeError(true); return; }
     onConfirm({
       ...buyer,
       privilegeId,
@@ -49,8 +63,11 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
     });
   };
 
+  // Обовʼязковий діалог не закрити (ні хрестиком, ні фоном), поки дати не валідні.
+  const handleClose = () => { if (!required || datesValid) onClose(); };
+
   return (
-    <Modal open={open} onClose={onClose} title={t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })} size="md">
+    <Modal open={open} onClose={handleClose} title={t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })} size="md" preventOutsideClose={required && !datesValid} hideClose={required && !datesValid}>
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
           <BadgePercent className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
@@ -92,15 +109,27 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}</label>
-          <DateInput value={policyholderBirth} onChange={setPolicyholderBirth} defaultYear={1990} />
+          <DateInput
+            value={policyholderBirth}
+            onChange={(v) => { setPolicyholderBirth(v); if (ageError) setAgeError(false); }}
+            defaultYear={1990}
+            required={required}
+            error={ageError && !dobOk(policyholderBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+          />
         </div>
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
-          <DateInput value={youngestBirth} onChange={setYoungestBirth} defaultYear={1990} />
+          <DateInput
+            value={youngestBirth}
+            onChange={(v) => { setYoungestBirth(v); if (ageError) setAgeError(false); }}
+            defaultYear={1990}
+            required={required}
+            error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+          />
         </div>
 
-        <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} className="w-full">
+        <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} disabled={required && !datesValid} className="w-full">
           {t({ uk: "Застосувати", en: "Apply" })}
         </Button>
       </div>
