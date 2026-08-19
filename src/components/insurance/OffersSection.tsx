@@ -7,7 +7,6 @@ import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
 import type { InsuranceOffer } from "@/types/api";
-import { osagoStrikePrice } from "@/lib/osago-discounts";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useI18n } from "@/lib/i18n";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
@@ -56,14 +55,7 @@ function OsagoInfo() {
   );
 }
 
-type SortKey = "price_asc" | "price_desc" | "discount_desc";
-
-// Сума знижки в грн для офера (0, якщо для цієї страхової знижки нема).
-function discountAmount(o: InsuranceOffer): number {
-  const name = [o.company?.publicName, (o.company as { companyName?: string })?.companyName].filter(Boolean).join(" ");
-  const strike = osagoStrikePrice(name, o.price);
-  return strike ? strike - o.price : 0;
-}
+type SortKey = "price_asc" | "price_desc";
 
 export function OffersSection({
   offers,
@@ -90,16 +82,11 @@ export function OffersSection({
   const SORT_OPTIONS = [
     { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
     { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
-    { k: "discount_desc", label: "Найбільша знижка", en: "Biggest discount", Icon: Percent },
   ] as const;
   const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
 
   const sorted = [...offers].sort((a, b) => {
     if (sortBy === "price_desc") return b.price - a.price;
-    if (sortBy === "discount_desc") {
-      const d = discountAmount(b) - discountAmount(a);
-      return d !== 0 ? d : a.price - b.price; // за рівної знижки — дешевші вище
-    }
     return a.price - b.price; // price_asc
   });
 

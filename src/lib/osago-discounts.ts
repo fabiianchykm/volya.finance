@@ -1,18 +1,9 @@
 // Знижки на ОСЦПВ, ВЖЕ враховані в ціні, яку віддає API. Для маркетингу показуємо
 // «стару» ціну (до знижки) закресленою: original = price / (1 - pct/100).
 // pct — відсоток знижки для конкретної страхової.
-const OSAGO_DISCOUNTS: { match: RegExp; pct: number }[] = [
-  { match: /\bтас\b|«?тас»?/i,          pct: 42.38 },
-  { match: /арсенал/i,                  pct: 29.36 },
-  { match: /інго|ingo/i,                pct: 29.17 },
-  { match: /княжа/i,                    pct: 28.64 },
-  { match: /ютіко|ютико|utico/i,        pct: 14.72 },
-  { match: /гардіан|guardian/i,         pct: 10.10 },
-  { match: /інтер[\s-]?поліс|inter[\s-]?polis/i, pct: 10.01 },
-  { match: /євроінс|euroins/i,          pct: 8.95 },
-  { match: /оранта/i,                   pct: 8.85 },
-  { match: /експрес|express/i,          pct: 7.14 },
-];
+// Знижки прибрано — не показуємо «стару» ціну/відсоток. Список порожній, тож
+// функції нижче повертають null (заглушка лишена, щоб не чіпати місця виклику).
+const OSAGO_DISCOUNTS: { match: RegExp; pct: number }[] = [];
 
 /** Відсоток знижки для страхової (0..100) або null, якщо знижки нема. */
 export function osagoDiscountPct(companyName: string | undefined): number | null {

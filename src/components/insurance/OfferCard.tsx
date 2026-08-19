@@ -453,11 +453,9 @@ export function OfferCard({
           {/* «Умови виплат» — окремий dropdown (між Базові опції та Документи) */}
           {offer.company.compensationDays > 0 && (
             <DetailsDropdown label={t({ uk: "Умови виплат", en: "Payout terms" })} open={openDetail === "term"} onToggle={() => toggleDetail("term")}>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-                <span className="text-xs text-zinc-700 dark:text-zinc-200">
-                  {t({ uk: `Виплата до ${offer.company.compensationDays} днів`, en: `Payout within ${offer.company.compensationDays} days` })}
-                </span>
-              </div>
+              <span className="text-xs text-zinc-700 dark:text-zinc-200">
+                {t({ uk: `Виплата до ${offer.company.compensationDays} днів`, en: `Payout within ${offer.company.compensationDays} days` })}
+              </span>
             </DetailsDropdown>
           )}
 
