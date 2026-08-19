@@ -259,7 +259,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                     </Link>
                     {isAdminClient(session?.user?.email) && (
                       <Link
-                        href="/admin/calculations"
+                        href="/admin/funnel"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
                       >
@@ -364,7 +364,7 @@ function UserMenu({
               </Link>
               {isAdminClient(user.email) && (
                 <Link
-                  href="/admin/calculations"
+                  href="/admin/funnel"
                   onClick={() => setOpen(false)}
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
                 >
