@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { BadgePercent } from "lucide-react";
+import { BadgePercent, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { PRIVILEGES } from "@/lib/constants";
 import { useI18n } from "@/lib/i18n";
 import { type BuyerData } from "@/types/insurance";
+
+// Пільга «без пільг» (id 1) = дефолт; хрестик скидає вибір саме до неї.
+const DEFAULT_PRIVILEGE = 1;
 
 interface BuyerModalProps {
   open: boolean;
@@ -58,15 +61,31 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Пільгова категорія", en: "Benefit category" })}</label>
-          <select
-            value={privilegeId}
-            onChange={(e) => setPrivilegeId(Number(e.target.value))}
-            className="h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-          >
-            {PRIVILEGES.map((p) => (
-              <option key={p.id} value={p.id}>{t({ uk: p.label, en: p.labelEn })}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={privilegeId}
+              onChange={(e) => setPrivilegeId(Number(e.target.value))}
+              className={`h-11 flex-1 rounded-xl border bg-white px-3 text-sm outline-none transition-colors focus:border-indigo-400 dark:bg-zinc-900 ${
+                privilegeId !== DEFAULT_PRIVILEGE
+                  ? "border-indigo-300 font-medium text-zinc-900 dark:border-indigo-800 dark:text-zinc-100"
+                  : "border-zinc-200 text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
+              }`}
+            >
+              {PRIVILEGES.map((p) => (
+                <option key={p.id} value={p.id}>{t({ uk: p.label, en: p.labelEn })}</option>
+              ))}
+            </select>
+            {privilegeId !== DEFAULT_PRIVILEGE && (
+              <button
+                type="button"
+                onClick={() => setPrivilegeId(DEFAULT_PRIVILEGE)}
+                aria-label={t({ uk: "Скасувати вибір пільги", en: "Clear benefit selection" })}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-zinc-400 transition-colors hover:border-rose-300 hover:text-rose-500 dark:border-zinc-700 dark:hover:border-rose-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div>

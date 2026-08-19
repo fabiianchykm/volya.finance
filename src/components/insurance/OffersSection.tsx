@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Info } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Percent, Info, Sparkles } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
@@ -136,7 +136,10 @@ export function OffersSection({
               <span className="min-w-0">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })}</span>
-                  <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{t({ uk: "Знижка до 42%", en: "Up to 42% off" })}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm shadow-rose-500/20">
+                    <Sparkles className="h-3 w-3" />
+                    {t({ uk: "Знижка до 42%", en: "Up to 42% off" })}
+                  </span>
                 </span>
                 {/* Дані, введені на попередньому кроці (впливають на ціну по кожній СК).
                     З реєстру приходить лише ВІК власника (день/місяць фейкові) → рік. */}
