@@ -81,11 +81,11 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
               {required
                 ? t({
-                    uk: "Вкажіть дати народження страхувальника й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
+                    uk: "Вкажіть дати народження страхувальника (покупця) й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
                     en: "Enter the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
                   })
                 : t({
-                    uk: "Заповніть пільгу та дати народження страхувальника й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
+                    uk: "Заповніть пільгу та дати народження страхувальника (покупця) й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
                     en: "Fill in your benefit and the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
                   })}
             </p>
@@ -126,7 +126,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}</label>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження страхувальника (покупця)", en: "Policyholder's (buyer's) date of birth" })}</label>
           <DateInput
             value={policyholderBirth}
             onChange={(v) => { setPolicyholderBirth(v); if (ageError) setAgeError(false); }}

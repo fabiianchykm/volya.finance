@@ -339,7 +339,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         {formStep === "customer" && (
         <>
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Страхувальник", en: "Policyholder" })}</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Страхувальник (покупець)", en: "Policyholder (buyer)" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input label={t({ uk: "Прізвище", en: "Surname" })} value={f.surnameUa} onChange={set("surnameUa")} required />
             <Input label={t({ uk: "Ім'я", en: "First name" })} value={f.nameUa} onChange={set("nameUa")} required />

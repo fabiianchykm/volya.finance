@@ -70,7 +70,7 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={t({ uk: "Дані страхувальника", en: "Policyholder details" })} size="2xl" preventOutsideClose>
+    <Modal open={open} onClose={onClose} title={t({ uk: "Дані страхувальника (покупця)", en: "Policyholder (buyer) details" })} size="2xl" preventOutsideClose>
       <form onSubmit={handleSubmit} className="space-y-5">
 
         <div>

@@ -376,7 +376,7 @@ export function VehicleConfirmModal({
               })}
             </p>
             <DateInput
-              label={t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}
+              label={t({ uk: "Дата народження страхувальника (покупця)", en: "Policyholder's (buyer's) date of birth" })}
               value={policyholderBirth}
               onChange={(v) => { setPolicyholderBirth(v); setAgeError(false); }}
               required

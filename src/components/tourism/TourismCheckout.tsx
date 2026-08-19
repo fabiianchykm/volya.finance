@@ -325,7 +325,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         {tourists.map((t2, i) => (
           <div key={i} className={i > 0 ? "border-t border-zinc-100 dark:border-zinc-800 pt-5" : ""}>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              {i === 0 ? t({ uk: "Страхувальник (турист 1)", en: "Policyholder (traveller 1)" }) : t({ uk: `Турист ${i + 1}`, en: `Traveller ${i + 1}` })}
+              {i === 0 ? t({ uk: "Страхувальник (покупець, турист 1)", en: "Policyholder (buyer, traveller 1)" }) : t({ uk: `Турист ${i + 1}`, en: `Traveller ${i + 1}` })}
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input label={t({ uk: "Прізвище (латиницею)", en: "Surname (Latin)" })} value={t2.surnameLat} onChange={(e) => setT(i, "surnameLat", e.target.value)} placeholder={t({ uk: "як у закордонному паспорті", en: "as in the international passport" })} required />
@@ -348,7 +348,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
         {/* Контакти */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Контакти страхувальника", en: "Policyholder contacts" })}</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Контакти страхувальника (покупця)", en: "Policyholder (buyer) contacts" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Телефон", en: "Phone" })}</label>
@@ -365,7 +365,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
         {/* Документ страхувальника */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Документ страхувальника", en: "Policyholder document" })}</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Документ страхувальника (покупця)", en: "Policyholder (buyer) document" })}</p>
           <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
             {DOC_TYPES.map(({ t: dt, label, en }) => (
               <button key={dt} type="button" onClick={() => changeDocType(dt)}
