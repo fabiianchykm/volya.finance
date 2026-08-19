@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, ExternalLink, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, ExternalLink, Info, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -409,24 +409,28 @@ export function OfferCard({
           так, щоб починалась під 2-м блоком «опис» (після колонки з лого w-48). */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4 dark:border-zinc-800">
+          {/* Основа розрахунку ціни — окремим блоком (чию ДН враховує ця СК) */}
+          {ageBasis && (
+            <div className="flex items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/50 dark:bg-indigo-950/30">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-500 dark:text-indigo-400" />
+              <p className="text-xs text-zinc-600 dark:text-zinc-300">
+                {t({ uk: "Ціна рахується за віком ", en: "Price is based on the age of " })}
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t(ageBasis)}</span>.
+              </p>
+            </div>
+          )}
+
           {/* «Базові опції» — покриття продукту (напр. ОСЦПВ) + пряме врегулювання */}
-          {(productDescription || offer.company.directSettlement === 1 || ageBasis) && (
+          {(productDescription || offer.company.directSettlement === 1) && (
             <DetailsDropdown label={t({ uk: "Базові опції", en: "Basic options" })} open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
               {productDescription}
-              {ageBasis && (
-                <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-                  <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                    {t({ uk: "Ціна рахується за віком ", en: "Price is based on the age of " })}
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t(ageBasis)}</span>.
-                  </p>
-                </div>
-              )}
               {offer.company.directSettlement === 1 && (
                 <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
                   <div
                     title={t({ uk: "Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.", en: "The injured party can claim insurance compensation directly from their own insurance company, which pays out and then settles accounts with the insurer of the party at fault in the accident." })}
                     className="inline-flex cursor-help items-center gap-1.5 text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
                   >
+                    <Check className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                     <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Пряме врегулювання", en: "Direct settlement" })}</span>
                     <Info className="h-3.5 w-3.5" />
                   </div>
