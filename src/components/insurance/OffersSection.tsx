@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
 import type { InsuranceOffer } from "@/types/api";
 import { osagoStrikePrice } from "@/lib/osago-discounts";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useI18n } from "@/lib/i18n";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
 
@@ -28,13 +29,17 @@ interface OffersSectionProps {
 function OsagoInfo() {
   const { t } = useI18n();
   return (
-  <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-    <div
-      title={t({ uk: "Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.", en: "Covers the damage you caused to other participants in an accident." })}
-      className="mb-2 inline-flex cursor-help items-center gap-1.5 text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
-    >
-      <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Ліміти", en: "Limits" })}</p>
-      <Info className="h-3.5 w-3.5" />
+  <div>
+    <div className="mb-2">
+      <Tooltip
+        className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
+        content={t({ uk: "Покриває шкоду, яку ви заподіяли іншим учасникам у ДТП.", en: "Covers the damage you caused to other participants in an accident." })}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Ліміти", en: "Limits" })}</span>
+          <Info className="h-3.5 w-3.5" />
+        </span>
+      </Tooltip>
     </div>
     {/* Ліміти виплат — простим текстом, без іконок */}
     <div className="flex flex-col gap-2">

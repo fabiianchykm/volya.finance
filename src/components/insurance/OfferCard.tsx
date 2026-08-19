@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp, FileText, ExternalLink, Info, Check } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -425,15 +426,17 @@ export function OfferCard({
             <DetailsDropdown label={t({ uk: "Базові опції", en: "Basic options" })} open={openDetail === "basic"} onToggle={() => toggleDetail("basic")}>
               {productDescription}
               {offer.company.directSettlement === 1 && (
-                <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-                  <div
-                    title={t({ uk: "Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.", en: "The injured party can claim insurance compensation directly from their own insurance company, which pays out and then settles accounts with the insurer of the party at fault in the accident." })}
-                    className="inline-flex cursor-help items-center gap-1.5 text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
+                <div className={productDescription ? "border-t border-zinc-100 pt-3 dark:border-zinc-800" : ""}>
+                  <Tooltip
+                    className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
+                    content={t({ uk: "Можливість потерпілої особи звернутися за страховим відшкодуванням безпосередньо до своєї страхової компанії, яка здійснює виплату та надалі врегульовує взаєморозрахунки зі страховиком винуватця ДТП.", en: "The injured party can claim insurance compensation directly from their own insurance company, which pays out and then settles accounts with the insurer of the party at fault in the accident." })}
                   >
-                    <Check className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Пряме врегулювання", en: "Direct settlement" })}</span>
-                    <Info className="h-3.5 w-3.5" />
-                  </div>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+                      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Пряме врегулювання", en: "Direct settlement" })}</span>
+                      <Info className="h-3.5 w-3.5" />
+                    </span>
+                  </Tooltip>
                 </div>
               )}
             </DetailsDropdown>
