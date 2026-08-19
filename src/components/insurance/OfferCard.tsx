@@ -2,8 +2,10 @@
 
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, FileText, ExternalLink, Info, Check } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, ChevronUp, FileText, ExternalLink, Info, Check, Star } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { INSURERS } from "@/lib/insurers";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -165,6 +167,8 @@ export function OfferCard({
   // «Стара» ціна (до знижки) + відсоток — лише для ОСЦПВ (discountEligible).
   const companyMatchName = [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" ");
   const ageBasis = showAgeBasis ? osagoAgeBasis(companyMatchName) : null;
+  // Slug сторінки страхової (де можна читати/лишати відгуки) — за назвою компанії.
+  const insurerSlug = INSURERS.find((i) => i.match.test(companyMatchName))?.slug ?? null;
   // Для адміна підсвічуємо СК, для яких основа розрахунку ще НЕ задана (немає правила
   // в osago-age-basis) — щоб було видно, де бракує даних. Клієнти цього не бачать.
   const { data: session } = useSession();
@@ -425,6 +429,18 @@ export function OfferCard({
           так, щоб починалась під 2-м блоком «опис» (після колонки з лого w-48). */}
       {expanded && (
         <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4 dark:border-zinc-800">
+          {/* Посилання на сторінку страхової (відгуки) — ліворуч, «під назвою». На
+              десктопі зсуваємо назад до лівого краю (під лого/назву) негативним відступом. */}
+          {insurerSlug && (
+            <Link
+              href={`/insurers/${insurerSlug}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300 lg:-ml-[14.75rem]"
+            >
+              <Star className="h-3.5 w-3.5" />
+              {t({ uk: "Відгуки про компанію", en: "Company reviews" })}
+            </Link>
+          )}
           {/* Основа розрахунку ціни — окремим блоком (чию ДН враховує ця СК) */}
           {ageBasis && (
             <div className="flex w-full max-w-[280px] items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/50 dark:bg-indigo-950/30">
