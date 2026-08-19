@@ -347,6 +347,9 @@ export function OfferCard({
               {t({ uk: "Детальніше", en: "Details" })}
             </button>
           )}
+          <p className="text-center text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
+            {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
+          </p>
         </div>
       </div>
 
@@ -367,10 +370,15 @@ export function OfferCard({
         {/* Блок 2: кількість опцій / документи. Фіксована ширина = ширина розгорнутих
             dropdown-ів під ним; так блок 3 (опції) зсувається праворуч і не перекривається. */}
         {canExpand && (
-          <div className="flex w-[280px] flex-col items-center justify-center shrink-0">
+          <div className="flex w-[280px] flex-col items-center shrink-0">
+            <div className="flex flex-1 items-center justify-center px-3">
+              <p className="text-center text-xs leading-snug text-zinc-500 dark:text-zinc-400">
+                {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
+              </p>
+            </div>
             <button
               onClick={() => setExpanded(v => !v)}
-              className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"
+              className="mt-auto flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               {t({ uk: "Додатково", en: "More" })}
