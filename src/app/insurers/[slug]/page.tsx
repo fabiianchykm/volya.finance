@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Home, MapPin, Phone, Globe, Info } from "lucide-react";
+import { ChevronRight, Home, Globe } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { InsurerReviews } from "@/components/reviews/InsurerReviews";
@@ -67,37 +67,8 @@ export default async function InsurerPage({ params }: { params: Promise<{ slug: 
             </div>
           </div>
 
-          {/* Інформація (ПРИКЛАД — заповнити реальними даними) */}
-          <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm">
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-              <Info className="h-3.5 w-3.5" /> Дані для прикладу — буде замінено на реальні
-            </div>
-            <h2 className="mb-2 text-lg font-bold text-zinc-900 dark:text-zinc-100">Про компанію</h2>
-            <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{ins.about}</p>
-            {ins.founded && <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Рік заснування: <span className="font-medium text-zinc-700 dark:text-zinc-200">{ins.founded}</span></p>}
-
-            {ins.offices && ins.offices.length > 0 && (
-              <div className="mt-4">
-                <h3 className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Офіси</h3>
-                <ul className="space-y-1.5">
-                  {ins.offices.map((o) => (
-                    <li key={o} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" /> {o}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {ins.phones && ins.phones.length > 0 && (
-              <div className="mt-4">
-                <h3 className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Контакти</h3>
-                <ul className="space-y-1.5">
-                  {ins.phones.map((p) => (
-                    <li key={p} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300"><Phone className="h-4 w-4 shrink-0 text-indigo-500" /> {p}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          {/* Профіль-поля (about/offices/phones) поки заглушки — НЕ показуємо, доки
+              не буде реальних даних. Сторінка = назва + лого + сайт + відгуки. */}
 
           {/* Відгуки */}
           <InsurerReviews slug={ins.slug} name={ins.name} />

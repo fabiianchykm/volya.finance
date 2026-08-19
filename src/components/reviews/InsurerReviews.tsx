@@ -6,9 +6,8 @@ import { Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 
-// Можливість залишати відгуки ТИМЧАСОВО заморожена: кнопка неактивна, форма/логіка
-// нижче збережені й активуються поверненням прапорця у false.
-const REVIEWS_FROZEN = true;
+// Можливість залишати відгуки: false → активна (форма для клієнтів, що купили поліс).
+const REVIEWS_FROZEN = false;
 
 interface Review {
   id: number;

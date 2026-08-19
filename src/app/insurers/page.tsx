@@ -27,7 +27,7 @@ export default function InsurersPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">Страхові компанії</h1>
             <p className="mt-2 max-w-2xl text-base text-zinc-500 dark:text-zinc-400">
-              Інформація про страховиків, контакти та відгуки клієнтів. Залишити відгук може той,
+              Відгуки клієнтів про страхові компанії. Залишити відгук може той,
               хто оформив поліс цієї страхової у нас.
             </p>
           </div>
@@ -52,7 +52,7 @@ export default function InsurersPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{ins.name}</p>
                     <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Відгуки та контакти
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Відгуки клієнтів
                     </p>
                   </div>
                   <ChevronRight className="h-5 w-5 shrink-0 text-zinc-300 dark:text-zinc-600 transition-colors group-hover:text-indigo-500" />

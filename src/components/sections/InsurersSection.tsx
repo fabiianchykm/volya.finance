@@ -101,7 +101,7 @@ export function InsurersSection() {
               href="/insurers"
               className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-zinc-900 px-6 py-3 text-sm font-semibold text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900 transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
-              {t({ uk: "Відгуки та контакти страхових", en: "Insurer reviews and contacts" })}
+              {t({ uk: "Відгуки клієнтів про страхові", en: "Customer reviews of insurers" })}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
