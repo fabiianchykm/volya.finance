@@ -420,7 +420,7 @@ export function OfferCard({
         <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4 dark:border-zinc-800">
           {/* Основа розрахунку ціни — окремим блоком (чию ДН враховує ця СК) */}
           {ageBasis && (
-            <div className="flex items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/50 dark:bg-indigo-950/30">
+            <div className="flex w-full max-w-[280px] items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/50 dark:bg-indigo-950/30">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-500 dark:text-indigo-400" />
               <p className="text-xs text-zinc-600 dark:text-zinc-300">
                 {t({ uk: "Ціна рахується за віком ", en: "Price is based on the age of " })}
