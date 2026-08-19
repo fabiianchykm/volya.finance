@@ -23,17 +23,29 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
+  // Блокування скролу + початковий фокус у панель — ЛИШЕ на відкриття/закриття.
+  // Важливо не залежати тут від onClose/preventOutsideClose: інакше зміна цих
+  // пропсів між рендерами (напр. похідних від вводу) перефокусовувала б панель і
+  // крала фокус із полів (кожна введена цифра «скидала» ввід). WCAG 2.4.3.
   useEffect(() => {
-    if (!open) { document.body.style.overflow = ""; return; }
+    if (!open) return;
     document.body.style.overflow = "hidden";
-    // Запамʼятовуємо, звідки прийшов фокус, і переводимо його в модалку (WCAG 2.4.3).
     const prevFocus = document.activeElement as HTMLElement | null;
     const t = setTimeout(() => panelRef.current?.focus(), 0);
+    return () => {
+      clearTimeout(t);
+      document.body.style.overflow = "";
+      prevFocus?.focus?.();
+    };
+  }, [open]);
 
+  // Esc + фокус-трап (Tab) — окремим ефектом, бо залежить від onClose/preventOutsideClose;
+  // тут немає перефокусування, тож ре-підписка не краде фокус із полів.
+  useEffect(() => {
+    if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !preventOutsideClose) { onClose(); return; }
       if (e.key !== "Tab") return;
-      // Простий фокус-трап у межах панелі (WCAG 2.4.3).
       const panel = panelRef.current;
       if (!panel) return;
       const focusable = panel.querySelectorAll<HTMLElement>(
@@ -46,12 +58,7 @@ export function Modal({ open, onClose, title, children, size = "md", className, 
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", onKeyDown);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
-      prevFocus?.focus?.();
-    };
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose, preventOutsideClose]);
 
   const sizes = {
