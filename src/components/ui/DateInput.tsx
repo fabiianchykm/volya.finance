@@ -74,13 +74,24 @@ export function DateInput({ label, value, onChange, required, className, error, 
     return { y: base.getFullYear(), m: base.getMonth() };
   });
   const ref = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
+  // Попап календаря позиціонуємо через position:fixed за координатами поля, щоб він
+  // не обрізався батьківськими рамками з overflow (напр. вмістом модального вікна).
+  const [pos, setPos] = useState<{ left: number; top: number; up: boolean } | null>(null);
+  const CAL_W = 288, CAL_H = 360;
+  const computePos = () => {
+    const el = fieldRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const left = Math.min(Math.max(r.left, 8), window.innerWidth - CAL_W - 8);
+    // Якщо знизу не влазить, а зверху місця більше — відкриваємо вгору.
+    const up = r.bottom + 8 + CAL_H > window.innerHeight && r.top > window.innerHeight - r.bottom;
+    setPos({ left, top: up ? r.top - 8 : r.bottom + 8, up });
+  };
 
   const toggle = () => {
-    setOpen((o) => {
-      const next = !o;
-      if (next && parsed) setView({ y: parsed.getFullYear(), m: parsed.getMonth() });
-      return next;
-    });
+    if (!open) { if (parsed) setView({ y: parsed.getFullYear(), m: parsed.getMonth() }); computePos(); }
+    setOpen((o) => !o);
   };
 
   // Закриття по кліку поза компонентом / Esc — вішаємо лише коли попап відкритий.
@@ -90,12 +101,18 @@ export function DateInput({ label, value, onChange, required, className, error, 
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onMove = () => computePos();
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onEsc);
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onEsc);
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
     };
+
   }, [open]);
 
   const years: number[] = [];
@@ -126,6 +143,7 @@ export function DateInput({ label, value, onChange, required, className, error, 
       {label && <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{label}</label>}
 
       <div
+        ref={fieldRef}
         className={`flex items-center rounded-xl border bg-white dark:bg-zinc-900 transition-colors focus-within:ring-1 ${
           errText
             ? "border-red-400 focus-within:border-red-500 focus-within:ring-red-500"
@@ -154,8 +172,11 @@ export function DateInput({ label, value, onChange, required, className, error, 
         </button>
       </div>
 
-      {open && (
-        <div className="absolute top-full left-0 z-30 mt-2 w-[288px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-xl">
+      {open && pos && (
+        <div
+          style={{ position: "fixed", left: pos.left, top: pos.top, transform: pos.up ? "translateY(-100%)" : undefined }}
+          className="z-[80] w-[288px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-xl"
+        >
           {/* Швидка дія (напр. «Якнайшвидше») — між полем вводу і сіткою календаря */}
           {quickAction && (
             <button
