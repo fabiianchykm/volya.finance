@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Star } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { INSURERS, INSURERS_FROZEN } from "@/lib/insurers";
@@ -51,9 +51,6 @@ export default function InsurersPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{ins.name}</p>
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Відгуки клієнтів
-                    </p>
                   </div>
                   <ChevronRight className="h-5 w-5 shrink-0 text-zinc-300 dark:text-zinc-600 transition-colors group-hover:text-indigo-500" />
                 </Link>
