@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, LayoutDashboard, type LucideIcon } from "lucide-react";
@@ -38,6 +39,8 @@ const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];
 function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]; opaque: boolean }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -101,7 +104,13 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
               <Link
                 key={href}
                 href={href}
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  setOpen(false);
+                  // Вже на цій сторінці (напр. показані пропозиції з ?step=offers у URL) —
+                  // Link зі співпадаючим pathname не завжди очищає query. Примусово
+                  // переходимо на чисту адресу → флоу повертається на перший екран.
+                  if (href === pathname) { e.preventDefault(); router.replace(href, { scroll: true }); }
+                }}
                 className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70 dark:hover:bg-indigo-950/30"
               >
                 {row}
@@ -120,6 +129,8 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const { data: session, status } = useSession();
   const { open: openLogin } = useLogin();
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -228,7 +239,11 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                     key={link.href}
                     href={link.href}
                     className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                    onClick={() => setMobileOpen(false)}
+                    onClick={(e) => {
+                      setMobileOpen(false);
+                      // Той самий pathname → примусово чистимо query, щоб флоу скинувся на 1-й екран.
+                      if (link.href === pathname) { e.preventDefault(); router.replace(link.href, { scroll: true }); }
+                    }}
                   >
                     {label}
                   </Link>
