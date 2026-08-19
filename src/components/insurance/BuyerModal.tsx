@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { PRIVILEGES } from "@/lib/constants";
 import { useI18n } from "@/lib/i18n";
-import { DEFAULT_BUYER, type BuyerData } from "@/types/insurance";
+import { type BuyerData } from "@/types/insurance";
 
 interface BuyerModalProps {
   open: boolean;
@@ -20,34 +20,39 @@ interface BuyerModalProps {
 export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerModalProps) {
   const { t } = useI18n();
   const [privilegeId, setPrivilegeId] = useState(buyer.privilegeId);
-  const [birth, setBirth] = useState(buyer.birthDate); // "ДД.ММ.РРРР"
+  // Дати з попереднього кроку (VehicleConfirmModal) — підтягуємо й даємо редагувати:
+  // різні СК рахують ціну за віком різної особи (osago-age-basis).
+  const [policyholderBirth, setPolicyholderBirth] = useState(buyer.policyholderBirthDate ?? "");
+  const [youngestBirth, setYoungestBirth] = useState(buyer.youngestBirthDate ?? "");
   const [wasOpen, setWasOpen] = useState(false);
 
   // Засіваємо форму поточними даними в момент відкриття (як у VehicleConfirmModal).
   if (open && !wasOpen) {
     setWasOpen(true);
     setPrivilegeId(buyer.privilegeId);
-    setBirth(buyer.birthDate);
+    setPolicyholderBirth(buyer.policyholderBirthDate ?? "");
+    setYoungestBirth(buyer.youngestBirthDate ?? "");
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
 
   const handleConfirm = () => {
-    const birthDate = parseUaDate(birth) ? birth : DEFAULT_BUYER.birthDate;
     onConfirm({
+      ...buyer,
       privilegeId,
-      birthDate,
       customerType: privilegeId === 1 ? 1 : 3,
+      policyholderBirthDate: parseUaDate(policyholderBirth) ? policyholderBirth : "",
+      youngestBirthDate: parseUaDate(youngestBirth) ? youngestBirth : "",
     });
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={t({ uk: "Дані страхувальника", en: "Policyholder details" })} size="md">
+    <Modal open={open} onClose={onClose} title={t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })} size="md">
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
           <BadgePercent className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
           <p className="text-sm text-indigo-800 dark:text-indigo-200">
-            {t({ uk: "Пільга та вік страхувальника впливають на ціну — вкажіть їх, щоб отримати знижку.", en: "The policyholder's benefit and age affect the price — specify them to get a discount." })}
+            {t({ uk: "Пільга та дати народження впливають на ціну — кожна страхова рахує за віком різної особи. Уточніть дані для точного розрахунку.", en: "The benefit and birth dates affect the price — each insurer prices by a different person's age. Adjust them for an accurate quote." })}
           </p>
         </div>
 
@@ -65,8 +70,13 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження", en: "Date of birth" })}</label>
-          <DateInput value={birth} onChange={setBirth} defaultYear={1990} />
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}</label>
+          <DateInput value={policyholderBirth} onChange={setPolicyholderBirth} defaultYear={1990} />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
+          <DateInput value={youngestBirth} onChange={setYoungestBirth} defaultYear={1990} />
         </div>
 
         <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} className="w-full">
