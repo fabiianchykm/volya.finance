@@ -367,20 +367,10 @@ export function OfferCard({
         {/* Блок 2: кількість опцій / документи. Фіксована ширина = ширина розгорнутих
             dropdown-ів під ним; так блок 3 (опції) зсувається праворуч і не перекривається. */}
         {canExpand && (
-          <div className="flex w-[280px] flex-col items-center shrink-0">
-            <div className="flex flex-col items-center gap-2 flex-1 justify-center">
-              {hasOptions && (
-                <>
-                  <span className="text-3xl text-zinc-900 dark:text-zinc-100">
-                    {(dgoList.length ? 1 : 0) + (lawyerList.length ? 1 : 0)}
-                  </span>
-                  <span className="text-xs text-zinc-400 font-medium dark:text-zinc-500">{t({ uk: "опції", en: "options" })}</span>
-                </>
-              )}
-            </div>
+          <div className="flex w-[280px] flex-col items-center justify-center shrink-0">
             <button
               onClick={() => setExpanded(v => !v)}
-              className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors mt-auto dark:text-zinc-500 dark:hover:text-indigo-400"
+              className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"
             >
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               {t({ uk: "Додатково", en: "More" })}
