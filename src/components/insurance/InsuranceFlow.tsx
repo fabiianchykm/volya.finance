@@ -178,8 +178,8 @@ export function InsuranceFlow() {
   const handleBuyerConfirm = (buyer: BuyerData) => {
     setShowBuyerModal(false);
     if (!state.vehicle) return;
-    // BuyerModal повертає лише пільгу/тип/ДН власника — зберігаємо раніше введені
-    // ДН страхувальника + наймолодшого водія (їх редагують у VehicleConfirmModal).
+    // BuyerModal («Індивідуальна пропозиція») повертає пільгу + ДН страхувальника
+    // та наймолодшого водія. Мержимо поверх поточного (ДН власника з реєстру лишається).
     const merged: BuyerData = { ...state.buyer, ...buyer };
     setState((s) => ({ ...s, buyer: merged, offers: [], offersLoading: true }));
     void fetchOffers(state.vehicle, merged, state.periodId);
