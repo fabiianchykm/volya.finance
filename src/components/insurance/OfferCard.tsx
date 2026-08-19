@@ -155,6 +155,10 @@ export function OfferCard({
 
   // Бонус 1% від вартості полісу — нараховується на бонусний рахунок клієнта.
   const bonus = Math.round(totalPrice * BONUS_RATE);
+  const bonusHint = t({
+    uk: `Після оформлення цього полісу нарахуємо +${formatPrice(bonus)} (1% вартості) на ваш бонусний рахунок у кабінеті. Бонусами можна оплатити частину наступних полісів — за підтримки менеджера. За кожного запрошеного друга, який купить поліс, — ще +5%.`,
+    en: `After you buy this policy we'll credit +${formatPrice(bonus)} (1% of the price) to your bonus account. You can put bonuses toward your next policies — with a manager's help. For every friend you invite who buys a policy — an extra 5%.`,
+  });
 
   // «Стара» ціна (до знижки) + відсоток — лише для ОСЦПВ (discountEligible).
   const companyMatchName = [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" ");
@@ -290,9 +294,11 @@ export function OfferCard({
               {formatPrice(totalPrice)}
             </span>
             {bonus > 0 && (
-              <span title={t({ uk: "1% від вартості полісу на бонусний рахунок", en: "1% of the policy price to your bonus account" })} className="mt-0.5 whitespace-nowrap text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
-              </span>
+              <Tooltip className="mt-0.5 cursor-help" content={bonusHint}>
+                <span className="whitespace-nowrap text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
+                </span>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -390,9 +396,11 @@ export function OfferCard({
               {formatPrice(totalPrice)}
             </div>
             {bonus > 0 && (
-              <span title={t({ uk: "1% від вартості полісу на бонусний рахунок", en: "1% of the policy price to your bonus account" })} className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-                +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
-              </span>
+              <Tooltip className="cursor-help" content={bonusHint}>
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                  +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
+                </span>
+              </Tooltip>
             )}
           </div>
           <Button
