@@ -21,7 +21,11 @@ export interface VehicleData {
 export interface BuyerData {
   customerType: number;
   privilegeId: number; // id з PRIVILEGES
-  birthDate: string;   // формат "DD.MM.YYYY" — параметр carBirthdayAt
+  birthDate: string;   // ДН власника авто (з реєстру за номером) — основа для СК, що рахують за власником
+  // Обовʼязкові поля з калькулятора: різні СК рахують ціну за віком різної особи
+  // (див. osago-age-basis). "DD.MM.YYYY".
+  policyholderBirthDate?: string; // ДН страхувальника
+  youngestBirthDate?: string;     // ДН наймолодшого водія (за нею ж рахуємо «водія»)
 }
 
 export const DEFAULT_BUYER: BuyerData = {
@@ -30,6 +34,8 @@ export const DEFAULT_BUYER: BuyerData = {
   // Порожньо: НЕ підставляємо фейкову дату народження — калькулятор рахує без неї,
   // а точну ціну під реальну ДН уточнюємо на checkout. (Було "01.01.1990".)
   birthDate: "",
+  policyholderBirthDate: "",
+  youngestBirthDate: "",
 };
 
 export interface VehicleDetails {

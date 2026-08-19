@@ -13,6 +13,7 @@ import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n } from "@/lib/i18n";
 
 const VehicleConfirmModal = dynamic(() => import("./VehicleConfirmModal").then(mod => mod.VehicleConfirmModal), { ssr: false });
+import type { DriverAges } from "./VehicleConfirmModal";
 
 // Ціни оферів можуть змінюватись — тихо перезавантажуємо список, поки
 // користувач на екрані пропозицій. Фінальну ціну ще раз звіряємо на checkout.
@@ -135,8 +136,13 @@ export function InsuranceFlow() {
 
   // Step 2: vehicle confirmed — validate synchronously, then transition to the
   // offers screen immediately and load offers asynchronously in the background.
-  const handleVehicleConfirm = (vehicle: VehicleData, periodId?: number) => {
+  const handleVehicleConfirm = (vehicle: VehicleData, periodId?: number, ages?: DriverAges) => {
     const period = periodId ?? state.periodId;
+    // ДН страхувальника + наймолодшого водія (обовʼязкові в модалці) — впливають на
+    // ціну: різні СК рахують за віком різної особи (osago-age-basis).
+    const buyer: BuyerData = ages
+      ? { ...state.buyer, policyholderBirthDate: ages.policyholderBirthDate, youngestBirthDate: ages.youngestBirthDate }
+      : state.buyer;
     // --- Validate vehicle data before sending ---
     const missing: string[] = [];
     if (!vehicle.autoCategory) missing.push("autoCategory");
@@ -155,21 +161,24 @@ export function InsuranceFlow() {
     setError(null);
     setShowVehicleModal(false);
     setEditingVehicle(false);
-    setState((s) => ({ ...s, step: "offers", vehicle, periodId: period, offers: [], offersLoading: true }));
+    setState((s) => ({ ...s, step: "offers", vehicle, buyer, periodId: period, offers: [], offersLoading: true }));
     // Номер авто (напівпублічний) — у URL через РОУТЕР (не replaceState), щоб клік по
     // меню на /osago розпізнавався як навігація й повертав на головний екран.
     router.replace(`${pathname}?step=offers&plate=${encodeURIComponent(vehicle.number || state.plate)}`, { scroll: false });
 
     // Fetch offers without blocking the UI transition (period передаємо явно).
-    void fetchOffers(vehicle, state.buyer, period);
+    void fetchOffers(vehicle, buyer, period);
   };
 
   // Зміна даних страхувальника з банера → зберігаємо й перераховуємо пропозиції.
   const handleBuyerConfirm = (buyer: BuyerData) => {
     setShowBuyerModal(false);
     if (!state.vehicle) return;
-    setState((s) => ({ ...s, buyer, offers: [], offersLoading: true }));
-    void fetchOffers(state.vehicle, buyer, state.periodId);
+    // BuyerModal повертає лише пільгу/тип/ДН власника — зберігаємо раніше введені
+    // ДН страхувальника + наймолодшого водія (їх редагують у VehicleConfirmModal).
+    const merged: BuyerData = { ...state.buyer, ...buyer };
+    setState((s) => ({ ...s, buyer: merged, offers: [], offersLoading: true }));
+    void fetchOffers(state.vehicle, merged, state.periodId);
   };
 
   // Loads offers for a confirmed vehicle and updates state when they arrive.
@@ -192,6 +201,8 @@ export function InsuranceFlow() {
         period_id: String(periodId),
         carYear: String(vehicle.year),
         carBirthdayAt: buyer.birthDate,
+        policyholderBirthday: buyer.policyholderBirthDate ?? "",
+        youngestBirthday: buyer.youngestBirthDate ?? "",
       };
 
       const res = await fetch(`/api/insurance/offers?${new URLSearchParams(paramsObj)}`);
@@ -318,6 +329,11 @@ export function InsuranceFlow() {
       lookupError={lookupError}
       editMode={editingVehicle}
       periodId={state.periodId}
+      collectAges
+      initialAges={{
+        policyholderBirthDate: state.buyer.policyholderBirthDate ?? "",
+        youngestBirthDate: state.buyer.youngestBirthDate ?? "",
+      }}
     />
   );
 

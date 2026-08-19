@@ -6,6 +6,7 @@ import { AlertCircle, Pencil, ChevronDown, Check, CalendarRange } from "lucide-r
 interface City { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import type { VehicleData } from "@/types/insurance";
 import { AUTO_CATEGORIES } from "@/lib/constants";
 import { cityShort } from "@/lib/utils";
@@ -16,13 +17,22 @@ interface VehicleConfirmModalProps {
   onClose: () => void;
   vehicle: VehicleData | null;
   plate: string;
-  onConfirm: (vehicle: VehicleData, periodId?: number) => void;
+  onConfirm: (vehicle: VehicleData, periodId?: number, ages?: DriverAges) => void;
   loading?: boolean;
   lookupError?: string | null;
   /** Відкрити одразу у формі редагування (для зміни даних з екрана пропозицій). */
   editMode?: boolean;
   /** Початковий період поліса: 12 = рік, 6 = пів року. Undefined → перемикач не показуємо (КАСКО). */
   periodId?: number;
+  /** ОСЦПВ: зібрати ДН страхувальника + наймолодшого водія (різні СК рахують по-різному). */
+  collectAges?: boolean;
+  /** Попередньо введені ДН (при поверненні до модалки з екрана пропозицій). */
+  initialAges?: DriverAges;
+}
+
+export interface DriverAges {
+  policyholderBirthDate: string; // "DD.MM.YYYY"
+  youngestBirthDate: string;     // "DD.MM.YYYY"
 }
 
 const categoryLabels: Record<string, { uk: string; en: string }> = {
@@ -60,10 +70,15 @@ export function VehicleConfirmModal({
   lookupError,
   editMode,
   periodId,
+  collectAges,
+  initialAges,
 }: VehicleConfirmModalProps) {
   const { t } = useI18n();
   const [manualMode, setManualMode] = useState(true);
   const [period, setPeriod] = useState(periodId ?? 12);
+  const [policyholderBirth, setPolicyholderBirth] = useState("");
+  const [youngestBirth, setYoungestBirth] = useState("");
+  const [ageError, setAgeError] = useState(false);
   const [form, setForm] = useState({
     mark: "",
     model: "",
@@ -94,6 +109,9 @@ export function VehicleConfirmModal({
   if (open && !wasOpen) {
     setWasOpen(true);
     setPeriod(periodId ?? 12);
+    setPolicyholderBirth(initialAges?.policyholderBirthDate ?? "");
+    setYoungestBirth(initialAges?.youngestBirthDate ?? "");
+    setAgeError(false);
     // Авто вважаємо «знайденим» лише якщо реєстр повернув КЛЮЧОВІ поля (марка, рік,
     // категорія). Порожні/нульові дані (year=0, категорія «») → одразу форма ручного
     // вводу, а не екран підтвердження з "‚ 0".
@@ -122,9 +140,21 @@ export function VehicleConfirmModal({
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  // ДН вважаємо валідною лише як реальну дату з розумним віком (18–99): захищає
+  // від помилкового вводу, що дав би абсурдну ціну.
+  const dobOk = (v: string) => {
+    const d = parseUaDate(v);
+    if (!d) return false;
+    const age = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
+    return age >= 18 && age <= 99;
+  };
+  const agesValid = !collectAges || (dobOk(policyholderBirth) && dobOk(youngestBirth));
+  const ages: DriverAges = { policyholderBirthDate: policyholderBirth, youngestBirthDate: youngestBirth };
+
   const handleConfirm = () => {
+    if (collectAges && !agesValid) { setAgeError(true); return; }
     if (vehicle && !manualMode) {
-      onConfirm(vehicle, period);
+      onConfirm(vehicle, period, ages);
       return;
     }
     // Ручний ввід: місто з вибору, із дефолтом Київ, якщо не обрано.
@@ -139,7 +169,7 @@ export function VehicleConfirmModal({
       cityName: selectedCity?.name_full_name_ua || selectedCity?.name_ua || "м. Київ",
       zone: selectedCity?.zone ?? 1,
     };
-    onConfirm(manualVehicle, period);
+    onConfirm(manualVehicle, period, ages);
   };
 
   const vehicleComplete = isVehicleComplete(vehicle);
@@ -331,6 +361,36 @@ export function VehicleConfirmModal({
           </div>
         )}
 
+        {/* ДН страхувальника + наймолодшого водія. Різні СК рахують ціну за віком
+            різної особи (власника беремо з реєстру за номером), тож збираємо обидві —
+            щоб показати ТОЧНУ ціну по кожній компанії. Обовʼязкові. */}
+        {collectAges && (
+          <div className="space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {t({
+                uk: "Кожна страхова рахує ціну за віком різної особи. Вкажіть дати народження — покажемо точну ціну по кожній компанії.",
+                en: "Each insurer prices by a different person's age. Enter the birth dates — we'll show the exact price for each company.",
+              })}
+            </p>
+            <DateInput
+              label={t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}
+              value={policyholderBirth}
+              onChange={(v) => { setPolicyholderBirth(v); setAgeError(false); }}
+              required
+              defaultYear={1990}
+              error={ageError && !dobOk(policyholderBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+            />
+            <DateInput
+              label={t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}
+              value={youngestBirth}
+              onChange={(v) => { setYoungestBirth(v); setAgeError(false); }}
+              required
+              defaultYear={1990}
+              error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+            />
+          </div>
+        )}
+
         {/* Період дії поліса — рік (за замовч.) або пів року. Лише ОСЦПВ. */}
         {periodId !== undefined && (
           <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
@@ -346,7 +406,7 @@ export function VehicleConfirmModal({
             onClick={handleConfirm}
             loading={loading}
             className="w-full"
-            disabled={manualMode && !selectedCity}
+            disabled={(manualMode && !selectedCity) || !agesValid}
           >
             {t({ uk: "Підтвердити", en: "Confirm" })}
           </Button>

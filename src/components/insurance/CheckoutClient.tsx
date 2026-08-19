@@ -20,6 +20,7 @@ import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { cityShort, cityLong } from "@/lib/utils";
+import { osagoDobForCompany } from "@/lib/osago-age-basis";
 import { useI18n } from "@/lib/i18n";
 
 // Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
@@ -145,8 +146,17 @@ export function CheckoutClient() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const startDate = `${String(tomorrow.getDate()).padStart(2, "0")}.${String(tomorrow.getMonth() + 1).padStart(2, "0")}.${tomorrow.getFullYear()}`;
 
-    // Реальна ДН страхувальника з форми checkout; фолбек — buyer.birthDate.
-    const realBirthDate = customer?.dateBirth ? unixToUaDate(customer.dateBirth) : buyer.birthDate;
+    // Ця СК рахує ціну за віком конкретної особи (власник/страхувальник/наймолодший —
+    // osago-age-basis). Беремо саме ЇЇ дату, щоб перерахунок збігся з ціною у видачі.
+    // Страхувальник — реальна ДН із форми checkout (фолбек — введена в калькуляторі).
+    const realPolicyholder = customer?.dateBirth ? unixToUaDate(customer.dateBirth) : (buyer.policyholderBirthDate || buyer.birthDate);
+    const dobs = {
+      owner: buyer.birthDate,
+      policyholder: realPolicyholder,
+      youngest: buyer.youngestBirthDate || buyer.birthDate,
+    };
+    const companyName = [offer.companyNamePublic, offer.companyName].filter(Boolean).join(" ");
+    const effectiveDob = osagoDobForCompany(companyName, dobs) || realPolicyholder;
 
     const paramsObj = {
       autoCategoryType: vehicle.autoCategory,
@@ -158,7 +168,7 @@ export function CheckoutClient() {
       registrationType: "1",
       period_id: String(periodId),
       carYear: String(vehicle.year),
-      carBirthdayAt: realBirthDate,
+      carBirthdayAt: effectiveDob,
     };
 
     // Матчимо ЛИШЕ за companyId (стабільний). УВАГА: externalIdTariff — це JSON
