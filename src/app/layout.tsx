@@ -10,7 +10,6 @@ import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/analyti
 import { Clarity } from "@/components/analytics/Clarity";
 import { ReferralCapture } from "@/components/referral/ReferralCapture";
 import { ContactWidget } from "@/components/layout/ContactWidget";
-import { PromoBanner } from "@/components/layout/PromoBanner";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SITE_URL, organizationLd, websiteLd } from "@/lib/seo";
@@ -87,7 +86,6 @@ export default async function RootLayout({
             <LoginProvider>{children}</LoginProvider>
           </SessionProvider>
           <ContactWidget />
-          <PromoBanner />
         </LangProvider>
         <ReferralCapture />
         <JsonLd data={[organizationLd(), websiteLd()]} />
