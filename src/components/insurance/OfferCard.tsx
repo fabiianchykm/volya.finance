@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { INSURERS } from "@/lib/insurers";
 import { Button } from "@/components/ui/Button";
@@ -351,8 +351,9 @@ export function OfferCard({
             className="cursor-help self-center"
             content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
           >
-            <span className="text-center text-[11px] leading-snug text-zinc-400 underline decoration-dotted underline-offset-2 dark:text-zinc-500">
-              {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
+            <span className="inline-flex items-center gap-1.5 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
+              <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />
+              <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
             </span>
           </Tooltip>
         </div>
@@ -381,8 +382,9 @@ export function OfferCard({
                 className="cursor-help"
                 content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
               >
-                <span className="text-center text-xs leading-snug text-zinc-500 underline decoration-dotted underline-offset-2 dark:text-zinc-400">
-                  {t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}
+                <span className="inline-flex items-center gap-1.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400">
+                  <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />
+                  <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
                 </span>
               </Tooltip>
             </div>
