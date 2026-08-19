@@ -436,19 +436,22 @@ export function OfferCard({
       {/* Розгорнута секція (Базові опції / Документи). На десктопі зсунута ліворуч
           так, щоб починалась під 2-м блоком «опис» (після колонки з лого w-48). */}
       {expanded && (
-        <div className="border-t border-zinc-100 px-4 lg:pl-[14.75rem] lg:pr-5 py-4 flex flex-col gap-4 dark:border-zinc-800">
-          {/* Посилання на сторінку страхової (відгуки) — ліворуч, «під назвою». На
-              десктопі зсуваємо назад до лівого краю (під лого/назву) негативним відступом. */}
-          {insurerSlug && (
-            <Link
-              href={`/insurers/${insurerSlug}`}
-              onClick={(e) => e.stopPropagation()}
-              className="group/rev inline-flex items-center gap-2 self-start rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-indigo-700 dark:hover:text-indigo-300"
-            >
-              {t({ uk: "Відгуки про компанію", en: "Company reviews" })}
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300 transition-transform group-hover/rev:translate-x-0.5 dark:text-zinc-600" />
-            </Link>
-          )}
+        <div className="border-t border-zinc-100 px-4 py-4 dark:border-zinc-800 lg:flex lg:gap-6 lg:px-5">
+          {/* Ліва колонка (w-48, під лого/назвою) — посилання на сторінку страхової (відгуки) */}
+          <div className="mb-3 lg:mb-0 lg:flex lg:w-48 lg:shrink-0 lg:items-start lg:justify-center">
+            {insurerSlug && (
+              <Link
+                href={`/insurers/${insurerSlug}`}
+                onClick={(e) => e.stopPropagation()}
+                className="group/rev inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-indigo-700 dark:hover:text-indigo-300"
+              >
+                {t({ uk: "Відгуки про компанію", en: "Company reviews" })}
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300 transition-transform group-hover/rev:translate-x-0.5 dark:text-zinc-600" />
+              </Link>
+            )}
+          </div>
+          {/* Права колонка — деталі */}
+          <div className="flex flex-1 flex-col gap-4">
           {/* Основа розрахунку ціни — окремим блоком (чию ДН враховує ця СК) */}
           {ageBasis && (
             <div className="flex w-full max-w-[280px] items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/50 dark:bg-indigo-950/30">
@@ -523,6 +526,7 @@ export function OfferCard({
               </div>
             </DetailsDropdown>
           )}
+          </div>
         </div>
       )}
 
