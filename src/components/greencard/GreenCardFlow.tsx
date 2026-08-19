@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useFlowReset } from "@/lib/nav-reset";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Globe, FileText, CreditCard, Download } from "lucide-react";
 import { HeroSteps } from "@/components/sections/HeroSteps";
@@ -59,6 +60,7 @@ const selectClass =
 export function GreenCardFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
+  useFlowReset(() => setStep("params"));
 
   // Для ЦІНИ достатньо типу авто; номер/марку/модель збираємо на кроці оформлення.
   const [carType, setCarType] = useState("B");

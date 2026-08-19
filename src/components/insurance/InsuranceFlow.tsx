@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useFlowReset } from "@/lib/nav-reset";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
@@ -46,6 +47,9 @@ export function InsuranceFlow() {
     offersLoading: false,
     periodId: 12,
   });
+
+  // Клік по «Автоцивілка» в меню, коли вже показані пропозиції → на перший екран.
+  useFlowReset(() => setState((s) => ({ ...s, step: "hero" })));
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

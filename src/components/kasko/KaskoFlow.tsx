@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useFlowReset } from "@/lib/nav-reset";
 import dynamic from "next/dynamic";
 import { CheckCircle2, Phone } from "lucide-react";
 import { KaskoHero } from "./KaskoHero";
@@ -22,6 +23,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
   const config = KASKO_PRODUCTS[product];
   const { t } = useI18n();
   const [step, setStep] = useState<Step>("hero");
+  useFlowReset(() => setStep("hero"));
   const [plate, setPlate] = useState("");
   const [vehicle, setVehicle] = useState<VehicleData | null>(null);
 

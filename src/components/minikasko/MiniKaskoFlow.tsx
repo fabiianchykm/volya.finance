@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useFlowReset } from "@/lib/nav-reset";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone, Car, FileText, CreditCard, Download, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { HeroSteps, type HeroStep } from "@/components/sections/HeroSteps";
@@ -39,6 +40,7 @@ export function MiniKaskoFlow() {
     { icon: Download, label: t({ uk: "Готовий поліс", en: "Ready policy" }) },
   ];
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
+  useFlowReset(() => setStep("params"));
 
   // Місто (автопідбір) + дата початку.
   const [cityQuery, setCityQuery] = useState("");

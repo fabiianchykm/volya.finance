@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useFlowReset } from "@/lib/nav-reset";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -157,6 +158,7 @@ function ZoneSelect({ value, onChange }: { value: string; onChange: (v: string) 
 export function TourismFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
+  useFlowReset(() => setStep("form"));
   const [selectedOffer, setSelectedOffer] = useState<TourismOffer | null>(null);
   const [zoneId, setZoneId] = useState("60");
   const [startDate, setStartDate] = useState("");

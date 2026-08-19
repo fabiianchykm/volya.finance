@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useFlowReset } from "@/lib/nav-reset";
 import { motion } from "framer-motion";
 import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -44,6 +45,7 @@ function toPetsInsuranceOffer(o: PetsOffer): InsuranceOffer {
 export function PetsFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
+  useFlowReset(() => setStep("form"));
   const [petType, setPetType] = useState("cat");
   // Дата початку зашита за замовчуванням (мінімум за API — через 10 днів), поле не показуємо.
   const [startDate] = useState(() => {

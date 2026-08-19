@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useFlowReset } from "@/lib/nav-reset";
 import { motion } from "framer-motion";
 import { Home as HomeIcon, Building2, ShieldCheck, CalendarDays, ArrowRight, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -41,6 +42,7 @@ const selectClass =
 export function HousingFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
+  useFlowReset(() => setStep("params"));
 
   const [homeType, setHomeType] = useState<"flat" | "house">("flat");
   const [amount, setAmount] = useState(1000000);

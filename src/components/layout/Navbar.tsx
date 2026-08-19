@@ -7,6 +7,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, LayoutDashboard, type LucideIcon } from "lucide-react";
 import { isAdminClient } from "@/lib/admin";
+import { emitNavReset } from "@/lib/nav-reset";
 import { VMark, BarlessA } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -108,8 +109,9 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
                   setOpen(false);
                   // Вже на цій сторінці (напр. показані пропозиції з ?step=offers у URL) —
                   // Link зі співпадаючим pathname не завжди очищає query. Примусово
-                  // переходимо на чисту адресу → флоу повертається на перший екран.
-                  if (href === pathname) { e.preventDefault(); router.replace(href, { scroll: true }); }
+                  // переходимо на чисту адресу (скидає URL-driven флоу, як ОСЦПВ) + шлемо
+                  // подію для флоу, що тримають крок у стані (ЗК, туризм, тварини, житло…).
+                  if (href === pathname) { e.preventDefault(); router.replace(href, { scroll: true }); emitNavReset(); }
                 }}
                 className="group/item flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-indigo-50/70 dark:hover:bg-indigo-950/30"
               >
@@ -241,8 +243,8 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                     className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                     onClick={(e) => {
                       setMobileOpen(false);
-                      // Той самий pathname → примусово чистимо query, щоб флоу скинувся на 1-й екран.
-                      if (link.href === pathname) { e.preventDefault(); router.replace(link.href, { scroll: true }); }
+                      // Той самий pathname → чистимо query + шлемо подію скидання флоу на 1-й екран.
+                      if (link.href === pathname) { e.preventDefault(); router.replace(link.href, { scroll: true }); emitNavReset(); }
                     }}
                   >
                     {label}
