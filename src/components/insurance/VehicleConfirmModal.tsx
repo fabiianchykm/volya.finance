@@ -153,8 +153,11 @@ export function VehicleConfirmModal({
 
   const handleConfirm = () => {
     if (collectAges && !agesValid) { setAgeError(true); return; }
+    // Дати передаємо ЛИШЕ якщо цей модал їх збирає (collectAges). Інакше — undefined,
+    // щоб не затерти введені в «Індивідуальній пропозиції» ДН порожніми значеннями.
+    const outAges = collectAges ? ages : undefined;
     if (vehicle && !manualMode) {
-      onConfirm(vehicle, period, ages);
+      onConfirm(vehicle, period, outAges);
       return;
     }
     // Ручний ввід: місто з вибору, із дефолтом Київ, якщо не обрано.
@@ -169,7 +172,7 @@ export function VehicleConfirmModal({
       cityName: selectedCity?.name_full_name_ua || selectedCity?.name_ua || "м. Київ",
       zone: selectedCity?.zone ?? 1,
     };
-    onConfirm(manualVehicle, period, ages);
+    onConfirm(manualVehicle, period, outAges);
   };
 
   const vehicleComplete = isVehicleComplete(vehicle);

@@ -351,11 +351,6 @@ export function InsuranceFlow() {
       lookupError={lookupError}
       editMode={editingVehicle}
       periodId={state.periodId}
-      collectAges
-      initialAges={{
-        policyholderBirthDate: state.buyer.policyholderBirthDate ?? "",
-        youngestBirthDate: state.buyer.youngestBirthDate ?? "",
-      }}
     />
   );
 
