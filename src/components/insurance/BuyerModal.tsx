@@ -55,7 +55,9 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading }: BuyerMo
         <div className="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
           <BadgePercent className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
           <p className="text-sm text-indigo-800 dark:text-indigo-200">
-            {t({ uk: "Пільга та дати народження впливають на ціну — кожна страхова рахує за віком різної особи. Уточніть дані для точного розрахунку.", en: "The benefit and birth dates affect the price — each insurer prices by a different person's age. Adjust them for an accurate quote." })}
+            {t({ uk: "Вкажіть пільгу та дати народження — і отримайте персональну ціну зі знижкою ", en: "Enter your benefit and birth dates to get a personalised price with a discount " })}
+            <span className="font-bold">{t({ uk: "до 42%", en: "of up to 42%" })}</span>
+            {t({ uk: ". Кожна страхова рахує ціну за віком різної особи.", en: ". Each insurer prices by a different person's age." })}
           </p>
         </div>
 
