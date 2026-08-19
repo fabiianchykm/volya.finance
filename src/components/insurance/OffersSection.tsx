@@ -134,19 +134,21 @@ export function OffersSection({
                 <Percent className="h-4 w-4" />
               </span>
               <span className="min-w-0">
-                {buyerSet ? (
-                  <>
-                    <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Дані страхувальника", en: "Policyholder details" })}</span>
-                    {/* З реєстру приходить лише ВІК (день/місяць фейкові = сьогодні), тож
-                        показуємо рік народження, а не повну дату. */}
-                    <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{privilegeLabel}{buyer.birthDate ? t({ uk: ` · ${buyer.birthDate.split(".")[2]} р.н.`, en: ` · b. ${buyer.birthDate.split(".")[2]}` }) : ""}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Пільга та дата народження", en: "Benefit and date of birth" })}</span>
-                    <span className="block text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Вкажіть — ціна може зменшитись", en: "Specify — the price may decrease" })}</span>
-                  </>
-                )}
+                <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })}</span>
+                {/* Дані, введені на попередньому кроці (впливають на ціну по кожній СК).
+                    З реєстру приходить лише ВІК власника (день/місяць фейкові) → рік. */}
+                <span className="mt-0.5 block space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {buyer.policyholderBirthDate && (
+                    <span className="block">{t({ uk: "Страхувальник: ", en: "Policyholder: " })}<span className="font-medium text-zinc-700 dark:text-zinc-300">{buyer.policyholderBirthDate}</span></span>
+                  )}
+                  {buyer.youngestBirthDate && (
+                    <span className="block">{t({ uk: "Наймолодший водій: ", en: "Youngest driver: " })}<span className="font-medium text-zinc-700 dark:text-zinc-300">{buyer.youngestBirthDate}</span></span>
+                  )}
+                  {buyer.birthDate && (
+                    <span className="block">{t({ uk: "Власник авто: ", en: "Vehicle owner: " })}<span className="font-medium text-zinc-700 dark:text-zinc-300">{t({ uk: `${buyer.birthDate.split(".")[2]} р.н.`, en: `b. ${buyer.birthDate.split(".")[2]}` })}</span></span>
+                  )}
+                  {buyerSet && <span className="block">{privilegeLabel}</span>}
+                </span>
               </span>
             </span>
             <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
