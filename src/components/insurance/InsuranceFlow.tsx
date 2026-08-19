@@ -183,6 +183,10 @@ export function InsuranceFlow() {
 
     // Fetch offers without blocking the UI transition (period передаємо явно).
     void fetchOffers(vehicle, buyer, period);
+
+    // Після підтвердження авто одразу просимо дати народження (страхувальник +
+    // наймолодший водій) у діалозі «Індивідуальна пропозиція», якщо їх ще не введено.
+    if (!buyer.policyholderBirthDate || !buyer.youngestBirthDate) setShowBuyerModal(true);
   };
 
   // Зміна даних страхувальника з банера → зберігаємо й перераховуємо пропозиції.
