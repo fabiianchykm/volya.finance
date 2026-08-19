@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, FileText, ExternalLink, Info, Check, Star } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, Star } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { INSURERS } from "@/lib/insurers";
 import { Button } from "@/components/ui/Button";
@@ -435,10 +435,11 @@ export function OfferCard({
             <Link
               href={`/insurers/${insurerSlug}`}
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300 lg:-ml-[14.75rem]"
+              className="group/rev inline-flex items-center gap-2 self-start rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-indigo-700 dark:hover:text-indigo-300 lg:-ml-[14.75rem]"
             >
-              <Star className="h-3.5 w-3.5" />
+              <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
               {t({ uk: "Відгуки про компанію", en: "Company reviews" })}
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-300 transition-transform group-hover/rev:translate-x-0.5 dark:text-zinc-600" />
             </Link>
           )}
           {/* Основа розрахунку ціни — окремим блоком (чию ДН враховує ця СК) */}
