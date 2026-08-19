@@ -132,8 +132,11 @@ export function CheckoutClient() {
   }
 
   // Submit flow
-  const handleCustomerSubmit = (data: Customer) => {
+  const handleCustomerSubmit = (data: Customer, youngestBirth: string) => {
     setCustomer(data);
+    // Оновлюємо ДН у buyer, щоб перерахунок ціни (revalidateOffer) враховував
+    // саме те, що клієнт підтвердив на цьому кроці.
+    setBuyer((b) => ({ ...b, policyholderBirthDate: unixToUaDate(data.dateBirth), youngestBirthDate: youngestBirth || b.youngestBirthDate }));
     setStep("vehicle");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -458,7 +461,11 @@ export function CheckoutClient() {
           // or we can reuse the modal logic by keeping it open inline. 
           // However, for a true page feeling, it's better to render just the form.
           // Since the user wants a full page checkout, let's render the forms directly.
-          <CheckoutCustomerForm onSubmit={handleCustomerSubmit} />
+          <CheckoutCustomerForm
+            onSubmit={handleCustomerSubmit}
+            initialPolicyholderBirth={buyer.policyholderBirthDate || ""}
+            initialYoungestBirth={buyer.youngestBirthDate || ""}
+          />
         )}
 
         {step === "vehicle" && (
@@ -529,7 +536,12 @@ export function CheckoutClient() {
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 
-function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void }) {
+function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initialYoungestBirth = "" }: {
+  onSubmit: (c: Customer, youngestBirth: string) => void;
+  // ДН, введені ще в калькуляторі — підтягуємо, щоб не вводити повторно.
+  initialPolicyholderBirth?: string;
+  initialYoungestBirth?: string;
+}) {
   const { t } = useI18n();
   const [form, setForm] = useState({
     name: "",
@@ -538,7 +550,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     phone: "",
     email: "",
     identificationCode: "",
-    dateBirth: "",
+    dateBirth: initialPolicyholderBirth,
     street: "",
     house: "",
     docSerial: "",
@@ -546,6 +558,9 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     docIssuedBy: "",
     docDate: "",
   });
+  // ДН наймолодшого водія — окремо від профілю (у профіль не входить), підтягнута з калькулятора.
+  const [youngestBirth, setYoungestBirth] = useState(initialYoungestBirth);
+  const [youngestErr, setYoungestErr] = useState(false);
 
   // Місто страхувальника обираємо з довідника, щоб надіслати коректний cityId
   // (а не хардкод Києва). full_name/zone беремо з обраного запису.
@@ -711,6 +726,8 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
     const dob = parseUaDate(form.dateBirth);
     if (!dob) { setDobError(true); return; }
     setDobError(false);
+    if (!parseUaDate(youngestBirth)) { setYoungestErr(true); return; }
+    setYoungestErr(false);
     const issue = parseUaDate(form.docDate);
     if (!issue) { setDocDateError(true); return; }
     setDocDateError(false);
@@ -747,7 +764,7 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
         cityName,
         full: `${cityName}, ${form.street}, ${form.house}`,
       },
-    });
+    }, youngestBirth);
   };
 
   return (
@@ -768,13 +785,24 @@ function CheckoutCustomerForm({ onSubmit }: { onSubmit: (c: Customer) => void })
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <DateInput
-            label={t({ uk: "Дата народження", en: "Date of birth" })}
+            label={t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}
             value={form.dateBirth}
             onChange={(v) => { setForm((f) => ({ ...f, dateBirth: v })); if (dobError) setDobError(false); }}
             error={dobError ? t({ uk: "Вкажіть дату народження", en: "Enter the date of birth" }) : undefined}
             defaultYear={1990}
             required
           />
+          <DateInput
+            label={t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}
+            value={youngestBirth}
+            onChange={(v) => { setYoungestBirth(v); if (youngestErr) setYoungestErr(false); }}
+            error={youngestErr ? t({ uk: "Вкажіть дату народження", en: "Enter the date of birth" }) : undefined}
+            defaultYear={1990}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label={t({ uk: "ІПН / ЄДРПО", en: "Tax ID / USREOU" })}
             value={form.identificationCode}
