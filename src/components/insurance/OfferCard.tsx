@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck } from "lucide-react";
@@ -114,6 +114,86 @@ function DetailsDropdown({ label, children, open, onToggle, bodyClassName = "px-
   );
 }
 
+// Пакети Автоюриста Ukasko (за номером program) + короткий опис що входить.
+const LAWYER_TIER = (a: AutolawyerOffer): { uk: string; en: string } =>
+  a.program === 3 ? { uk: "Комфорт+", en: "Comfort+" }
+  : a.program === 2 ? { uk: "Комфорт", en: "Comfort" }
+  : { uk: "Стандарт", en: "Standard" };
+const LAWYER_DESC = (a: AutolawyerOffer): { uk: string; en: string } =>
+  a.program === 3 ? { uk: "Усе з «Комфорт» + складання заяв, скарг і документів", en: "Comfort + drafting claims & documents" }
+  : a.program === 2 ? { uk: "Усе зі «Стандарт» + юридичний супровід при ДТП", en: "Standard + accident legal support" }
+  : { uk: "Юридична інформація та консультації", en: "Legal information & consultations" };
+
+// Кастомний дропдаун Автоюриста: у списку під кожним пакетом — опис (нативний
+// <select> цього не вміє). Ціни — з API (offer.listAutolawyer[].price).
+function AutolawyerSelect({ lawyers, selectedId, onSelect }: {
+  lawyers: AutolawyerOffer[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+
+  const selected = lawyers.find((a) => a.id === selectedId) ?? null;
+  const priceLabel = (a: AutolawyerOffer) => (a.price > 0 ? `+${formatPrice(a.price)}` : t({ uk: "безкоштовно", en: "free" }));
+
+  return (
+    <div className="relative w-full" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-3.5 pr-3 text-left text-sm font-medium transition-all",
+          selected
+            ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-zinc-200 dark:ring-indigo-800"
+            : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+        )}
+      >
+        <span className="truncate">
+          {selected ? `${t({ uk: "Автоюрист", en: "Auto lawyer" })} «${t(LAWYER_TIER(selected))}» — ${priceLabel(selected)}` : t({ uk: "Автоюрист", en: "Auto lawyer" })}
+        </span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+          <button type="button" onClick={() => { onSelect(null); setOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-zinc-500 transition-colors hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800/60">
+            {t({ uk: "Не потрібен", en: "Not needed" })}
+          </button>
+          {lawyers.map((a) => {
+            const active = a.id === selectedId;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => { onSelect(a.id); setOpen(false); }}
+                className={cn("flex w-full flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors", active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60")}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className={cn("text-sm font-semibold", active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-100")}>{t(LAWYER_TIER(a))}</span>
+                  <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{priceLabel(a)}</span>
+                </span>
+                <span className="text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">{t(LAWYER_DESC(a))}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function OfferCard({
   offer,
   selected,
@@ -210,20 +290,7 @@ export function OfferCard({
   ) : null;
 
   // Автоюрист має 3 пакети Ukasko (за номером program): Стандарт / Комфорт / Комфорт+.
-  // Показуємо всі як вибір (dropdown), відсортовані за ціною, з ⓘ-описом що входить.
-  const lawyerTier = (a: AutolawyerOffer): { uk: string; en: string } =>
-    a.program === 3 ? { uk: "Комфорт+", en: "Comfort+" }
-    : a.program === 2 ? { uk: "Комфорт", en: "Comfort" }
-    : { uk: "Стандарт", en: "Standard" };
   const lawyers = [...lawyerList].sort((a, b) => a.price - b.price);
-  const lawyerInfo = (
-    <span className="block space-y-1 text-left">
-      <span className="block font-semibold">{t({ uk: "Юридичний захист водія — що входить:", en: "Legal protection — what's included:" })}</span>
-      <span className="block">{t({ uk: "• Стандарт — юридична інформація та консультації", en: "• Standard — legal info & consultations" })}</span>
-      <span className="block">{t({ uk: "• Комфорт — усе зі «Стандарт» + юридичний супровід при ДТП", en: "• Comfort — Standard + accident legal support" })}</span>
-      <span className="block">{t({ uk: "• Комфорт+ — усе з «Комфорт» + складання заяв, скарг і документів", en: "• Comfort+ — Comfort + drafting claims & documents" })}</span>
-    </span>
-  );
   const rowClass = (active: boolean) =>
     cn(
       "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all",
@@ -232,37 +299,9 @@ export function OfferCard({
 
   const optionsBlock = (
     <div className="flex w-full max-w-[240px] flex-col gap-2">
-      {/* Автоюрист — вибір пакета (Стандарт / Комфорт / Комфорт+) з ⓘ-описом. */}
+      {/* Автоюрист — вибір пакета з описом під кожним пунктом. */}
       {lawyers.length > 0 && (
-        <div className="w-full">
-          <div className="mb-1 flex items-center gap-1">
-            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Автоюрист", en: "Auto lawyer" })}</span>
-            <Tooltip className="cursor-help text-zinc-400 hover:text-indigo-500 dark:text-zinc-500" content={lawyerInfo}>
-              <Info className="h-3 w-3" />
-            </Tooltip>
-          </div>
-          <div className="relative w-full">
-            <select
-              aria-label={t({ uk: "Автоюрист", en: "Auto lawyer" })}
-              value={selectedAutolawyerId || ""}
-              onChange={(e) => onSelectAutolawyer(e.target.value || null)}
-              className={cn(
-                "w-full cursor-pointer appearance-none rounded-xl border py-2.5 pl-3.5 pr-9 text-sm font-medium outline-none transition-all",
-                selectedAutolawyerId
-                  ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-zinc-200 dark:ring-indigo-800"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-              )}
-            >
-              <option value="">{t({ uk: "Не потрібен", en: "Not needed" })}</option>
-              {lawyers.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {t(lawyerTier(a))} — {a.price > 0 ? `+${formatPrice(a.price)}` : t({ uk: "безкоштовно", en: "free" })}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
-          </div>
-        </div>
+        <AutolawyerSelect lawyers={lawyers} selectedId={selectedAutolawyerId} onSelect={onSelectAutolawyer} />
       )}
 
       {/* «Додаткове покриття» — єдиний dropdown: перший пункт-плейсхолдер, далі варіанти. */}
