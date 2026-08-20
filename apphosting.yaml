@@ -100,3 +100,10 @@ env:
     value: "-1003917146936"
     availability:
       - RUNTIME
+  # Спільний ключ доступу мобільного застосунку (React Native) до публічних API.
+  # Клієнт шле його у заголовку `x-api-key`; api-guard пускає такий запит повз
+  # перевірку Origin (rate-limit лишається). Створити:
+  #   openssl rand -hex 32
+  #   firebase apphosting:secrets:set mobile-api-key   (вставити згенероване значення)
+  - variable: MOBILE_API_KEY
+    secret: mobile-api-key
