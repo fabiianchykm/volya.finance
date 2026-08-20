@@ -15,7 +15,7 @@ import { logoSrc } from "@/lib/logos";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "next-auth/react";
 import { isAdminClient } from "@/lib/admin";
-import type { InsuranceCompany, InsuranceOffer, AutolawyerOffer } from "@/types/api";
+import type { InsuranceCompany, InsuranceOffer, AutolawyerOffer, DgoOffer } from "@/types/api";
 
 interface OfferCardProps {
   offer: InsuranceOffer;
@@ -194,6 +194,77 @@ function AutolawyerSelect({ lawyers, selectedId, onSelect }: {
   );
 }
 
+// Кастомний дропдаун «Додаткове покриття» (ДЦВ) — той самий дизайн, що й Автоюрист:
+// у списку під сумою покриття є короткий опис. Суми/ціни — з API (offer.listDgo).
+function CoverageSelect({ dgoList, selectedId, onSelect }: {
+  dgoList: DgoOffer[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+
+  const selected = dgoList.find((d) => d.id === selectedId) ?? null;
+  const cov = (d: DgoOffer) => `+${Number(d.coverage).toLocaleString("uk-UA")} ₴`;
+  const cost = (d: DgoOffer) => `+${formatPrice(Number(d.cost))}`;
+
+  return (
+    <div className="relative w-full" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-3.5 pr-3 text-left text-sm font-medium transition-all",
+          selected
+            ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-zinc-200 dark:ring-indigo-800"
+            : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+        )}
+      >
+        <span className="truncate">
+          {selected ? `${t({ uk: "Покриття", en: "Coverage" })} ${cov(selected)} — ${cost(selected)}` : t({ uk: "Додаткове покриття", en: "Additional coverage" })}
+        </span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+          <button type="button" onClick={() => { onSelect(null); setOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-zinc-500 transition-colors hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800/60">
+            {t({ uk: "Без додаткового покриття", en: "No extra coverage" })}
+          </button>
+          {dgoList.map((d) => {
+            const active = d.id === selectedId;
+            return (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => { onSelect(d.id); setOpen(false); }}
+                className={cn("flex w-full flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors", active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60")}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className={cn("text-sm font-semibold", active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-100")}>{cov(d)}</span>
+                  <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{cost(d)}</span>
+                </span>
+                <span className="text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">{t({ uk: "Додатковий ліміт відшкодування понад базовий ОСЦПВ", en: "Extra payout limit above the base OSAGO" })}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function OfferCard({
   offer,
   selected,
@@ -304,29 +375,9 @@ export function OfferCard({
         <AutolawyerSelect lawyers={lawyers} selectedId={selectedAutolawyerId} onSelect={onSelectAutolawyer} />
       )}
 
-      {/* «Додаткове покриття» — єдиний dropdown: перший пункт-плейсхолдер, далі варіанти. */}
+      {/* «Додаткове покриття» — кастомний дропдаун (як Автоюрист), з описом під пунктами. */}
       {dgoList.length > 0 && (
-        <div className="relative w-full">
-          <select
-            aria-label={t({ uk: "Додаткове покриття", en: "Additional coverage" })}
-            value={selectedDgoId || ""}
-            onChange={(e) => onSelectDgo(e.target.value || null)}
-            className={cn(
-              "w-full cursor-pointer appearance-none rounded-xl border py-2.5 pl-3.5 pr-9 text-sm font-medium outline-none transition-all",
-              selectedDgoId
-                ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-zinc-200 dark:ring-indigo-800"
-                : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-            )}
-          >
-            <option value="">{t({ uk: "Додаткове покриття", en: "Additional coverage" })}</option>
-            {dgoList.map((dgo) => (
-              <option key={dgo.id} value={dgo.id}>
-                +{Number(dgo.coverage).toLocaleString()} {t({ uk: "грн", en: "UAH" })} — {formatPrice(Number(dgo.cost))}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
-        </div>
+        <CoverageSelect dgoList={dgoList} selectedId={selectedDgoId} onSelect={onSelectDgo} />
       )}
     </div>
   );
