@@ -181,12 +181,15 @@ export function InsuranceFlow() {
     // меню на /osago розпізнавався як навігація й повертав на головний екран.
     router.replace(buildOffersUrl(vehicle, buyer, state.plate), { scroll: false });
 
-    // Fetch offers without blocking the UI transition (period передаємо явно).
-    void fetchOffers(vehicle, buyer, period);
-
-    // Після підтвердження авто одразу просимо дати народження (страхувальник +
-    // наймолодший водій) у діалозі «Індивідуальна пропозиція», якщо їх ще не введено.
-    if (!buyer.policyholderBirthDate || !buyer.youngestBirthDate) setShowBuyerModal(true);
+    // Якщо ДН ще нема — спершу ОБОВʼЯЗКОВО просимо їх у діалозі й НЕ вантажимо
+    // пропозиції двічі: завантажимо один раз після «Застосувати» (handleBuyerConfirm).
+    // Якщо ДН уже є (редагування авто / відновлення з URL) — вантажимо одразу.
+    const askDobs = !buyer.policyholderBirthDate || !buyer.youngestBirthDate;
+    if (askDobs) {
+      setShowBuyerModal(true);
+    } else {
+      void fetchOffers(vehicle, buyer, period);
+    }
   };
 
   // Зміна даних страхувальника з банера → зберігаємо й перераховуємо пропозиції.
