@@ -249,13 +249,10 @@ function CoverageSelect({ dgoList, selectedId, onSelect }: {
                 key={d.id}
                 type="button"
                 onClick={() => { onSelect(d.id); setOpen(false); }}
-                className={cn("flex w-full flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors", active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60")}
+                className={cn("flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition-colors", active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60")}
               >
-                <span className="flex items-center justify-between gap-2">
-                  <span className={cn("text-sm font-semibold", active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-100")}>{cov(d)}</span>
-                  <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{cost(d)}</span>
-                </span>
-                <span className="text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">{t({ uk: "Додатковий ліміт відшкодування понад базовий ОСЦПВ", en: "Extra payout limit above the base OSAGO" })}</span>
+                <span className={cn("text-sm font-semibold", active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-100")}>{cov(d)}</span>
+                <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">{cost(d)}</span>
               </button>
             );
           })}
