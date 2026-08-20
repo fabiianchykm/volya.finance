@@ -145,20 +145,15 @@ export function OffersSection({
           <button
             type="button"
             onClick={onEditBuyer}
-            className="block w-full border-t border-zinc-100 bg-indigo-50/40 px-6 py-4 text-left transition-colors hover:bg-indigo-50 dark:border-zinc-800 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50"
+            className="flex w-full items-center justify-between gap-3 border-t border-zinc-100 bg-indigo-50/40 px-6 py-4 text-left transition-colors hover:bg-indigo-50 dark:border-zinc-800 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/50"
           >
-            <span className="flex items-center justify-between gap-3">
-              <span className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="min-w-0">
+              <span className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })}</span>
               </span>
-              <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                {buyerSet ? t({ uk: "Змінити", en: "Edit" }) : t({ uk: "Вказати", en: "Specify" })}
-                <ChevronRight className="h-4 w-4" />
-              </span>
-            </span>
 
-            {/* Введені дані як чіпи (з реєстру приходить лише ВІК власника → рік). */}
-            <span className="mt-2.5 flex flex-wrap gap-1.5">
+              {/* Введені дані як чіпи (з реєстру приходить лише ВІК власника → рік). */}
+              <span className="mt-2.5 flex flex-wrap gap-1.5">
               {buyer.policyholderBirthDate && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-white/80 px-2 py-1 text-[11px] text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Страхувальник (покупець)", en: "Policyholder (buyer)" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{buyer.policyholderBirthDate}</span></span>
               )}
@@ -171,6 +166,11 @@ export function OffersSection({
               {buyerSet && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900">{privilegeLabel}</span>
               )}
+            </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+              {buyerSet ? t({ uk: "Змінити", en: "Edit" }) : t({ uk: "Вказати", en: "Specify" })}
+              <ChevronRight className="h-4 w-4" />
             </span>
           </button>
         </div>
