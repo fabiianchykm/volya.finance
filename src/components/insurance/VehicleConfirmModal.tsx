@@ -202,16 +202,24 @@ export function VehicleConfirmModal({
       )}
       {cityResults.length > 0 && !selectedCity && cityQuery.length >= 2 && (
         <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden dark:border-zinc-700 dark:bg-zinc-900">
-          {cityResults.map((city) => (
-            <button
-              key={city.id}
-              type="button"
-              onClick={() => { setSelectedCity(city); setCityQuery(cityShort(city.name_full_name_ua ?? city.name_ua)); setCityResults([]); }}
-              className="w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 transition-colors dark:text-zinc-200 dark:hover:bg-zinc-800/60"
-            >
-              {cityShort(city.name_full_name_ua ?? city.name_ua)}
-            </button>
-          ))}
+          {cityResults.map((city) => {
+            const short = cityShort(city.name_full_name_ua ?? city.name_ua);
+            // Повна назва (з районом/областю) — щоб відрізнити однойменні міста; у полі
+            // після вибору лишається лише коротка назва міста.
+            const full = (city.name_full_name_ua || city.name_ua || "").replace(/,?\s*Україна\.?$/i, "");
+            const region = full.replace(new RegExp(`^м?\\.?\\s*${short}\\s*,?\\s*`, "i"), "").trim();
+            return (
+              <button
+                key={city.id}
+                type="button"
+                onClick={() => { setSelectedCity(city); setCityQuery(short); setCityResults([]); }}
+                className="w-full px-3 py-2 text-left hover:bg-zinc-50 transition-colors dark:hover:bg-zinc-800/60"
+              >
+                <span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{short}</span>
+                {region && <span className="text-xs text-zinc-400 dark:text-zinc-500"> · {region}</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Info } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Info, Car, MapPin, CalendarDays } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
@@ -57,6 +57,14 @@ function OsagoInfo() {
 
 type SortKey = "price_asc" | "price_desc";
 
+// Прибираємо «Україна» та (коли відомий район) — область, щоб не захаращувати рядок.
+function cityLabel(city: string): string {
+  const parts = city.replace(/,?\s*Україна\.?$/i, "").split(",").map((s) => s.trim()).filter(Boolean);
+  const hasRaion = parts.some((p) => /р-?н|район/i.test(p));
+  const kept = hasRaion ? parts.filter((p) => !/\bобл(асть|\.)?/i.test(p)) : parts;
+  return kept.join(", ");
+}
+
 export function OffersSection({
   offers,
   loading = false,
@@ -108,11 +116,21 @@ export function OffersSection({
               <span className="text-zinc-600 font-medium dark:text-zinc-300">{t({ uk: "Автоцивілка", en: "OSAGO" })}</span>
             </div>
 
-            <p className="font-bold text-zinc-900 inline-flex items-center gap-2 flex-wrap dark:text-zinc-100" style={{ fontSize: 19 }}>
-              {vehicle.mark} {vehicle.model}
-              {vehicle.year && `, ${vehicle.year}`}
-              {vehicle.cityName && `, ${vehicle.cityName.replace(/,?\s*Україна$/i, '')}`}
-              {`, ${periodLabel}`}
+            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 18 }}>
+              <span className="inline-flex items-center gap-1.5">
+                <Car className="h-4 w-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
+                {vehicle.mark} {vehicle.model}{vehicle.year ? `, ${vehicle.year}` : ""}
+              </span>
+              {vehicle.cityName && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
+                  {cityLabel(vehicle.cityName)}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarDays className="h-4 w-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
+                {periodLabel}
+              </span>
               <button
                 onClick={onEdit}
                 aria-label={t({ uk: "Змінити дані авто", en: "Edit vehicle data" })}
@@ -120,7 +138,7 @@ export function OffersSection({
               >
                 <Pencil className="h-4 w-4" />
               </button>
-            </p>
+            </div>
           </div>
 
           {/* Індивідуальна пропозиція: знижка + введені дані (впливають на ціну). */}
