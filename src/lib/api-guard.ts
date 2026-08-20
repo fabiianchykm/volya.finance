@@ -65,12 +65,24 @@ function isSameOrigin(req: NextRequest): boolean {
   return false;
 }
 
+// Мобільний застосунок не має Origin/Referer нашого сайту, тож пускаємо його за
+// спільним секретом у заголовку `x-api-key` (env MOBILE_API_KEY). Це «мʼякий» бар'єр
+// проти наївного скрапінгу (ключ у бінарнику застосунку не є справжнім секретом) —
+// rate-limit усе одно застосовується, а доступ до персональних даних (поліси, профіль)
+// далі захищений сесією NextAuth, а не цим ключем.
+function isMobileClient(req: NextRequest): boolean {
+  const key = process.env.MOBILE_API_KEY;
+  if (!key) return false;
+  const sent = req.headers.get("x-api-key");
+  return !!sent && sent === key;
+}
+
 /**
  * Перевіряє лише походження запиту (без rate-limit).
- * Повертає NextResponse з 403, якщо запит не з нашого сайту, інакше null.
+ * Повертає NextResponse з 403, якщо запит не з нашого сайту (і не мобільний клієнт), інакше null.
  */
 export function assertSameOrigin(req: NextRequest): NextResponse | null {
-  if (!isSameOrigin(req)) {
+  if (!isSameOrigin(req) && !isMobileClient(req)) {
     return NextResponse.json({ success: false, error: "Доступ заборонено" }, { status: 403 });
   }
   return null;
