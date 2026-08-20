@@ -14,6 +14,8 @@ import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insuran
 interface OffersSectionProps {
   offers: InsuranceOffer[];
   loading?: boolean;
+  /** Відкрито обовʼязковий діалог ДН і ще не рахували — показуємо спокійний плейсхолдер, не «пошук». */
+  awaitingBuyer?: boolean;
   vehicle: VehicleData;
   buyer: BuyerData;
   onBack: () => void;
@@ -68,6 +70,7 @@ function cityLabel(city: string): string {
 export function OffersSection({
   offers,
   loading = false,
+  awaitingBuyer = false,
   vehicle,
   buyer,
   onBack,
@@ -214,7 +217,12 @@ export function OffersSection({
         )}
 
 
-        {loading ? (
+        {awaitingBuyer && offers.length === 0 && !loading ? (
+          <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+            <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Заповніть дати народження", en: "Enter the birth dates" })}</p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Щоб розрахувати персональну ціну по кожній страховій.", en: "So we can calculate a personalised price for each insurer." })}</p>
+          </div>
+        ) : loading ? (
           <div className="space-y-3">
             <SearchingInsurers />
             {Array.from({ length: 5 }).map((_, i) => (

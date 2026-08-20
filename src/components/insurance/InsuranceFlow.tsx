@@ -176,15 +176,16 @@ export function InsuranceFlow() {
     setError(null);
     setShowVehicleModal(false);
     setEditingVehicle(false);
-    setState((s) => ({ ...s, step: "offers", vehicle, buyer, periodId: period, offers: [], offersLoading: true }));
+    // Якщо ДН ще нема — спершу ОБОВʼЯЗКОВО просимо їх у діалозі й НЕ вантажимо
+    // пропозиції двічі: завантажимо один раз після «Застосувати» (handleBuyerConfirm).
+    // Тоді offersLoading=false, щоб за модалкою НЕ крутився фейковий «пошук».
+    // Якщо ДН уже є (редагування авто / відновлення з URL) — вантажимо одразу.
+    const askDobs = !buyer.policyholderBirthDate || !buyer.youngestBirthDate;
+    setState((s) => ({ ...s, step: "offers", vehicle, buyer, periodId: period, offers: [], offersLoading: !askDobs }));
     // Номер авто (напівпублічний) — у URL через РОУТЕР (не replaceState), щоб клік по
     // меню на /osago розпізнавався як навігація й повертав на головний екран.
     router.replace(buildOffersUrl(vehicle, buyer, state.plate), { scroll: false });
 
-    // Якщо ДН ще нема — спершу ОБОВʼЯЗКОВО просимо їх у діалозі й НЕ вантажимо
-    // пропозиції двічі: завантажимо один раз після «Застосувати» (handleBuyerConfirm).
-    // Якщо ДН уже є (редагування авто / відновлення з URL) — вантажимо одразу.
-    const askDobs = !buyer.policyholderBirthDate || !buyer.youngestBirthDate;
     if (askDobs) {
       setShowBuyerModal(true);
     } else {
@@ -369,6 +370,7 @@ export function InsuranceFlow() {
         <OffersSection
           offers={state.offers}
           loading={state.offersLoading}
+          awaitingBuyer={showBuyerModal && state.offers.length === 0}
           vehicle={state.vehicle}
           buyer={state.buyer}
           onBack={() => { setState((s) => ({ ...s, step: "hero" })); router.replace(pathname, { scroll: false }); }}

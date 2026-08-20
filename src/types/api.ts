@@ -170,6 +170,8 @@ export interface CalculatorParams {
   "car[birthdayAt]"?: string;
   "customer[dateBirth]"?: string;
   customerBirthday?: string;
+  /** Обмежити розрахунок однією СК (модуль Ukasko) — для по-модульного паралельного запиту. */
+  moduleId?: number;
 }
 
 export interface CustomerDocumentation {

@@ -49,9 +49,8 @@ export interface OsagoDobs {
 
 // Повертає ДАТУ (DD.MM.YYYY), за якою треба рахувати ціну конкретної СК, з розумними
 // фолбеками, якщо потрібної дати немає. Порожньо → викликач підставляє свій дефолт.
-export function osagoDobForCompany(companyName: string | undefined, dobs: OsagoDobs): string {
+export function osagoDobForBasis(kind: AgeBasisKind | undefined, dobs: OsagoDobs): string {
   const { owner = "", policyholder = "", youngest = "" } = dobs;
-  const kind = osagoAgeBasis(companyName)?.kind;
   switch (kind) {
     case "owner":
       return owner || policyholder || youngest;
@@ -61,7 +60,11 @@ export function osagoDobForCompany(companyName: string | undefined, dobs: OsagoD
     case "driver":
       return youngest || policyholder || owner;
     default:
-      // Невідома СК — рахуємо за страхувальником (найпоширеніша основа).
+      // Невідома основа — рахуємо за страхувальником (найпоширеніша).
       return policyholder || owner || youngest;
   }
+}
+
+export function osagoDobForCompany(companyName: string | undefined, dobs: OsagoDobs): string {
+  return osagoDobForBasis(osagoAgeBasis(companyName)?.kind, dobs);
 }
