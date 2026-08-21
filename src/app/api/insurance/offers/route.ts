@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
-import { osagoDobForBasis } from "@/lib/osago-age-basis";
-import { OSAGO_MODULE_BASIS } from "@/lib/osago-modules";
 import type { CalculatorParams, InsuranceOffer } from "@/types/api";
 
 // Калькулятор Ukasko рахує 18+ страхових ~7с. Кешуємо успішні результати по
@@ -31,14 +29,6 @@ async function offersForDob(base: CalculatorParams, dob: string) {
     if (offerCount(retry) > 0) data = retry;
   }
   return data;
-}
-
-// Розрахунок ОДНІЄЇ СК (moduleId) під конкретну ДН — легкий (~2-4с) і паралелиться.
-async function offersForModule(base: CalculatorParams, moduleId: number, dob: string): Promise<InsuranceOffer[]> {
-  const params: CalculatorParams = { ...base, moduleId, "car[birthdayAt]": dob, "customer[dateBirth]": dob };
-  const data = await ukaskoService.getOffers(params);
-  const arr = (data as { data?: InsuranceOffer[] })?.data;
-  return Array.isArray(arr) ? arr : [];
 }
 
 export async function GET(req: NextRequest) {
@@ -84,32 +74,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: hit.data, cached: true });
     }
 
-    // ПО-МОДУЛЬНО: кожну СК тягнемо окремим легким запитом (moduleId) з ДН за ЇЇ
-    // основою — усі паралельно. Швидше й надійніше за повний батч; падіння однієї
-    // СК не валить решту (allSettled). Так само отримуємо точну ціну по кожній СК
-    // за один прохід.
-    const perModule = await Promise.allSettled(
-      OSAGO_MODULE_BASIS.map(({ moduleId, basis }) =>
-        offersForModule(base, moduleId, osagoDobForBasis(basis, dobs) || DEFAULT_DOB)
-      )
-    );
-
-    const seen = new Set<string>();
-    const merged: InsuranceOffer[] = [];
-    for (const r of perModule) {
-      if (r.status !== "fulfilled") continue;
-      for (const o of r.value) {
-        if (o?.companyId && !seen.has(o.companyId)) { seen.add(o.companyId); merged.push(o); }
-      }
-    }
-
-    // Фолбек: якщо по-модульно нічого не прийшло (напр. Ukasko змінив набір модулів
-    // або тимчасовий збій) — повний батч за страхувальником, щоб не показати порожньо.
-    if (merged.length === 0) {
-      const fb = await offersForDob(base, dobs.policyholder || dobs.owner || dobs.youngest || DEFAULT_DOB);
-      const arr = (fb as { data?: InsuranceOffer[] })?.data;
-      if (Array.isArray(arr)) for (const o of arr) if (o?.companyId && !seen.has(o.companyId)) { seen.add(o.companyId); merged.push(o); }
-    }
+    // ОДИН повний батч під ЄДИНУ дату (страхувальника) — найнадійніше: 1 звернення
+    // до Ukasko. Кілька паралельних (по-модульно чи під різні ДН) тригерять
+    // Cloudflare-ліміт Ukasko на серверний IP → порожня видача. Точну ціну обраної
+    // СК за її основою уточнюємо на checkout (revalidateOffer).
+    const dob = dobs.policyholder || dobs.owner || dobs.youngest || DEFAULT_DOB;
+    const batch = await offersForDob(base, dob);
+    const arr = (batch as { data?: InsuranceOffer[] })?.data;
+    const merged: InsuranceOffer[] = Array.isArray(arr) ? arr.filter((o) => o?.companyId) : [];
 
     const data = { status: "success", message: "", data: merged, errorInfo: [] };
 
