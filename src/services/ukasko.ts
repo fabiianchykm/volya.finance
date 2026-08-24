@@ -157,6 +157,14 @@ async function postJson(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      // ЦЕНТРАЛІЗОВАНЕ логування падінь модулів СК (5xx / PHP «undefined offset»):
+      // через postJson ідуть ВСІ замовлення (ОСАЦВ, Тварини, Туризм, Зелена карта,
+      // МініКаско, Житло), тож сирий текст + offerId/moduleId завжди буде в Cloud
+      // Logging — незалежно від того, чи проковтне помилку catch продукту нижче.
+      if (res.status >= 500) {
+        const d = (data ?? {}) as { offerId?: unknown; moduleId?: unknown };
+        console.error(`[ukasko POST 5xx] ${target} offerId=${d.offerId ?? "-"} moduleId=${d.moduleId ?? "-"} raw:`, text.slice(0, 500));
+      }
       throw new HttpError(res.status, `[POST ${target}] ${res.status}: ${text.slice(0, 400)}`);
     }
 
@@ -183,6 +191,9 @@ async function getJson(url: string, token: string): Promise<unknown> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    if (res.status >= 500) {
+      console.error(`[ukasko GET 5xx] ${url.slice(0, 160)} raw:`, text.slice(0, 400));
+    }
     throw new HttpError(res.status, `[GET ${url}] ${res.status}: ${text.slice(0, 400)}`);
   }
 
@@ -754,11 +765,8 @@ export class UkaskoService {
       // 500-кою з PHP-помилкою ("Undefined offset", "Server Error") замість чистої
       // валідації. Показуємо дружнє повідомлення замість технічного сміття.
       const m = e instanceof Error ? e.message : String(e);
-      // Логуємо СИРИЙ текст помилки + який offerId/moduleId — щоб бачити, яке саме
-      // поле «undefined» валить модуль СК (наш payload чи їхній баг). Без цього
-      // діагностувати неможливо: далі клієнту йде лише дружнє повідомлення.
-      console.error("[ukasko declare] module error. offerId=", payload.offerId,
-        "moduleId=", payload.moduleId, "raw:", m.slice(0, 500));
+      // Сирий 5xx-текст модуля СК логується централізовано в postJson (див. нижче),
+      // тож тут лише перетворюємо технічне сміття на дружнє повідомлення.
       if (/undefined offset|server error|undefined (index|array key)/i.test(m)) {
         throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
       }
