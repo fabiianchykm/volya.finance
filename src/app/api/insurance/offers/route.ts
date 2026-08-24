@@ -57,7 +57,12 @@ export async function GET(req: NextRequest) {
       registrationPlaceId: Number(searchParams.get("registrationPlaceId") ?? 1),
       zone: Number(searchParams.get("zone") ?? 1),
       withoutOtk: 1,
-      startDate: searchParams.get("startDate") ?? new Date().toISOString().slice(0, 10).split("-").reverse().join("."),
+      // Дефолт — ЗАВТРА (не сьогодні): OSAGO-калькулятор Ukasko на день «сьогодні»
+      // віддає 0 пропозицій (поліс не може стартувати заднім числом/сьогодні).
+      startDate: searchParams.get("startDate") ?? (() => {
+        const d = new Date(); d.setDate(d.getDate() + 1);
+        return d.toISOString().slice(0, 10).split("-").reverse().join(".");
+      })(),
       customerPrivilege: Number(searchParams.get("customerPrivilege") ?? 1),
       registrationType: Number(searchParams.get("registrationType") ?? 1),
       period_id: Number(searchParams.get("period_id") ?? 12),

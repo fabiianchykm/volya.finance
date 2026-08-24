@@ -754,6 +754,11 @@ export class UkaskoService {
       // 500-кою з PHP-помилкою ("Undefined offset", "Server Error") замість чистої
       // валідації. Показуємо дружнє повідомлення замість технічного сміття.
       const m = e instanceof Error ? e.message : String(e);
+      // Логуємо СИРИЙ текст помилки + який offerId/moduleId — щоб бачити, яке саме
+      // поле «undefined» валить модуль СК (наш payload чи їхній баг). Без цього
+      // діагностувати неможливо: далі клієнту йде лише дружнє повідомлення.
+      console.error("[ukasko declare] module error. offerId=", payload.offerId,
+        "moduleId=", payload.moduleId, "raw:", m.slice(0, 500));
       if (/undefined offset|server error|undefined (index|array key)/i.test(m)) {
         throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
       }
