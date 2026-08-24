@@ -486,14 +486,15 @@ export class UkaskoService {
   async createGreenCardOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string; mtsbuLink?: string }> {
     // params ОБОВʼЯЗКОВИЙ (як у туристичному): без нього бекенд читає params['statusId']
     // з null і падає 500 "array offset on null" (OrderGreenCardRequest.php:283).
-    // type:"declare" — ЛИШЕ заявити замовлення й отримати orderId (реальна видача —
-    // пізніше через contract/confirm після оплати). type:"save" ТУТ помилковий: він
-    // одразу запускає лістенер збереження транзакції договору (SaveTransactionContract),
-    // а обʼєкта договору ще нема → 500 "Trying to get property 'discount_price' of
-    // non-object" (перевірено на dev: save падає, declare/draft повертають id).
+    // type:"make" — документований тип повного замовлення (swagger 2026-08 —
+    // devconnect.ukasko.ua/docs/greencard-swagger.yaml). Раніше слали недокументоване
+    // "declare"; тест на проді (2026-08-24) підтвердив: "make" на draft-кроці працює
+    // ІДЕНТИЧНО (200 + id), тож перейшли на документований варіант. type:"save" ТУТ
+    // помилковий: запускає лістенер SaveTransactionContract, а обʼєкта договору ще нема
+    // → 500 "Trying to get property 'discount_price' of non-object" (підтверджено).
     // statusId:-1 = крок 1, чернетка (за схемою). type — обовʼязковий (без нього
     // "Undefined index: type"). isDP — прапорець модуля ТАС (без нього "Undefined index: isDP").
-    const payload = { ...orderData, isDP: false, params: { type: "declare", statusId: -1 } };
+    const payload = { ...orderData, isDP: false, params: { type: "make", statusId: -1 } };
     const raw = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/greencard/order/create`,
       payload,
@@ -524,7 +525,7 @@ export class UkaskoService {
     // Ukasko: невдале заявлення повертає status:"success", АЛЕ data:[] і message =
     // текст помилки (напр. «Некорректный ИНН», «Не заповнено номер кузова»). Тому
     // виявляємо «тиху» помилку за порожнім data + message і показуємо її клієнту.
-    const declarePayload = { ...orderData, orderId: first.id, isDP: false, params: { type: "declare", statusId: null } };
+    const declarePayload = { ...orderData, orderId: first.id, isDP: false, params: { type: "make", statusId: null } };
     const decRaw = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/greencard/order/create`,
       declarePayload,
