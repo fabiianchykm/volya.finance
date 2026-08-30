@@ -148,7 +148,9 @@ export function VehicleConfirmModal({
     const age = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
     return age >= 18 && age <= 99;
   };
-  const agesValid = !collectAges || (dobOk(policyholderBirth) && dobOk(youngestBirth));
+  // Перед пропозиціями рахуємо список по наймолодшому водію → вимагаємо ЛИШЕ його ДН.
+  // ДН страхувальника спитаємо на checkout (там і так вводиться у формі покупця).
+  const agesValid = !collectAges || dobOk(youngestBirth);
   const ages: DriverAges = { policyholderBirthDate: policyholderBirth, youngestBirthDate: youngestBirth };
 
   const handleConfirm = () => {
@@ -394,25 +396,16 @@ export function VehicleConfirmModal({
           </div>
         )}
 
-        {/* ДН страхувальника + наймолодшого водія. Різні СК рахують ціну за віком
-            різної особи (власника беремо з реєстру за номером), тож збираємо обидві —
-            щоб показати ТОЧНУ ціну по кожній компанії. Обовʼязкові. */}
+        {/* Список пропозицій рахуємо по наймолодшому водію → просимо ЛИШЕ його ДН.
+            ДН страхувальника вводиться на checkout (у формі покупця). */}
         {collectAges && (
           <div className="space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {t({
-                uk: "Кожна страхова рахує ціну за віком різної особи. Вкажіть дати народження — покажемо точну ціну по кожній компанії.",
-                en: "Each insurer prices by a different person's age. Enter the birth dates — we'll show the exact price for each company.",
+                uk: "Ціну рахуємо за віком наймолодшого водія. Вкажіть його дату народження — покажемо пропозиції.",
+                en: "We price by the youngest driver's age. Enter their date of birth — we'll show the offers.",
               })}
             </p>
-            <DateInput
-              label={t({ uk: "Дата народження страхувальника (покупця)", en: "Policyholder's (buyer's) date of birth" })}
-              value={policyholderBirth}
-              onChange={(v) => { setPolicyholderBirth(v); setAgeError(false); }}
-              required
-              defaultYear={1990}
-              error={ageError && !dobOk(policyholderBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
-            />
             <DateInput
               label={t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}
               value={youngestBirth}
