@@ -92,15 +92,16 @@ export function InsuranceFlow() {
           model: car.model ?? "",
           mark: car.mark ?? "",
           autoCategory: car.autoCategory ?? "B1",
-          // Якщо реєстр повернув місто — беремо його; інакше дефолт Київ (зона 1).
-          // Поле міста в модалці редаговане, тож користувач може змінити Київ на потрібне.
+          // Якщо реєстр повернув місто — беремо його. Якщо НІ — лишаємо cityId/zone
+          // порожніми (НЕ підставляємо Київ!): фейковий Київ зони 1 дав би невірну ціну
+          // і міг спричинити відмову СК на declare. Модалка тоді попросить обрати місто.
           ...(car.city?.id
             ? {
                 cityId: car.city.id,
                 cityName: car.city.name_full_name_ua || car.city.name_ua || "",
                 zone: car.city.zone,
               }
-            : { cityId: 1, cityName: "м. Київ", zone: 1 }),
+            : {}),
           capacity: car.additionalParameters?.capacity
             ? Number(car.additionalParameters.capacity)
             : undefined,
@@ -276,7 +277,7 @@ export function InsuranceFlow() {
           autoCategory: car.autoCategory ?? "B1",
           ...(car.city?.id
             ? { cityId: car.city.id, cityName: car.city.name_full_name_ua || car.city.name_ua || "", zone: car.city.zone }
-            : { cityId: 1, cityName: "м. Київ", zone: 1 }),
+            : {}),
           capacity: car.additionalParameters?.capacity ? Number(car.additionalParameters.capacity) : undefined,
           numberOfSeats: car.additionalParameters?.numberOfSeats ? Number(car.additionalParameters.numberOfSeats) : undefined,
           ownWeight: car.additionalParameters?.ownWeight ? Number(car.additionalParameters.ownWeight) : undefined,
@@ -294,6 +295,14 @@ export function InsuranceFlow() {
           policyholderBirthDate: sp.get("ph") || "",
           youngestBirthDate: sp.get("yd") || "",
         };
+        // Реєстр не повернув місто реєстрації → не шлемо офери з порожньою зоною,
+        // а відкриваємо модалку, щоб користувач обрав місто (інакше ціна невірна).
+        if (!vehicle.cityId) {
+          setState((s) => ({ ...s, plate, vehicle, buyer: restoredBuyer }));
+          setEditingVehicle(false);
+          setShowVehicleModal(true);
+          return;
+        }
         setState((s) => ({ ...s, plate, vehicle, buyer: restoredBuyer, step: "offers", offers: [], offersLoading: true }));
         void fetchOffers(vehicle, restoredBuyer, 12);
       } catch {

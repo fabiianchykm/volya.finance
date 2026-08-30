@@ -157,7 +157,16 @@ export function VehicleConfirmModal({
     // щоб не затерти введені в «Індивідуальній пропозиції» ДН порожніми значеннями.
     const outAges = collectAges ? ages : undefined;
     if (vehicle && !manualMode) {
-      onConfirm(vehicle, period, outAges);
+      // Якщо реєстр не дав місто — беремо обране користувачем (інакше зона порожня).
+      const withCity: VehicleData = vehicle.cityId
+        ? vehicle
+        : {
+            ...vehicle,
+            cityId: selectedCity?.id,
+            cityName: selectedCity?.name_full_name_ua || selectedCity?.name_ua,
+            zone: selectedCity?.zone,
+          };
+      onConfirm(withCity, period, outAges);
       return;
     }
     // Ручний ввід: місто з вибору, із дефолтом Київ, якщо не обрано.
@@ -280,13 +289,26 @@ export function VehicleConfirmModal({
               </p>
             </div>
 
-            {/* Місце реєстрації */}
-            <div className="text-center">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                <span className="font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Місце реєстрації: ", en: "Place of registration: " })}</span>
-                {vehicle.cityName?.replace(/,?\s*Україна$/i, '')}
-              </p>
-            </div>
+            {/* Місце реєстрації: якщо реєстр його повернув — показуємо; якщо НІ —
+                просимо обрати вручну (без фейкового Києва, що дав би невірну зону/ціну). */}
+            {vehicle.cityId ? (
+              <div className="text-center">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Місце реєстрації: ", en: "Place of registration: " })}</span>
+                  {vehicle.cityName?.replace(/,?\s*Україна$/i, '')}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-900 dark:bg-amber-950/40">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    {t({ uk: "Реєстр не повернув місце реєстрації авто — оберіть місто самостійно (впливає на ціну).", en: "The registry did not return the vehicle's place of registration — please select the city (it affects the price)." })}
+                  </p>
+                </div>
+                {cityField}
+              </div>
+            )}
 
             {/* VIN та категорія */}
             <div className="text-center space-y-1">
@@ -417,7 +439,7 @@ export function VehicleConfirmModal({
             onClick={handleConfirm}
             loading={loading}
             className="w-full"
-            disabled={(manualMode && !selectedCity) || !agesValid}
+            disabled={(manualMode && !selectedCity) || (!manualMode && !vehicle?.cityId && !selectedCity) || !agesValid}
           >
             {t({ uk: "Підтвердити", en: "Confirm" })}
           </Button>

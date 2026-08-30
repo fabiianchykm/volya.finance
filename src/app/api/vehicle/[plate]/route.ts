@@ -14,6 +14,13 @@ export async function GET(
     const { plate } = await params;
     const decoded = decodeURIComponent(plate).toUpperCase().replace(/\s/g, "");
     const data = await ukaskoService.getCarByPlate(decoded);
+    // Діагностика: реєстр знайшов авто, але БЕЗ міста реєстрації → фронт мусить
+    // просити місто вручну (інакше раніше підставлявся фейковий Київ зони 1 →
+    // завищена ціна). Логуємо номер, щоб оцінити масштаб проблеми на проді.
+    const city = (data as { city?: { id?: unknown; zone?: unknown } })?.city;
+    if (!city?.id) {
+      console.warn(`[vehicle no-city] plate=${decoded} mark=${data?.mark ?? "-"} model=${data?.model ?? "-"} year=${data?.year ?? "-"} cityRaw=${JSON.stringify(city ?? null).slice(0, 200)}`);
+    }
     return NextResponse.json({ success: true, data });
   } catch (error) {
     const raw = error instanceof Error ? error.message : "Unknown error";
