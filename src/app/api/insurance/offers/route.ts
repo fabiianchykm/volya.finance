@@ -79,11 +79,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: hit.data, cached: true });
     }
 
-    // ОДИН повний батч під ЄДИНУ дату (страхувальника) — найнадійніше: 1 звернення
-    // до Ukasko. Кілька паралельних (по-модульно чи під різні ДН) тригерять
-    // Cloudflare-ліміт Ukasko на серверний IP → порожня видача. Точну ціну обраної
-    // СК за її основою уточнюємо на checkout (revalidateOffer).
-    const dob = dobs.policyholder || dobs.owner || dobs.youngest || DEFAULT_DOB;
+    // ОДИН повний батч під ЄДИНУ дату — найнадійніше: 1 звернення до Ukasko.
+    // Кілька паралельних (по-модульно чи під різні ДН) тригерять Cloudflare-ліміт
+    // Ukasko на серверний IP → порожня видача. Беремо ДН НАЙМОЛОДШОГО ВОДІЯ:
+    // це найконсервативніша (зазвичай найвища) ціна, тож на checkout ціна СК з
+    // іншою основою радше впаде, ніж зросте (без «подорожчання» для клієнта).
+    // Точну ціну обраної СК за її основою уточнюємо на checkout (revalidateOffer).
+    const dob = dobs.youngest || dobs.policyholder || dobs.owner || DEFAULT_DOB;
     const batch = await offersForDob(base, dob);
     const arr = (batch as { data?: InsuranceOffer[] })?.data;
     const merged: InsuranceOffer[] = Array.isArray(arr) ? arr.filter((o) => o?.companyId) : [];
