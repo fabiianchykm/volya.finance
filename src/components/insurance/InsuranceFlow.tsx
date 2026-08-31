@@ -181,7 +181,8 @@ export function InsuranceFlow() {
     // пропозиції двічі: завантажимо один раз після «Застосувати» (handleBuyerConfirm).
     // Тоді offersLoading=false, щоб за модалкою НЕ крутився фейковий «пошук».
     // Якщо ДН уже є (редагування авто / відновлення з URL) — вантажимо одразу.
-    const askDobs = !buyer.policyholderBirthDate || !buyer.youngestBirthDate;
+    // Список рахуємо по наймолодшому водію → просимо лише його ДН (страхувальника — на checkout).
+    const askDobs = !buyer.youngestBirthDate;
     setState((s) => ({ ...s, step: "offers", vehicle, buyer, periodId: period, offers: [], offersLoading: !askDobs }));
     // Номер авто (напівпублічний) — у URL через РОУТЕР (не replaceState), щоб клік по
     // меню на /osago розпізнавався як навігація й повертав на головний екран.
@@ -395,8 +396,8 @@ export function InsuranceFlow() {
           buyer={state.buyer}
           onConfirm={handleBuyerConfirm}
           loading={state.offersLoading}
-          // Обовʼязково заповнити, поки ДН ще не введені (не можна пропустити крок).
-          required={!state.buyer.policyholderBirthDate || !state.buyer.youngestBirthDate}
+          // Обовʼязково заповнити, поки ДН наймолодшого ще нема (не можна пропустити крок).
+          required={!state.buyer.youngestBirthDate}
         />
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
       </>

@@ -25,12 +25,9 @@ interface BuyerModalProps {
 export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required }: BuyerModalProps) {
   const { t } = useI18n();
   const [privilegeId, setPrivilegeId] = useState(buyer.privilegeId);
-  // Дати з попереднього кроку (VehicleConfirmModal) — підтягуємо й даємо редагувати:
-  // різні СК рахують ціну за віком різної особи (osago-age-basis).
-  const [policyholderBirth, setPolicyholderBirth] = useState(buyer.policyholderBirthDate ?? "");
+  // Список пропозицій рахуємо по наймолодшому водію → тут просимо ЛИШЕ його ДН.
+  // ДН страхувальника вводиться на checkout (у формі покупця).
   const [youngestBirth, setYoungestBirth] = useState(buyer.youngestBirthDate ?? "");
-  // «Та сама дата»: наймолодший водій = страхувальник (щоб не вводити двічі).
-  const [sameDob, setSameDob] = useState(false);
   const [ageError, setAgeError] = useState(false);
   const [wasOpen, setWasOpen] = useState(false);
 
@@ -38,10 +35,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
   if (open && !wasOpen) {
     setWasOpen(true);
     setPrivilegeId(buyer.privilegeId);
-    setPolicyholderBirth(buyer.policyholderBirthDate ?? "");
     setYoungestBirth(buyer.youngestBirthDate ?? "");
-    // Якщо дати вже введені й збігаються — вмикаємо «та сама дата».
-    setSameDob(!!buyer.policyholderBirthDate && buyer.policyholderBirthDate === buyer.youngestBirthDate);
     setAgeError(false);
   } else if (!open && wasOpen) {
     setWasOpen(false);
@@ -54,9 +48,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
     const age = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
     return age >= 18 && age <= 99;
   };
-  // Якщо «та сама дата» — наймолодший = страхувальник.
-  const effectiveYoungest = sameDob ? policyholderBirth : youngestBirth;
-  const datesValid = dobOk(policyholderBirth) && dobOk(effectiveYoungest);
+  const datesValid = dobOk(youngestBirth);
 
   const handleConfirm = () => {
     if (required && !datesValid) { setAgeError(true); return; }
@@ -64,8 +56,9 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
       ...buyer,
       privilegeId,
       customerType: privilegeId === 1 ? 1 : 3,
-      policyholderBirthDate: parseUaDate(policyholderBirth) ? policyholderBirth : "",
-      youngestBirthDate: parseUaDate(effectiveYoungest) ? effectiveYoungest : "",
+      // ДН страхувальника тут не збираємо — вводиться на checkout. Зберігаємо наявне.
+      policyholderBirthDate: buyer.policyholderBirthDate ?? "",
+      youngestBirthDate: parseUaDate(youngestBirth) ? youngestBirth : "",
     });
   };
 
@@ -87,12 +80,12 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
               {required
                 ? t({
-                    uk: "Вкажіть дати народження страхувальника (покупця) й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
-                    en: "Enter the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
+                    uk: "Вкажіть дату народження наймолодшого водія — за нею рахуємо ціну. Дату страхувальника введете при оформленні.",
+                    en: "Enter the youngest driver's date of birth — we price by it. The policyholder's date is entered at checkout.",
                   })
                 : t({
-                    uk: "Заповніть пільгу та дати народження страхувальника (покупця) й наймолодшого водія. Кожна страхова рахує ціну за віком різної особи — тож саме ці дані відкривають найвигіднішу пропозицію для вас.",
-                    en: "Fill in your benefit and the birth dates of the policyholder and youngest driver. Each insurer prices by a different person's age — so these details unlock the best offer for you.",
+                    uk: "Оберіть пільгу та вкажіть дату народження наймолодшого водія — за нею рахуємо ціну. Дату страхувальника введете при оформленні.",
+                    en: "Choose your benefit and enter the youngest driver's date of birth — we price by it. The policyholder's date is entered at checkout.",
                   })}
             </p>
           </div>
@@ -132,39 +125,15 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження страхувальника (покупця)", en: "Policyholder's (buyer's) date of birth" })}</label>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
           <DateInput
-            value={policyholderBirth}
-            onChange={(v) => { setPolicyholderBirth(v); if (ageError) setAgeError(false); }}
+            value={youngestBirth}
+            onChange={(v) => { setYoungestBirth(v); if (ageError) setAgeError(false); }}
             defaultYear={1990}
             required={required}
-            error={ageError && !dobOk(policyholderBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+            error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
           />
         </div>
-
-        {/* Прапорець «та сама дата» — щоб не вводити ДН наймолодшого водія вдруге. */}
-        <label className="flex cursor-pointer items-center gap-2.5 select-none">
-          <input
-            type="checkbox"
-            checked={sameDob}
-            onChange={(e) => { setSameDob(e.target.checked); if (ageError) setAgeError(false); }}
-            className="h-4 w-4 shrink-0 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600 dark:bg-zinc-800"
-          />
-          <span className="text-sm text-zinc-700 dark:text-zinc-200">{t({ uk: "Наймолодший водій — та сама дата народження", en: "Youngest driver has the same date of birth" })}</span>
-        </label>
-
-        {!sameDob && (
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
-            <DateInput
-              value={youngestBirth}
-              onChange={(v) => { setYoungestBirth(v); if (ageError) setAgeError(false); }}
-              defaultYear={1990}
-              required={required}
-              error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
-            />
-          </div>
-        )}
 
         <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} disabled={required && !datesValid} className="w-full">
           {t({ uk: "Застосувати", en: "Apply" })}
