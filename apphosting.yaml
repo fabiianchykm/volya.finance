@@ -42,13 +42,12 @@ env:
   #     - BUILD
   #     - RUNTIME
   # Microsoft Clarity project ID (публічне) — теплові карти й записи сесій.
-  # ВИМКНЕНО на прохання (рекламники не використовують). Компонент лишається в коді
-  # й «спить» без ID. Щоб знову увімкнути — розкоментуй рядки нижче.
-  # - variable: NEXT_PUBLIC_CLARITY_ID
-  #   value: xwju3zp0zl
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
+  # УВІМКНЕНО: записи сесій потрібні, щоб бачити, як клієнти клікають на сайті.
+  - variable: NEXT_PUBLIC_CLARITY_ID
+    value: xwju3zp0zl
+    availability:
+      - BUILD
+      - RUNTIME
   # Базовий URL для NextAuth callback-ів — той самий прод-домен.
   - variable: AUTH_URL
     value: https://volya.finance
