@@ -213,9 +213,6 @@ export function CheckoutClient() {
     setLoading(true);
     setError(null);
     setPriceNotice(null);
-    // Один ключ ідемпотентності на спробу оформлення — захищає draft/declare від
-    // дублів при подвійному кліку чи ретраї мережі.
-    const idemKey = crypto.randomUUID();
     try {
       // Обовʼязково беремо СВІЖИЙ offerId: пропозиції ОСЦПВ мають короткий термін
       // життя, і застарілий offerId Ukasko відхиляє з 422 «offer id не коректне».
@@ -246,37 +243,71 @@ export function CheckoutClient() {
         return;
       }
 
-      const payload = buildOrderPayload(
-        mergedVehicle,
-        fresh, // гарантовано свіжий оффер (див. перевірку !fresh вище)
-        periodId,
-        selectedDgoId,
-        selectedAutolawyerId,
-        customer,
-        details,
-        buyer.privilegeId
-      );
+      // draft + declare для конкретного (свіжого) оффера. Кожна спроба — свій ключ
+      // ідемпотентності (новий draft), щоб авто-повтор не впирався в дедуплікацію.
+      const draftAndDeclare = async (ord: InsuranceOffer): Promise<string> => {
+        const idemKey = crypto.randomUUID();
+        const payload = buildOrderPayload(
+          mergedVehicle,
+          ord,
+          periodId,
+          selectedDgoId,
+          selectedAutolawyerId,
+          customer,
+          details,
+          buyer.privilegeId
+        );
+        // 5a. Створити чернетку
+        const draftRes = await fetch("/api/insurance/order", {
+          method: "POST",
+          headers: { "content-type": "application/json", "idempotency-key": idemKey },
+          body: JSON.stringify({ action: "draft", ...payload }),
+        });
+        const draftJson = await draftRes.json();
+        if (!draftJson.success) throw new Error(draftJson.error ?? t({ uk: "Помилка створення чернетки", en: "Error creating draft" }));
+        const id = draftJson.data.id;
+        // 5b. Заявити поліс
+        const declareRes = await fetch("/api/insurance/order", {
+          method: "POST",
+          headers: { "content-type": "application/json", "idempotency-key": idemKey },
+          body: JSON.stringify({ action: "declare", ...payload, orderId: id }),
+        });
+        const declareJson = await declareRes.json();
+        if (!declareJson.success) throw new Error(declareJson.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
+        return declareJson.data?.id ?? id;
+      };
 
-      // 5a. Створити чернетку
-      const draftRes = await fetch("/api/insurance/order", {
-        method: "POST",
-        headers: { "content-type": "application/json", "idempotency-key": idemKey },
-        body: JSON.stringify({ action: "draft", ...payload }),
-      });
-      const draftJson = await draftRes.json();
-      if (!draftJson.success) throw new Error(draftJson.error ?? t({ uk: "Помилка створення чернетки", en: "Error creating draft" }));
-      const id = draftJson.data.id;
+      // «offer id не коректне» = оффер протух між розрахунком і замовленням. Один
+      // авто-повтор зі свіжо перерахованим оффером робить збій непомітним для клієнта.
+      const isStaleOffer = (e: unknown) =>
+        /offer\s*id|offerid|не\s*коректн/i.test(e instanceof Error ? e.message : String(e));
 
-      // 5b. Заявити поліс
-      const declareRes = await fetch("/api/insurance/order", {
-        method: "POST",
-        headers: { "content-type": "application/json", "idempotency-key": idemKey },
-        body: JSON.stringify({ action: "declare", ...payload, orderId: id }),
-      });
-      const declareJson = await declareRes.json();
-      if (!declareJson.success) throw new Error(declareJson.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
-
-      const declaredId = declareJson.data?.id ?? id;
+      let declaredId: string;
+      try {
+        declaredId = await draftAndDeclare(fresh);
+      } catch (firstErr) {
+        if (!isStaleOffer(firstErr)) throw firstErr;
+        const fresh2 = await revalidateOffer();
+        if (!fresh2) throw firstErr;
+        if (fresh2.price !== offer.price) {
+          setOffer(fresh2);
+          setPriceNotice(
+            t({
+              uk:
+                `Страхова компанія перерахувала вартість поліса. ` +
+                `Актуальна ціна: ${fresh2.price} грн (у пропозиції — ${offer.price} грн). ` +
+                `Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`,
+              en:
+                `The insurer recalculated the policy price. ` +
+                `Current price: ${fresh2.price} UAH (in the offer — ${offer.price} UAH). ` +
+                `Check the amount and click "Continue" to proceed to payment.`,
+            })
+          );
+          setLoading(false);
+          return;
+        }
+        declaredId = await draftAndDeclare(fresh2);
+      }
 
       // Контекст фіналізації — щоб /payment-success уклав поліс і зберіг його в
       // кабінет навіть якщо клієнта редіректнуло з модалки оплати.
