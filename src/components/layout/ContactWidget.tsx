@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, Mail, Send, MessageCircle, X } from "lucide-react";
+import { Phone, Mail, Send, Headset, X } from "lucide-react";
 import { LeadModal, type LeadMode } from "./LeadModal";
 import { useI18n } from "@/lib/i18n";
 
@@ -108,7 +108,7 @@ export function ContactWidget() {
           onClick={() => setOpen((v) => !v)}
           className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95"
         >
-          {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+          {open ? <X className="h-6 w-6" /> : <Headset className="h-6 w-6" />}
         </button>
       </div>
 
