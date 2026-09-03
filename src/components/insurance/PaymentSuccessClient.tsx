@@ -40,6 +40,11 @@ export function PaymentSuccessClient() {
       for (let i = 0; i < MAX_ATTEMPTS && !cancelled; i++) {
         // Продукт-незалежна фіналізація: /api/finalize сам перевіряє оплату,
         // укладає договір правильним для продукту способом і зберігає поліс.
+        // ВАЖЛИВО: жоден збій тут НЕ фатальний. Одразу після повернення з LiqPay
+        // на iOS Safari перший fetch часто падає з "Load failed" (транзієнтний
+        // мережевий збій / повільний confirm), а finalize ще й ідемпотентний —
+        // тож на будь-яку невдачу просто опитуємо далі, а не лякаємо клієнта
+        // помилкою (поліс усе одно укладеться, щойно оплата підтвердиться).
         try {
           const res = await fetch("/api/finalize", {
             method: "POST",
@@ -51,14 +56,12 @@ export function PaymentSuccessClient() {
             if (!cancelled) { setContractId(json.contractId); setPhase("done"); }
             return;
           }
-          if (!json.success) throw new Error(json.error ?? t({ uk: "Не вдалося підтвердити поліс", en: "Failed to confirm the policy" }));
-        } catch (e) {
-          // Помилка укладання (а не «ще не оплачено») — показуємо й зупиняємось.
-          if (!cancelled) { setError(e instanceof Error ? e.message : t({ uk: "Сталася помилка", en: "An error occurred" })); setPhase("error"); }
-          return;
+          // не success або «ще не оплачено» → продовжуємо цикл (не спиняємось).
+        } catch {
+          // Мережевий збій (напр. Safari "Load failed") — теж не фатал, повторимо.
         }
 
-        // Ще не оплачено: після порогу показуємо «обробляється», але цикл триває.
+        // Після порогу показуємо «обробляється», але опитування триває.
         if (i + 1 >= PENDING_AFTER && !cancelled) setPhase("pending");
         await new Promise((r) => setTimeout(r, 3000));
       }
