@@ -12,7 +12,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, formatCompanyName, cityShort, cityLong } from "@/lib/utils";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { useI18n } from "@/lib/i18n";
 
@@ -30,11 +30,6 @@ export interface TourismCheckoutCtx {
   multiVisa: boolean;
   birthDates: string[];     // ДД.ММ.РРРР по туристу (з калькулятора)
 }
-
-const DOC_TYPES = [
-  { t: 3 as const, label: "ID-карта", en: "ID card" },
-  { t: 1 as const, label: "Паспорт (книжечка)", en: "Passport (booklet)" },
-];
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number }
 
@@ -66,19 +61,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   // Страхувальник (він же турист №1).
   const [c, setC] = useState({
     phone: "", email: "",
-    docType: 3 as 1 | 3, docSerial: "", docNumber: "", docIssuedBy: "", docDate: "",
     street: "", house: "", apartment: "",
   });
   const setCf = (k: keyof typeof c) => (e: React.ChangeEvent<HTMLInputElement>) => setC((s) => ({ ...s, [k]: e.target.value }));
-
-  // Поля документа памʼятаються окремо по типу (як в інших чекаутах).
-  const docStash = useRef<Record<number, { serial: string; number: string; issuedBy: string; date: string }>>({});
-  const changeDocType = (t: 1 | 3) => setC((s) => {
-    if (s.docType === t) return s;
-    docStash.current[s.docType] = { serial: s.docSerial, number: s.docNumber, issuedBy: s.docIssuedBy, date: s.docDate };
-    const saved = docStash.current[t];
-    return { ...s, docType: t, docSerial: saved?.serial ?? "", docNumber: saved?.number ?? "", docIssuedBy: saved?.issuedBy ?? "", docDate: saved?.date ?? "" };
-  });
 
   // Туристи (перший — страхувальник). ДН попередньо заповнені з калькулятора.
   const [tourists, setTourists] = useState<TouristForm[]>(
@@ -106,18 +91,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   // і закордонний паспорт туриста №1 (страхувальника). Зберігаємо частково (без укр. ПІБ),
   // тож спільний профіль не засмічується. docType звужуємо до 1|3.
   const applyProfile = (p: CustomerProfile) => {
-    // Документ — з канонічних сутностей (туристичне підтримує лише паспорт/ID-картку).
-    const stash: Record<number, DocFields> = {};
-    const pf = docFieldsByKind(p, "passport"); if (pf) stash[1] = pf;
-    const idf = docFieldsByKind(p, "idcard"); if (idf) stash[3] = idf;
-    docStash.current = stash;
-    const dt: 1 | 3 = p.lastDocKind === "passport" ? 1 : 3;
-    const active = stash[dt];
     setC((s) => ({
       ...s,
       phone: p.phone, email: p.email,
-      docType: dt,
-      docSerial: active?.serial ?? "", docNumber: active?.number ?? "", docIssuedBy: active?.issuedBy ?? "", docDate: active?.date ?? "",
       street: p.street, house: p.house,
     }));
     // Турист №1 (страхувальник) — латинські ПІБ і закордонний паспорт зі збереженого профілю.
@@ -172,7 +148,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     const touristsListInfo = tourists.map((t) => ({
       name: t.nameLat.trim(), surname: t.surnameLat.trim(), dateBirth: t.dateBirth,
       identificationCode: t.identificationCode, withoutIdentificationCode: t.identificationCode ? false : true,
-      documentType: 3,
+      // 2 = «Закордонний паспорт» (DOCUMENT_EXTERNAL_PASSPORT) — саме його вводять для
+      // виїзду за кордон; є в available_documents оффера. Раніше слався 3 (ID-карта).
+      documentType: 2,
       passportSerial: t.passportSerial || "", passportNumber: t.passportNumber || "",
       passportDate: t.passportDate ? toISO(t.passportDate) : "",
       passportEndDate: t.passportEndDate ? toISO(t.passportEndDate) : "",
@@ -193,9 +171,11 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         phone: `+380${c.phone.replace(/\D/g, "")}`, mail: c.email,
         city: { id: selectedCity?.id ?? null, name: selectedCity?.name_ua ?? cityName, name_full_name_ua: cityName },
         street: c.street, house: c.house, apartment: c.apartment || "",
+        // Документ страхувальника = його ж закордонний паспорт (турист №1), тип 2.
+        // Окремого внутрішнього документа більше не збираємо.
         documentation: {
-          type: c.docType, serial: c.docSerial, number: c.docNumber, issuedBy: c.docIssuedBy,
-          dateOfIssue: toUnix(c.docDate), endDateOfIssue: null,
+          type: 2, serial: main.passportSerial, number: main.passportNumber, issuedBy: main.passportIssuedBy,
+          dateOfIssue: toUnix(main.passportDate), endDateOfIssue: toUnix(main.passportEndDate),
         },
       },
       touristsListInfo,
@@ -216,15 +196,18 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     if (loading) return;
     if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
     if (tourists.some((tr) => !parseUaDate(tr.dateBirth))) { setError(t({ uk: "Вкажіть коректні дати народження туристів", en: "Enter valid dates of birth for the travellers" })); return; }
-    if (!parseUaDate(c.docDate)) { setError(t({ uk: "Вкажіть дату видачі документа", en: "Enter the document issue date" })); return; }
+    // Документ страхувальника = закордонний паспорт туриста №1 → перевіряємо саме його.
+    if (!tourists[0]?.passportNumber?.trim() || !parseUaDate(tourists[0]?.passportDate)) {
+      setError(t({ uk: "Вкажіть закордонний паспорт і дату його видачі (турист №1 — страхувальник)", en: "Enter the international passport and its issue date (traveller #1 — policyholder)" })); return;
+    }
     setLoading(true);
     setError(null);
-    // Зберігаємо профіль (контакт/документ/адреса/місто + латиниця й закордонний паспорт
-    // страхувальника) для автозаповнення наступного разу. Укр. ПІБ тут немає — мердж їх збереже.
+    // Зберігаємо профіль (контакт/адреса/місто + латиниця й закордонний паспорт
+    // страхувальника). Внутрішній документ туризм більше НЕ збирає — тож не передаємо
+    // doc-поля, щоб не затерти реальний документ з інших продуктів (ОСЦПВ/тварини).
     const main = tourists[0];
     saveProfile({
       email: c.email, phone: c.phone,
-      docType: c.docType, docKind: c.docType === 1 ? "passport" : "idcard", docSerial: c.docSerial, docNumber: c.docNumber, docIssuedBy: c.docIssuedBy, docDate: c.docDate,
       street: c.street, house: c.house,
       city: selectedCity, cityQuery,
       identificationCode: main.identificationCode || undefined,
@@ -363,26 +346,8 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
           </div>
         </div>
 
-        {/* Документ страхувальника */}
-        <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Документ страхувальника (покупця)", en: "Policyholder (buyer) document" })}</p>
-          <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
-            {DOC_TYPES.map(({ t: dt, label, en }) => (
-              <button key={dt} type="button" onClick={() => changeDocType(dt)}
-                className={`min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                  c.docType === dt ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
-                }`}>{t({ uk: label, en })}</button>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label={c.docType === 3 ? t({ uk: "Запис № (УНЗР)", en: "Record No. (UNZR)" }) : t({ uk: "Серія", en: "Series" })} value={c.docSerial} onChange={setCf("docSerial")} required={c.docType === 1} />
-            <Input label={t({ uk: "Номер документа", en: "Document number" })} value={c.docNumber} onChange={setCf("docNumber")} required />
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label={t({ uk: "Ким видано", en: "Issued by" })} value={c.docIssuedBy} onChange={setCf("docIssuedBy")} required />
-            <DateInput label={t({ uk: "Дата видачі", en: "Issue date" })} value={c.docDate} onChange={(v) => setC((s) => ({ ...s, docDate: v }))} required />
-          </div>
-        </div>
+        {/* Окремий документ страхувальника не збираємо — використовується закордонний
+            паспорт туриста №1 (страхувальника) з блоку туристів вище. */}
 
         {/* Адреса */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
