@@ -390,6 +390,14 @@ export function TourismFlow() {
                   {loading ? t({ uk: "Шукаємо пропозиції…", en: "Searching for offers…" }) : <>{t({ uk: "Розрахувати вартість", en: "Calculate cost" })} <ArrowRight className="h-5 w-5" /></>}
                 </span>
               </Button>
+              {loading && (
+                <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                  {t({
+                    uk: "Опитуємо страхові компанії — це може зайняти до 30 секунд. Не закривайте сторінку.",
+                    en: "Polling the insurers — this can take up to 30 seconds. Please don't close the page.",
+                  })}
+                </p>
+              )}
             </form>
           </motion.div>
         </div>
