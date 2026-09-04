@@ -67,7 +67,27 @@ export async function POST(req: NextRequest) {
       // Продукт зі збереженого pending order; немає запису → ОСЦПВ (як історично).
       const pending = await getPendingOrder(id);
       const product = pending?.product ?? "osago";
-      const { contractId } = await confirmByProduct(product, id, pending?.orderPayload ?? null);
+      let contractId: string;
+      try {
+        ({ contractId } = await confirmByProduct(product, id, pending?.orderPayload ?? null));
+      } catch (confirmErr) {
+        // Оплата ВЖЕ підтверджена (status_id=2), але укладання договору впало —
+        // це «💳 оплачено, поліса нема». НІКОЛИ не губимо тихо: гучний алерт
+        // підтримці з усіма даними для ручної видачі в кабінеті. Далі кидаємо
+        // помилку — клієнт бачить «обробляється», а finalize лишається ідемпотентним
+        // (успішна повторна спроба сама укладе, якщо оффер ще живий).
+        const m = pending?.meta;
+        const raw = confirmErr instanceof Error ? confirmErr.message : String(confirmErr);
+        await notifyDevError(
+          `💳❌ ОПЛАЧЕНО, АЛЕ НЕ ВИДАНО — потрібна ручна видача\n` +
+          `product=${product} orderId=${id}\n` +
+          `клієнт=${m?.customerName ?? "-"} тел=${m?.phone ?? "-"} email=${m?.email ?? "-"}\n` +
+          `СК=${m?.company ?? "-"} ціна=${m?.price ?? "-"}\n` +
+          `причина: ${raw.slice(0, 400)}`,
+          confirmErr
+        );
+        throw confirmErr;
+      }
 
       // Зберігаємо поліс у кабінет (best-effort — не валимо відповідь).
       const meta = pending?.meta;
