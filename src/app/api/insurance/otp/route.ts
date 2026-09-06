@@ -73,12 +73,18 @@ export async function POST(req: NextRequest) {
     const msg = e instanceof Error ? e.message : "Error";
     console.error(`[otp] ${ctx} error:`, msg.slice(0, 600));
     await notifyDevError(`otp ${ctx}`, e);
-    // Відомий баг Ukasko (телеметрія recordApiMetrics/UpdateModuleProductCalcTimeJob крашить
-    // із null) — показуємо клієнту зрозуміле, а не сирий PHP-дамп.
-    const ukaskoBug = /UpdateModuleProductCalcTimeJob|recordApiMetrics|must be of the type string, null given|ErrorException/i.test(msg);
-    const clientMsg = ukaskoBug
-      ? "Страхова тимчасово недоступна — не вдалося надіслати код. Спробуйте за кілька хвилин або оберіть іншу страхову компанію."
-      : msg;
+    // НІКОЛИ не показуємо клієнту сирий дамп Ukasko (URL + PHP/JSON). Розрізняємо:
+    //  • «невірний код» при перевірці — актуально клієнту, кажемо перевірити SMS;
+    //  • будь-який збій НАДСИЛАННЯ коду (вкл. відомий баг телеметрії Ukasko й
+    //    500 «Сталася помилка перевірки коду ОТП», data:1000) — це збій СК, не клієнта,
+    //    тож просимо повторити за хвилину або зателефонувати нам.
+    const isSend = ctx.startsWith("send");
+    const wrongCode = !isSend && /не\s*коректн/i.test(msg);
+    const clientMsg = wrongCode
+      ? "Невірний код підтвердження. Перевірте SMS і спробуйте ще раз."
+      : isSend
+        ? "Страхова тимчасово недоступна — не вдалося надіслати код. Спробуйте за кілька хвилин або зателефонуйте нам: +380 96 509 24 00."
+        : "Не вдалося підтвердити код. Спробуйте ще раз за хвилину.";
     return NextResponse.json({ success: false, error: clientMsg }, { status: 500 });
   }
 }
