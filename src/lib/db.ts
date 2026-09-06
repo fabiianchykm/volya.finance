@@ -129,6 +129,19 @@ export function ensureSchema(): Promise<void> {
         )
       `;
       await sql`CREATE INDEX IF NOT EXISTS calc_leads_updated_idx ON calc_leads (updated_at DESC)`;
+      // Спільний кеш результатів калькуляторів (передусім туристичного — 20–34с на
+      // холодний виклик Ukasko). In-memory кеш живе лише в одному інстансі; цей —
+      // спільний для всіх, тож важка калькуляція платиться раз глобально на набір
+      // параметрів. cache_key = product + нормалізовані параметри; offers — jsonb.
+      await sql`
+        CREATE TABLE IF NOT EXISTS offer_cache (
+          cache_key  text PRIMARY KEY,
+          offers     jsonb NOT NULL,
+          expires_at timestamptz NOT NULL,
+          created_at timestamptz NOT NULL DEFAULT now()
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS offer_cache_expires_idx ON offer_cache (expires_at)`;
     })().catch((e) => {
       schemaPromise = null;
       throw e;
