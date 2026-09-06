@@ -62,6 +62,9 @@ export function CheckoutClient() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
+  // Лід у sales-Telegram шлемо ОДИН раз — щойно клієнт заповнив контакти (до declare),
+  // щоб оператор мав телефон навіть якщо клієнт застрягне на перевірці оффера/оплаті.
+  const leadPingedRef = useRef(false);
   
   // Network state
   const [loading, setLoading] = useState(false);
@@ -144,6 +147,21 @@ export function CheckoutClient() {
     // Оновлюємо ДН у buyer, щоб перерахунок ціни (revalidateOffer) враховував
     // саме те, що клієнт підтвердив на цьому кроці.
     setBuyer((b) => ({ ...b, policyholderBirthDate: unixToUaDate(data.dateBirth), youngestBirthDate: youngestBirth || b.youngestBirthDate }));
+    // Лід із телефоном у sales-Telegram — ЩОЙНО контакти заповнено (до declare/оплати).
+    // Раніше він летів аж після успішного declare+OTP, тож клієнти, що застрягали на
+    // перевірці оффера, не потрапляли в Telegram узагалі — оператор не мав кому дзвонити.
+    if (!leadPingedRef.current) {
+      leadPingedRef.current = true;
+      trackCheckoutStarted({
+        product: "Автоцивілка",
+        name: [data.surname, data.name, data.patronymic].filter(Boolean).join(" "),
+        company: offer?.companyNamePublic || offer?.companyName,
+        price: offer?.price,
+        car: [vehicle?.mark, vehicle?.model].filter(Boolean).join(" "),
+        phone: data.phone,
+        email: data.email,
+      });
+    }
     setStep("vehicle");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -331,15 +349,7 @@ export function CheckoutClient() {
         body: JSON.stringify({ action: "send", orderId: declaredId }),
       });
 
-      trackCheckoutStarted({
-        product: "Автоцивілка",
-        name: [customer?.surname, customer?.name, customer?.patronymic].filter(Boolean).join(" "),
-        company: offer?.companyNamePublic || offer?.companyName,
-        price: offer?.price,
-        car: [mergedVehicle.mark, mergedVehicle.model].filter(Boolean).join(" "),
-        phone: customer?.phone,
-        email: customer?.email,
-      });
+      // Лід у sales-Telegram уже надіслано в handleCustomerSubmit (з телефоном, раніше).
       setOrderId(declaredId);
       setStep("otp");
     } catch (e) {
