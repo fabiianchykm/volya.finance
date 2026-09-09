@@ -181,7 +181,11 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       touristsListInfo,
       offerInfo: {
         ...o,
-        offerId: o.offerId, purposeOfTrip: "tourism",
+        // Мета поїздки. Дозволені значення Ukasko: travel, teaching, activeTravel,
+        // extrim, professionalSports, sport, work, business_travel (дефолт travel).
+        // Раніше слали невалідне "tourism". Поки що фіксуємо коректний дефолт;
+        // вибір мети клієнтом (спорт/екстрим/робота — впливає на покриття) — окремо.
+        offerId: o.offerId, purposeOfTrip: "travel",
         startDate: ctx.startDate, endDate: ctx.endDate,
         price: o.price, fullPrice: (o as { fullPrice?: number }).fullPrice ?? o.price,
         company: { ...(o.company ?? {}), Id: o.company?.ex_id ?? o.company?.id },
