@@ -419,10 +419,17 @@ export class UkaskoService {
   }
 
   async takePetsContract(contractId: string): Promise<{ contract?: string; mtsbuLink?: string; mtsbuCode?: string }> {
-    const data = await this.withAuth((token) => postForm(
-      `${BASE_URL}/insurance/pets/contract/take`, { contractId }, token
-    )) as { data: { contract?: string; mtsbuCode?: string } };
-    return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode };
+    // PDF генерується не миттєво — повторюємо, поки зʼявиться (див. downloadContract).
+    try {
+      const data = await withRetry(() => this.withAuth(async (token) => {
+        const r = await postForm(`${BASE_URL}/insurance/pets/contract/take`, { contractId }, token) as { data?: { contract?: string; mtsbuCode?: string } };
+        if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий");
+        return r;
+      }), 4, 1500, true) as { data: { contract?: string; mtsbuCode?: string } };
+      return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode };
+    } catch {
+      throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
+    }
   }
 
   // Калькулятор туристичного страхування → масив пропозицій.
@@ -586,12 +593,17 @@ export class UkaskoService {
 
   // Завантаження полісу ЗК.
   async downloadGreenCardContract(contractId: string): Promise<{ mtsbuLink?: string; contract?: string }> {
-    const data = await this.withAuth((token) => postForm(
-      `${BASE_URL}/insurance/greencard/contract/take`,
-      { contractId },
-      token
-    )) as { data: { mtsbuLink?: string; contract?: string } };
-    return data.data;
+    // PDF генерується не миттєво — повторюємо, поки зʼявиться (див. downloadContract).
+    try {
+      const data = await withRetry(() => this.withAuth(async (token) => {
+        const r = await postForm(`${BASE_URL}/insurance/greencard/contract/take`, { contractId }, token) as { data?: { mtsbuLink?: string; contract?: string } };
+        if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий");
+        return r;
+      }), 4, 1500, true) as { data: { mtsbuLink?: string; contract?: string } };
+      return data.data;
+    } catch {
+      throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
+    }
   }
 
   // ── Міні-КАСКО ────────────────────────────────────────────────────────────
@@ -759,8 +771,17 @@ export class UkaskoService {
 
   // Файли поліса — прямі URL (не base64). Якщо contract === null — ще генерується.
   async takeHomeContract(contractId: string): Promise<{ contract?: string | null; contractDraft_path?: string | null }> {
-    const data = await this.withAuth((t) => postJson(`${HOME_BASE}/contract/take`, { contractId }, t)) as { data: { contract?: string | null; contractDraft_path?: string | null } };
-    return data.data;
+    // PDF генерується не миттєво — повторюємо, поки зʼявиться (див. downloadContract).
+    try {
+      const data = await withRetry(() => this.withAuth(async (t) => {
+        const r = await postJson(`${HOME_BASE}/contract/take`, { contractId }, t) as { data?: { contract?: string | null; contractDraft_path?: string | null } };
+        if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий");
+        return r;
+      }), 4, 1500, true) as { data: { contract?: string | null; contractDraft_path?: string | null } };
+      return data.data;
+    } catch {
+      throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
+    }
   }
 
   // Довідник міст ЖИТЛА (окремий від загального).
@@ -968,12 +989,19 @@ export class UkaskoService {
   }
 
   async downloadContract(contractId: string) {
-    const data = await this.withAuth((token) => postForm(
-      `${BASE_URL}/insurance/contract/take`,
-      { contractId, orderType: "1" },
-      token
-    )) as { data: { mtsbuLink: string; contract: string } };
-    return data.data;
+    // Одразу після оплати Ukasko ще генерує PDF → contract/take віддає 500 «ще не
+    // готовий» або 200 з порожнім contract. Повторюємо з паузою (download ідемпотентний,
+    // retry500), порожній contract = «ще не готово». Далі — чесне повідомлення.
+    try {
+      const data = await withRetry(() => this.withAuth(async (token) => {
+        const r = await postForm(`${BASE_URL}/insurance/contract/take`, { contractId, orderType: "1" }, token) as { data?: { mtsbuLink?: string; contract?: string } };
+        if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий (порожній contract)");
+        return r;
+      }), 4, 1500, true) as { data: { mtsbuLink: string; contract: string } };
+      return data.data;
+    } catch {
+      throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
+    }
   }
 }
 
