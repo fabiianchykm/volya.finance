@@ -295,16 +295,19 @@ export function CheckoutClient() {
         return declareJson.data?.id ?? id;
       };
 
-      // «offer id не коректне» = оффер протух між розрахунком і замовленням. Один
-      // авто-повтор зі свіжо перерахованим оффером робить збій непомітним для клієнта.
-      const isStaleOffer = (e: unknown) =>
-        /offer\s*id|offerid|не\s*коректн/i.test(e instanceof Error ? e.message : String(e));
+      // Транзієнтні збої Ukasko, що зникають після одного повтору зі свіжим оффером:
+      //  • «offer id не коректне» — оффер протух між розрахунком і замовленням;
+      //  • «Порожня відповідь від сервера» — модуль СК флапнув (200 з порожнім data).
+      // Один авто-повтор робить обидва непомітними для клієнта (інакше — «до оплати
+      // не доходить»).
+      const isRetryable = (e: unknown) =>
+        /offer\s*id|offerid|не\s*коректн|порожн[яю]\s*відповід|empty/i.test(e instanceof Error ? e.message : String(e));
 
       let declaredId: string;
       try {
         declaredId = await draftAndDeclare(fresh);
       } catch (firstErr) {
-        if (!isStaleOffer(firstErr)) throw firstErr;
+        if (!isRetryable(firstErr)) throw firstErr;
         const fresh2 = await revalidateOffer();
         if (!fresh2) throw firstErr;
         if (fresh2.price !== offer.price) {
