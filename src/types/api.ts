@@ -204,6 +204,20 @@ export interface Customer {
   email: string;
   documentation: CustomerDocumentation;
   address: CustomerAddress;
+  /** Пільговий документ — лише коли обрано пільгу (customerPrivilege ≠ 1). */
+  privilege?: CustomerPrivilege;
+}
+
+// Пільговий документ ОСЦПВ — «заповнюється для пільговиків додатково» (специфікація
+// Ukasko). Дати — unix timestamp. Для безстрокових посвідчень endDateOfIssue = дата
+// видачі + 100 років (Ukasko вимагає непорожню дату закінчення).
+export interface CustomerPrivilege {
+  type: number;        // ID з довідника типів документів (7 Пенсійне, 8 Е-пенс., 9 УБД…)
+  serial: string;
+  number: string;
+  issuedBy: string;
+  dateOfIssue: number;
+  endDateOfIssue: number;
 }
 
 export interface OrderDraft {

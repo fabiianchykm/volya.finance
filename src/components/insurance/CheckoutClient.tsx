@@ -514,6 +514,7 @@ export function CheckoutClient() {
           // Since the user wants a full page checkout, let's render the forms directly.
           <CheckoutCustomerForm
             onSubmit={handleCustomerSubmit}
+            privilegeId={buyer.privilegeId}
             initialPolicyholderBirth={buyer.policyholderBirthDate || ""}
             initialYoungestBirth={buyer.youngestBirthDate || ""}
           />
@@ -585,13 +586,33 @@ export function CheckoutClient() {
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 
-function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initialYoungestBirth = "" }: {
+// Пільговий документ: типи з довідника Ukasko, що стосуються пільг (решта — паспорт/
+// ID/права — до пільги не належать). Розширюється, коли Ukasko підтвердить ID для
+// інвалідності (МСЕК) / ЧАЕС тощо. Дефолтний тип підбираємо за категорією пільги.
+const PRIVILEGE_DOC_TYPES: { id: number; label: string }[] = [
+  { id: 7, label: "Пенсійне посвідчення" },
+  { id: 8, label: "Е-посвідчення пенсіонера" },
+  { id: 9, label: "Посвідчення УБД / ветерана" },
+];
+const PRIVILEGE_DEFAULT_DOC: Record<number, number> = {
+  2: 7,  // пенсіонер → пенсійне
+  6: 8,  // пенсіонер (е-посвідчення) → е-посвідчення
+  10: 9, // УБД → посвідчення УБД
+  3: 9,  // учасник війни → ветеранське
+  9: 9,  // інвалід внаслідок війни → ветеранське
+  7: 9,  // учасник Революції Гідності → ветеранське
+};
+
+function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBirth = "", initialYoungestBirth = "" }: {
   onSubmit: (c: Customer, youngestBirth: string) => void;
+  // Обрана пільга (з BuyerModal). ≠ 1 → показуємо секцію пільгового документа.
+  privilegeId?: number;
   // ДН, введені ще в калькуляторі — підтягуємо, щоб не вводити повторно.
   initialPolicyholderBirth?: string;
   initialYoungestBirth?: string;
 }) {
   const { t } = useI18n();
+  const hasPrivilege = privilegeId !== 1;
   const [form, setForm] = useState({
     name: "",
     surname: "",
@@ -606,7 +627,16 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
     docNumber: "",
     docIssuedBy: "",
     docDate: "",
+    // Пільговий документ (лише коли hasPrivilege).
+    privType: PRIVILEGE_DEFAULT_DOC[privilegeId] ?? 7,
+    privSerial: "",
+    privNumber: "",
+    privIssuedBy: "",
+    privDate: "",
+    privEndDate: "",
+    privIndefinite: true, // більшість пільгових посвідчень безстрокові
   });
+  const [privError, setPrivError] = useState(false);
   // ДН наймолодшого водія — окремо від профілю (у профіль не входить), підтягнута з калькулятора.
   const [youngestBirth, setYoungestBirth] = useState(initialYoungestBirth);
   const [youngestErr, setYoungestErr] = useState(false);
@@ -655,7 +685,8 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
     // Тип за збереженою сутністю, якщо ОСЦПВ його приймає (закордонний → ID-картка).
     const dt: 1 | 3 | 4 = p.lastDocKind === "passport" ? 1 : p.lastDocKind === "license" ? 4 : 3;
     const active = stash[dt];
-    setForm({
+    setForm((f) => ({
+      ...f,
       name: p.name,
       surname: p.surname,
       patronymic: p.patronymic,
@@ -669,7 +700,7 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
       docNumber: active?.number ?? "",
       docIssuedBy: active?.issuedBy ?? "",
       docDate: active?.date ?? "",
-    });
+    }));
     setDocType(dt);
     // ДН наймолодшого водія — окремо від form (у профілі зберігається). Не затираємо
     // значення з калькулятора порожнім: підставляємо лише якщо в профілі щось є.
@@ -713,7 +744,8 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
   // Тестове автозаповнення: ввести "007" у поле «Прізвище» → форма заповнюється
   // валідними тестовими даними (щоб не вбивати все вручну під час тестування).
   const fillTestData = () => {
-    setForm({
+    setForm((f) => ({
+      ...f,
       name: "Тест",
       surname: "Тестовий",
       patronymic: "Тестович",
@@ -727,7 +759,11 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
       docNumber: "123456789",
       docIssuedBy: "1234",
       docDate: "01.01.2020",
-    });
+      privSerial: "АА",
+      privNumber: "123456",
+      privIssuedBy: "ПФУ",
+      privDate: "01.01.2020",
+    }));
     setSelectedCity({ id: 1, name_ua: "Київ", name_full_name_ua: "м. Київ, Україна", zone: 1 });
     setCityQuery("м. Київ, Україна");
     setCityError(false);
@@ -785,6 +821,34 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
     if (!issue) { setDocDateError(true); return; }
     setDocDateError(false);
     if (!selectedCity) { setCityError(true); return; }
+
+    // Пільговий документ — обовʼязковий, коли обрано пільгу (Ukasko: customer.privilege).
+    let privilege: Customer["privilege"];
+    if (hasPrivilege) {
+      const pIssue = parseUaDate(form.privDate);
+      if (!form.privNumber.trim() || !pIssue) { setPrivError(true); return; }
+      const pIssueTs = Math.floor(pIssue.getTime() / 1000);
+      let pEndTs: number;
+      if (form.privIndefinite) {
+        // Безстрокове посвідчення — Ukasko вимагає непорожню дату закінчення: +100 років.
+        const d = new Date(pIssue); d.setFullYear(d.getFullYear() + 100);
+        pEndTs = Math.floor(d.getTime() / 1000);
+      } else {
+        const pEnd = parseUaDate(form.privEndDate);
+        if (!pEnd) { setPrivError(true); return; }
+        pEndTs = Math.floor(pEnd.getTime() / 1000);
+      }
+      setPrivError(false);
+      privilege = {
+        type: form.privType,
+        serial: form.privSerial.trim(),
+        number: form.privNumber.trim(),
+        issuedBy: form.privIssuedBy.trim(),
+        dateOfIssue: pIssueTs,
+        endDateOfIssue: pEndTs,
+      };
+    }
+
     const dateBirth = Math.floor(dob.getTime() / 1000);
     const dateOfIssue = Math.floor(issue.getTime() / 1000);
 
@@ -794,7 +858,8 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
     persistProfile();
 
     onSubmit({
-      customerType: 1,
+      // Пільговик → customerType 3 (як у калькуляторі/BuyerModal), інакше 1.
+      customerType: hasPrivilege ? 3 : 1,
       name: form.name,
       surname: form.surname,
       patronymic: form.patronymic,
@@ -817,6 +882,7 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
         cityName,
         full: `${cityName}, ${form.street}, ${form.house}`,
       },
+      ...(privilege ? { privilege } : {}),
     }, youngestBirth);
   };
 
@@ -950,6 +1016,75 @@ function CheckoutCustomerForm({ onSubmit, initialPolicyholderBirth = "", initial
             />
           </div>
         </div>
+
+        {hasPrivilege && (
+          <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              {t({ uk: "Пільговий документ", en: "Benefit document" })}
+            </p>
+            <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+              {t({ uk: "Для поліса з пільгою вкажіть підтверджувальний документ (посвідчення).", en: "For a discounted policy, provide the supporting benefit document (certificate)." })}
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Тип документа", en: "Document type" })}</label>
+                <select
+                  value={form.privType}
+                  onChange={(e) => setForm((f) => ({ ...f, privType: Number(e.target.value) }))}
+                  className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                >
+                  {PRIVILEGE_DOC_TYPES.map((d) => (
+                    <option key={d.id} value={d.id}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+              <Input
+                label={t({ uk: "Серія", en: "Series" })}
+                value={form.privSerial}
+                onChange={set("privSerial")}
+              />
+              <Input
+                label={t({ uk: "Номер", en: "Number" })}
+                value={form.privNumber}
+                onChange={(e) => { setForm((f) => ({ ...f, privNumber: e.target.value })); if (privError) setPrivError(false); }}
+                required
+              />
+              <Input
+                label={t({ uk: "Ким виданий", en: "Issued by" })}
+                value={form.privIssuedBy}
+                onChange={set("privIssuedBy")}
+              />
+              <DateInput
+                label={t({ uk: "Дата видачі", en: "Date of issue" })}
+                value={form.privDate}
+                onChange={(v) => { setForm((f) => ({ ...f, privDate: v })); if (privError) setPrivError(false); }}
+                required
+              />
+              {!form.privIndefinite && (
+                <DateInput
+                  label={t({ uk: "Дійсний до", en: "Valid until" })}
+                  value={form.privEndDate}
+                  onChange={(v) => setForm((f) => ({ ...f, privEndDate: v }))}
+                  required
+                />
+              )}
+            </div>
+            <label className="mt-3 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+              <input
+                type="checkbox"
+                checked={form.privIndefinite}
+                onChange={(e) => setForm((f) => ({ ...f, privIndefinite: e.target.checked }))}
+                className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              {t({ uk: "Безстроковий (без дати закінчення)", en: "Indefinite (no expiry date)" })}
+            </label>
+            {privError && (
+              <p className="mt-2 text-xs font-medium text-red-500">
+                {t({ uk: "Заповніть номер і дату видачі пільгового документа", en: "Fill in the benefit document number and date of issue" })}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
