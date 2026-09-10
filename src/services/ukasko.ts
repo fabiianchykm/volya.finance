@@ -483,10 +483,23 @@ export class UkaskoService {
   }
 
   async takeTourismContract(contractId: string): Promise<{ contract?: string; mtsbuLink?: string; mtsbuCode?: string }> {
-    const data = await this.withAuth((token) => postForm(
-      `${BASE_URL}/insurance/tourism/contract/take`, { contractId }, token
-    )) as { data: { contract?: string; mtsbuCode?: string } };
-    return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode };
+    // Одразу після оплати Ukasko ще ГЕНЕРУЄ PDF — contract/take віддає 500 «Файл не
+    // знайдено, можливо договір ще не готовий» або 200 з порожнім contract. Файл
+    // зʼявляється за кілька секунд, тож повторюємо з паузою (download ідемпотентний →
+    // retry безпечний, retry500=true). Порожній contract теж трактуємо як «ще не
+    // готово» й ретраїмо.
+    try {
+      const data = await withRetry(() => this.withAuth(async (token) => {
+        const r = await postForm(`${BASE_URL}/insurance/tourism/contract/take`, { contractId }, token) as { data?: { contract?: string; mtsbuCode?: string } };
+        if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий (порожній contract)");
+        return r;
+      }), 4, 1500, true) as { data: { contract?: string; mtsbuCode?: string } };
+      return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode };
+    } catch {
+      // Після кількох спроб PDF усе ще не готовий. Договір у будь-якому разі вже
+      // надіслано клієнту на email — просимо спробувати завантаження трохи згодом.
+      throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
+    }
   }
 
   // Заявлення «Зелена карта» (POST greencard/order/create) → orderId. Далі —
