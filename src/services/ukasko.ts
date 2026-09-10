@@ -49,6 +49,13 @@ const PRIVILEGE_UNSUPPORTED_MSG =
   "Оформлення поліса з пільгою поки що доступне лише через менеджера. " +
   "Зателефонуйте нам: +380 96 509 24 00 — ми оформимо зі знижкою.";
 
+// Апстрім-збої Ukasko↔СК/МТСБУ (таймаути, недоступність import-policy.mtsbu.ua):
+// declare повертає порожньо з таким текстом у message. Це НЕ «оберіть іншу СК»
+// (інша не допоможе, якщо лежить МТСБУ) — показуємо чесне «тимчасово недоступні».
+const UPSTREAM_TIMEOUT_RE = /cURL error 28|error 524|timeout|did not properly respond|connection (attempt )?failed|mtsbu|мтсбу|не отримал\w* відповід|перевищ\w* часу/i;
+const UPSTREAM_UNAVAILABLE_MSG =
+  "Страхова компанія або МТСБУ тимчасово недоступні. Спробуйте, будь ласка, ще раз за кілька хвилин.";
+
 // Прод-API (uconnect.com.ua) стоїть за Cloudflare, який блокує запити без
 // браузерного User-Agent (403). Шлемо реалістичний UA у кожному запиті.
 const UA =
@@ -836,7 +843,10 @@ export class UkaskoService {
 
     const data = raw as { data: [{ id: string; status: string; mtsbuLink?: string }] };
     if (!data.data?.[0]) {
-      console.error("[ukasko declare] empty data. raw:", JSON.stringify(raw).slice(0, 800));
+      const rawStr = JSON.stringify(raw);
+      console.error("[ukasko declare] empty data. raw:", rawStr.slice(0, 800));
+      // Таймаут/недоступність МТСБУ чи СК — чесне «тимчасово недоступні», а не «оберіть іншу».
+      if (UPSTREAM_TIMEOUT_RE.test(rawStr)) throw new Error(UPSTREAM_UNAVAILABLE_MSG);
       throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
     }
     return data.data[0];

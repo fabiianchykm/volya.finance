@@ -301,7 +301,7 @@ export function CheckoutClient() {
       // Один авто-повтор робить обидва непомітними для клієнта (інакше — «до оплати
       // не доходить»).
       const isRetryable = (e: unknown) =>
-        /offer\s*id|offerid|не\s*коректн|порожн[яю]\s*відповід|empty/i.test(e instanceof Error ? e.message : String(e));
+        /offer\s*id|offerid|не\s*коректн|порожн[яю]\s*відповід|empty|тимчасов[ао]\s*недоступн|недоступн/i.test(e instanceof Error ? e.message : String(e));
 
       let declaredId: string;
       try {
