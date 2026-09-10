@@ -41,6 +41,14 @@ const HOME_BASE = `${BASE_URL}/insurance/home`;
 // getGreenCardOffers, коли повний батч калькулятора падає через один модуль.
 const GC_MODULE_IDS = [9, 10, 11, 17, 18, 29, 31];
 
+// Пільгове ОСЦПВ поки не підтримане end-to-end (див. declarePolicy): Ukasko вимагає
+// поле `privilege` + пільговий документ. До впровадження (B) — чесне, дійове
+// повідомлення замість краш-маскування «оберіть іншу СК».
+const PRIVILEGE_ERROR_RE = /undefined index:\s*privilege/i;
+const PRIVILEGE_UNSUPPORTED_MSG =
+  "Оформлення поліса з пільгою поки що доступне лише через менеджера. " +
+  "Зателефонуйте нам: +380 96 509 24 00 — ми оформимо зі знижкою.";
+
 // Прод-API (uconnect.com.ua) стоїть за Cloudflare, який блокує запити без
 // браузерного User-Agent (403). Шлемо реалістичний UA у кожному запиті.
 const UA =
@@ -768,6 +776,11 @@ export class UkaskoService {
       const m = e instanceof Error ? e.message : String(e);
       // Сирий 5xx-текст модуля СК логується централізовано в postJson (див. нижче),
       // тож тут лише перетворюємо технічне сміття на дружнє повідомлення.
+      // Пільгове ОСЦПВ поки не підтримане end-to-end: Ukasko вимагає поле `privilege`
+      // + пільговий документ, яких ми ще не шлемо, тож declare падає «Undefined index:
+      // privilege». Не маскуємо під «оберіть іншу СК» (це вводить в оману) — даємо
+      // клієнту дію: оформити з пільгою через менеджера. TODO: прибрати після (B).
+      if (PRIVILEGE_ERROR_RE.test(m)) throw new Error(PRIVILEGE_UNSUPPORTED_MSG);
       if (/undefined offset|server error|undefined (index|array key)/i.test(m)) {
         throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
       }
@@ -800,6 +813,7 @@ export class UkaskoService {
       const rawText = msg ?? JSON.stringify(raw);
       // Логуємо СИРУ відповідь — щоб бачити реальну причину відмови в Cloud Logging.
       console.error("[ukasko declare] rejected. raw:", rawText.slice(0, 800));
+      if (PRIVILEGE_ERROR_RE.test(rawText)) throw new Error(PRIVILEGE_UNSUPPORTED_MSG);
       if (/undefined offset|server error/i.test(rawText)) {
         throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
       }
