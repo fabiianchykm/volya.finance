@@ -520,15 +520,13 @@ export function CheckoutClient() {
         )}
 
         {step === "vehicle" && (
-          <CheckoutVehicleForm 
-            vehicle={vehicle} 
-            customerBirthDate={
-              customer
-                ? new Date(customer.dateBirth * 1000)
-                    .toLocaleDateString("uk-UA", { day: "2-digit", month: "2-digit", year: "numeric" })
-                    .replace(/\//g, ".")
-                : ""
-            }
+          <CheckoutVehicleForm
+            vehicle={vehicle}
+            // Поле кроку 2 — «ДН наймолодшого водія» (йде в car.birthdayAt і саме за ним
+            // рахується ціна). Раніше сюди помилково клали ДН СТРАХУВАЛЬНИКА → поле
+            // показувало чужу/некоректну дату, а declare міг розійтися з ціною. Беремо
+            // реальну ДН наймолодшого, зібрану до пропозицій / на кроці 1.
+            customerBirthDate={buyer.youngestBirthDate || ""}
             onSubmit={handleVehicleSubmit}
             loading={loading}
           />
