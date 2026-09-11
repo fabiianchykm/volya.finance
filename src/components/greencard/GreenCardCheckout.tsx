@@ -603,6 +603,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         email={f.email}
         loading={loading}
         error={error}
+        minLength={6}
+        maxLength={8}
       />
 
       {orderId && (

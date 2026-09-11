@@ -33,27 +33,34 @@ interface OtpModalProps {
   email: string;
   loading?: boolean;
   error?: string | null;
+  /** Довжина коду. Зелена карта шле 6 АБО 8 символів → передає minLength=6, maxLength=8.
+   *  Коли min≠max — показуємо одне текстове поле (комірки не годяться для змінної довжини). */
+  minLength?: number;
+  maxLength?: number;
 }
 
-export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, error }: OtpModalProps) {
+export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, error, minLength = 6, maxLength = 6 }: OtpModalProps) {
   const { t } = useI18n();
-  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+  const variable = maxLength !== minLength;
+  const boxes = minLength; // к-сть комірок у фіксованому режимі
+  const [digits, setDigits] = useState<string[]>(() => Array(boxes).fill(""));
+  const [code, setCode] = useState(""); // режим змінної довжини (одне поле)
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (open) {
       // Reset only when opening to ensure clean state
-      const timer = setTimeout(() => setDigits(["", "", "", "", "", ""]), 0);
+      const timer = setTimeout(() => { setDigits(Array(boxes).fill("")); setCode(""); }, 0);
       return () => clearTimeout(timer);
     }
-  }, [open]);
+  }, [open, boxes]);
 
   const handleChange = (i: number, val: string) => {
     const digit = normalizeOtp(val).slice(-1);
     const next = [...digits];
     next[i] = digit;
     setDigits(next);
-    if (digit && i < 5) refs.current[i + 1]?.focus();
+    if (digit && i < boxes - 1) refs.current[i + 1]?.focus();
     // Авто-підтвердження лише в момент заповнення останньої порожньої комірки,
     // а не на кожне натискання при вже повному коді — інакше кожна правка
     // миттєво ре-сабмітить і з'їдає ліміт спроб (5/10хв).
@@ -73,13 +80,15 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    const text = normalizeOtp(e.clipboardData.getData("text")).slice(0, 6);
-    if (text.length === 6) {
+    const text = normalizeOtp(e.clipboardData.getData("text")).slice(0, boxes);
+    if (text.length === boxes) {
       const next = text.split("");
       setDigits(next);
       if (!loading) onConfirm(text);
     }
   };
+
+  const canSubmit = variable ? code.length >= minLength && code.length <= maxLength : digits.every((d) => d !== "");
 
   return (
     <Modal open={open} onClose={onClose} title={t({ uk: "Підтвердіть email", en: "Confirm email" })} size="sm" preventOutsideClose>
@@ -94,26 +103,46 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           </p>
         </div>
 
-        <div className="flex justify-center gap-2" onPaste={handlePaste}>
-          {digits.map((d, i) => (
+        {variable ? (
+          // Змінна довжина (Зелена карта: 6 або 8) — одне поле, без авто-сабміту.
+          <div className="space-y-2">
             <input
-              key={i}
-              ref={(el) => { refs.current[i] = el; }}
               type="text"
               inputMode="text"
-              aria-label={t({ uk: `Цифра коду ${i + 1}`, en: `Code digit ${i + 1}` })}
-              maxLength={1}
-              value={d}
-              onChange={(e) => handleChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              className={`h-12 w-10 rounded-xl border text-center text-xl font-bold outline-none transition-colors ${
-                d
-                  ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
-                  : "border-zinc-200 bg-white text-zinc-900 focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-              }`}
+              autoFocus
+              aria-label={t({ uk: "Код підтвердження", en: "Confirmation code" })}
+              value={code}
+              onChange={(e) => setCode(normalizeOtp(e.target.value).slice(0, maxLength))}
+              onKeyDown={(e) => { if (e.key === "Enter" && canSubmit && !loading) onConfirm(code); }}
+              placeholder={t({ uk: "Введіть код із листа", en: "Enter the code from the email" })}
+              className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-center text-xl font-bold tracking-[0.3em] text-zinc-900 outline-none transition-colors focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             />
-          ))}
-        </div>
+            <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
+              {t({ uk: `Код складається з ${minLength} або ${maxLength} символів`, en: `The code has ${minLength} or ${maxLength} characters` })}
+            </p>
+          </div>
+        ) : (
+          <div className="flex justify-center gap-2" onPaste={handlePaste}>
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={(el) => { refs.current[i] = el; }}
+                type="text"
+                inputMode="text"
+                aria-label={t({ uk: `Цифра коду ${i + 1}`, en: `Code digit ${i + 1}` })}
+                maxLength={1}
+                value={d}
+                onChange={(e) => handleChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                className={`h-12 w-10 rounded-xl border text-center text-xl font-bold outline-none transition-colors ${
+                  d
+                    ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+                    : "border-zinc-200 bg-white text-zinc-900 focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                }`}
+              />
+            ))}
+          </div>
+        )}
 
         {error && (
           <p className="text-center text-sm font-medium text-red-500">{error}</p>
@@ -123,8 +152,8 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           variant="primary"
           size="md"
           loading={loading}
-          onClick={() => onConfirm(digits.join(""))}
-          disabled={digits.some((d) => !d) || loading}
+          onClick={() => onConfirm(variable ? code : digits.join(""))}
+          disabled={!canSubmit || loading}
           className="w-full"
         >
           {t({ uk: "Підтвердити", en: "Confirm" })}
