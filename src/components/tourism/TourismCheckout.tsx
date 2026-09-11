@@ -200,9 +200,12 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     if (loading) return;
     if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
     if (tourists.some((tr) => !parseUaDate(tr.dateBirth))) { setError(t({ uk: "Вкажіть коректні дати народження туристів", en: "Enter valid dates of birth for the travellers" })); return; }
-    // Документ страхувальника = закордонний паспорт туриста №1 → перевіряємо саме його.
-    if (!tourists[0]?.passportNumber?.trim() || !parseUaDate(tourists[0]?.passportDate)) {
-      setError(t({ uk: "Вкажіть закордонний паспорт і дату його видачі (турист №1 — страхувальник)", en: "Enter the international passport and its issue date (traveller #1 — policyholder)" })); return;
+    // Паспорт (номер + дата видачі + «дійсний до») — ОБОВʼЯЗКОВО для КОЖНОГО туриста.
+    // Порожня дата «дійсний до» ламала укладання (confirm/nextFinal падав 500
+    // «separation symbol / Trailing data»): declare її ковтав, а nextFinal — ні,
+    // і клієнт лишався «оплачено, поліса нема». Тепер не пускаємо порожні паспортні дати.
+    if (tourists.some((tr) => !tr.passportNumber?.trim() || !parseUaDate(tr.passportDate) || !parseUaDate(tr.passportEndDate))) {
+      setError(t({ uk: "Для кожного туриста вкажіть закордонний паспорт: номер, дату видачі та дату «дійсний до».", en: "For each traveller, enter the international passport: number, issue date and valid-until date." })); return;
     }
     setLoading(true);
     setError(null);
@@ -327,8 +330,8 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
               <Input label={t({ uk: "Ким виданий", en: "Issued by" })} value={t2.passportIssuedBy} onChange={(e) => setT(i, "passportIssuedBy", e.target.value)} placeholder={t({ uk: "напр. 1234", en: "e.g. 1234" })} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <DateInput label={t({ uk: "Дата видачі паспорта", en: "Passport issue date" })} value={t2.passportDate} onChange={(v) => setT(i, "passportDate", v)} defaultYear={2015} />
-              <DateInput label={t({ uk: "Паспорт дійсний до", en: "Passport valid until" })} value={t2.passportEndDate} onChange={(v) => setT(i, "passportEndDate", v)} minDate={new Date()} maxDate={new Date(new Date().getFullYear() + 15, 11, 31)} defaultYear={new Date().getFullYear() + 5} />
+              <DateInput label={t({ uk: "Дата видачі паспорта", en: "Passport issue date" })} value={t2.passportDate} onChange={(v) => setT(i, "passportDate", v)} defaultYear={2015} required />
+              <DateInput label={t({ uk: "Паспорт дійсний до", en: "Passport valid until" })} value={t2.passportEndDate} onChange={(v) => setT(i, "passportEndDate", v)} minDate={new Date()} maxDate={new Date(new Date().getFullYear() + 15, 11, 31)} defaultYear={new Date().getFullYear() + 5} required />
             </div>
           </div>
         ))}
