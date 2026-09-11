@@ -1,49 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
-import { withIdempotency } from "@/lib/idempotency";
-import { getPendingOrder, markPendingFinalized } from "@/lib/pending-orders";
-import { savePolicy } from "@/lib/policies";
-import { creditPolicyRewards } from "@/lib/referral";
+import { finalizeOrder, notifyPaidNotIssued } from "@/lib/finalize-order";
 import { notifyDevError } from "@/lib/telegram";
 
 // Продукт-незалежна фіналізація після оплати. LiqPay редіректить клієнта на
-// /payment-success незалежно від продукту, а укладання договору відрізняється по
-// продуктах (ОСЦПВ/ЗК/житло/тварини/міні-КАСКО — по orderId; туризм — повний order).
-// Раніше /payment-success укладав ЛИШЕ ОСЦПВ → інші продукти лишались оплаченими,
-// але без поліса. Тут дивимось збережений при declare pending_order і кличемо
-// правильне укладання + зберігаємо поліс. Це замикає діру «оплатив — поліса нема».
-
-async function confirmByProduct(product: string, orderId: string, orderPayload: Record<string, unknown> | null): Promise<{ contractId: string }> {
-  switch (product) {
-    case "tourism": {
-      if (!orderPayload) throw new Error("Немає даних для укладання туристичного поліса.");
-      const r = await ukaskoService.confirmTourismOrder({ ...orderPayload, orderId });
-      return { contractId: r.contractId };
-    }
-    case "greencard": {
-      const r = await ukaskoService.confirmGreenCard(orderId);
-      return { contractId: r.contractId };
-    }
-    case "housing": {
-      const r = await ukaskoService.confirmHome(orderId);
-      return { contractId: r.contractId };
-    }
-    case "pets": {
-      const r = await ukaskoService.confirmPetsOrder(orderId);
-      return { contractId: r.contractId };
-    }
-    case "mini-kasko": {
-      const r = await ukaskoService.confirmMiniKasko(orderId);
-      return { contractId: r.contractId };
-    }
-    case "osago":
-    default: {
-      const r = await ukaskoService.confirmPolicy(orderId);
-      return { contractId: r.contractId };
-    }
-  }
-}
+// /payment-success незалежно від продукту; спільна логіка укладання — у
+// lib/finalize-order (тими ж кроками користується фоновий /api/finalize/sweep).
+// Це замикає діру «оплатив — поліса нема».
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,82 +17,16 @@ export async function POST(req: NextRequest) {
     const id = String(orderId ?? "");
     if (!id) return NextResponse.json({ success: false, error: "orderId required" }, { status: 400 });
 
-    // 1) Перевіряємо оплату ПОЗА idempotency (статус змінюється з часом; кешувати не
-    // можна — інакше «не оплачено» застрягне). statusId=2 → оплачено.
-    const inv = await ukaskoService.checkInvoice(id);
-    if (inv.status_id !== 2) {
-      return NextResponse.json({ success: true, paid: false });
-    }
+    const r = await finalizeOrder(id, { refCode: req.cookies.get("ref")?.value ?? null });
 
-    // 2) Оплачено → укладаємо (мутація) під idempotency: повторні виклики повертають
-    // той самий contractId, без дублів.
-    const { status, body } = await withIdempotency(`finalize:${id}`, async () => {
-      // Продукт зі збереженого pending order; немає запису → ОСЦПВ (як історично).
-      const pending = await getPendingOrder(id);
-      const product = pending?.product ?? "osago";
-      let contractId: string;
-      try {
-        ({ contractId } = await confirmByProduct(product, id, pending?.orderPayload ?? null));
-      } catch (confirmErr) {
-        // Оплата ВЖЕ підтверджена (status_id=2), але укладання договору впало —
-        // це «💳 оплачено, поліса нема». НІКОЛИ не губимо тихо: гучний алерт
-        // підтримці з усіма даними для ручної видачі в кабінеті. Далі кидаємо
-        // помилку — клієнт бачить «обробляється», а finalize лишається ідемпотентним
-        // (успішна повторна спроба сама укладе, якщо оффер ще живий).
-        const m = pending?.meta;
-        const raw = confirmErr instanceof Error ? confirmErr.message : String(confirmErr);
-        await notifyDevError(
-          `💳❌ ОПЛАЧЕНО, АЛЕ НЕ ВИДАНО — потрібна ручна видача\n` +
-          `product=${product} orderId=${id}\n` +
-          `клієнт=${m?.customerName ?? "-"} тел=${m?.phone ?? "-"} email=${m?.email ?? "-"}\n` +
-          `СК=${m?.company ?? "-"} ціна=${m?.price ?? "-"}\n` +
-          `причина: ${raw.slice(0, 400)}`,
-          confirmErr
-        );
-        throw confirmErr;
-      }
+    if (!r.paid) return NextResponse.json({ success: true, paid: false });
+    if (r.issued) return NextResponse.json({ success: true, paid: true, contractId: r.contractId, product: r.product });
 
-      // Зберігаємо поліс у кабінет (best-effort — не валимо відповідь).
-      const meta = pending?.meta;
-      if (meta?.email) {
-        try {
-          await savePolicy({
-            id: contractId || id,
-            email: String(meta.email),
-            phone: meta.phone ?? null,
-            customerName: meta.customerName ?? null,
-            customer: meta.customer ?? null,
-            contractId,
-            orderId: id,
-            company: meta.company ?? null,
-            vehicle: meta.vehicle ?? {},
-            price: typeof meta.price === "number" ? meta.price : null,
-            startDate: meta.startDate ?? null,
-            endDate: meta.endDate ?? null,
-            product,
-          });
-        } catch (e) {
-          await notifyDevError("finalize savePolicy", e);
-        }
-        // Бонуси за поліс: 1% покупцю + 5% реферу (ref-cookie). Раніше нараховувались
-        // лише на /api/policies (in-page модалка) — на редіректному шляху губились.
-        try {
-          await creditPolicyRewards({
-            email: String(meta.email),
-            policyId: contractId || id,
-            price: typeof meta.price === "number" ? meta.price : null,
-            refCode: req.cookies.get("ref")?.value ?? null,
-          });
-        } catch (e) {
-          await notifyDevError("finalize rewards", e);
-        }
-      }
-
-      await markPendingFinalized(id);
-      return { status: 200, body: { success: true, paid: true, contractId, product } };
-    });
-
-    return NextResponse.json(body, { status });
+    // Оплачено, але укладання впало — гучний алерт підтримці + 500, щоб клієнт бачив
+    // «обробляється» (finalize ідемпотентний: успішний повтор сам укладе). Фоновий
+    // sweep також добере це замовлення пізніше, якщо клієнт не повернеться.
+    await notifyPaidNotIssued({ orderId: id, product: r.product, error: r.error, meta: r.meta });
+    return NextResponse.json({ success: false, error: r.error }, { status: 500 });
   } catch (e) {
     await notifyDevError("finalize", e);
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Error" }, { status: 500 });

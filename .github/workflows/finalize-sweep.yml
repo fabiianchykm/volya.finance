@@ -1,0 +1,28 @@
+# Safety-net: добирає ОПЛАЧЕНІ, але не видані замовлення й доукладає їх.
+# Дзвонить у захищений роут /api/finalize/sweep кожні 15 хв.
+#
+# Потрібні два repo-секрети (Settings → Secrets and variables → Actions):
+#   SWEEP_URL     = https://volya.finance/api/finalize/sweep
+#   SWEEP_SECRET  = те саме значення, що в App Hosting (firebase apphosting:secrets:set sweep-secret)
+name: finalize-sweep
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # кожні 15 хвилин (UTC)
+  workflow_dispatch: {}       # + можливість запустити вручну з вкладки Actions
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call finalize sweep
+        run: |
+          if [ -z "${{ secrets.SWEEP_URL }}" ] || [ -z "${{ secrets.SWEEP_SECRET }}" ]; then
+            echo "SWEEP_URL / SWEEP_SECRET не налаштовані у repo-секретах"; exit 1
+          fi
+          code=$(curl -s -o /tmp/resp.json -w "%{http_code}" --max-time 290 \
+            -H "x-sweep-secret: ${{ secrets.SWEEP_SECRET }}" \
+            "${{ secrets.SWEEP_URL }}")
+          echo "HTTP $code"; cat /tmp/resp.json; echo
+          # 2xx — успіх (навіть якщо нічого не знайдено). Інше — падаємо, щоб бачити в Actions.
+          [ "$code" -ge 200 ] && [ "$code" -lt 300 ]

@@ -106,3 +106,10 @@ env:
   #   firebase apphosting:secrets:set mobile-api-key   (вставити згенероване значення)
   - variable: MOBILE_API_KEY
     secret: mobile-api-key
+  # Токен захисту фонового sweep (/api/finalize/sweep) — добирає ОПЛАЧЕНІ, але не
+  # видані замовлення й доукладає їх (safety-net проти «оплачено, поліса нема»).
+  # Викликається зовнішнім cron із заголовком x-sweep-secret. Створити:
+  #   openssl rand -hex 32
+  #   firebase apphosting:secrets:set sweep-secret   (вставити згенероване)
+  - variable: SWEEP_SECRET
+    secret: sweep-secret

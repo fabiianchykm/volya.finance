@@ -112,6 +112,11 @@ export function ensureSchema(): Promise<void> {
           created_at    timestamptz NOT NULL DEFAULT now()
         )
       `;
+      // Коли sweep уже алертив про «оплачено, не видано» — щоб не слати той самий
+      // алерт щоразу (раз на кілька годин достатньо).
+      await sql`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS alerted_at timestamptz`;
+      // Швидкий вибір неукладених для sweep.
+      await sql`CREATE INDEX IF NOT EXISTS pending_orders_unfinalized_idx ON pending_orders (created_at) WHERE finalized = false`;
       // Прорахунки на калькуляторі (до оформлення). Дає бачити попит навіть коли
       // людина порахувала й пішла. Дедуп за (visitor, product, param_key): повторний
       // прорахунок тими ж параметрами лише піднімає count + updated_at.

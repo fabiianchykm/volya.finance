@@ -65,3 +65,42 @@ export async function markPendingFinalized(orderId: string): Promise<void> {
   if (!sql) return;
   await sql`UPDATE pending_orders SET finalized = true WHERE order_id = ${orderId}`;
 }
+
+export interface UnfinalizedOrder extends PendingOrder {
+  createdAt: string;
+  alertedAt: string | null;
+}
+
+// Неукладені замовлення для safety-net sweep. minAgeMinutes — пропускаємо зовсім
+// свіжі (щоб не перетинатись із живим /payment-success finalize); maxAgeHours —
+// беремо лише недавні (старіші вже або оброблені вручну, або протухли).
+export async function listUnfinalizedOrders(opts: { minAgeMinutes?: number; maxAgeHours?: number; limit?: number } = {}): Promise<UnfinalizedOrder[]> {
+  if (!sql) return [];
+  await ensureSchema();
+  const minAge = opts.minAgeMinutes ?? 2;
+  const maxAge = opts.maxAgeHours ?? 72;
+  const limit = opts.limit ?? 100;
+  const rows = await sql`
+    SELECT order_id, product, order_payload, meta, finalized, created_at, alerted_at
+    FROM pending_orders
+    WHERE finalized = false
+      AND created_at <= now() - (${minAge} * interval '1 minute')
+      AND created_at >= now() - (${maxAge} * interval '1 hour')
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+  return rows.map((r) => ({
+    orderId: r.order_id,
+    product: r.product,
+    orderPayload: r.order_payload ?? null,
+    meta: r.meta ?? null,
+    finalized: !!r.finalized,
+    createdAt: String(r.created_at),
+    alertedAt: r.alerted_at ? String(r.alerted_at) : null,
+  }));
+}
+
+export async function markPendingAlerted(orderId: string): Promise<void> {
+  if (!sql) return;
+  await sql`UPDATE pending_orders SET alerted_at = now() WHERE order_id = ${orderId}`;
+}
