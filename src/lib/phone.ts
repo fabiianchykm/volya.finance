@@ -14,3 +14,16 @@ export function isValidPhone(raw: string): boolean {
   const digits = raw.replace(/\D/g, "");
   return digits.length >= 9 && digits.length <= 13;
 }
+
+/**
+ * Формат телефону, який вимагають деякі модулі СК Ukasko у замовленні:
+ * "+380 XX-XXX-XX-XX" (регекс '^\+380 \d\d-\d\d\d-\d\d-\d\d$'). Суцільний
+ * "+380XXXXXXXXX" вони відхиляють (declare → порожня відповідь / PhoneNumber format).
+ * Повертає best-effort: якщо не 9 цифр абонента — віддаємо як є (не гірше).
+ */
+export function toUkaskoPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  const local = digits.length >= 9 ? digits.slice(-9) : "";
+  if (local.length !== 9) return raw;
+  return `+380 ${local.slice(0, 2)}-${local.slice(2, 5)}-${local.slice(5, 7)}-${local.slice(7, 9)}`;
+}

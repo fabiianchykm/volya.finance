@@ -20,6 +20,7 @@ import type { InsuranceOffer, Customer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { cityShort, cityLong } from "@/lib/utils";
+import { toUkaskoPhone } from "@/lib/phone";
 import { osagoDobForCompany } from "@/lib/osago-age-basis";
 import { useI18n } from "@/lib/i18n";
 
@@ -1398,7 +1399,10 @@ function buildOrderPayload(
       name_ua: v.cityName?.replace(/,?\s*Україна$/i, "").trim() ?? "",
       name_full_name_ua: v.cityName ?? "",
     },
-    customer,
+    // Телефон у форматі, який вимагають модулі СК Ukasko: "+380 XX-XXX-XX-XX".
+    // Суцільний "+380XXXXXXXXX" частина СК відхиляла (declare → порожня відповідь,
+    // PhoneNumber format). Решта полів customer — без змін.
+    customer: { ...customer, phone: toUkaskoPhone(customer.phone) },
     car: {
       vin: v.vin || "0",
       year: v.year,
