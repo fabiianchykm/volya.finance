@@ -39,7 +39,6 @@ function formatUaPhone(digits: string): string {
 }
 
 const toUnix = (ua: string): number | null => { const d = parseUaDate(ua); return d ? Math.floor(d.getTime() / 1000) : null; };
-const toISO = (ua: string): string => { const d = parseUaDate(ua); if (!d) return ""; const p = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 
 interface TouristForm {
   surnameLat: string; nameLat: string; dateBirth: string; identificationCode: string;
@@ -152,8 +151,11 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       // виїзду за кордон; є в available_documents оффера. Раніше слався 3 (ID-карта).
       documentType: 2,
       passportSerial: t.passportSerial || "", passportNumber: t.passportNumber || "",
-      passportDate: t.passportDate ? toISO(t.passportDate) : "",
-      passportEndDate: t.passportEndDate ? toISO(t.passportEndDate) : "",
+      // Ukasko вимагає паспортні дати у форматі d.m.Y (ДД.ММ.РРРР) — НЕ ISO. ISO
+      // (YYYY-MM-DD) валив укладання (nextFinal 500 «separation symbol could not be
+      // found»: парсер шукав крапку, бачив дефіси). Форма й так зберігає ДД.ММ.РРРР.
+      passportDate: t.passportDate || "",
+      passportEndDate: t.passportEndDate || "",
       passportIssuedBy: t.passportIssuedBy || "", unzr: "",
     }));
     return {
