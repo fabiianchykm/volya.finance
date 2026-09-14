@@ -36,10 +36,10 @@ export interface GreenCardContext {
 // Кожен страховик приймає СВІЙ набір (offer.available_documents), тож у checkout
 // показуємо лише перетин із цим каталогом. Порядок = пріоритет за замовчуванням.
 type DocCode = 1 | 2 | 3;
-const DOC_CATALOG: { key: string; t: DocCode; kind: DocKind; label: string; en: string; serialLabel: string; serialEn: string }[] = [
-  { key: "DOCUMENT_ID_CARD",          t: 3, kind: "idcard",  label: "ID-картка", en: "ID card",           serialLabel: "Запис № (УНЗР)", serialEn: "Record No. (UNZR)" },
-  { key: "DOCUMENT_EXTERNAL_PASSPORT", t: 2, kind: "foreign", label: "Закордонний паспорт", en: "International passport", serialLabel: "Серія", serialEn: "Series" },
-  { key: "DOCUMENT_PASSPORT",         t: 1, kind: "passport", label: "Паспорт (книжечка)", en: "Passport (booklet)",  serialLabel: "Серія", serialEn: "Series" },
+const DOC_CATALOG: { key: string; t: DocCode; kind: DocKind; label: string; en: string; serialLabel: string; serialEn: string; serialPh: string; numberPh: string }[] = [
+  { key: "DOCUMENT_ID_CARD",          t: 3, kind: "idcard",  label: "ID-картка", en: "ID card",           serialLabel: "Запис № (УНЗР)", serialEn: "Record No. (UNZR)", serialPh: "19850101-12345", numberPh: "123456789" },
+  { key: "DOCUMENT_EXTERNAL_PASSPORT", t: 2, kind: "foreign", label: "Закордонний паспорт", en: "International passport", serialLabel: "Серія", serialEn: "Series", serialPh: "FA", numberPh: "123456" },
+  { key: "DOCUMENT_PASSPORT",         t: 1, kind: "passport", label: "Паспорт (книжечка)", en: "Passport (booklet)",  serialLabel: "Серія", serialEn: "Series", serialPh: "КМ", numberPh: "123456" },
 ];
 const kindOfDoc = (t: DocCode): DocKind => DOC_CATALOG.find((d) => d.t === t)?.kind ?? "idcard";
 const DOC_FALLBACK = DOC_CATALOG.filter((d) => d.t === 3 || d.t === 1);
@@ -313,6 +313,10 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     if (f.phone.replace(/\D/g, "").length < 9) { setError(t({ uk: "Вкажіть номер телефону", en: "Enter a phone number" })); return; }
     if (!f.email) { setError(t({ uk: "Вкажіть email", en: "Enter an email" })); return; }
     if (!f.docSerial || !f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError(t({ uk: "Заповніть дані документа", en: "Fill in the document details" })); return; }
+    // Паспорт-книжечка: серія = 2 літери, номер = 6 цифр (типова помилка вводу → відмова Ukasko).
+    if (f.docType === 1 && (!/^[A-ZА-ЯІЇЄҐ]{2}$/.test(f.docSerial) || !/^\d{6}$/.test(f.docNumber))) {
+      setError(t({ uk: "Паспорт (книжечка): серія — 2 літери, номер — 6 цифр (напр. КМ 123456).", en: "Booklet passport: series — 2 letters, number — 6 digits (e.g. КМ 123456)." })); return;
+    }
     if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
     if (!f.street || !f.house) { setError(t({ uk: "Вкажіть адресу проживання", en: "Enter your residential address" })); return; }
     setError(null);
@@ -512,8 +516,25 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
             ))}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label={serialLbl} value={f.docSerial} onChange={set("docSerial")} required />
-            <Input label={t({ uk: "Номер документа", en: "Document number" })} value={f.docNumber} onChange={set("docNumber")} required />
+            <Input
+              label={serialLbl}
+              value={f.docSerial}
+              placeholder={serialDoc?.serialPh}
+              // Паспорт (книжечка) / закордонний: серія = 2 літери → лишаємо лише літери,
+              // ВЕЛИКИМИ, максимум 2. ID-картка (УНЗР) — без обмежень (цифри+дефіс).
+              onChange={(f.docType === 1 || f.docType === 2)
+                ? (e) => setF((s) => ({ ...s, docSerial: e.target.value.replace(/[^A-Za-zА-Яа-яІЇЄҐіїєґ]/g, "").toUpperCase().slice(0, 2) }))
+                : set("docSerial")}
+              required
+            />
+            <Input
+              label={t({ uk: "Номер документа", en: "Document number" })}
+              value={f.docNumber}
+              placeholder={serialDoc?.numberPh}
+              // Номер — лише цифри. Книжечка/закордонний = 6 цифр, ID-картка = 9.
+              onChange={(e) => setF((s) => ({ ...s, docNumber: e.target.value.replace(/\D/g, "").slice(0, f.docType === 3 ? 9 : 6) }))}
+              required
+            />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input label={t({ uk: "Ким видано", en: "Issued by" })} value={f.docIssuedBy} onChange={set("docIssuedBy")} required />
