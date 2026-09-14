@@ -14,6 +14,7 @@ import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong } from "@/lib/utils";
+import { toUkaskoPhone } from "@/lib/phone";
 import { useI18n } from "@/lib/i18n";
 
 // Оформлення страхування житла: страхувальник (паспорт/ID, ІПН) + адреса обʼєкта →
@@ -240,7 +241,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       info: {
         name_ua: f.nameUa, surname_ua: f.surnameUa, patronymic_ua: f.patronymicUa,
         dateBirth: toUnix(f.dateBirth),                // unix
-        phone: `+380${f.phone.replace(/\D/g, "")}`,
+        phone: toUkaskoPhone(f.phone),                 // Ukasko-формат "+380 XX-XXX-XX-XX"
         mail: f.email,
         city: cityObj,
         street: f.street, house: f.house, apartment: f.apartment,

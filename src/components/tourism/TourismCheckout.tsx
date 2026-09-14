@@ -10,6 +10,7 @@ import { OtpModal } from "@/components/insurance/OtpModal";
 import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, formatCompanyName, cityShort, cityLong } from "@/lib/utils";
+import { toUkaskoPhone } from "@/lib/phone";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, type CustomerProfile } from "@/lib/customer-profile";
@@ -170,7 +171,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       info: {
         name: main.nameLat.trim(), surname: main.surnameLat.trim(), dateBirth: main.dateBirth,
         identificationCode: main.identificationCode, withoutIdentificationCode: main.identificationCode ? false : true,
-        phone: `+380${c.phone.replace(/\D/g, "")}`, mail: c.email,
+        phone: toUkaskoPhone(c.phone), mail: c.email,
         city: { id: selectedCity?.id ?? null, name: selectedCity?.name_ua ?? cityName, name_full_name_ua: cityName },
         street: c.street, house: c.house, apartment: c.apartment || "",
         // Документ страхувальника = його ж закордонний паспорт (турист №1), тип 2.

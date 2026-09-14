@@ -10,6 +10,7 @@ import { OtpModal } from "@/components/insurance/OtpModal";
 import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, cityShort, cityLong } from "@/lib/utils";
+import { toUkaskoPhone } from "@/lib/phone";
 import type { PetsOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
@@ -159,7 +160,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
         name_ua_lat: f.nameLat.trim(), surname_ua_lat: f.surnameLat.trim(),
         companyName: null, edrpou: null,
         dateBirth: toUnix(f.dateBirth),
-        phone: `+380${f.phone.replace(/\D/g, "")}`,
+        phone: toUkaskoPhone(f.phone),          // Ukasko-формат "+380 XX-XXX-XX-XX"
         mail: f.email.trim(),
         city: { id: selectedCity?.id ?? null, name: selectedCity?.name_ua ?? "" },
         street: f.street.trim(), house: f.house.trim(), apartment: f.apartment.trim() || null,

@@ -15,6 +15,7 @@ import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
+import { toUkaskoPhone } from "@/lib/phone";
 import { useI18n } from "@/lib/i18n";
 
 // Анкета оформлення «Зелена карта» (аналог CheckoutClient для ОСЦПВ):
@@ -277,7 +278,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         surname: f.surnameLat, name: f.nameLat,
         surname_ua: f.surnameUa, name_ua: f.nameUa, patronymic_ua: f.patronymicUa,
         dateBirth: toISODate(dob),              // YYYY-MM-DD
-        phone: `+380${f.phone.replace(/\D/g, "")}`,
+        phone: toUkaskoPhone(f.phone),          // Ukasko-формат "+380 XX-XXX-XX-XX"
         mail: f.email,
         identificationCode: f.identificationCode,
         withoutIdentificationCode: !f.identificationCode,   // boolean
