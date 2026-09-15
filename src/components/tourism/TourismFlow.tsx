@@ -56,11 +56,18 @@ function riskTags(o: TourismOffer, t: Tr): string[] {
 function TourismRiskDetail({ o }: { o: TourismOffer }) {
   const { t } = useI18n();
   const progs = Array.isArray(o.programs) ? o.programs : [];
-  if (progs.length === 0) return null;
   const franchise = Number(o.franchise ?? 0);
   const cur0 = currencySymbol(o.limit_currency);
+  // Назва програми від СК (напр. «Туризм A 30000 / Робота з низьким ризиком»).
+  const progName = (o.name || o.title || "").trim();
+  if (progs.length === 0 && !progName) return null;
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
+      {progName && (
+        <p className="mb-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300">{progName}</p>
+      )}
+      {progs.length > 0 && (
+      <>
       <p className="mb-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Що покриває", en: "What's covered" })}</p>
       <div className="flex flex-col gap-1.5">
         {progs.map((p, idx) => (
@@ -79,6 +86,8 @@ function TourismRiskDetail({ o }: { o: TourismOffer }) {
           ? t({ uk: `Франшиза: ${nf(franchise)} ${cur0} — цю суму за кожним випадком клієнт покриває сам.`, en: `Deductible: ${nf(franchise)} ${cur0} — the client covers this amount per claim.` })
           : t({ uk: "Франшиза: 0 — страхова відшкодовує з першого євро, без вашої участі.", en: "Deductible: 0 — the insurer pays from the first euro, with no out-of-pocket cost." })}
       </p>
+      </>
+      )}
     </div>
   );
 }
