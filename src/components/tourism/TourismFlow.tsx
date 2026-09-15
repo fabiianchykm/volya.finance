@@ -197,6 +197,10 @@ export function TourismFlow() {
     if (!sD || d <= 0 || !births.every((b) => parseUaDate(b)) || (!multi && !eD)) return;
     setLoading(true);
     setError(null);
+    // Одразу переходимо на екран пропозицій із індикатором завантаження (як в ОСЦПВ),
+    // а не крутимо кнопку на формі — калькулятор довгий (30–50с).
+    setOffers([]);
+    setStep("offers");
     // Параметри в URL (у т.ч. дати народження туристів — на прохання).
     const qs = `?step=offers&zone=${zid}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}&multi=${multi ? 1 : 0}&tripDays=${tDays}&births=${encodeURIComponent(births.join(","))}`;
     window.history.replaceState(null, "", qs);
@@ -239,6 +243,7 @@ export function TourismFlow() {
       setStep("offers");
     } catch (err) {
       setError(err instanceof Error ? err.message : t({ uk: "Не вдалося отримати пропозиції.", en: "Could not fetch offers." }));
+      setStep("form"); // при помилці — назад на форму, щоб показати повідомлення й дати повторити
     } finally {
       setLoading(false);
     }
@@ -277,7 +282,19 @@ export function TourismFlow() {
         <Navbar solid />
         <section className="min-h-screen pt-20 pb-10">
           <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
-            {step === "offers" ? (
+            {step === "offers" && loading && offers.length === 0 ? (
+              // Екран завантаження (калькулятор Ukasko довгий) — щоб перехід був як в ОСЦПВ.
+              <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600 dark:border-zinc-700 dark:border-t-indigo-400" />
+                <p className="text-base font-medium text-zinc-800 dark:text-zinc-100">{t({ uk: "Шукаємо пропозиції…", en: "Searching for offers…" })}</p>
+                <p className="max-w-md text-sm text-zinc-500 dark:text-zinc-400">
+                  {t({ uk: "Опитуємо страхові компанії — це може зайняти до 40 секунд. Не закривайте сторінку.", en: "Polling the insurers — this can take up to 40 seconds. Please don't close the page." })}
+                </p>
+                <button onClick={() => { setStep("form"); window.history.replaceState(null, "", window.location.pathname); }} className="text-xs text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">
+                  {t({ uk: "← Назад", en: "← Back" })}
+                </button>
+              </div>
+            ) : step === "offers" ? (
               <div className="flex flex-col items-start gap-6 lg:flex-row">
                 <div className="min-w-0 flex-1">
                   <TourismOffers
