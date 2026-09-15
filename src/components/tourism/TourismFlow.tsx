@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
 import { OfferCard } from "@/components/insurance/OfferCard";
+import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { Navbar } from "@/components/layout/Navbar";
 import { TourismCheckout, type TourismCheckoutCtx } from "./TourismCheckout";
 import type { TourismOffer, InsuranceOffer } from "@/types/api";
@@ -292,16 +293,10 @@ export function TourismFlow() {
         <section className="min-h-screen pt-20 pb-10">
           <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
             {step === "offers" && loading && offers.length === 0 ? (
-              // Екран завантаження (калькулятор Ukasko довгий) — щоб перехід був як в ОСЦПВ.
-              <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
-                <div className="h-10 w-10 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600 dark:border-zinc-700 dark:border-t-indigo-400" />
-                <p className="text-base font-medium text-zinc-800 dark:text-zinc-100">{t({ uk: "Шукаємо пропозиції…", en: "Searching for offers…" })}</p>
-                <p className="max-w-md text-sm text-zinc-500 dark:text-zinc-400">
-                  {t({ uk: "Опитуємо страхові компанії — це може зайняти до 40 секунд. Не закривайте сторінку.", en: "Polling the insurers — this can take up to 40 seconds. Please don't close the page." })}
-                </p>
-                <button onClick={() => { setStep("form"); window.history.replaceState(null, "", window.location.pathname); }} className="text-xs text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">
-                  {t({ uk: "← Назад", en: "← Back" })}
-                </button>
+              // Завантаження — як в ОСЦПВ: банер «опитуємо страхові» + скелетони карток.
+              <div className="min-w-0 flex-1 space-y-3">
+                <SearchingInsurers />
+                {Array.from({ length: 5 }).map((_, i) => <TourismOfferSkeleton key={i} />)}
               </div>
             ) : step === "offers" ? (
               <div className="flex flex-col items-start gap-6 lg:flex-row">
@@ -449,6 +444,28 @@ export function TourismFlow() {
 
 // EUR → €, USD → $ для суми покриття.
 const currencySymbol = (cur?: string) => (cur === "USD" ? "$" : "€");
+
+// Скелетон картки під час завантаження (як OfferCardSkeleton в ОСЦПВ).
+function TourismOfferSkeleton() {
+  return (
+    <div className="animate-pulse rounded-2xl bg-white border border-zinc-100 shadow-sm px-6 py-5 dark:bg-zinc-900 dark:border-zinc-800">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-zinc-100 dark:bg-zinc-800" />
+          <div className="space-y-2">
+            <div className="h-4 w-32 rounded bg-zinc-100 dark:bg-zinc-800" />
+            <div className="h-3 w-20 rounded bg-zinc-100 dark:bg-zinc-800" />
+          </div>
+        </div>
+        <div className="space-y-2 text-right">
+          <div className="ml-auto h-6 w-24 rounded bg-zinc-100 dark:bg-zinc-800" />
+          <div className="ml-auto h-3 w-16 rounded bg-zinc-100 dark:bg-zinc-800" />
+        </div>
+      </div>
+      <div className="mt-4 h-10 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800" />
+    </div>
+  );
+}
 
 // Мапимо офер туристичного у форму InsuranceOffer, щоб переюзати OSAGO OfferCard.
 function toTourismInsuranceOffer(o: TourismOffer): InsuranceOffer {
