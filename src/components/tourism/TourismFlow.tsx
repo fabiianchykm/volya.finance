@@ -377,7 +377,7 @@ export function TourismFlow() {
 
               <label className="mt-5 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 px-4 py-3 transition-colors hover:border-indigo-200">
                 <span className="flex flex-col">
-                  <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t({ uk: "Річний поліс (мультивіза)", en: "Annual policy (multi-visa)" })}</span>
+                  <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t({ uk: "Мультивіза", en: "Multi-visa" })}</span>
                   <span className="text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Багато поїздок протягом року", en: "Multiple trips within a year" })}</span>
                 </span>
                 <input type="checkbox" checked={multiVisa} onChange={(e) => setMultiVisa(e.target.checked)} className="h-5 w-5 rounded border-zinc-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500" />
