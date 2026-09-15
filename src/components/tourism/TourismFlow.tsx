@@ -204,20 +204,35 @@ export function TourismFlow() {
     trackCalc("tourism", { zone: ZONES.find((z) => String(z.id) === zid)?.label ?? zid, start: sUa, end: eUa, days: d, tourists: births.length, multiVisa: multi });
     try {
       const zone = ZONES.find((z) => String(z.id) === zid)!;
-      const res = await fetch("/api/tourism", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          birthDates: births,               // dd.mm.yyyy = d.m.Y
-          country: { id: zone.id, name: zone.name },
-          date: sUa,
-          days: d,
-          multiVisa: multi,
-          tourists: births.length,
-        }),
+      const body = JSON.stringify({
+        birthDates: births,               // dd.mm.yyyy = d.m.Y
+        country: { id: zone.id, name: zone.name },
+        date: sUa,
+        days: d,
+        multiVisa: multi,
+        tourists: births.length,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }));
+      // Калькулятор Ukasko повільний (30–50с), тож на мобільних запит іноді обривається
+      // ("Load failed" / "fetch failed" — TypeError). Повторюємо на мережевому збої:
+      // сервер міг уже порахувати й закешувати → повтор часто миттєвий.
+      let data: { success?: boolean; offers?: TourismOffer[]; error?: string } = {};
+      let lastErr: unknown;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch("/api/tourism", { method: "POST", headers: { "content-type": "application/json" }, body });
+          data = await res.json().catch(() => ({}));
+          if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }));
+          lastErr = null;
+          break;
+        } catch (e) {
+          lastErr = e;
+          const msg = e instanceof Error ? e.message : String(e);
+          const isNetwork = e instanceof TypeError || /load failed|fetch failed|networkerror|network request failed/i.test(msg);
+          if (isNetwork && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
+          throw e;
+        }
+      }
+      if (lastErr) throw lastErr;
       const list: TourismOffer[] = (data.offers ?? []).filter((o: TourismOffer) => o && o.price > 0);
       list.sort((a, b) => a.price - b.price);
       setOffers(list);
