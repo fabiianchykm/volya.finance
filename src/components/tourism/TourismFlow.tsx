@@ -377,7 +377,7 @@ export function TourismFlow() {
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Днів на поїздку", en: "Days per trip" })}</label>
                     <div className="relative">
                       <select value={tripDays} onChange={(e) => setTripDays(Number(e.target.value))} className={`${selectClass} cursor-pointer appearance-none pr-10`}>
-                        {[30, 60, 90, 180].map((d) => <option key={d} value={d}>{t({ uk: `до ${d} днів на поїздку`, en: `up to ${d} days per trip` })}</option>)}
+                        {[30, 60, 90, 180, 270, 365].map((d) => <option key={d} value={d}>{t({ uk: `до ${d} днів на поїздку`, en: `up to ${d} days per trip` })}</option>)}
                       </select>
                       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
                     </div>
