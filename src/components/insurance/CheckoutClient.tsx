@@ -209,8 +209,16 @@ export function CheckoutClient() {
 
     for (let attempt = 0; attempt < 3; attempt++) {
       // nocache — щоб отримати СВІЖИЙ offerId (кешований міг протухнути → 422).
-      const res = await fetch(`/api/insurance/offers?${new URLSearchParams({ ...paramsObj, nocache: "1" })}`);
-      const json = await res.json();
+      // Обгортаємо у try: мобільний обриває довгий запит («Load failed»/TypeError) —
+      // не валимо весь розрахунок, а пробуємо ще раз (пауза між спробами).
+      let json: { success?: boolean; data?: { data?: InsuranceOffer[] } };
+      try {
+        const res = await fetch(`/api/insurance/offers?${new URLSearchParams({ ...paramsObj, nocache: "1" })}`);
+        json = await res.json();
+      } catch {
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1200));
+        continue;
+      }
       if (!json.success) continue; // тимчасовий збій — пробуємо ще раз
       const list: InsuranceOffer[] = Array.isArray(json.data?.data) ? json.data.data : [];
       const found = list.find(matches);
@@ -303,7 +311,8 @@ export function CheckoutClient() {
       // Один авто-повтор робить обидва непомітними для клієнта (інакше — «до оплати
       // не доходить»).
       const isRetryable = (e: unknown) =>
-        /offer\s*id|offerid|не\s*коректн|порожн[яю]\s*відповід|empty|тимчасов[ао]\s*недоступн|недоступн/i.test(e instanceof Error ? e.message : String(e));
+        e instanceof TypeError || // мережевий обрив (Load failed / Failed to fetch)
+        /offer\s*id|offerid|не\s*коректн|порожн[яю]\s*відповід|empty|тимчасов[ао]\s*недоступн|недоступн|load failed|fetch failed|network/i.test(e instanceof Error ? e.message : String(e));
 
       let declaredId: string;
       try {
