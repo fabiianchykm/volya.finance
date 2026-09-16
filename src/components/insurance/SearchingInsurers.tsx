@@ -17,7 +17,8 @@ export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string
   const { t } = useI18n();
   const [i, setI] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setI((v) => v + 1), 480);
+    // Спокійний темп зміни назв (раніше 480мс — читалось як миготливе «слайд-шоу»).
+    const t = setInterval(() => setI((v) => v + 1), 1100);
     return () => clearInterval(t);
   }, []);
   const name = names[i % names.length];
@@ -31,10 +32,10 @@ export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
                 key={name + i}
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
                 className="col-start-1 row-start-1 whitespace-nowrap font-semibold text-indigo-600 dark:text-indigo-400"
               >
                 {name}
