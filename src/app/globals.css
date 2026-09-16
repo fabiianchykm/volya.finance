@@ -136,6 +136,17 @@ body {
   animation: gradient-shift 20s ease infinite;
 }
 
+/* Індикатор завантаження (SearchingInsurers) — чистий CSS замість framer-motion,
+   щоб не навантажувати головний потік під час довгого очікування калькулятора. */
+@keyframes loading-bar {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(420%); }
+}
+.animate-loading-bar {
+  animation: loading-bar 1.4s ease-in-out infinite;
+  will-change: transform;
+}
+
 .animate-plate-glow {
   animation: plate-glow 3s ease-in-out infinite;
 }

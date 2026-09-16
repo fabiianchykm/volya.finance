@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 
-// Динамічний індикатор пошуку: «опитуємо» страховиків по черзі — реальні назви
-// компаній змінюються + смуга завантаження, щоб було відчуття живого порівняння.
-// Спільний для автоцивілки, зеленої карти й туристичного (можна передати свій names).
+// Індикатор пошуку: «опитуємо» страховиків по черзі + смуга завантаження.
+// БЕЗ framer-motion — чистий CSS, щоб не навантажувати головний потік під час
+// довгого очікування калькулятора (інакше сторінка підлагує). Спільний для
+// автоцивілки, зеленої карти й туристичного (можна передати свій names).
 
 const DEFAULT_INSURERS = [
   "ІНГО", "ПЗУ", "УНІКА", "ОРАНТА", "ТАС", "КНЯЖА", "УСГ", "ВУСО",
@@ -17,41 +17,24 @@ export function SearchingInsurers({ names = DEFAULT_INSURERS }: { names?: string
   const { t } = useI18n();
   const [i, setI] = useState(0);
   useEffect(() => {
-    // Спокійний темп зміни назв (раніше 480мс — читалось як миготливе «слайд-шоу»).
-    const t = setInterval(() => setI((v) => v + 1), 1100);
-    return () => clearInterval(t);
+    // Один ре-рендер на 1.1с (назва СК). Без анімацій на кожен кадр.
+    const id = setInterval(() => setI((v) => v + 1), 1100);
+    return () => clearInterval(id);
   }, []);
   const name = names[i % names.length];
   return (
     <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
       <div className="flex items-center justify-center gap-2.5">
         <span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-500 dark:border-indigo-800" />
-        <p className="flex items-center justify-center gap-x-1.5 text-sm text-zinc-600 dark:text-zinc-300">
-          <span>{t({ uk: "Порівнюємо тарифи страховиків —", en: "Comparing insurer rates —" })}</span>
-          <span className="relative inline-grid">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span
-                key={name + i}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="col-start-1 row-start-1 whitespace-nowrap font-semibold text-indigo-600 dark:text-indigo-400"
-              >
-                {name}
-              </motion.span>
-            </AnimatePresence>
-          </span>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          {t({ uk: "Порівнюємо тарифи страховиків —", en: "Comparing insurer rates —" })}{" "}
+          <span className="font-semibold text-indigo-600 transition-opacity duration-300 dark:text-indigo-400">{name}</span>
         </p>
       </div>
 
-      {/* Смуга завантаження — рухається зліва направо, поки тягнемо пропозиції. */}
+      {/* Смуга завантаження — чистий CSS (GPU), без JS-анімації. */}
       <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-indigo-100 dark:bg-indigo-900/40">
-        <motion.div
-          className="h-full w-1/3 rounded-full bg-gradient-to-r from-indigo-400 to-violet-500"
-          animate={{ x: ["-100%", "300%"] }}
-          transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <div className="h-full w-1/4 rounded-full bg-gradient-to-r from-indigo-400 to-violet-500 animate-loading-bar" />
       </div>
     </div>
   );
