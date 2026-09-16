@@ -17,6 +17,7 @@ import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 import { toUkaskoPhone } from "@/lib/phone";
 import { useI18n } from "@/lib/i18n";
+import { SupportCTA } from "@/components/ui/SupportCTA";
 
 // Анкета оформлення «Зелена карта» (аналог CheckoutClient для ОСЦПВ):
 // дані страхувальника (ПІБ укр + латиниця, документ, адреса) → заявлення
@@ -468,7 +469,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         </div>
       </div>
 
-      {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}</div>}
+      {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}<SupportCTA /></div>}
       {priceNotice && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">{priceNotice}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">

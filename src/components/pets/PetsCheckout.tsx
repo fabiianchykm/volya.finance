@@ -16,6 +16,7 @@ import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { useSession } from "next-auth/react";
 import { useI18n } from "@/lib/i18n";
+import { SupportCTA } from "@/components/ui/SupportCTA";
 
 // Анкета оформлення страхування тварин: дані улюбленця + власника → order/create
 // (statusId:5) → OTP → оплата → confirm → поліс. Дати — Unix timestamp (сек).
@@ -277,7 +278,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
         </div>
       </div>
 
-      {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+      {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}<SupportCTA /></div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Тварина */}

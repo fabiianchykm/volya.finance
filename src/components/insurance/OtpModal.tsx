@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Mail } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { SupportCTA } from "@/components/ui/SupportCTA";
 
 // Код приходить латиницею, але клієнт із кириличною розкладкою може ввести
 // візуально ІДЕНТИЧНІ кириличні літери (с, а, о, р, х, е…). Конвертуємо такі
@@ -145,7 +146,10 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
         )}
 
         {error && (
-          <p className="text-center text-sm font-medium text-red-500">{error}</p>
+          <div className="text-center">
+            <p className="text-sm font-medium text-red-500">{error}</p>
+            <SupportCTA className="justify-center" />
+          </div>
         )}
 
         <Button

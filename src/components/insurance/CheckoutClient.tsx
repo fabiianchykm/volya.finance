@@ -21,6 +21,7 @@ import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } 
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { cityShort, cityLong } from "@/lib/utils";
 import { toUkaskoPhone } from "@/lib/phone";
+import { SupportCTA } from "@/components/ui/SupportCTA";
 import { osagoDobForCompany } from "@/lib/osago-age-basis";
 import { useI18n } from "@/lib/i18n";
 
@@ -504,6 +505,7 @@ export function CheckoutClient() {
       {error && step !== "otp" && (
         <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
           <span className="font-semibold">{t({ uk: "Помилка: ", en: "Error: " })}</span>{error}
+          <SupportCTA />
         </div>
       )}
 

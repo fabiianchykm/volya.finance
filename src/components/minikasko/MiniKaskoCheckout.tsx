@@ -15,6 +15,7 @@ import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docField
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { SupportCTA } from "@/components/ui/SupportCTA";
 
 // Оформлення міні-КАСКО: дані страхувальника (паспорт, ІПН, адреса) + авто за
 // номером → declare → OTP підпису → оплата → confirm → готовий поліс (PDF).
@@ -333,7 +334,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
         </div>
       </div>
 
-      {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}</div>}
+      {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}<SupportCTA /></div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {formStep === "customer" && (

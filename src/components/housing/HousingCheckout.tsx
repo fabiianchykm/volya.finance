@@ -16,6 +16,7 @@ import { useSession } from "next-auth/react";
 import { cityShort, cityLong } from "@/lib/utils";
 import { toUkaskoPhone } from "@/lib/phone";
 import { useI18n } from "@/lib/i18n";
+import { SupportCTA } from "@/components/ui/SupportCTA";
 
 // Оформлення страхування житла: страхувальник (паспорт/ID, ІПН) + адреса обʼєкта →
 // order/create → OTP (спільний) → оплата → contract/confirm → contract/take (PDF).
@@ -389,7 +390,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
         </div>
       </div>
 
-      {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}</div>}
+      {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}<SupportCTA /></div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Страхувальник */}
