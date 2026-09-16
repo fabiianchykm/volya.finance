@@ -433,10 +433,13 @@ export class UkaskoService {
   }
 
   // Калькулятор туристичного страхування → масив пропозицій.
-  async getTourismOffers(params: TourismParams): Promise<TourismOffer[]> {
+  async getTourismOffers(params: TourismParams, moduleId?: number): Promise<TourismOffer[]> {
     const url = `${BASE_URL}/insurance/calculator/tourism`;
+    // moduleId (опційно) → калькулятор рахує ЛИШЕ цю СК. Для потокової видачі (стрім)
+    // опитуємо модулі поокремо; без нього — звичний повний батч (як було).
+    const payload = moduleId ? { ...params, moduleId } : params;
     const once = async (): Promise<TourismOffer[]> => {
-      const raw = await withRetry(() => this.withAuth((token) => postJson(url, params, token))) as Record<string, unknown>;
+      const raw = await withRetry(() => this.withAuth((token) => postJson(url, payload, token))) as Record<string, unknown>;
       const data = raw.data;
       return Array.isArray(data) ? (data as TourismOffer[]) : [];
     };

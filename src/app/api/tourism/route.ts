@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   if (blocked) return blocked;
 
   let params: TourismParams;
+  let moduleId: number | undefined;
   try {
     const body = await req.json();
     params = {
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       multiVisa: !!body?.multiVisa,
       tourists: Number(body?.tourists),
     };
+    moduleId = Number(body?.moduleId) || undefined; // опційно: рахувати лише одну СК (для стріму)
   } catch {
     return NextResponse.json({ success: false, error: "Некоректний запит" }, { status: 400 });
   }
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
   const cacheKey = JSON.stringify({
     c: params.country.id, d: params.date, days: params.days,
     m: params.multiVisa, t: params.tourists, b: [...params.birthDates].sort(),
+    mod: moduleId ?? 0,
   });
   const now = Date.now();
   const memHit = tourismCache.get(cacheKey);
@@ -63,7 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const offers = await ukaskoService.getTourismOffers(params);
+    const offers = await ukaskoService.getTourismOffers(params, moduleId);
     // Кешуємо лише НЕпорожній результат — щоб транзієнтна порожня видача не
     // «застрягла» в кеші й не блокувала повторні спроби. Пишемо в обидва рівні.
     if (Array.isArray(offers) && offers.length > 0) {
