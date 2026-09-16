@@ -78,7 +78,7 @@ export function HomeHero() {
               <Link
                 key={href}
                 href={href}
-                className="group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 p-6 text-left shadow-sm ring-1 ring-zinc-200/60 dark:ring-zinc-700 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-100 dark:hover:ring-indigo-900"
+                className="group flex flex-col rounded-2xl bg-white dark:bg-zinc-900 p-6 text-left shadow-sm ring-1 ring-zinc-200/60 dark:ring-zinc-700 transition-all duration-200 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-200 dark:hover:ring-indigo-800"
               >
                 {inner}
               </Link>
