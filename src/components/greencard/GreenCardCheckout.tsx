@@ -626,7 +626,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
         loading={loading}
         error={error}
         minLength={6}
-        maxLength={8}
+        // 8-символьний OTP шле лише УТСК; решта ЗК-страхових — 6 (звичні клітинки).
+        maxLength={/утск|utsk|укр.*трансп/i.test(gcOffer.companyNamePublic || gcOffer.companyName || "") ? 8 : 6}
       />
 
       {orderId && (
