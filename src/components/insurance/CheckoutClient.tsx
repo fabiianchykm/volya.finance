@@ -11,7 +11,8 @@ import { registerPendingOrder } from "@/lib/pending-order-client";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { searchMarks, searchModels } from "@/lib/car-catalog";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, listProfiles, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+import { ProfilePicker } from "./ProfilePicker";
 
 // Локальні числові коди документів ОСЦПВ → канонічний тип-сутність.
 const OSAGO_DOC_KIND: Record<1 | 3 | 4, DocKind> = { 1: "passport", 3: "idcard", 4: "license" };
@@ -734,17 +735,14 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
   // При відкритті форми — підставляємо останній збережений профіль (свій пристрій),
   // щоб повторним клієнтам не вводити все заново. Порожній email → нічого не робимо.
   const { status: authStatus } = useSession();
-  const didAutofill = useRef(false);
+  // Поля лишаємо ПОРОЖНІМИ (на акаунті може бути кілька осіб — сам, дружина…).
+  // Замість автозаповнення готуємо список збережених профілів для пікера зверху.
+  const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);
   useEffect(() => {
-    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
-    if (authStatus !== "authenticated" || didAutofill.current) return;
-    didAutofill.current = true;
-    const last = loadLastProfile();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (last) applyProfile(last);
-    // Fallback: кеш ще порожній (ProfileSync не встиг) — тягнемо профіль напряму.
-    else void fetchServerProfile().then((p) => { if (p) applyProfile(p); });
-
+    if (authStatus !== "authenticated") return;
+    setSavedProfiles(listProfiles());
+    // Підтягуємо з сервера (крос-девайс) і оновлюємо список — БЕЗ застосування.
+    void fetchServerProfile().then(() => setSavedProfiles(listProfiles()));
   }, [authStatus]);
 
   // Email — окремий обробник: якщо введений email збігається зі збереженим профілем,
@@ -906,6 +904,7 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Дані страхувальника (покупця)", en: "Policyholder (buyer) details" })}</h2>
+      <ProfilePicker profiles={savedProfiles} onPick={applyProfile} />
 
       <div className="space-y-5">
         <div>

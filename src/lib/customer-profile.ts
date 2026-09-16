@@ -185,6 +185,18 @@ export function loadProfile(email: string): CustomerProfile | null {
   return map[e] ?? null;
 }
 
+/** Усі збережені профілі (найсвіжіші першими) — для пікера «Заповнити збереженими».
+ *  На одному акаунті можуть бути дані кількох осіб (сам, дружина тощо). */
+export function listProfiles(): CustomerProfile[] {
+  try {
+    return Object.values(readMap())
+      .filter((p) => (p.surname || p.name || p.nameLat || p.surnameLat)) // без порожніх
+      .sort((a, b) => b.savedAt - a.savedAt);
+  } catch {
+    return [];
+  }
+}
+
 /** Найсвіжіший збережений профіль (для автопідстановки при відкритті форми). */
 export function loadLastProfile(): CustomerProfile | null {
   try {
