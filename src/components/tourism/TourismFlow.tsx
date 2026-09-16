@@ -61,12 +61,31 @@ function TourismRiskDetail({ o }: { o: TourismOffer }) {
   const cur0 = currencySymbol(o.limit_currency);
   // Назва програми від СК (напр. «Туризм A 30000 / Робота з низьким ризиком»).
   const progName = (o.name || o.title || "").trim();
+  // Ключові параметри (як у конкурента): тариф, ліміт, франшиза, к-сть опцій.
+  const tier = o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : "";
+  const coverage = coverageOf(o);
+  const opts = o.options && typeof o.options === "object" ? o.options : {};
+  const optionsCount = Object.values(opts).filter((v) =>
+    v === true || (typeof v === "number" && v > 0) || (!!v && typeof v === "object" && ((v as { status?: boolean }).status === true || ((v as { value?: number }).value ?? 0) > 0))
+  ).length;
   if (progs.length === 0 && !progName) return null;
+  const Row = ({ label, value }: { label: string; value: string }) => (
+    <>
+      <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+      <span className="text-right font-semibold text-zinc-900 dark:text-zinc-100">{value}</span>
+    </>
+  );
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
       {progName && (
         <p className="mb-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300">{progName}</p>
       )}
+      <div className="mb-2.5 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        {tier && <Row label={t({ uk: "Програма", en: "Program" })} value={tier} />}
+        {coverage > 0 && <Row label={t({ uk: "Страховий ліміт", en: "Coverage limit" })} value={`${nf(coverage)} ${cur0}`} />}
+        <Row label={t({ uk: "Франшиза", en: "Deductible" })} value={franchise > 0 ? `${nf(franchise)} ${cur0}` : t({ uk: "0 (без франшизи)", en: "0 (none)" })} />
+        {optionsCount > 0 && <Row label={t({ uk: "Включено опцій", en: "Options included" })} value={String(optionsCount)} />}
+      </div>
       {progs.length > 0 && (
       <>
       <p className="mb-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Що покриває", en: "What's covered" })}</p>
