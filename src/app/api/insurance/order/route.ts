@@ -46,7 +46,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    await notifyDevError("insurance order", error);
+    // Очікувані, САМОВІДНОВЛЮВАНІ транзієнти (див. CheckoutClient.isRetryable):
+    //  • «offer id не коректне» — офер протух між розрахунком і замовленням;
+    //  • порожня відповідь модуля СК (флап).
+    // Клієнт їх лікує авто-повтором зі свіжим офером, тож у Telegram вони летіли
+    // ФАЛЬШИВОЮ тривогою (алерт на кожну першу спробу, хоч checkout відновлювався).
+    // Лишаємо їх у Cloud Logging (console.error), але НЕ пінгуємо оператора.
+    const expectedTransient =
+      /offer\s*id|offerid|не\s*коректн|порожн[яю]\s*відповід|empty|тимчасов[ао]\s*недоступн/i.test(message);
+    if (expectedTransient) {
+      console.error("[order] expected transient (client auto-retries):", message.slice(0, 300));
+    } else {
+      await notifyDevError("insurance order", error);
+    }
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
