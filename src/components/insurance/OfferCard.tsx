@@ -44,6 +44,10 @@ interface OfferCardProps {
   /** Додатковий рядок на лицьовій частині картки — під «Виправлення поліса у разі
    *  помилки», у тому самому стилі (напр. туристичне мультивіза: «Договір діє 365 днів»). */
   faceNote?: string;
+  /** Нейтральний (сірий) вигляд іконки faceNote — коли це не перевага, а просто факт. */
+  faceNoteMuted?: boolean;
+  /** Пояснення faceNote при наведенні (тултіп). */
+  faceNoteHint?: string;
 }
 
 function transliterate(text: string) {
@@ -282,6 +286,8 @@ export function OfferCard({
   showAgeBasis,
   coverageTags,
   faceNote,
+  faceNoteMuted,
+  faceNoteHint,
 }: OfferCardProps) {
   const { t } = useI18n();
   // Розгортання «Детальніше» — через спільний стор (акордеон): відкрита лише одна.
@@ -483,10 +489,12 @@ export function OfferCard({
             </span>
           </Tooltip>
           {faceNote && (
-            <span className="inline-flex items-center gap-1.5 self-center text-xs font-medium leading-snug text-zinc-500 dark:text-zinc-400">
-              <CalendarCheck className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
-              {faceNote}
-            </span>
+            <Tooltip className={cn("self-center", faceNoteHint && "cursor-help")} content={faceNoteHint ?? ""}>
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium leading-snug text-zinc-500 dark:text-zinc-400">
+                <CalendarCheck className={cn("h-4 w-4 shrink-0", faceNoteMuted ? "text-zinc-400 dark:text-zinc-500" : "text-emerald-500 dark:text-emerald-400")} />
+                <span className={cn(faceNoteHint && "underline decoration-dotted underline-offset-2")}>{faceNote}</span>
+              </span>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -521,10 +529,12 @@ export function OfferCard({
                 </span>
               </Tooltip>
               {faceNote && (
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-300">
-                  <CalendarCheck className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
-                  {faceNote}
-                </span>
+                <Tooltip className={cn(faceNoteHint && "cursor-help")} content={faceNoteHint ?? ""}>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-300">
+                    <CalendarCheck className={cn("h-4 w-4 shrink-0", faceNoteMuted ? "text-zinc-400 dark:text-zinc-500" : "text-emerald-500 dark:text-emerald-400")} />
+                    <span className={cn(faceNoteHint && "underline decoration-dotted underline-offset-2")}>{faceNote}</span>
+                  </span>
+                </Tooltip>
               )}
               </div>
             </div>
