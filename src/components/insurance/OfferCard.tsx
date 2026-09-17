@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck, CalendarCheck } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { INSURERS } from "@/lib/insurers";
 import { Button } from "@/components/ui/Button";
@@ -41,9 +41,9 @@ interface OfferCardProps {
   showAgeBasis?: boolean;
   /** Що покриває — короткі теги по центру картки (напр. міні-КАСКО: «Воєнні ризики», «З вини»). */
   coverageTags?: string[];
-  /** Бейдж на лицьовій частині картки поруч із «Виправлення поліса у разі помилки»
-   *  (напр. туристичне мультивіза: «Договір діє 365 днів»). */
-  faceBadge?: ReactNode;
+  /** Додатковий рядок на лицьовій частині картки — під «Виправлення поліса у разі
+   *  помилки», у тому самому стилі (напр. туристичне мультивіза: «Договір діє 365 днів»). */
+  faceNote?: string;
 }
 
 function transliterate(text: string) {
@@ -281,7 +281,7 @@ export function OfferCard({
   productDescription,
   showAgeBasis,
   coverageTags,
-  faceBadge,
+  faceNote,
 }: OfferCardProps) {
   const { t } = useI18n();
   // Розгортання «Детальніше» — через спільний стор (акордеон): відкрита лише одна.
@@ -482,7 +482,12 @@ export function OfferCard({
               <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
             </span>
           </Tooltip>
-          {faceBadge}
+          {faceNote && (
+            <span className="inline-flex items-center gap-1.5 self-center text-xs font-medium leading-snug text-zinc-500 dark:text-zinc-400">
+              <CalendarCheck className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
+              {faceNote}
+            </span>
+          )}
         </div>
       </div>
 
@@ -505,6 +510,7 @@ export function OfferCard({
         {canExpand && (
           <div className="flex w-[280px] flex-col items-center shrink-0">
             <div className="flex flex-1 items-center justify-center px-3">
+              <div className="flex flex-col items-start gap-2">
               <Tooltip
                 className="cursor-help"
                 content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
@@ -514,8 +520,14 @@ export function OfferCard({
                   <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
                 </span>
               </Tooltip>
+              {faceNote && (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-300">
+                  <CalendarCheck className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
+                  {faceNote}
+                </span>
+              )}
+              </div>
             </div>
-            {faceBadge && <div className="mt-1 flex justify-center px-3">{faceBadge}</div>}
             <button
               onClick={() => setExpanded(v => !v)}
               className="mt-auto flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"

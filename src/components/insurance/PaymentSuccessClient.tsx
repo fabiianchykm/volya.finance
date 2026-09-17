@@ -162,10 +162,10 @@ export function PaymentSuccessClient() {
               <Link href="/policies">
                 <Button variant="primary" size="lg" className="w-full">{t({ uk: "Мої поліси", en: "My policies" })}</Button>
               </Link>
-              <a href="tel:+380965092400">
+              <a href="https://t.me/volya_finance_bot" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="lg" className="w-full flex items-center justify-center gap-2">
                   <ExternalLink className="h-4 w-4" />
-                  {t({ uk: "Звʼязатися з підтримкою", en: "Contact support" })}
+                  {t({ uk: "Написати в Telegram", en: "Message us on Telegram" })}
                 </Button>
               </a>
             </div>

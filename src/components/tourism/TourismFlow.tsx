@@ -563,46 +563,50 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
           <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
         </div>
 
-        {/* Сума покриття + фільтр «Договір діє 365 днів» (у мультивізі) — поруч */}
+        {/* Сума покриття (сегменти) + фільтр «Договір діє 365 днів» (у мультивізі) — один рядок */}
         {(coverages.length > 1 || has365) && (
-          <div className="border-t border-zinc-100 dark:border-zinc-800 bg-indigo-50/40 dark:bg-indigo-950/40 px-6 py-3.5">
-            <div className="flex flex-wrap items-end gap-4">
-              {coverages.length > 1 && (
-                <div className="min-w-0">
-                  <label htmlFor="tour-coverage" className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Сума покриття", en: "Coverage amount" })}</label>
-                  <select
-                    id="tour-coverage"
-                    value={coverage}
-                    onChange={(e) => setCoverage(Number(e.target.value))}
-                    className="h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-72"
-                  >
-                    {coverages.map((c) => (
-                      <option key={c} value={c}>
-                        {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
-                      </option>
-                    ))}
-                  </select>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-zinc-100 px-6 py-3.5 dark:border-zinc-800">
+            {coverages.length > 1 && (
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Сума покриття", en: "Coverage amount" })}</span>
+                <div role="radiogroup" aria-label={t({ uk: "Сума покриття", en: "Coverage amount" })} className="inline-flex flex-wrap gap-1 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+                  {coverages.map((c) => {
+                    const active = c === coverage;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setCoverage(c)}
+                        className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                          active
+                            ? "bg-white text-indigo-700 shadow-sm dark:bg-zinc-950 dark:text-indigo-300"
+                            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                        }`}
+                      >
+                        {nf(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-              {has365 && (
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Термін договору", en: "Contract term" })}</label>
-                  <button
-                    type="button"
-                    onClick={() => setOnly365((v) => !v)}
-                    aria-pressed={only365}
-                    className={`inline-flex h-11 items-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition-colors ${
-                      only365
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                        : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-                    }`}
-                  >
-                    <CalendarCheck className="h-4 w-4 shrink-0" />{t({ uk: "Договір діє 365 днів", en: "Valid for 365 days" })}
-                    {only365 && <X className="h-3.5 w-3.5 opacity-70" />}
-                  </button>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+            {has365 && (
+              <button
+                type="button"
+                onClick={() => setOnly365((v) => !v)}
+                aria-pressed={only365}
+                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                  only365
+                    ? "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900"
+                    : "bg-zinc-100 text-zinc-600 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100"
+                }`}
+              >
+                <CalendarCheck className="h-4 w-4 shrink-0" />{t({ uk: "Договір діє 365 днів", en: "Valid for 365 days" })}
+                {only365 && <X className="h-3.5 w-3.5 opacity-70" />}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -668,11 +672,7 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
               onBuy={() => onSelect(o)}
               hideExtras
               coverageTags={riskTags(o, t)}
-              faceBadge={isAnnual365(o, multiVisa) ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                  <CalendarCheck className="h-3.5 w-3.5 shrink-0" />{t({ uk: "Договір діє 365 днів", en: "Valid for 365 days" })}
-                </span>
-              ) : undefined}
+              faceNote={isAnnual365(o, multiVisa) ? t({ uk: "Договір діє 365 днів", en: "Policy valid for 365 days" }) : undefined}
               productDescription={<TourismRiskDetail o={o} />}
               cornerBadge={o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined}
             />

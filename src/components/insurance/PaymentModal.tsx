@@ -210,9 +210,9 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
                 {t({ uk: "Сплатити онлайн зараз неможливо. Ваш поліс зарезервовано — звʼяжіться з підтримкою, щоб завершити оплату та оформлення.", en: "Online payment is not possible right now. Your policy is reserved — contact support to complete payment and issuance." })}
               </p>
             </div>
-            <a href="tel:+380965092400" className="w-full">
+            <a href="https://t.me/volya_finance_bot" target="_blank" rel="noopener noreferrer" className="w-full">
               <Button variant="primary" size="lg" className="w-full">
-                {t({ uk: "Звʼязатися з підтримкою", en: "Contact support" })}
+                {t({ uk: "Написати в Telegram", en: "Message us on Telegram" })}
               </Button>
             </a>
           </div>

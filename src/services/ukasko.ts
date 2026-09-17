@@ -47,7 +47,7 @@ const GC_MODULE_IDS = [9, 10, 11, 17, 18, 29, 31];
 const PRIVILEGE_ERROR_RE = /undefined index:\s*privilege|DDocumentType|документ.{0,60}пільг|пільг.{0,60}документ/i;
 const PRIVILEGE_UNSUPPORTED_MSG =
   "Оформлення поліса з пільгою поки що доступне лише через менеджера. " +
-  "Зателефонуйте нам: +380 96 509 24 00 — ми оформимо зі знижкою.";
+  "Напишіть нам у Telegram (@volya_finance_bot) — ми оформимо зі знижкою.";
 
 // Апстрім-збої Ukasko↔СК/МТСБУ (таймаути, недоступність import-policy.mtsbu.ua):
 // declare повертає порожньо з таким текстом у message. Це НЕ «оберіть іншу СК»
