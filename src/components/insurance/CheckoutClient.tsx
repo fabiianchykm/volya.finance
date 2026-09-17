@@ -667,6 +667,7 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
   const [cityError, setCityError] = useState(false);
   const [dobError, setDobError] = useState(false);
   const [docDateError, setDocDateError] = useState(false);
+  const [emailError, setEmailError] = useState(false);
   const [docType, setDocType] = useState<1 | 3 | 4>(3); // 3 = ID-карта, 1 = паспорт, 4 = водійське посвідчення
   // Поля документа памʼятаються окремо по типу: при зміні типу сташимо поточні й
   // відновлюємо збережені для нового (або порожні, якщо для нього ще нема даних).
@@ -836,6 +837,10 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
     if (!issue) { setDocDateError(true); return; }
     setDocDateError(false);
     if (!selectedCity) { setCityError(true); return; }
+    // Email обовʼязковий для declare (Ukasko: customer.email). Валідуємо явно —
+    // не покладаємось лише на HTML required (автозаповнення прибрано → буває порожнім).
+    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) { setEmailError(true); return; }
+    setEmailError(false);
 
     // Пільговий документ — обовʼязковий, коли обрано пільгу (Ukasko: customer.privilege).
     let privilege: Customer["privilege"];
@@ -966,10 +971,11 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
             label="Email"
             type="email"
             value={form.email}
-            onChange={handleEmail}
+            onChange={(e) => { handleEmail(e); if (emailError) setEmailError(false); }}
             placeholder="email@example.com"
             required
           />
+          {emailError && <p className="mt-1 text-xs font-medium text-red-500">{t({ uk: "Вкажіть коректний email", en: "Enter a valid email" })}</p>}
         </div>
 
         <div className="border-t border-zinc-100 pt-5 dark:border-zinc-800">

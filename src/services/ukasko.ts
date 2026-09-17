@@ -44,7 +44,7 @@ const GC_MODULE_IDS = [9, 10, 11, 17, 18, 29, 31];
 // Пільгове ОСЦПВ поки не підтримане end-to-end (див. declarePolicy): Ukasko вимагає
 // поле `privilege` + пільговий документ. До впровадження (B) — чесне, дійове
 // повідомлення замість краш-маскування «оберіть іншу СК».
-const PRIVILEGE_ERROR_RE = /undefined index:\s*privilege/i;
+const PRIVILEGE_ERROR_RE = /undefined index:\s*privilege|DDocumentType|документ.{0,60}пільг|пільг.{0,60}документ/i;
 const PRIVILEGE_UNSUPPORTED_MSG =
   "Оформлення поліса з пільгою поки що доступне лише через менеджера. " +
   "Зателефонуйте нам: +380 96 509 24 00 — ми оформимо зі знижкою.";
@@ -869,6 +869,9 @@ export class UkaskoService {
     if (!data.data?.[0]) {
       const rawStr = JSON.stringify(raw);
       console.error("[ukasko declare] empty data. raw:", rawStr.slice(0, 800));
+      // Пільгове ОСЦПВ: Ukasko вимагає документ пільги в формі, яку ми ще не
+      // підтверджено надсилаємо (osago order не задокументований) → ведемо на менеджера.
+      if (PRIVILEGE_ERROR_RE.test(rawStr)) throw new Error(PRIVILEGE_UNSUPPORTED_MSG);
       // Таймаут/недоступність МТСБУ чи СК — чесне «тимчасово недоступні», а не «оберіть іншу».
       if (UPSTREAM_TIMEOUT_RE.test(rawStr)) throw new Error(UPSTREAM_UNAVAILABLE_MSG);
       throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
