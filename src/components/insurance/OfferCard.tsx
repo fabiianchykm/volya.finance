@@ -41,6 +41,9 @@ interface OfferCardProps {
   showAgeBasis?: boolean;
   /** Що покриває — короткі теги по центру картки (напр. міні-КАСКО: «Воєнні ризики», «З вини»). */
   coverageTags?: string[];
+  /** Бейдж на лицьовій частині картки поруч із «Виправлення поліса у разі помилки»
+   *  (напр. туристичне мультивіза: «Договір діє 365 днів»). */
+  faceBadge?: ReactNode;
 }
 
 function transliterate(text: string) {
@@ -278,6 +281,7 @@ export function OfferCard({
   productDescription,
   showAgeBasis,
   coverageTags,
+  faceBadge,
 }: OfferCardProps) {
   const { t } = useI18n();
   // Розгортання «Детальніше» — через спільний стор (акордеон): відкрита лише одна.
@@ -478,6 +482,7 @@ export function OfferCard({
               <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
             </span>
           </Tooltip>
+          {faceBadge}
         </div>
       </div>
 
@@ -510,6 +515,7 @@ export function OfferCard({
                 </span>
               </Tooltip>
             </div>
+            {faceBadge && <div className="mt-1 flex justify-center px-3">{faceBadge}</div>}
             <button
               onClick={() => setExpanded(v => !v)}
               className="mt-auto flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"

@@ -71,8 +71,7 @@ function StatRow({ label, value }: { label: string; value: string }) {
 }
 
 // Повний перелік ризиків із лімітами й описом + франшиза — у «Детальніше» картки.
-// annual365 (лише мультивіза, лише перелічені СК) — мітка «Договір діє 365 днів».
-function TourismRiskDetail({ o, annual365 }: { o: TourismOffer; annual365?: boolean }) {
+function TourismRiskDetail({ o }: { o: TourismOffer }) {
   const { t } = useI18n();
   const progs = Array.isArray(o.programs) ? o.programs : [];
   const franchise = Number(o.franchise ?? 0);
@@ -86,14 +85,9 @@ function TourismRiskDetail({ o, annual365 }: { o: TourismOffer; annual365?: bool
   const optionsCount = Object.values(opts).filter((v) =>
     v === true || (typeof v === "number" && v > 0) || (!!v && typeof v === "object" && ((v as { status?: boolean }).status === true || ((v as { value?: number }).value ?? 0) > 0))
   ).length;
-  if (progs.length === 0 && !progName && !annual365) return null;
+  if (progs.length === 0 && !progName) return null;
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-      {annual365 ? (
-        <p className="mb-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-          <CalendarCheck className="h-3.5 w-3.5" />{t({ uk: "Договір діє 365 днів", en: "Policy valid for 365 days" })}
-        </p>
-      ) : null}
       {progName && (
         <p className="mb-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300">{progName}</p>
       )}
@@ -569,45 +563,53 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
           <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
         </div>
 
-        {/* Сума покриття — випадний список */}
-        {coverages.length > 1 && (
+        {/* Сума покриття + фільтр «Договір діє 365 днів» (у мультивізі) — поруч */}
+        {(coverages.length > 1 || has365) && (
           <div className="border-t border-zinc-100 dark:border-zinc-800 bg-indigo-50/40 dark:bg-indigo-950/40 px-6 py-3.5">
-            <label htmlFor="tour-coverage" className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Сума покриття", en: "Coverage amount" })}</label>
-            <select
-              id="tour-coverage"
-              value={coverage}
-              onChange={(e) => setCoverage(Number(e.target.value))}
-              className="h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-72"
-            >
-              {coverages.map((c) => (
-                <option key={c} value={c}>
-                  {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap items-end gap-4">
+              {coverages.length > 1 && (
+                <div className="min-w-0">
+                  <label htmlFor="tour-coverage" className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Сума покриття", en: "Coverage amount" })}</label>
+                  <select
+                    id="tour-coverage"
+                    value={coverage}
+                    onChange={(e) => setCoverage(Number(e.target.value))}
+                    className="h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-72"
+                  >
+                    {coverages.map((c) => (
+                      <option key={c} value={c}>
+                        {new Intl.NumberFormat("uk-UA").format(c)} {currencySymbol(offers.find((o) => coverageOf(o) === c)?.limit_currency)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {has365 && (
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Термін договору", en: "Contract term" })}</label>
+                  <button
+                    type="button"
+                    onClick={() => setOnly365((v) => !v)}
+                    aria-pressed={only365}
+                    className={`inline-flex h-11 items-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition-colors ${
+                      only365
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                    }`}
+                  >
+                    <CalendarCheck className="h-4 w-4 shrink-0" />{t({ uk: "Договір діє 365 днів", en: "Valid for 365 days" })}
+                    {only365 && <X className="h-3.5 w-3.5 opacity-70" />}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Фільтр «365 днів» (зліва, лише в мультивізі з такими СК) + сортування (справа) */}
-      {allCards.length > 0 && (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          {has365 ? (
-            <button
-              type="button"
-              onClick={() => setOnly365((v) => !v)}
-              aria-pressed={only365}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-semibold shadow-sm transition-colors ${
-                only365
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-              }`}
-            >
-              <CalendarCheck className="h-4 w-4" />{t({ uk: "Договір діє 365 днів", en: "Valid for 365 days" })}
-              {only365 && <X className="h-3.5 w-3.5 opacity-70" />}
-            </button>
-          ) : <span />}
-          <div className="flex items-center gap-3">
+      {/* Сортування — кастомний dropdown (як у ОСЦПВ) */}
+      {cards.length > 0 && (
+        <div className="mb-5 flex items-center justify-end gap-3">
           <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
           <div className="relative">
             <button
@@ -641,7 +643,6 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
               </>
             )}
           </div>
-          </div>
         </div>
       )}
 
@@ -667,7 +668,12 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
               onBuy={() => onSelect(o)}
               hideExtras
               coverageTags={riskTags(o, t)}
-              productDescription={<TourismRiskDetail o={o} annual365={isAnnual365(o, multiVisa)} />}
+              faceBadge={isAnnual365(o, multiVisa) ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <CalendarCheck className="h-3.5 w-3.5 shrink-0" />{t({ uk: "Договір діє 365 днів", en: "Valid for 365 days" })}
+                </span>
+              ) : undefined}
+              productDescription={<TourismRiskDetail o={o} />}
               cornerBadge={o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined}
             />
           ))}
