@@ -31,15 +31,6 @@ const ANNUAL_365_RE = /універсал|universal|вусо|vuso|гардіан
 const isAnnual365 = (o: TourismOffer, multiVisa: boolean): boolean =>
   multiVisa && ANNUAL_365_RE.test(String(o.company?.publicName || o.company?.name || ""));
 
-// Термін дії договору для ІНШИХ СК (не з переліку 365): беремо з даних оффера
-// (endDate − startDate, дати включні); якщо дат нема — обраний період мультивізи.
-function contractDaysOf(o: TourismOffer, fallbackDays: number): number {
-  if (o.startDate && o.endDate) {
-    const d = Math.round((new Date(`${o.endDate}T00:00:00`).getTime() - new Date(`${o.startDate}T00:00:00`).getTime()) / 86_400_000) + 1;
-    if (d > 0) return d;
-  }
-  return fallbackDays;
-}
 const daysWord = (n: number): string => {
   const m10 = n % 10, m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return "день";
@@ -690,7 +681,7 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
               coverageTags={riskTags(o, t)}
               {...(() => {
                 // Мультивіза: СК з переліку — «365 днів» (зелена перевага); решта —
-                // реальний термін договору нейтральним рядком, щоб було видно різницю.
+                // нейтральний рядок «не діє 365 днів» (точний термін не підтверджено).
                 if (!multiVisa) return {};
                 if (isAnnual365(o, true)) return {
                   faceNote: t({ uk: "Договір діє 365 днів", en: "Policy valid for 365 days" }),
@@ -699,15 +690,15 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
                     en: `The policy is valid for a full year from the start date. You can travel many times — each trip up to ${days} days.`,
                   }),
                 };
-                const n = contractDaysOf(o, days);
-                return n > 0 ? {
-                  faceNote: t({ uk: `Договір діє ${n} ${daysWord(n)}`, en: `Policy valid for ${n} days` }),
+                // Точний термін в інших СК не підтверджено — кажемо лише, що це НЕ рік.
+                return {
+                  faceNote: t({ uk: "Договір не діє 365 днів", en: "Policy is not valid for 365 days" }),
                   faceNoteMuted: true,
                   faceNoteHint: t({
-                    uk: `У цієї страхової договір діє ${n} ${daysWord(n)} від дати початку, а не рік. Поїздки покриваються лише в межах цього терміну — далі потрібен новий поліс.`,
-                    en: `This insurer's policy is valid for ${n} days from the start date, not a year. Trips are covered only within that term — after it you need a new policy.`,
+                    uk: "У цієї страхової договір мультивізи діє не цілий рік. Точний термін дії буде вказано в полісі.",
+                    en: "This insurer's multi-trip policy is not valid for a full year. The exact term is stated in the policy.",
                   }),
-                } : {};
+                };
               })()}
               productDescription={<TourismRiskDetail o={o} />}
               cornerBadge={o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined}
