@@ -565,6 +565,7 @@ export function CheckoutClient() {
 
       {orderId && (
         <PaymentModal
+          product="osago"
           open={step === "payment"}
           onClose={() => setStep("vehicle")}
           orderId={orderId}

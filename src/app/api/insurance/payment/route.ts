@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const blocked = guardRequest(req, { name: "payment", limit: 40, windowMs: 10 * 60 * 1000 });
     if (blocked) return blocked;
 
-    const { action, orderId } = await req.json();
+    const { action, orderId, product } = await req.json();
 
     if (action === "invoice") {
       // Генерацію рахунку дедуплікуємо за orderId — повторні відкриття модалки
@@ -36,8 +36,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "check") {
-      // check НЕ ідемпотентний — статус оплати змінюється з часом.
-      const data = await ukaskoService.checkInvoice(orderId);
+      // check НЕ ідемпотентний — статус оплати змінюється з часом. product (опційно)
+      // з клієнта: для не-ОСЦПВ orderStatus=2 ≠ оплата (див. checkInvoice).
+      const data = await ukaskoService.checkInvoice(orderId, typeof product === "string" ? product : undefined);
       return NextResponse.json({ success: true, data });
     }
 

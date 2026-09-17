@@ -484,6 +484,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
 
       {orderId && (
         <PaymentModal
+          product="housing"
           open={step === "payment"}
           onClose={() => setStep("form")}
           orderId={orderId}

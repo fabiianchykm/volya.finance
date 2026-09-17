@@ -401,6 +401,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
       {orderId && savedOrder && (
         <PaymentModal
+          product="tourism"
           open={step === "payment"}
           onClose={() => setStep("form")}
           orderId={orderId}

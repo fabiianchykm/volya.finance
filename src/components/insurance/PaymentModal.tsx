@@ -19,9 +19,12 @@ interface PaymentModalProps {
   confirmAction?: string;
   /** Додаткові поля в тіло запиту підтвердження (напр. туристичне — повний payload для nextFinal). */
   confirmPayload?: Record<string, unknown>;
+  /** Продукт (osago/greencard/tourism/…) — для перевірки оплати: у не-ОСЦПВ
+   *  orderStatus=2 ≠ оплата (див. checkInvoice). Без нього — дефолтна логіка. */
+  product?: string;
 }
 
-export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEndpoint = "/api/insurance/contract", confirmAction = "confirm", confirmPayload }: PaymentModalProps) {
+export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEndpoint = "/api/insurance/contract", confirmAction = "confirm", confirmPayload, product }: PaymentModalProps) {
   const { t } = useI18n();
   const [invoice, setInvoice] = useState<{ invoiceLink?: string; qrCode?: string; mtsbuLink?: string } | null>(null);
   // testMode приходить із сервера (UKASKO_ENV). Лише в dev дозволено підтверджувати
@@ -79,7 +82,7 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
         const res = await fetch("/api/insurance/payment", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "check", orderId }),
+          body: JSON.stringify({ action: "check", orderId, product }),
         });
         const json = await res.json();
         if (json.success && json.data?.status_id === 2) {

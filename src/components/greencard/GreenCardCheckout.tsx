@@ -632,6 +632,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
 
       {orderId && (
         <PaymentModal
+          product="greencard"
           open={step === "payment"}
           onClose={() => setStep("form")}
           orderId={orderId}

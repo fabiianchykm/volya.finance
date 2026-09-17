@@ -400,6 +400,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
 
       {orderId && savedOrder && (
         <PaymentModal
+          product="pets"
           open={step === "payment"}
           onClose={() => setStep("form")}
           orderId={orderId}

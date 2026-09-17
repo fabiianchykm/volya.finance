@@ -451,6 +451,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
 
       {orderId && (
         <PaymentModal
+          product="mini-kasko"
           open={step === "payment"}
           onClose={() => setStep("form")}
           orderId={orderId}

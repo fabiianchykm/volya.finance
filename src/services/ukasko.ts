@@ -939,7 +939,7 @@ export class UkaskoService {
     };
   }
 
-  async checkInvoice(orderId: string): Promise<{ status_id: number; payed_at: string | null }> {
+  async checkInvoice(orderId: string, product?: string): Promise<{ status_id: number; payed_at: string | null }> {
     // Статус оплати. Різні продукти Ukasko віддають його по-різному, а старий
     // виклик `/payments/{orderId}/check-invoice` на проді падає 500 (orderId у шляху —
     // некоректно). Тож пробуємо кілька коректних варіантів: GET /orders/{id}/get-invoice
@@ -972,8 +972,15 @@ export class UkaskoService {
             if (s === 2 || pa) { paidByInvoice = true; payedAt = pa ?? payedAt; }
           }
           const orderStatus = Number(d.statusId ?? d.status_id ?? 0) || 0;
-          const paid = d.isPaid === true || paidByInvoice || orderStatus === 2;
-          console.error(`[ukasko check-invoice] ${url} → isPaid=${d.isPaid} orderStatus=${orderStatus} paidByInvoice=${paidByInvoice} payed_at=${payedAt}`);
+          // orderStatus===2 як ОЗНАКУ ОПЛАТИ довіряємо ЛИШЕ для ОСЦПВ (де це
+          // документовано) та невідомого продукту (сумісність). Для ЗК/туризму/тварин/
+          // житла/міні-КАСКО statusId=2 означає «заявлено», а НЕ «оплачено» — тож
+          // кинута ЗК-чернетка зі статусом 2 раніше ХИБНО читалась як оплачена →
+          // фальшивий алерт «оплачено, не видано». Реальну оплату там ловимо ТІЛЬКИ
+          // за isPaid / payed_at / invoice.status_id (paidByInvoice).
+          const trustOrderStatus = !product || product === "osago";
+          const paid = d.isPaid === true || paidByInvoice || (trustOrderStatus && orderStatus === 2);
+          console.error(`[ukasko check-invoice] ${url} product=${product ?? "-"} → isPaid=${d.isPaid} orderStatus=${orderStatus} paidByInvoice=${paidByInvoice} payed_at=${payedAt} → paid=${paid}`);
           if (paid) return { status_id: 2, payed_at: payedAt };
         } catch (e) {
           if (e instanceof HttpError && e.status === 401) throw e; // токен протух — withAuth перевипустить

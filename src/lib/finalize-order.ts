@@ -50,12 +50,15 @@ export type FinalizeResult =
 // без дублів). Збій укладання НЕ кидає, а повертає issued:false — щоб викликач
 // (finalize/sweep) вирішив, як алертити. Несподівані помилки (checkInvoice) — кидає.
 export async function finalizeOrder(orderId: string, opts: { refCode?: string | null } = {}): Promise<FinalizeResult> {
-  // Статус оплати — ПОЗА idempotency (змінюється з часом). statusId=2 → оплачено.
-  const inv = await ukaskoService.checkInvoice(orderId);
-  if (inv.status_id !== 2) return { paid: false };
-
+  // Продукт визначаємо ПЕРШИМ — checkInvoice продукт-обізнаний: для не-ОСЦПВ
+  // orderStatus=2 ≠ оплата (інакше кинута ЗК/туристична чернетка читається як
+  // «оплачено» → фальшивий алерт «оплачено, не видано»).
   const pending = await getPendingOrder(orderId);
   const product = pending?.product ?? "osago";
+
+  // Статус оплати — ПОЗА idempotency (змінюється з часом).
+  const inv = await ukaskoService.checkInvoice(orderId, product);
+  if (inv.status_id !== 2) return { paid: false };
 
   try {
     const { body } = await withIdempotency(`finalize:${orderId}`, async () => {
