@@ -66,6 +66,21 @@ export function ensureSchema(): Promise<void> {
           updated_at timestamptz NOT NULL DEFAULT now()
         )
       `;
+      // Мульти-профіль: на ОДНОМУ акаунті можуть бути дані КІЛЬКОХ осіб (сам, дружина,
+      // дитина…). account — ключ акаунта (email сесії або "phone:+380…"); person_key —
+      // нормалізований email конкретної особи (унікальний у межах акаунта). data —
+      // весь CustomerProfile як jsonb, ЗАШИФРОВАНИЙ (як customer_profiles). Легасі
+      // customer_profiles (один-на-акаунт) лишається для сумісності й читається як фолбек.
+      await sql`
+        CREATE TABLE IF NOT EXISTS account_people (
+          account    text NOT NULL,
+          person_key text NOT NULL,
+          data       jsonb NOT NULL DEFAULT '{}'::jsonb,
+          updated_at timestamptz NOT NULL DEFAULT now(),
+          PRIMARY KEY (account, person_key)
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS account_people_account_idx ON account_people (account, updated_at DESC)`;
       // Відгуки про страхові — лише від тих, хто купував поліс цієї СК у нас.
       await sql`
         CREATE TABLE IF NOT EXISTS insurer_reviews (

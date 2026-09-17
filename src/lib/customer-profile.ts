@@ -235,6 +235,42 @@ export async function fetchServerProfile(): Promise<CustomerProfile | null> {
   }
 }
 
+/** Підтягнути УСІ профілі акаунта з БД (кілька осіб) і влити в локальний кеш —
+ *  БЕЗ зміни «активного»/«останнього». Для пікера «Заповнити збереженими», де на
+ *  акаунті кілька людей (сам, дружина…). Повертає повний список для UI. */
+export async function fetchServerProfiles(): Promise<CustomerProfile[]> {
+  try {
+    const r = await fetch("/api/profile");
+    if (!r.ok) return listProfiles();
+    const j = await r.json();
+    const list: CustomerProfile[] = Array.isArray(j?.profiles)
+      ? j.profiles
+      : j?.profile
+        ? [j.profile]
+        : [];
+    for (const p of list) mergeProfileIntoCache(p);
+    return listProfiles();
+  } catch {
+    return listProfiles();
+  }
+}
+
+/** Влити один серверний профіль у локальну мапу, НЕ чіпаючи активний/останній і не
+ *  затираючи новіший локальний запис старішим із сервера. */
+function mergeProfileIntoCache(p: CustomerProfile): void {
+  try {
+    const email = normEmail(p?.email || "");
+    if (!email) return;
+    const map = readMap();
+    const prev = map[email];
+    if (prev && (prev.savedAt || 0) >= (p.savedAt || 0)) return; // локальний свіжіший
+    map[email] = { ...p, email, savedAt: p.savedAt || Date.now() };
+    localStorage.setItem(KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+}
+
 /** Записати профіль із сервера в локальний кеш і зробити його активним. */
 export function importServerProfile(p: CustomerProfile): void {
   try {

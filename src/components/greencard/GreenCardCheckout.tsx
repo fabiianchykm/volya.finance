@@ -12,7 +12,8 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 import { toUkaskoPhone } from "@/lib/phone";
@@ -217,17 +218,14 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
 
   // При відкритті форми підставляємо останній збережений профіль (з пристрою).
   const { status: authStatus } = useSession();
-  const didAutofill = useRef(false);
+  // Поля лишаємо ПОРОЖНІМИ (на акаунті може бути кілька осіб — сам, дружина…).
+  // Замість автозаповнення — список збережених профілів для пікера зверху.
+  const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);
   useEffect(() => {
-    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
-    if (authStatus !== "authenticated" || didAutofill.current) return;
-    didAutofill.current = true;
-    const last = loadLastProfile();
+    if (authStatus !== "authenticated") return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (last) applyProfile(last);
-    // Fallback: кеш ще порожній (ProfileSync не встиг) — тягнемо профіль напряму.
-    else void fetchServerProfile().then((p) => { if (p) applyProfile(p); });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setSavedProfiles(listProfiles());
+    void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
   // Якщо введений email збігається зі збереженим профілем — автозаповнюємо решту.
@@ -475,6 +473,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       <form onSubmit={handleSubmit} className="space-y-6">
         {formStep === "customer" && (
         <>
+        <ProfilePicker profiles={savedProfiles} onPick={applyProfile} />
         {/* Страхувальник */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Страхувальник (покупець)", en: "Policyholder (buyer)" })}</p>

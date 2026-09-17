@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import {
-  importServerProfile,
+  fetchServerProfiles,
   clearLocalProfiles,
   getProfileOwner,
   setProfileOwner,
@@ -33,18 +33,13 @@ export function ProfileSync() {
         clearLocalProfiles();
         setProfileOwner(accountKey);
       }
-      let cancelled = false;
-      // /api/profile ідентичнісно-обізнаний: вхід за номером отримає профіль,
-      // збережений під повʼязаним Google-акаунтом (і навпаки).
-      fetch("/api/profile")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => {
-          if (cancelled) return;
-          if (j?.profile) importServerProfile(j.profile);
-          setProfileOwner(accountKey); // importServerProfile міг не спрацювати — фіксуємо власника
-        })
+      // /api/profile ідентичнісно-обізнаний: вхід за номером отримає профілі,
+      // збережені під повʼязаним Google-акаунтом (і навпаки). Тягнемо УСІ особи
+      // акаунта (сам, дружина…) у локальний кеш — БЕЗ автозастосування (поля лишаємо
+      // порожніми; підстановка — лише через пікер «Заповнити збереженими»).
+      void fetchServerProfiles()
+        .then(() => setProfileOwner(accountKey))
         .catch(() => { /* ignore */ });
-      return () => { cancelled = true; };
     }
 
     // Гість. Якщо кеш належав акаунту — це вихід (у т.ч. через reload): чистимо.

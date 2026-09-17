@@ -13,7 +13,8 @@ import { formatPrice, cityShort, cityLong } from "@/lib/utils";
 import { toUkaskoPhone } from "@/lib/phone";
 import type { PetsOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
+import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
 import { useI18n } from "@/lib/i18n";
 import { SupportCTA } from "@/components/ui/SupportCTA";
@@ -114,17 +115,14 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
   };
 
   const { status: authStatus } = useSession();
-  const didAutofill = useRef(false);
+  // Поля лишаємо ПОРОЖНІМИ (на акаунті може бути кілька осіб — сам, дружина…).
+  // Замість автозаповнення — список збережених профілів для пікера зверху.
+  const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);
   useEffect(() => {
-    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
-    if (authStatus !== "authenticated" || didAutofill.current) return;
-    didAutofill.current = true;
-    const last = loadLastProfile();
+    if (authStatus !== "authenticated") return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (last) applyProfile(last);
-    // Fallback: кеш ще порожній (ProfileSync не встиг) — тягнемо профіль напряму.
-    else void fetchServerProfile().then((p) => { if (p) applyProfile(p); });
-
+    setSavedProfiles(listProfiles());
+    void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -281,6 +279,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}<SupportCTA /></div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <ProfilePicker profiles={savedProfiles} onPick={applyProfile} />
         {/* Тварина */}
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Улюбленець", en: "Pet" })}</p>

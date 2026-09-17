@@ -11,7 +11,8 @@ import { PaymentModal } from "@/components/insurance/PaymentModal";
 import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { MiniKaskoOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, loadLastProfile, fetchServerProfile, docFieldsByKind, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile } from "@/lib/customer-profile";
+import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -141,17 +142,14 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
     }
   };
   const { status: authStatus } = useSession();
-  const didAutofill = useRef(false);
+  // Поля лишаємо ПОРОЖНІМИ (на акаунті може бути кілька осіб — сам, дружина…).
+  // Замість автозаповнення — список збережених профілів для пікера зверху.
+  const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);
   useEffect(() => {
-    // Автозаповнення ЛИШЕ для авторизованих (гість / після виходу — без підстановки).
-    if (authStatus !== "authenticated" || didAutofill.current) return;
-    didAutofill.current = true;
-    const last = loadLastProfile();
+    if (authStatus !== "authenticated") return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (last) applyProfile(last);
-    // Fallback: кеш ще порожній (ProfileSync не встиг) — тягнемо профіль напряму.
-    else void fetchServerProfile().then((p) => { if (p) applyProfile(p); });
-
+    setSavedProfiles(listProfiles());
+    void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -339,6 +337,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       <form onSubmit={handleSubmit} className="space-y-6">
         {formStep === "customer" && (
         <>
+        <ProfilePicker profiles={savedProfiles} onPick={applyProfile} />
         <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Страхувальник (покупець)", en: "Policyholder (buyer)" })}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

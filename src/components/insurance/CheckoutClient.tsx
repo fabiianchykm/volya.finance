@@ -11,7 +11,7 @@ import { registerPendingOrder } from "@/lib/pending-order-client";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { searchMarks, searchModels } from "@/lib/car-catalog";
-import { saveProfile, loadProfile, listProfiles, fetchServerProfile, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { ProfilePicker } from "./ProfilePicker";
 
 // Локальні числові коди документів ОСЦПВ → канонічний тип-сутність.
@@ -741,9 +741,10 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
   const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);
   useEffect(() => {
     if (authStatus !== "authenticated") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSavedProfiles(listProfiles());
-    // Підтягуємо з сервера (крос-девайс) і оновлюємо список — БЕЗ застосування.
-    void fetchServerProfile().then(() => setSavedProfiles(listProfiles()));
+    // Підтягуємо з сервера УСІ особи акаунта (крос-девайс) — БЕЗ застосування.
+    void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
   // Email — окремий обробник: якщо введений email збігається зі збереженим профілем,

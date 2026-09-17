@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getServerProfile, upsertServerProfile } from "@/lib/profile-store";
+import { getServerProfile, listServerProfiles, upsertServerProfile, deleteServerProfile } from "@/lib/profile-store";
 import { resolveIdentities, primaryEmail } from "@/lib/identity";
 
 // Профіль страхувальника, привʼязаний до акаунта. Ідентичність беремо ЛИШЕ з сесії
@@ -24,12 +24,17 @@ async function profileKey(): Promise<string | null> {
 
 export async function GET() {
   const email = await profileKey();
-  if (!email) return NextResponse.json({ profile: null });
+  if (!email) return NextResponse.json({ profile: null, profiles: [] });
   try {
-    const profile = await getServerProfile(email);
-    return NextResponse.json({ profile });
+    // profile — найсвіжіший (легасі-сумісність для старих читачів); profiles — усі
+    // особи акаунта (для пікера «Заповнити збереженими» з кількома людьми).
+    const [profile, profiles] = await Promise.all([
+      getServerProfile(email),
+      listServerProfiles(email),
+    ]);
+    return NextResponse.json({ profile, profiles });
   } catch {
-    return NextResponse.json({ profile: null });
+    return NextResponse.json({ profile: null, profiles: [] });
   }
 }
 
@@ -42,6 +47,21 @@ export async function POST(req: NextRequest) {
   }
   try {
     await upsertServerProfile(email, body);
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
+}
+
+// Видалити профіль конкретної особи з акаунта (за її email у тілі запиту).
+export async function DELETE(req: NextRequest) {
+  const account = await profileKey();
+  if (!account) return NextResponse.json({ success: false }, { status: 401 });
+  const body = await req.json().catch(() => null);
+  const personEmail = typeof body?.email === "string" ? body.email : "";
+  if (!personEmail) return NextResponse.json({ success: false }, { status: 400 });
+  try {
+    await deleteServerProfile(account, personEmail);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });
