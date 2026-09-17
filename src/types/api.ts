@@ -336,6 +336,10 @@ export interface TourismOffer {
   limit_currency?: string;     // EUR | USD
   covid_help?: boolean;
   franchise?: number | string;
+  // Період дії ДОГОВОРУ (ISO "YYYY-MM-DD"). У мультивізі endDate−startDate = термін
+  // дії полісу (напр. ІНТЕР-ПОЛІС дає 365 незалежно від ліміту поїздки).
+  startDate?: string;
+  endDate?: string | null;
   // Набір опцій/ризиків, що покриває поліс (medicine_help, dentistry, baggage_loss,
   // trip_impossible, visa_impossible, avia_await, cv…) — {status, value}. Саме цим
   // оффери відрізняються між собою.

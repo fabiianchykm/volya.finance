@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { MapPin, CalendarDays, CalendarCheck, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -23,6 +23,13 @@ const PROGRAM_LABELS_EN: Record<string, string> = {
 };
 
 const coverageOf = (o: TourismOffer) => Number(o.coverage ?? o.limit ?? 0);
+
+// СК, у яких договір МУЛЬТИВІЗИ діє 365 днів (річний) — за даними бізнесу:
+// Універсальна, ГАРДІАН, ВУСО. Інші поки не позначаємо (термін не підтверджено).
+// Матч по назві компанії (враховує «Галичина/Галичина М» у ВУСО).
+const ANNUAL_365_RE = /універсал|universal|вусо|vuso|гардіан|гардиан|guardian/i;
+const isAnnual365 = (o: TourismOffer, multiVisa: boolean): boolean =>
+  multiVisa && ANNUAL_365_RE.test(String(o.company?.publicName || o.company?.name || ""));
 
 type Tr = (tr: { uk: string; en?: string }) => string;
 const nf = (n: number) => new Intl.NumberFormat("uk-UA").format(n);
@@ -53,8 +60,19 @@ function riskTags(o: TourismOffer, t: Tr): string[] {
   }).filter(Boolean);
 }
 
+// Рядок «мітка → значення» у сітці ключових параметрів (модульний, не в render).
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <>
+      <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+      <span className="text-right font-semibold text-zinc-900 dark:text-zinc-100">{value}</span>
+    </>
+  );
+}
+
 // Повний перелік ризиків із лімітами й описом + франшиза — у «Детальніше» картки.
-function TourismRiskDetail({ o }: { o: TourismOffer }) {
+// annual365 (лише мультивіза, лише перелічені СК) — мітка «Договір діє 365 днів».
+function TourismRiskDetail({ o, annual365 }: { o: TourismOffer; annual365?: boolean }) {
   const { t } = useI18n();
   const progs = Array.isArray(o.programs) ? o.programs : [];
   const franchise = Number(o.franchise ?? 0);
@@ -68,23 +86,22 @@ function TourismRiskDetail({ o }: { o: TourismOffer }) {
   const optionsCount = Object.values(opts).filter((v) =>
     v === true || (typeof v === "number" && v > 0) || (!!v && typeof v === "object" && ((v as { status?: boolean }).status === true || ((v as { value?: number }).value ?? 0) > 0))
   ).length;
-  if (progs.length === 0 && !progName) return null;
-  const Row = ({ label, value }: { label: string; value: string }) => (
-    <>
-      <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
-      <span className="text-right font-semibold text-zinc-900 dark:text-zinc-100">{value}</span>
-    </>
-  );
+  if (progs.length === 0 && !progName && !annual365) return null;
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
+      {annual365 ? (
+        <p className="mb-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <CalendarCheck className="h-3.5 w-3.5" />{t({ uk: "Договір діє 365 днів", en: "Policy valid for 365 days" })}
+        </p>
+      ) : null}
       {progName && (
         <p className="mb-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300">{progName}</p>
       )}
       <div className="mb-2.5 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-        {tier && <Row label={t({ uk: "Програма", en: "Program" })} value={tier} />}
-        {coverage > 0 && <Row label={t({ uk: "Страховий ліміт", en: "Coverage limit" })} value={`${nf(coverage)} ${cur0}`} />}
-        <Row label={t({ uk: "Франшиза", en: "Deductible" })} value={franchise > 0 ? `${nf(franchise)} ${cur0}` : t({ uk: "0 (без франшизи)", en: "0 (none)" })} />
-        {optionsCount > 0 && <Row label={t({ uk: "Включено опцій", en: "Options included" })} value={String(optionsCount)} />}
+        {tier && <StatRow label={t({ uk: "Програма", en: "Program" })} value={tier} />}
+        {coverage > 0 && <StatRow label={t({ uk: "Страховий ліміт", en: "Coverage limit" })} value={`${nf(coverage)} ${cur0}`} />}
+        <StatRow label={t({ uk: "Франшиза", en: "Deductible" })} value={franchise > 0 ? `${nf(franchise)} ${cur0}` : t({ uk: "0 (без франшизи)", en: "0 (none)" })} />
+        {optionsCount > 0 && <StatRow label={t({ uk: "Включено опцій", en: "Options included" })} value={String(optionsCount)} />}
       </div>
       {progs.length > 0 && (
       <>
@@ -322,6 +339,7 @@ export function TourismFlow() {
                 <div className="min-w-0 flex-1">
                   <TourismOffers
                     offers={offers}
+                    multiVisa={multiVisa}
                     zoneLabel={(() => { const z = ZONES.find((z) => String(z.id) === zoneId); return z ? t({ uk: z.label, en: z.en }) : ""; })()}
                     dates={startDate && endDate ? `${startDate} – ${endDate}` : ""}
                     days={days}
@@ -497,8 +515,9 @@ function toTourismInsuranceOffer(o: TourismOffer): InsuranceOffer {
   } as unknown as InsuranceOffer;
 }
 
-function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSelect }: {
+function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, onBack, onSelect }: {
   offers: TourismOffer[];
+  multiVisa: boolean;
   zoneLabel: string;
   dates: string;
   days: number;
@@ -507,6 +526,8 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
   onSelect: (offer: TourismOffer) => void;
 }) {
   const { t } = useI18n();
+  // Фільтр «Договір діє 365 днів» — лише в мультивізі й лише коли такі СК є у видачі.
+  const [only365, setOnly365] = useState(false);
   // Рівні покриття (10к…100к EUR). Мінімум для Шенгену — 30 000. Виносимо зверху.
   const coverages = Array.from(new Set(offers.map(coverageOf).filter((c) => c > 0))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
@@ -525,7 +546,10 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
     const prev = best.get(key);
     if (!prev || o.price < prev.price) best.set(key, o);
   }
-  const cards = Array.from(best.values()).sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
+  const allCards = Array.from(best.values()).sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
+  // Показуємо фільтр «365 днів» лише якщо в мультивізі є хоч одна така СК.
+  const has365 = multiVisa && allCards.some((o) => isAnnual365(o, true));
+  const cards = only365 && has365 ? allCards.filter((o) => isAnnual365(o, true)) : allCards;
 
   const touristsLabel = `${tourists} ${t({ uk: tourists === 1 ? "турист" : tourists < 5 ? "туристи" : "туристів", en: tourists === 1 ? "traveller" : "travellers" })}`;
   const summary = [touristsLabel, zoneLabel, dates, days ? `${days} ${t({ uk: "дн.", en: "days" })}` : ""].filter(Boolean).join(" · ");
@@ -565,9 +589,25 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
         )}
       </div>
 
-      {/* Сортування — кастомний dropdown (як у ОСЦПВ) */}
-      {cards.length > 0 && (
-        <div className="mb-5 flex items-center justify-end gap-3">
+      {/* Фільтр «365 днів» (зліва, лише в мультивізі з такими СК) + сортування (справа) */}
+      {allCards.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          {has365 ? (
+            <button
+              type="button"
+              onClick={() => setOnly365((v) => !v)}
+              aria-pressed={only365}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-semibold shadow-sm transition-colors ${
+                only365
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              }`}
+            >
+              <CalendarCheck className="h-4 w-4" />{t({ uk: "Договір діє 365 днів", en: "Valid for 365 days" })}
+              {only365 && <X className="h-3.5 w-3.5 opacity-70" />}
+            </button>
+          ) : <span />}
+          <div className="flex items-center gap-3">
           <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
           <div className="relative">
             <button
@@ -601,6 +641,7 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
               </>
             )}
           </div>
+          </div>
         </div>
       )}
 
@@ -626,7 +667,7 @@ function TourismOffers({ offers, zoneLabel, dates, days, tourists, onBack, onSel
               onBuy={() => onSelect(o)}
               hideExtras
               coverageTags={riskTags(o, t)}
-              productDescription={<TourismRiskDetail o={o} />}
+              productDescription={<TourismRiskDetail o={o} annual365={isAnnual365(o, multiVisa)} />}
               cornerBadge={o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined}
             />
           ))}
