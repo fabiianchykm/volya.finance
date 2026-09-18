@@ -91,6 +91,20 @@ function riskItems(o: TourismOffer, t: Tr): { label: string; value?: string; hin
       muted: true,
     });
   }
+  // Франшиза — якщо СК її повідомила (число, у т.ч. 0 = без франшизи).
+  const fr = o.franchise === undefined || o.franchise === null || o.franchise === "" ? NaN : Number(o.franchise);
+  if (items.length > 0 && Number.isFinite(fr)) {
+    const cur0 = currencySymbol(o.limit_currency);
+    items.push(fr > 0 ? {
+      label: t({ uk: "Франшиза", en: "Deductible" }),
+      value: `${nf(fr)} ${cur0}`,
+      hint: t({ uk: `Франшиза ${nf(fr)} ${cur0} — цю суму за кожним страховим випадком ви покриваєте самі, решту відшкодовує страхова.`, en: `Deductible ${nf(fr)} ${cur0} — you cover this amount per claim yourself; the insurer pays the rest.` }),
+    } : {
+      label: t({ uk: "Франшиза", en: "Deductible" }),
+      value: t({ uk: "без франшизи", en: "none" }),
+      hint: t({ uk: "Франшизи немає — страхова відшкодовує витрати з першого євро, без вашої участі.", en: "No deductible — the insurer pays from the first euro, with no out-of-pocket cost." }),
+    });
+  }
   return items;
 }
 
