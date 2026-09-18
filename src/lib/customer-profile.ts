@@ -150,30 +150,82 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
     localStorage.setItem(KEY, JSON.stringify(trimmed));
     localStorage.setItem(LAST_KEY, email);
 
-    // Синхронізація в БД під акаунтом. Сервер бере email із сесії: для гостей
-    // поверне 401 і нічого не збереже — це нормально (крос-девайс лише для залогінених).
-    // Надійність на масштабі:
-    //  • keepalive — запит доживає, навіть якщо користувач одразу переходить на крок
-    //    OTP/оплати або закриває вкладку (інакше браузер може обірвати fetch);
-    //  • легкий ретрай на транзієнтні збої (холодний старт Cloud Run, мережевий флап).
-    //    401 (гість) не ретраїмо — це очікувано.
-    const payload = JSON.stringify(map[email]);
-    const push = async (attempt = 0): Promise<void> => {
-      try {
-        const r = await fetch("/api/profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        });
-        if (!r.ok && r.status !== 401 && attempt < 2) throw new Error(String(r.status));
-      } catch {
-        if (attempt < 2) setTimeout(() => void push(attempt + 1), 700 * (attempt + 1));
-      }
-    };
-    void push();
+    void pushToServer(map[email]);
   } catch {
     // localStorage може бути недоступний (приватний режим, квота) — просто пропускаємо.
+  }
+}
+
+// Синхронізація в БД під акаунтом. Сервер бере email із сесії: для гостей поверне
+// 401 і нічого не збереже — це нормально (крос-девайс лише для залогінених).
+// Надійність на масштабі:
+//  • keepalive — запит доживає, навіть якщо користувач одразу переходить на крок
+//    OTP/оплати або закриває вкладку (інакше браузер може обірвати fetch);
+//  • легкий ретрай на транзієнтні збої (холодний старт Cloud Run, мережевий флап).
+//    401 (гість) не ретраїмо — це очікувано.
+function pushToServer(profile: CustomerProfile): Promise<boolean> {
+  const payload = JSON.stringify(profile);
+  const push = async (attempt = 0): Promise<boolean> => {
+    try {
+      const r = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      });
+      if (r.ok) return true;
+      if (r.status === 401) return false;
+      if (attempt < 2) throw new Error(String(r.status));
+      return false;
+    } catch {
+      if (attempt < 2) {
+        await new Promise((res) => setTimeout(res, 700 * (attempt + 1)));
+        return push(attempt + 1);
+      }
+      return false;
+    }
+  };
+  return push();
+}
+
+/** Зберегти ПОВНИЙ профіль особи як є (кабінет «Мої дані»: редагування всіх полів,
+ *  усіх типів документів одразу). Пише в локальний кеш і в БД; повертає, чи
+ *  вдалося зберегти на сервері. */
+export async function putProfile(p: CustomerProfile): Promise<boolean> {
+  const email = normEmail(p.email);
+  if (!email) return false;
+  const full: CustomerProfile = { ...p, email, savedAt: Date.now() };
+  try {
+    const map = readMap();
+    map[email] = full;
+    localStorage.setItem(KEY, JSON.stringify(map));
+  } catch {
+    // localStorage недоступний — все одно пробуємо сервер
+  }
+  return pushToServer(full);
+}
+
+/** Видалити особу (за email) з локального кешу й з БД акаунта. */
+export async function removeProfile(email: string): Promise<boolean> {
+  const e = normEmail(email);
+  if (!e) return false;
+  try {
+    const map = readMap();
+    delete map[e];
+    localStorage.setItem(KEY, JSON.stringify(map));
+    if (localStorage.getItem(LAST_KEY) === e) localStorage.removeItem(LAST_KEY);
+  } catch {
+    // ignore
+  }
+  try {
+    const r = await fetch("/api/profile", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: e }),
+    });
+    return r.ok;
+  } catch {
+    return false;
   }
 }
 
