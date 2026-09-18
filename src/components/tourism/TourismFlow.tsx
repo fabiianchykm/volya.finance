@@ -55,16 +55,43 @@ const RISK_LABELS: Record<number, { uk: string; en: string }> = {
   35: { uk: "Спорт", en: "Sport" },
 };
 
-// Чипи «що покриває» — короткі назви ризиків (медицина — із лімітом), щоб оффери
-// було легко розрізнити з першого погляду.
-function riskTags(o: TourismOffer, t: Tr): string[] {
+// Пояснення ризиків для підказки при наведенні на чип картки.
+const RISK_HINTS: Record<number, { uk: string; en: string }> = {
+  1: { uk: "Оплата лікування за кордоном: виклик лікаря, госпіталізація, ліки, невідкладна стоматологія, транспортування — у межах цієї суми.", en: "Pays for treatment abroad: doctor visits, hospitalisation, medicines, emergency dental care, transport — up to this limit." },
+  2: { uk: "Грошова виплата застрахованому (або родині), якщо в поїздці стався нещасний випадок із травмою, інвалідністю чи смертю. Це окрема сума — не оплата лікування.", en: "A cash payout to the insured (or family) if an accident during the trip causes injury, disability or death. A separate sum — not medical bills." },
+  3: { uk: "Лікування COVID-19 за кордоном у межах ліміту.", en: "COVID-19 treatment abroad within the limit." },
+  4: { uk: "Компенсація, якщо перевізник загубив, пошкодив або затримав ваш багаж.", en: "Compensation if the carrier loses, damages or delays your baggage." },
+  5: { uk: "Повернення витрат на квитки й бронювання, якщо поїздка зірвалась із поважної причини (хвороба, відмова у візі тощо).", en: "Refund of tickets and bookings if the trip is cancelled for a valid reason (illness, visa refusal, etc.)." },
+  6: { uk: "Компенсація витрат, якщо консульство відмовило у візі.", en: "Compensation of costs if the consulate refuses the visa." },
+  7: { uk: "Компенсація непередбачених фінансових втрат у поїздці, передбачених програмою.", en: "Compensation of unexpected financial losses during the trip, as defined by the programme." },
+  8: { uk: "Добровільне медичне страхування — розширене медичне покриття.", en: "Voluntary health insurance — extended medical cover." },
+  12: { uk: "Компенсація витрат, якщо рейс затримали довше визначеного часу.", en: "Compensation of costs if your flight is delayed beyond the set time." },
+  35: { uk: "Покриття для занять спортом і активного відпочинку.", en: "Cover for sports and active leisure." },
+};
+
+// Структуровані чипи «що покриває»: назва ризику + сума + пояснення при наведенні.
+function riskItems(o: TourismOffer, t: Tr): { label: string; value?: string; hint?: string; muted?: boolean }[] {
   const progs = Array.isArray(o.programs) ? o.programs : [];
-  return progs.map((p) => {
+  const items: { label: string; value?: string; hint?: string; muted?: boolean }[] = progs.map((p) => {
     const lbl = p.code != null ? RISK_LABELS[p.code] : undefined;
-    const cur = currencySymbol(p.limitCurrency ?? o.limit_currency);
-    if (p.code === 1 && p.limit) return t({ uk: `Медицина ${nf(p.limit)} ${cur}`, en: `Medical ${nf(p.limit)} ${cur}` });
-    return lbl ? t(lbl) : (p.description ?? "");
-  }).filter(Boolean);
+    const label = p.code === 1 ? t({ uk: "Медичні витрати", en: "Medical expenses" }) : lbl ? t(lbl) : (p.description ?? "");
+    // Медичний ліміт = сума покриття оффера (€/$); деякі модулі (РЕСПЕКТ) помилково
+    // ставлять тут UAH — ігноруємо. Для інших ризиків (НВ тощо) UAH — реальна валюта.
+    const cur = p.code === 1 ? currencySymbol(o.limit_currency) : currencySymbolExact(p.limitCurrency ?? o.limit_currency);
+    const value = p.limit ? t({ uk: `до ${nf(p.limit)} ${cur}`, en: `up to ${nf(p.limit)} ${cur}` }) : undefined;
+    const hint = p.code != null && RISK_HINTS[p.code] ? t(RISK_HINTS[p.code]) : undefined;
+    return { label, value, hint };
+  }).filter((x) => x.label);
+  // Нещасний випадок — важлива відмінність між СК: якщо його нема, кажемо це явно.
+  if (items.length > 0 && !progs.some((p) => p.code === 2)) {
+    items.push({
+      label: t(RISK_LABELS[2]),
+      value: t({ uk: "не включено", en: "not included" }),
+      hint: t({ uk: "У цій програмі немає страхування від нещасного випадку — окремої виплати при травмі чи інвалідності. Лікування покривається лише в межах медичних витрат.", en: "This programme has no accident insurance — no separate payout for injury or disability. Treatment is covered only within medical expenses." }),
+      muted: true,
+    });
+  }
+  return items;
 }
 
 // Рядок «мітка → значення» у сітці ключових параметрів (модульний, не в render).
@@ -482,6 +509,8 @@ export function TourismFlow() {
 
 // EUR → €, USD → $ для суми покриття.
 const currencySymbol = (cur?: string) => (cur === "USD" ? "$" : "€");
+// Точний символ (включно з гривнею) — для лімітів окремих ризиків.
+const currencySymbolExact = (cur?: string) => (cur === "USD" ? "$" : cur === "UAH" ? "₴" : "€");
 
 // Скелетон картки під час завантаження (як OfferCardSkeleton в ОСЦПВ).
 function TourismOfferSkeleton() {
@@ -678,7 +707,7 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
               onSelectAutolawyer={() => {}}
               onBuy={() => onSelect(o)}
               hideExtras
-              coverageTags={riskTags(o, t)}
+              coverageItems={riskItems(o, t)}
               {...(() => {
                 // Мультивіза: СК з переліку — «365 днів» (зелена перевага); решта —
                 // нейтральний рядок «не діє 365 днів» (точний термін не підтверджено).

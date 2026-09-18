@@ -41,6 +41,9 @@ interface OfferCardProps {
   showAgeBasis?: boolean;
   /** Що покриває — короткі теги по центру картки (напр. міні-КАСКО: «Воєнні ризики», «З вини»). */
   coverageTags?: string[];
+  /** Структуровані ризики (туристичне): назва + сума + пояснення при наведенні.
+   *  Якщо задано — має пріоритет над coverageTags. */
+  coverageItems?: { label: string; value?: string; hint?: string; muted?: boolean }[];
   /** Додатковий рядок на лицьовій частині картки — під «Виправлення поліса у разі
    *  помилки», у тому самому стилі (напр. туристичне мультивіза: «Договір діє 365 днів»). */
   faceNote?: string;
@@ -285,6 +288,7 @@ export function OfferCard({
   productDescription,
   showAgeBasis,
   coverageTags,
+  coverageItems,
   faceNote,
   faceNoteMuted,
   faceNoteHint,
@@ -357,7 +361,18 @@ export function OfferCard({
   const canExpand = !!productDescription || hasFacts || hasDocs;
 
   // Короткі теги «що покриває» (напр. міні-КАСКО) — чипи по центру картки.
-  const coverageChips = coverageTags && coverageTags.length > 0 ? (
+  const coverageChips = coverageItems && coverageItems.length > 0 ? (
+    <div className="flex flex-wrap justify-center gap-2">
+      {coverageItems.map((it) => (
+        <Tooltip key={it.label} className={cn(it.hint && "cursor-help")} content={it.hint ?? ""}>
+          <span className={cn("inline-flex flex-col items-start rounded-xl border px-3 py-1.5 text-left", it.muted ? "border-dashed border-zinc-200 bg-transparent dark:border-zinc-700" : "border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/50")}>
+            <span className={cn("text-[11px] font-medium leading-tight text-zinc-500 dark:text-zinc-400", it.hint && "underline decoration-dotted underline-offset-2")}>{it.label}</span>
+            {it.value && <span className={cn("text-sm font-semibold leading-tight", it.muted ? "text-zinc-400 dark:text-zinc-500" : "text-zinc-900 dark:text-zinc-100")}>{it.value}</span>}
+          </span>
+        </Tooltip>
+      ))}
+    </div>
+  ) : coverageTags && coverageTags.length > 0 ? (
     <div className="flex flex-wrap justify-center gap-1.5">
       {coverageTags.map((t) => (
         <span key={t} className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900">
