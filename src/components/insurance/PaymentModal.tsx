@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { CheckCircle, ExternalLink, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { SupportCTA } from "@/components/ui/SupportCTA";
 
 interface PaymentModalProps {
   open: boolean;
@@ -219,7 +220,10 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
         )}
 
         {!loading && error && (
-          <p className="text-center text-sm text-red-500">{error}</p>
+          <div className="flex flex-col items-center">
+            <p className="text-center text-sm text-red-500">{error}</p>
+            <SupportCTA className="justify-center" />
+          </div>
         )}
       </div>
     </Modal>

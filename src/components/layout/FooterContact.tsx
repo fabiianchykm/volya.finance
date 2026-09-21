@@ -37,34 +37,10 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
-function YouTubeIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-      <path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 00.5 6.19C0 8.08 0 12 0 12s0 3.92.5 5.81a3.02 3.02 0 002.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 002.12-2.14C24 15.92 24 12 24 12s0-3.92-.5-5.81zM9.6 15.6V8.4l6.24 3.6L9.6 15.6z" />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-      <path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.6l5.24 6.93 6.06-6.93zm-1.29 19.5h2.04L6.48 3.24H4.29L17.61 20.65z" />
-    </svg>
-  );
-}
-
 function FacebookIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
       <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.02 4.39 11.01 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8v8.44C19.61 23.08 24 18.09 24 12.07z" />
-    </svg>
-  );
-}
-
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-      <path d="M16.6 5.82a4.28 4.28 0 01-1.06-2.82h-3.3v13.05a2.59 2.59 0 01-2.59 2.59 2.59 2.59 0 01-2.59-2.59 2.59 2.59 0 012.59-2.59c.27 0 .53.04.78.12v-3.35a5.95 5.95 0 00-.78-.05A5.94 5.94 0 003.71 16.1a5.94 5.94 0 005.94 5.94 5.94 5.94 0 005.94-5.94V9.4a7.56 7.56 0 004.41 1.41V7.5a4.28 4.28 0 01-3.4-1.68z" />
     </svg>
   );
 }
@@ -81,9 +57,6 @@ const SOCIALS = [
   { label: "Telegram", href: TELEGRAM_URL, Icon: TelegramIcon },
   { label: "Instagram", href: "https://www.instagram.com/volya.finance", Icon: InstagramIcon, live: true },
   { label: "Facebook", href: "https://www.facebook.com/volya.finance", Icon: FacebookIcon },
-  { label: "TikTok", href: "https://www.tiktok.com/@volya.finance", Icon: TikTokIcon },
-  { label: "YouTube", href: "https://www.youtube.com/@volya.finance", Icon: YouTubeIcon },
-  { label: "X", href: "https://x.com/volya_finance", Icon: XIcon },
 ];
 
 export function FooterContact() {
