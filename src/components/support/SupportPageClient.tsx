@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 
 const TELEGRAM_URL = "https://t.me/volya_finance_bot";
+// Viber — без бота: пряме посилання відкриває чат із номером підтримки в застосунку.
+const VIBER_NUMBER = "+380965092400";
+const VIBER_URL = `viber://chat?number=${encodeURIComponent(VIBER_NUMBER)}`;
 
 function formatUaPhone(digits: string): string {
   const d = digits.replace(/\D/g, "").slice(0, 9);
@@ -45,7 +48,7 @@ export function SupportPageClient() {
   };
 
   return (
-    <div className="grid gap-5 md:grid-cols-2">
+    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
       {/* Telegram */}
       <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300"><Send className="h-6 w-6" /></div>
@@ -61,6 +64,20 @@ export function SupportPageClient() {
           <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2"><Send className="h-4 w-4" />{t({ uk: "Відкрити Telegram", en: "Open Telegram" })}</Button>
         </a>
         <p className="mt-2 text-center text-xs text-zinc-400 dark:text-zinc-500">@volya_finance_bot</p>
+      </div>
+
+      {/* Viber — чат за номером, без бота */}
+      <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300"><MessageCircle className="h-6 w-6" /></div>
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Написати у Viber", en: "Message us on Viber" })}</h2>
+        <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+          {t({ uk: "Зручніше у Viber? Напишіть нам напряму — відповість менеджер.", en: "Prefer Viber? Message us directly — a manager will reply." })}
+        </p>
+        <p className="mt-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">+380 96 509 24 00</p>
+        <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Кнопка відкриє чат у застосунку Viber. Якщо не відкрився — знайдіть нас у Viber за цим номером.", en: "The button opens the chat in the Viber app. If it doesn't, find us in Viber by this number." })}</p>
+        <a href={VIBER_URL} className="mt-6 md:mt-auto md:pt-6">
+          <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2 !bg-violet-600 hover:!bg-violet-700"><MessageCircle className="h-4 w-4" />{t({ uk: "Відкрити Viber", en: "Open Viber" })}</Button>
+        </a>
       </div>
 
       {/* Замовити дзвінок */}

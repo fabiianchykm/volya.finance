@@ -6,7 +6,7 @@ import { SupportPageClient } from "@/components/support/SupportPageClient";
 
 export const metadata: Metadata = {
   title: "Підтримка — volya.finance",
-  description: "Звʼяжіться з підтримкою volya.finance: напишіть у Telegram-бот або замовте дзвінок — допоможемо оформити страховий поліс чи вирішити питання.",
+  description: "Звʼяжіться з підтримкою volya.finance: напишіть у Telegram чи Viber або замовте дзвінок — допоможемо оформити страховий поліс чи вирішити питання.",
   alternates: { canonical: "/support" },
 };
 
