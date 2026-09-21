@@ -17,11 +17,16 @@ export async function POST(req: NextRequest) {
   let rawPhone = "";
   let email = "";
   let source = "";
+  let name = "";
+  let comment = "";
   try {
     const body = await req.json();
     rawPhone = String(body?.phone ?? "").replace(/\D/g, "");
     email = String(body?.email ?? "").trim();
     source = String(body?.source ?? "");
+    // Опційні поля зі сторінки підтримки: імʼя та коротке питання (обрізаємо довжину).
+    name = String(body?.name ?? "").trim().slice(0, 60);
+    comment = String(body?.comment ?? "").trim().slice(0, 500);
   } catch {
     return NextResponse.json({ success: false, error: "Bad request" }, { status: 400 });
   }
@@ -52,6 +57,8 @@ export async function POST(req: NextRequest) {
     lines = [
       "📞 <b>Заявка на дзвінок</b>",
       `☎️ <code>${escapeHtml(full)}</code> (${escapeHtml(pretty)})`,
+      name ? `👤 ${escapeHtml(name)}` : null,
+      comment ? `💬 ${escapeHtml(comment)}` : null,
       source ? `🌐 Джерело: ${escapeHtml(source).slice(0, 60)}` : null,
     ].filter(Boolean) as string[];
   }
@@ -62,7 +69,7 @@ export async function POST(req: NextRequest) {
     // Не втрачаємо лід: дублюємо в dev-бот і повідомляємо клієнта, що краще подзвонити.
     await trySendTelegram("dev", `⚠️ <b>Лід не доставлено в sales</b>\n${lines.join("\n")}\n<code>${escapeHtml(e instanceof Error ? e.message : String(e)).slice(0, 200)}</code>`);
     return NextResponse.json(
-      { success: false, error: "Не вдалося надіслати заявку. Зателефонуйте нам, будь ласка." },
+      { success: false, error: "Не вдалося надіслати заявку. Напишіть нам, будь ласка, у Telegram." },
       { status: 502 }
     );
   }

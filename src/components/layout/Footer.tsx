@@ -63,6 +63,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
     { label: "Звіти", labelEn: "Reports", href: "/reports", frozen: true },
   ],
   legal: [
+    { label: "Підтримка", labelEn: "Support", href: "/support" },
     { label: "Інформація про Субагента", labelEn: "Sub-agent information", href: "/subagent" },
     // Публічна оферта / Політика конфіденційності — біля копірайта внизу (заморожені).
   ],
