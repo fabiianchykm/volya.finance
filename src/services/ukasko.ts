@@ -972,14 +972,13 @@ export class UkaskoService {
             if (s === 2 || pa) { paidByInvoice = true; payedAt = pa ?? payedAt; }
           }
           const orderStatus = Number(d.statusId ?? d.status_id ?? 0) || 0;
-          // orderStatus===2 як ОЗНАКУ ОПЛАТИ довіряємо ЛИШЕ для ОСЦПВ (де це
-          // документовано) та невідомого продукту (сумісність). Для ЗК/туризму/тварин/
-          // житла/міні-КАСКО statusId=2 означає «заявлено», а НЕ «оплачено» — тож
-          // кинута ЗК-чернетка зі статусом 2 раніше ХИБНО читалась як оплачена →
-          // фальшивий алерт «оплачено, не видано». Реальну оплату там ловимо ТІЛЬКИ
-          // за isPaid / payed_at / invoice.status_id (paidByInvoice).
-          const trustOrderStatus = !product || product === "osago";
-          const paid = d.isPaid === true || paidByInvoice || (trustOrderStatus && orderStatus === 2);
+          // КРИТИЧНО: order.statusId НЕ є ознакою оплати НІ ДЛЯ ЯКОГО продукту.
+          // statusId=2 = «заявлено» (після OTP), а не «оплачено» — і для ОСЦПВ теж
+          // (прод-логи: isPaid=false, payed_at=null, orderStatus=2 у кинутих замовлень).
+          // Раніше довіра до statusId=2 змушувала sweep/finalize УКЛАДАТИ НЕОПЛАЧЕНІ
+          // договори (Ukasko confirm оплату не перевіряє). Оплата = ЛИШЕ реальні
+          // платіжні сигнали: isPaid / invoice.status_id=2 / payed_at.
+          const paid = d.isPaid === true || paidByInvoice;
           console.error(`[ukasko check-invoice] ${url} product=${product ?? "-"} → isPaid=${d.isPaid} orderStatus=${orderStatus} paidByInvoice=${paidByInvoice} payed_at=${payedAt} → paid=${paid}`);
           if (paid) return { status_id: 2, payed_at: payedAt };
         } catch (e) {
