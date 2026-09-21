@@ -1,10 +1,11 @@
 "use client";
 
-import { Send } from "lucide-react";
+import { LifeBuoy } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 // Виводимо біля повідомлень про помилку в оформленні: даємо клієнту одразу вихід
-// на підтримку в Telegram (телефон свідомо НЕ показуємо), щоб не втратити його на збої. Плаваюча кнопка
+// на сторінку підтримки /support (Telegram, Viber, замовити дзвінок). Відкриваємо в
+// НОВІЙ вкладці — щоб клієнт не втратив поточну сторінку з уже заповненою формою. Плаваюча кнопка
 // підтримки на /checkout прихована, тож цей CTA — єдиний канал у момент помилки.
 export function SupportCTA({ className = "" }: { className?: string }) {
   const { t } = useI18n();
@@ -14,12 +15,12 @@ export function SupportCTA({ className = "" }: { className?: string }) {
         {t({ uk: "Не виходить оформити? Ми допоможемо:", en: "Trouble completing it? We'll help:" })}
       </span>
       <a
-        href="https://t.me/volya_finance_bot"
+        href="/support"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-sky-600"
+        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-700"
       >
-        <Send className="h-3.5 w-3.5" /> Telegram
+        <LifeBuoy className="h-3.5 w-3.5" /> {t({ uk: "Звернутись у підтримку", en: "Contact support" })}
       </a>
     </div>
   );
