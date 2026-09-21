@@ -18,7 +18,6 @@ function formatUaPhone(digits: string): string {
 export function SupportPageClient() {
   const { t } = useI18n();
   const [phone, setPhone] = useState("");
-  const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +31,7 @@ export function SupportPageClient() {
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ phone, comment, source: "Сторінка підтримки" }),
+        body: JSON.stringify({ phone, source: "Сторінка підтримки" }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) throw new Error(json?.error || "error");
@@ -79,12 +78,6 @@ export function SupportPageClient() {
         ) : (
           <form onSubmit={submit} className="mt-5 space-y-3">
             <Input label={t({ uk: "Телефон", en: "Phone" })} type="tel" inputMode="numeric" prefix="+380" value={formatUaPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="67 123 45 67" required autoComplete="tel-national" />
-            <div>
-              <label htmlFor="support-comment" className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Коротко про питання (необов'язково)", en: "Briefly, what's it about (optional)" })}</label>
-              <textarea id="support-comment" value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} rows={3}
-                className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                placeholder={t({ uk: "Напр.: не можу оплатити поліс ОСЦПВ", en: "E.g.: I can't pay for my policy" })} />
-            </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" variant="primary" size="lg" loading={busy} className="flex w-full items-center justify-center gap-2"><PhoneCall className="h-4 w-4" />{t({ uk: "Передзвоніть мені", en: "Call me back" })}</Button>
           </form>
