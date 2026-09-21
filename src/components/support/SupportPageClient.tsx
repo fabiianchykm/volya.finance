@@ -17,7 +17,6 @@ function formatUaPhone(digits: string): string {
 // (заявка йде менеджеру через /api/lead, як і з плаваючої кнопки звʼязку).
 export function SupportPageClient() {
   const { t } = useI18n();
-  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
@@ -33,7 +32,7 @@ export function SupportPageClient() {
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ phone, name, comment, source: "Сторінка підтримки" }),
+        body: JSON.stringify({ phone, comment, source: "Сторінка підтримки" }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) throw new Error(json?.error || "error");
@@ -79,7 +78,6 @@ export function SupportPageClient() {
           </div>
         ) : (
           <form onSubmit={submit} className="mt-5 space-y-3">
-            <Input label={t({ uk: "Ваше ім'я", en: "Your name" })} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} autoComplete="given-name" />
             <Input label={t({ uk: "Телефон", en: "Phone" })} type="tel" inputMode="numeric" prefix="+380" value={formatUaPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="67 123 45 67" required autoComplete="tel-national" />
             <div>
               <label htmlFor="support-comment" className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Коротко про питання (необов'язково)", en: "Briefly, what's it about (optional)" })}</label>
