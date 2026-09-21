@@ -221,8 +221,10 @@ export class UkaskoService {
   private token: string | null = null;
 
   async authenticate(): Promise<string> {
-    const email = process.env.UKASKO_EMAIL;
-    const password = process.env.UKASKO_PASSWORD;
+    // trim: секрети, вставлені через CLI, інколи мають хвостовий пробіл/перенос рядка —
+    // Ukasko тоді відповідає 403 UnAuthorised, хоча пароль правильний.
+    const email = process.env.UKASKO_EMAIL?.trim();
+    const password = process.env.UKASKO_PASSWORD?.trim();
 
     if (!email || !password) {
       throw new Error("Не задані UKASKO_EMAIL / UKASKO_PASSWORD в .env.local");
