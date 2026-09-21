@@ -42,14 +42,14 @@ async function confirmByProduct(product: string, orderId: string, orderPayload: 
 }
 
 export type FinalizeResult =
-  | { paid: false }
+  | { paid: false; uncertain?: boolean; product?: string; meta?: PendingMeta | null }
   | { paid: true; issued: true; contractId: string; product: string }
   | { paid: true; issued: false; product: string; error: string; meta: PendingMeta | null };
 
 // Укладає ОДНЕ замовлення, якщо воно оплачене. Ідемпотентно (той самий contractId,
 // без дублів). Збій укладання НЕ кидає, а повертає issued:false — щоб викликач
 // (finalize/sweep) вирішив, як алертити. Несподівані помилки (checkInvoice) — кидає.
-export async function finalizeOrder(orderId: string, opts: { refCode?: string | null } = {}): Promise<FinalizeResult> {
+export async function finalizeOrder(orderId: string, opts: { refCode?: string | null; confirm?: boolean } = {}): Promise<FinalizeResult> {
   // Продукт визначаємо ПЕРШИМ — checkInvoice продукт-обізнаний: для не-ОСЦПВ
   // orderStatus=2 ≠ оплата (інакше кинута ЗК/туристична чернетка читається як
   // «оплачено» → фальшивий алерт «оплачено, не видано»).
@@ -58,7 +58,12 @@ export async function finalizeOrder(orderId: string, opts: { refCode?: string | 
 
   // Статус оплати — ПОЗА idempotency (змінюється з часом).
   const inv = await ukaskoService.checkInvoice(orderId, product);
-  if (inv.status_id !== 2) return { paid: false };
+  if (inv.status_id !== 2) return { paid: false, uncertain: inv.uncertain === true, product, meta: pending?.meta ?? null };
+
+  // Фоновий sweep за замовчуванням НЕ укладає сам (confirm:false) — лише повідомляє.
+  if (opts.confirm === false) {
+    return { paid: true, issued: false, product, error: "Оплату підтверджено (isPaid), але авто-укладання у sweep вимкнено — укладіть вручну або ввімкніть SWEEP_AUTO_CONFIRM=1.", meta: pending?.meta ?? null };
+  }
 
   try {
     const { body } = await withIdempotency(`finalize:${orderId}`, async () => {

@@ -944,7 +944,7 @@ export class UkaskoService {
     };
   }
 
-  async checkInvoice(orderId: string, product?: string): Promise<{ status_id: number; payed_at: string | null }> {
+  async checkInvoice(orderId: string, product?: string): Promise<{ status_id: number; payed_at: string | null; uncertain?: boolean }> {
     // Статус оплати. Різні продукти Ukasko віддають його по-різному, а старий
     // виклик `/payments/{orderId}/check-invoice` на проді падає 500 (orderId у шляху —
     // некоректно). Тож пробуємо кілька коректних варіантів: GET /orders/{id}/get-invoice
@@ -959,6 +959,7 @@ export class UkaskoService {
       `${BASE_URL}/orders/${orderId}/get-invoice`,
     ];
     return this.withAuth(async (token) => {
+      let uncertainSeen = false;
       for (const url of urls) {
         try {
           const raw = await getJson(url, token) as Record<string, unknown>;
@@ -977,14 +978,18 @@ export class UkaskoService {
             if (s === 2 || pa) { paidByInvoice = true; payedAt = pa ?? payedAt; }
           }
           const orderStatus = Number(d.statusId ?? d.status_id ?? 0) || 0;
-          // КРИТИЧНО: order.statusId НЕ є ознакою оплати НІ ДЛЯ ЯКОГО продукту.
-          // statusId=2 = «заявлено» (після OTP), а не «оплачено» — і для ОСЦПВ теж
-          // (прод-логи: isPaid=false, payed_at=null, orderStatus=2 у кинутих замовлень).
-          // Раніше довіра до statusId=2 змушувала sweep/finalize УКЛАДАТИ НЕОПЛАЧЕНІ
-          // договори (Ukasko confirm оплату не перевіряє). Оплата = ЛИШЕ реальні
-          // платіжні сигнали: isPaid / invoice.status_id=2 / payed_at.
-          const paid = d.isPaid === true || paidByInvoice;
-          console.error(`[ukasko check-invoice] ${url} product=${product ?? "-"} → isPaid=${d.isPaid} orderStatus=${orderStatus} paidByInvoice=${paidByInvoice} payed_at=${payedAt} → paid=${paid}`);
+          // КРИТИЧНО — що вважаємо оплатою. Перевірено на прод-логах (09.2026):
+          //  • order.statusId=2 = «заявлено» (після OTP), НЕ оплата — для всіх продуктів;
+          //  • payments[].invoice.payed_at / status_id теж НЕ оплата: Ukasko ставить їх
+          //    фоновим процесом і при генерації рахунку (три різні неоплачені замовлення
+          //    мали ідентичний до секунди payed_at; в UConnect — «Не сплачено»).
+          // Довіра до цих полів змушувала sweep УКЛАДАТИ НЕОПЛАЧЕНІ ДОГОВОРИ (Ukasko
+          // confirm оплату не перевіряє). Єдиний надійний сигнал — isPaid === true
+          // (усі справді оплачені замовлення в логах мали його). Решта — лише
+          // «сумнівно» (uncertain): не укладаємо, а просимо людину перевірити.
+          const paid = d.isPaid === true;
+          uncertainSeen = uncertainSeen || (!paid && paidByInvoice);
+          console.error(`[ukasko check-invoice] ${url} product=${product ?? "-"} → isPaid=${d.isPaid} orderStatus=${orderStatus} invoiceSignal=${paidByInvoice} payed_at=${payedAt} → paid=${paid}`);
           if (paid) return { status_id: 2, payed_at: payedAt };
         } catch (e) {
           if (e instanceof HttpError && e.status === 401) throw e; // токен протух — withAuth перевипустить
@@ -992,7 +997,7 @@ export class UkaskoService {
         }
       }
       // Ніде не побачили оплату — вважаємо «ще не оплачено» (клієнт опитає ще раз).
-      return { status_id: 0, payed_at: null };
+      return { status_id: 0, payed_at: null, uncertain: uncertainSeen };
     });
   }
 

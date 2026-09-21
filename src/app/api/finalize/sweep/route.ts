@@ -28,8 +28,27 @@ async function runSweep(req: NextRequest) {
 
   for (const o of orders) {
     try {
-      const r = await finalizeOrder(o.orderId);
-      if (!r.paid) { summary.unpaid++; continue; }
+      // БЕЗПЕКА: sweep сам НЕ укладає договори, доки це явно не ввімкнено
+      // (SWEEP_AUTO_CONFIRM=1) — після інциденту з укладанням неоплачених полісів.
+      const r = await finalizeOrder(o.orderId, { confirm: process.env.SWEEP_AUTO_CONFIRM === "1" });
+      if (!r.paid) {
+        summary.unpaid++;
+        // «Сумнівно»: Ukasko показує платіжні мітки, але isPaid=false. Не укладаємо —
+        // просимо людину глянути в UConnect (раз на 6 год на замовлення).
+        const recently = o.alertedAt && (now - new Date(o.alertedAt).getTime() < RE_ALERT_AFTER_MS);
+        if (r.uncertain && !recently) {
+          const m = r.meta;
+          await notifyDevError(
+            `❓ Можлива оплата — ПЕРЕВІРТЕ в UConnect (договір НЕ укладено автоматично)\n` +
+            `product=${r.product ?? "-"} orderId=${o.orderId}\n` +
+            `клієнт=${m?.customerName ?? "-"} тел=${m?.phone ?? "-"} СК=${m?.company ?? "-"} ціна=${m?.price ?? "-"}`,
+            new Error("uncertain payment signal (payed_at set, isPaid=false)")
+          );
+          await markPendingAlerted(o.orderId);
+          summary.alerted++;
+        }
+        continue;
+      }
       if (r.issued) { summary.issued++; continue; }
       // Оплачено, але й тут не укладається.
       summary.stillFailing++;
