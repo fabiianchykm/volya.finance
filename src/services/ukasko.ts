@@ -412,6 +412,7 @@ export class UkaskoService {
   }
 
   async confirmPetsOrder(orderId: string): Promise<{ contractId: string; status?: string }> {
+    await this.assertPaid(orderId, "pets");
     const data = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/pets/contract/confirm`, { orderId }, token
     )) as { data: [{ contractId: string; status?: string }] };
@@ -488,6 +489,7 @@ export class UkaskoService {
   }
 
   async confirmTourismOrder(orderData: Record<string, unknown>): Promise<{ contractId: string; status?: string }> {
+    await this.assertPaid(String(orderData.orderId ?? ""), "tourism");
     const payload = { ...orderData, params: { type: "nextFinal", statusId: 2 } };
     const raw = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/tourism/order/create`, payload, token
@@ -586,6 +588,7 @@ export class UkaskoService {
 
   // Оформлення (укладення) договору ЗК після оплати → contractId.
   async confirmGreenCard(orderId: string): Promise<{ contractId: string; status?: string }> {
+    await this.assertPaid(orderId, "greencard");
     const data = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/greencard/contract/confirm`,
       { orderId },
@@ -670,6 +673,7 @@ export class UkaskoService {
 
   // Фінальне підтвердження договору (потребує заявлення + оплату + підтверджений OTP).
   async confirmMiniKasko(orderId: string, otp?: string): Promise<{ contractId: string; statusId?: number }> {
+    await this.assertPaid(orderId, "mini-kasko");
     const raw = await this.withAuth((t) => postJson(`${MINI_BASE}/orders/${orderId}/confirm`, otp ? { otp } : {}, t)) as Record<string, unknown>;
     if (raw.status === "error") throw new Error((raw.message as string) || "Не вдалося підтвердити договір");
     return { contractId: (raw.id as string) ?? orderId, statusId: raw.statusId as number | undefined };
@@ -768,6 +772,7 @@ export class UkaskoService {
   }
 
   async confirmHome(orderId: string): Promise<{ contractId: string; status?: string }> {
+    await this.assertPaid(orderId, "housing");
     const data = await this.withAuth((t) => postJson(`${HOME_BASE}/contract/confirm`, { orderId }, t)) as { data: [{ contractId: string; status?: string }] };
     return data.data[0];
   }
@@ -991,7 +996,23 @@ export class UkaskoService {
     });
   }
 
+  // ПЛАТІЖНИЙ ШЛАГБАУМ. Ukasko confirm НЕ перевіряє оплату — укладе договір і без
+  // неї (так зʼявлялись «Укладений / Не сплачено»). Тому КОЖЕН confirm на проді
+  // спершу сам перевіряє реальну оплату; без неї — відмова. Єдина точка для всіх
+  // шляхів: клієнтські роути, /api/finalize, фоновий sweep. У dev (тестове API без
+  // LiqPay) підтвердження без оплати лишається дозволеним.
+  private async assertPaid(orderId: string, product: string): Promise<void> {
+    if (isDev) return;
+    if (!orderId) throw new Error("Оплату не підтверджено: немає номера замовлення.");
+    const inv = await this.checkInvoice(orderId, product);
+    if (inv.status_id !== 2) {
+      console.error(`[ukasko confirm BLOCKED] ${product} order=${orderId} — оплату не підтверджено, договір НЕ укладаємо`);
+      throw new Error("Оплату ще не підтверджено. Договір буде укладено одразу після надходження оплати.");
+    }
+  }
+
   async confirmPolicy(orderId: string) {
+    await this.assertPaid(orderId, "osago");
     const data = await this.withAuth((token) => postJson(
       `${BASE_URL}/insurance/contract/confirm`,
       { orderId },
