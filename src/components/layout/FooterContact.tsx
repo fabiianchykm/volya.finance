@@ -53,7 +53,7 @@ const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 // `live: true` — реальний профіль (клікабельний). Решта — заглушки (заморожені),
 // поки профілів немає. TODO: замінити на реальні й проставити live, коли будуть.
 const SOCIALS = [
-  { label: "Threads", href: "https://www.threads.net/@volya.finance", Icon: ThreadsIcon },
+  { label: "Threads", href: "https://www.threads.com/@volya.finance", Icon: ThreadsIcon },
   { label: "Telegram", href: TELEGRAM_URL, Icon: TelegramIcon },
   { label: "Instagram", href: "https://www.instagram.com/volya.finance", Icon: InstagramIcon, live: true },
   { label: "Facebook", href: "https://www.facebook.com/volya.finance", Icon: FacebookIcon },
