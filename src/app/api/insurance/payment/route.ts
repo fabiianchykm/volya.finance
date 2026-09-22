@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { ukaskoService, UKASKO_IS_DEV } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
@@ -6,7 +7,7 @@ import { notifyDevError } from "@/lib/telegram";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     // check опитується кілька разів на клік — тримаємо ліміт вищим, але обмеженим.
     const blocked = guardRequest(req, { name: "payment", limit: 40, windowMs: 10 * 60 * 1000 });
@@ -49,3 +50,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }
 }
+
+export const POST = withJourney("insurance/payment", handlePost);

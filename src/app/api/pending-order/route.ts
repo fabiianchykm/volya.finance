@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { guardRequest } from "@/lib/api-guard";
 import { savePendingOrder, type PendingProduct, type PendingMeta } from "@/lib/pending-orders";
 
@@ -7,7 +8,7 @@ import { savePendingOrder, type PendingProduct, type PendingMeta } from "@/lib/p
 // не налаштована або запис не вдався — не блокуємо оформлення.
 const PRODUCTS: PendingProduct[] = ["osago", "tourism", "greencard", "housing", "pets", "mini-kasko"];
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     const blocked = guardRequest(req, { name: "pending-order", limit: 30, windowMs: 10 * 60 * 1000 });
     if (blocked) return blocked;
@@ -30,3 +31,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, stored: false });
   }
 }
+
+export const POST = withJourney("pending-order", handlePost);

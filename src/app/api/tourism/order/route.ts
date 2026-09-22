@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
@@ -9,7 +10,7 @@ import { notifyDevError } from "@/lib/telegram";
 // повним payload) → contractId → download (tourism/contract/take).
 // OTP та оплату переюзуємо з /api/insurance/otp|payment.
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     const blocked = guardRequest(req, { name: "tourism-order", limit: 15, windowMs: 10 * 60 * 1000 });
     if (blocked) return blocked;
@@ -58,3 +59,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
+
+export const POST = withJourney("tourism/order", handlePost);

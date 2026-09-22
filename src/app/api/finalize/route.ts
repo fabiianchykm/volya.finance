@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { guardRequest } from "@/lib/api-guard";
 import { finalizeOrder, notifyPaidNotIssued } from "@/lib/finalize-order";
 import { notifyDevError } from "@/lib/telegram";
@@ -8,7 +9,7 @@ import { notifyDevError } from "@/lib/telegram";
 // lib/finalize-order (тими ж кроками користується фоновий /api/finalize/sweep).
 // Це замикає діру «оплатив — поліса нема».
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     const blocked = guardRequest(req, { name: "finalize", limit: 40, windowMs: 10 * 60 * 1000 });
     if (blocked) return blocked;
@@ -32,3 +33,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : "Error" }, { status: 500 });
   }
 }
+
+export const POST = withJourney("finalize", handlePost);

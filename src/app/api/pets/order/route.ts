@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
@@ -7,7 +8,7 @@ import { notifyDevError } from "@/lib/telegram";
 // Флоу тварин: declare (order/create statusId:5) → orderId → [спільні OTP та
 // оплата] → confirm (pets/contract/confirm) → download (pets/contract/take).
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     const blocked = guardRequest(req, { name: "pets-order", limit: 15, windowMs: 10 * 60 * 1000 });
     if (blocked) return blocked;
@@ -55,3 +56,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
+
+export const POST = withJourney("pets/order", handlePost);

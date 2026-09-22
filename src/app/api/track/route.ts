@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { guardRequest } from "@/lib/api-guard";
 import { trySendTelegram, escapeHtml } from "@/lib/telegram";
 import { saveLead } from "@/lib/leads";
@@ -28,7 +29,7 @@ function s(v: unknown, max = 80): string {
   return escapeHtml(String(v ?? "").slice(0, max));
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   // Подій може бути багато (beacon на виході) — ліміт вищий, але обмежений.
   const blocked = guardRequest(req, { name: "track", limit: 60, windowMs: 10 * 60 * 1000 });
   if (blocked) return blocked;
@@ -117,3 +118,5 @@ export async function POST(req: NextRequest) {
   // Невідома подія / ранній крок — тихо ігноруємо (не помилка).
   return NextResponse.json({ success: true });
 }
+
+export const POST = withJourney("track", handlePost);

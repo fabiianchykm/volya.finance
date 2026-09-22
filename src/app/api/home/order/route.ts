@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
@@ -6,7 +7,7 @@ import { notifyDevError } from "@/lib/telegram";
 
 // Флоу житла: declare (order/create) → [спільні OTP /api/insurance/otp + оплата
 // /api/insurance/payment] → confirm (contract/confirm) → download (contract/take → URL).
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     const blocked = guardRequest(req, { name: "home-order", limit: 20, windowMs: 10 * 60 * 1000 });
     if (blocked) return blocked;
@@ -57,3 +58,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
+
+export const POST = withJourney("home/order", handlePost);

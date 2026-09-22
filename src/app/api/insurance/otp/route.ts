@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
 import { rateLimit, maybeCleanup } from "@/lib/rate-limit";
 import { assertSameOrigin } from "@/lib/api-guard";
@@ -23,7 +24,7 @@ function getClientIp(req: NextRequest): string {
   return req.headers.get("x-real-ip") ?? "unknown";
 }
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   let ctx = "";
   try {
     const originBlocked = assertSameOrigin(req);
@@ -91,3 +92,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: clientMsg }, { status: 500 });
   }
 }
+
+export const POST = withJourney("insurance/otp", handlePost);

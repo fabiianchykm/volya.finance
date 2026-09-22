@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
 
-export async function POST(req: NextRequest) {
+async function handlePost(req: NextRequest) {
   try {
     // Створення/заявлення поліса запускає SMS/email — обмежуємо жорсткіше.
     const blocked = guardRequest(req, { name: "order", limit: 15, windowMs: 10 * 60 * 1000 });
@@ -62,3 +63,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
+
+export const POST = withJourney("insurance/order", handlePost);
