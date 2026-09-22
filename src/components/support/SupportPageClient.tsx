@@ -10,6 +10,8 @@ const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 // Viber — без бота: пряме посилання відкриває чат із номером підтримки в застосунку.
 const VIBER_NUMBER = "+380965092400";
 const VIBER_URL = `viber://chat?number=${encodeURIComponent(VIBER_NUMBER)}`;
+// Усі три дії — однакові кнопки (індиго), щоб картки читались як один ряд.
+const BTN = "flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl !bg-indigo-600 text-white hover:!bg-indigo-700";
 
 function formatUaPhone(digits: string): string {
   const d = digits.replace(/\D/g, "").slice(0, 9);
@@ -22,8 +24,8 @@ function Card({ icon, tone, title, text, children }: { icon: React.ReactNode; to
     <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>{icon}</div>
       <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{title}</h2>
-      <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">{text}</p>
-      <div className="mt-auto pt-6">{children}</div>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{text}</p>
+      <div className="mt-auto pt-7">{children}</div>
     </div>
   );
 }
@@ -67,7 +69,7 @@ export function SupportPageClient() {
         text={t({ uk: "Найшвидший спосіб: питання одразу потрапляє до менеджера.", en: "The fastest way: your question goes straight to a manager." })}
       >
         <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
-          <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2"><Send className="h-4 w-4" />{t({ uk: "Написати в Telegram", en: "Message on Telegram" })}</Button>
+          <Button variant="primary" size="lg" className={BTN}><Send className="h-4 w-4 shrink-0" />{t({ uk: "Відкрити Telegram", en: "Open Telegram" })}</Button>
         </a>
       </Card>
 
@@ -78,7 +80,7 @@ export function SupportPageClient() {
         text={t({ uk: "Чат із менеджером за номером +380 96 509 24 00.", en: "Chat with a manager at +380 96 509 24 00." })}
       >
         <a href={VIBER_URL}>
-          <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2 !bg-violet-600 hover:!bg-violet-700"><MessageCircle className="h-4 w-4" />{t({ uk: "Написати у Viber", en: "Message on Viber" })}</Button>
+          <Button variant="primary" size="lg" className={BTN}><MessageCircle className="h-4 w-4 shrink-0" />{t({ uk: "Відкрити Viber", en: "Open Viber" })}</Button>
         </a>
       </Card>
 
@@ -93,10 +95,10 @@ export function SupportPageClient() {
             <Check className="h-4 w-4 shrink-0" />{t({ uk: "Прийнято — зателефонуємо найближчим часом.", en: "Received — we'll call you shortly." })}
           </div>
         ) : (
-          <form onSubmit={submit} className="space-y-2.5">
-            <Input type="tel" inputMode="numeric" prefix="+380" value={formatUaPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="67 123 45 67" aria-label={t({ uk: "Номер телефону", en: "Phone number" })} required autoComplete="tel-national" />
+          <form onSubmit={submit} className="space-y-3">
+            <Input type="tel" inputMode="numeric" prefix="+380" className="h-12" value={formatUaPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="67 123 45 67" aria-label={t({ uk: "Номер телефону", en: "Phone number" })} required autoComplete="tel-national" />
             {error && <p className="text-xs text-red-500">{error}</p>}
-            <Button type="submit" variant="primary" size="lg" loading={busy} className="flex w-full items-center justify-center gap-2 !bg-emerald-600 hover:!bg-emerald-700"><PhoneCall className="h-4 w-4" />{t({ uk: "Передзвоніть мені", en: "Call me back" })}</Button>
+            <Button type="submit" variant="primary" size="lg" loading={busy} className={BTN}><PhoneCall className="h-4 w-4 shrink-0" />{t({ uk: "Замовити дзвінок", en: "Request a call" })}</Button>
           </form>
         )}
       </Card>
