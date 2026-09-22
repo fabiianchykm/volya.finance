@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Globe, FileText, CreditCard, Download } from "lucide-react";
 import { HeroSteps } from "@/components/sections/HeroSteps";
@@ -71,6 +72,14 @@ export function GreenCardFlow() {
 
   const [offers, setOffers] = useState<GreenCardOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<GreenCardOffer | null>(null);
+  // Відновлення оформлення після перезавантаження вкладки (див. lib/checkout-resume):
+  // якщо є свіжий знімок з orderId — одразу відкриваємо checkout із його ctx.
+  const [resumeCtx, setResumeCtx] = useState<GreenCardContext | null>(null);
+  useEffect(() => {
+    const r = readResume<{ ctx: GreenCardContext }>("checkout_resume_greencard");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (r?.ctx) { setResumeCtx(r.ctx); setStep("checkout"); }
+  }, []);
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -176,8 +185,8 @@ export function GreenCardFlow() {
                 onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
-            ) : selectedOffer ? (
-              <GreenCardCheckout ctx={checkoutCtx(selectedOffer)} onBack={() => setStep("offers")} />
+            ) : (resumeCtx || selectedOffer) ? (
+              <GreenCardCheckout ctx={resumeCtx ?? checkoutCtx(selectedOffer!)} onBack={() => { if (resumeCtx) { clearResume("checkout_resume_greencard"); setResumeCtx(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }} />
             ) : null}
           </div>
         </section>

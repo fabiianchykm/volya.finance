@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -59,6 +60,14 @@ export function PetsFlow() {
   const [offers, setOffers] = useState<PetsOffer[]>([]);
   const [earnings, setEarnings] = useState<number>(15);
   const [selectedOffer, setSelectedOffer] = useState<PetsOffer | null>(null);
+  // Відновлення оформлення після перезавантаження вкладки (див. lib/checkout-resume):
+  // якщо є свіжий знімок з orderId — одразу відкриваємо checkout із його ctx.
+  const [resumeCtx, setResumeCtx] = useState<PetsCheckoutCtx | null>(null);
+  useEffect(() => {
+    const r = readResume<{ ctx: PetsCheckoutCtx }>("checkout_resume_pets");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (r?.ctx) { setResumeCtx(r.ctx); setStep("checkout"); }
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,10 +142,10 @@ export function PetsFlow() {
                   />
                 </div>
               </div>
-            ) : selectedOffer ? (
+            ) : (resumeCtx || selectedOffer) ? (
               <PetsCheckout
-                ctx={{ offer: selectedOffer, petType, insurancePeriod: period, startDate, earnings } satisfies PetsCheckoutCtx}
-                onBack={() => setStep("offers")}
+                ctx={resumeCtx ?? ({ offer: selectedOffer!, petType, insurancePeriod: period, startDate, earnings } satisfies PetsCheckoutCtx)}
+                onBack={() => { if (resumeCtx) { clearResume("checkout_resume_pets"); setResumeCtx(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }}
               />
             ) : null}
           </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, CalendarCheck, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -248,6 +249,14 @@ export function TourismFlow() {
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
   useFlowReset(() => setStep("form"));
   const [selectedOffer, setSelectedOffer] = useState<TourismOffer | null>(null);
+  // Відновлення оформлення після перезавантаження вкладки (див. lib/checkout-resume):
+  // якщо є свіжий знімок з orderId — одразу відкриваємо checkout із його ctx.
+  const [resumeCtx, setResumeCtx] = useState<TourismCheckoutCtx | null>(null);
+  useEffect(() => {
+    const r = readResume<{ ctx: TourismCheckoutCtx }>("checkout_resume_tourism");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (r?.ctx) { setResumeCtx(r.ctx); setStep("checkout"); }
+  }, []);
   const [zoneId, setZoneId] = useState("60");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -391,10 +400,10 @@ export function TourismFlow() {
                   />
                 </div>
               </div>
-            ) : selectedOffer ? (
+            ) : (resumeCtx || selectedOffer) ? (
               <TourismCheckout
-                ctx={{
-                  offer: selectedOffer,
+                ctx={resumeCtx ?? ({
+                  offer: selectedOffer!,
                   countryId: Number(zoneId),
                   countryName: ZONES.find((z) => String(z.id) === zoneId)?.name ?? "",
                   startDate,
@@ -402,8 +411,8 @@ export function TourismFlow() {
                   days,
                   multiVisa,
                   birthDates,
-                } satisfies TourismCheckoutCtx}
-                onBack={() => setStep("offers")}
+                } satisfies TourismCheckoutCtx)}
+                onBack={() => { if (resumeCtx) { clearResume("checkout_resume_tourism"); setResumeCtx(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }}
               />
             ) : null}
           </div>

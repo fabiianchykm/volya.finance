@@ -8,6 +8,7 @@ import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { registerPendingOrder } from "@/lib/pending-order-client";
+import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { searchMarks, searchModels } from "@/lib/car-catalog";
@@ -95,6 +96,17 @@ export function CheckoutClient() {
         setBuyer(parsed.buyer ?? DEFAULT_BUYER);
         setSelectedDgoId(parsed.selectedDgoId || null);
         setSelectedAutolawyerId(parsed.selectedAutolawyerId || null);
+        // Повернення після перезавантаження (пошта/SMS за кодом): відновлюємо крок,
+        // дані клієнта й orderId — щоб не проходити все спочатку.
+        const r = readResume<{ step: "vehicle" | "otp" | "payment"; customer: Customer | null; buyer?: BuyerData; vehicle?: VehicleData; orderId: string | null }>("checkout_resume_osago");
+        if (r && (r.step === "vehicle" || r.orderId)) {
+          if (r.customer) setCustomer(r.customer);
+          if (r.buyer) setBuyer(r.buyer);
+          if (r.vehicle) setVehicle(r.vehicle);
+          if (r.orderId) setOrderId(r.orderId);
+          leadPingedRef.current = true;
+          setStep(r.step);
+        }
         setLoaded(true);
       }
     } catch (e) {
@@ -103,6 +115,14 @@ export function CheckoutClient() {
     }
     return () => { isMounted = false; };
   }, [router]);
+
+  // Знімок прогресу для відновлення після перезавантаження вкладки.
+  useResumeSnapshot(
+    "checkout_resume_osago",
+    loaded && (step === "vehicle" || ((step === "otp" || step === "payment") && orderId))
+      ? { step, customer, buyer, vehicle, orderId }
+      : null
+  );
 
   // Повідомлення (помилка/зміна ціни) рендеряться нагорі — підкручуємо до них,
   // бо кнопка «Продовжити» внизу довгої форми й інакше результат лишається поза екраном.
@@ -484,6 +504,7 @@ export function CheckoutClient() {
     }
 
     sessionStorage.removeItem("checkout_data");
+    clearResume("checkout_resume_osago");
   };
 
   return (

@@ -14,6 +14,8 @@ import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
+import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
+
 import { cityShort, cityLong } from "@/lib/utils";
 import { toUkaskoPhone } from "@/lib/phone";
 import { useI18n } from "@/lib/i18n";
@@ -261,6 +263,21 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     };
   };
 
+  // Відновлення після перезавантаження вкладки (клієнт ходив у пошту/SMS за кодом):
+  // повертаємо форму, orderId і крок OTP/оплата, щоб не проходити все спочатку.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    resumedRef.current = true;
+    const r = readResume<{ step: "otp" | "payment"; f: typeof f; cityQuery: string; selectedCity: HomeCity | null; orderId: string }>("checkout_resume_housing");
+    if (r && r.orderId && (r.step === "otp" || r.step === "payment")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setF(r.f); setCityQuery(r.cityQuery); setSelectedCity(r.selectedCity);
+      setOrderId(r.orderId); setStep(r.step);
+    }
+  }, []);
+  useResumeSnapshot("checkout_resume_housing", (step === "otp" || step === "payment") && orderId ? { ctx, step, f, cityQuery, selectedCity, orderId } : null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -494,7 +511,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
             trackEvent("purchase", { product: "housing", currency: "UAH", value: ctx.offer.price, transaction_id: cId });
             setContractId(cId);
             void savePolicyRecord(cId);
-            setStep("success");
+            setStep("success"); clearResume("checkout_resume_housing");
           }}
         />
       )}

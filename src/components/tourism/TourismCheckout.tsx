@@ -16,6 +16,8 @@ import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, type CustomerProfile } from "@/lib/customer-profile";
 import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
+import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
+
 import { useI18n } from "@/lib/i18n";
 import { SupportCTA } from "@/components/ui/SupportCTA";
 
@@ -196,6 +198,21 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   };
 
   const [savedOrder, setSavedOrder] = useState<Record<string, unknown> | null>(null);
+
+  // Відновлення після перезавантаження вкладки (клієнт ходив у пошту/SMS за кодом):
+  // повертаємо форму, orderId і крок OTP/оплата, щоб не проходити все спочатку.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    resumedRef.current = true;
+    const r = readResume<{ step: "otp" | "payment"; c: typeof c; tourists: TouristForm[]; cityQuery: string; selectedCity: CityOption | null; orderId: string; savedOrder: Record<string, unknown> | null }>("checkout_resume_tourism");
+    if (r && r.orderId && (r.step === "otp" || r.step === "payment")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setC(r.c); setTourists(r.tourists); setCityQuery(r.cityQuery); setSelectedCity(r.selectedCity);
+      setOrderId(r.orderId); setSavedOrder(r.savedOrder); setStep(r.step);
+    }
+  }, []);
+  useResumeSnapshot("checkout_resume_tourism", (step === "otp" || step === "payment") && orderId ? { ctx, step, c, tourists, cityQuery, selectedCity, orderId, savedOrder } : null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -411,7 +428,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
           onPaid={(cId) => {
             trackEvent("purchase", { product: "tourism", currency: "UAH", value: ctx.offer.price, transaction_id: cId });
             setContractId(cId);
-            setStep("success");
+            setStep("success"); clearResume("checkout_resume_tourism");
           }}
         />
       )}

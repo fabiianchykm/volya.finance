@@ -14,6 +14,8 @@ import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile } from "@/lib/customer-profile";
 import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
+import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
+
 import { cityShort, cityLong, formatPlate } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { SupportCTA } from "@/components/ui/SupportCTA";
@@ -219,6 +221,21 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
     setFormStep("vehicle");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Відновлення після перезавантаження вкладки (клієнт ходив у пошту/SMS за кодом):
+  // повертаємо форму, orderId і крок OTP/оплата, щоб не проходити все спочатку.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    resumedRef.current = true;
+    const r = readResume<{ step: "otp" | "payment"; formStep: "customer" | "vehicle"; f: typeof f; cityQuery: string; selectedCity: CityOption | null; orderId: string }>("checkout_resume_minikasko");
+    if (r && r.orderId && (r.step === "otp" || r.step === "payment")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setF(r.f); setFormStep(r.formStep); setCityQuery(r.cityQuery); setSelectedCity(r.selectedCity);
+      setOrderId(r.orderId); setStep(r.step);
+    }
+  }, []);
+  useResumeSnapshot("checkout_resume_minikasko", (step === "otp" || step === "payment") && orderId ? { ctx, step, formStep, f, cityQuery, selectedCity, orderId } : null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -461,7 +478,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
             trackEvent("purchase", { product: "mini-kasko", currency: "UAH", value: ctx.offer.price, transaction_id: cId });
             setContractId(cId);
             void savePolicyRecord(cId);
-            setStep("success");
+            setStep("success"); clearResume("checkout_resume_minikasko");
           }}
         />
       )}

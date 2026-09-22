@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { Home as HomeIcon, Building2, ShieldCheck, CalendarDays, ArrowRight, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -58,6 +59,14 @@ export function HousingFlow() {
 
   const [offers, setOffers] = useState<HomeOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<HomeOffer | null>(null);
+  // Відновлення оформлення після перезавантаження вкладки (див. lib/checkout-resume):
+  // якщо є свіжий знімок з orderId — одразу відкриваємо checkout із його ctx.
+  const [resumeCtx, setResumeCtx] = useState<HousingContext | null>(null);
+  useEffect(() => {
+    const r = readResume<{ ctx: HousingContext }>("checkout_resume_housing");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (r?.ctx) { setResumeCtx(r.ctx); setStep("checkout"); }
+  }, []);
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -147,8 +156,8 @@ export function HousingFlow() {
                 onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
-            ) : selectedOffer ? (
-              <HousingCheckout ctx={checkoutCtx(selectedOffer)} onBack={() => setStep("offers")} />
+            ) : (resumeCtx || selectedOffer) ? (
+              <HousingCheckout ctx={resumeCtx ?? checkoutCtx(selectedOffer!)} onBack={() => { if (resumeCtx) { clearResume("checkout_resume_housing"); setResumeCtx(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }} />
             ) : null}
           </div>
         </section>

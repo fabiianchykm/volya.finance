@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone, Car, FileText, CreditCard, Download, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { HeroSteps, type HeroStep } from "@/components/sections/HeroSteps";
@@ -61,6 +62,14 @@ export function MiniKaskoFlow() {
 
   const [offers, setOffers] = useState<MiniKaskoOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<MiniKaskoOffer | null>(null);
+  // Відновлення оформлення після перезавантаження вкладки (див. lib/checkout-resume):
+  // якщо є свіжий знімок з orderId — одразу відкриваємо checkout із його ctx.
+  const [resumeCtx, setResumeCtx] = useState<MiniKaskoContext | null>(null);
+  useEffect(() => {
+    const r = readResume<{ ctx: MiniKaskoContext }>("checkout_resume_minikasko");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (r?.ctx) { setResumeCtx(r.ctx); setStep("checkout"); }
+  }, []);
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -160,8 +169,8 @@ export function MiniKaskoFlow() {
                 onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
-            ) : selectedOffer ? (
-              <MiniKaskoCheckout ctx={checkoutCtx(selectedOffer)} onBack={() => setStep("offers")} />
+            ) : (resumeCtx || selectedOffer) ? (
+              <MiniKaskoCheckout ctx={resumeCtx ?? checkoutCtx(selectedOffer!)} onBack={() => { if (resumeCtx) { clearResume("checkout_resume_minikasko"); setResumeCtx(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }} />
             ) : null}
           </div>
         </section>
