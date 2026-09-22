@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send, PhoneCall, Check, Clock, MessageCircle } from "lucide-react";
+import { Send, PhoneCall, Check, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
@@ -16,7 +16,19 @@ function formatUaPhone(digits: string): string {
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(" ");
 }
 
-// Сторінка підтримки: два канали — Telegram-бот (найшвидше) і «Замовити дзвінок»
+// Три однакові за структурою картки: іконка → заголовок → один рядок → дія.
+function Card({ icon, tone, title, text, children }: { icon: React.ReactNode; tone: string; title: string; text: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>{icon}</div>
+      <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{title}</h2>
+      <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">{text}</p>
+      <div className="mt-auto pt-6">{children}</div>
+    </div>
+  );
+}
+
+// Сторінка підтримки: Telegram-бот, Viber за номером, «Замовити дзвінок»
 // (заявка йде менеджеру через /api/lead, як і з плаваючої кнопки звʼязку).
 export function SupportPageClient() {
   const { t } = useI18n();
@@ -28,7 +40,7 @@ export function SupportPageClient() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (phone.length !== 9) { setError(t({ uk: "Вкажіть номер телефону — 9 цифр після +380.", en: "Enter your phone number — 9 digits after +380." })); return; }
+    if (phone.length !== 9) { setError(t({ uk: "Введіть 9 цифр номера після +380.", en: "Enter the 9 digits after +380." })); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/lead", {
@@ -40,66 +52,54 @@ export function SupportPageClient() {
       if (!res.ok || !json?.success) throw new Error(json?.error || "error");
       setDone(true);
     } catch (err) {
-      const msg = err instanceof Error && err.message !== "error" ? err.message : t({ uk: "Не вдалося надіслати заявку. Напишіть нам у Telegram.", en: "Could not send the request. Please message us on Telegram." });
-      setError(msg);
+      setError(err instanceof Error && err.message !== "error" ? err.message : t({ uk: "Не вдалося надіслати. Напишіть нам у Telegram або Viber.", en: "Could not send. Please message us on Telegram or Viber." }));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-      {/* Telegram */}
-      <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300"><Send className="h-6 w-6" /></div>
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Написати в Telegram", en: "Message us on Telegram" })}</h2>
-        <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
-          {t({ uk: "Найшвидший спосіб. Напишіть боту — питання одразу потрапить до менеджера, відповідь прийде в той самий чат.", en: "The fastest way. Message the bot — your question goes straight to a manager and the reply arrives in the same chat." })}
-        </p>
-        <ul className="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
-          <li className="flex items-center gap-2"><MessageCircle className="h-4 w-4 shrink-0 text-sky-500" />{t({ uk: "Допоможемо оформити поліс або виправити дані", en: "Help with buying a policy or fixing details" })}</li>
-          <li className="flex items-center gap-2"><Clock className="h-4 w-4 shrink-0 text-sky-500" />{t({ uk: "Зазвичай відповідаємо протягом кількох хвилин", en: "We usually reply within a few minutes" })}</li>
-        </ul>
-        <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-6 md:mt-auto md:pt-6">
-          <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2"><Send className="h-4 w-4" />{t({ uk: "Відкрити Telegram", en: "Open Telegram" })}</Button>
+    <div className="grid gap-5 md:grid-cols-3">
+      <Card
+        icon={<Send className="h-6 w-6" />}
+        tone="bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300"
+        title="Telegram"
+        text={t({ uk: "Найшвидший спосіб: питання одразу потрапляє до менеджера.", en: "The fastest way: your question goes straight to a manager." })}
+      >
+        <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
+          <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2"><Send className="h-4 w-4" />{t({ uk: "Написати в Telegram", en: "Message on Telegram" })}</Button>
         </a>
-        <p className="mt-2 text-center text-xs text-zinc-400 dark:text-zinc-500">@volya_finance_bot</p>
-      </div>
+      </Card>
 
-      {/* Viber — чат за номером, без бота */}
-      <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300"><MessageCircle className="h-6 w-6" /></div>
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Написати у Viber", en: "Message us on Viber" })}</h2>
-        <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
-          {t({ uk: "Зручніше у Viber? Напишіть нам напряму — відповість менеджер.", en: "Prefer Viber? Message us directly — a manager will reply." })}
-        </p>
-        <p className="mt-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">+380 96 509 24 00</p>
-        <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Кнопка відкриє чат у застосунку Viber. Якщо не відкрився — знайдіть нас у Viber за цим номером.", en: "The button opens the chat in the Viber app. If it doesn't, find us in Viber by this number." })}</p>
-        <a href={VIBER_URL} className="mt-6 md:mt-auto md:pt-6">
-          <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2 !bg-violet-600 hover:!bg-violet-700"><MessageCircle className="h-4 w-4" />{t({ uk: "Відкрити Viber", en: "Open Viber" })}</Button>
+      <Card
+        icon={<MessageCircle className="h-6 w-6" />}
+        tone="bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300"
+        title="Viber"
+        text={t({ uk: "Чат із менеджером за номером +380 96 509 24 00.", en: "Chat with a manager at +380 96 509 24 00." })}
+      >
+        <a href={VIBER_URL}>
+          <Button variant="primary" size="lg" className="flex w-full items-center justify-center gap-2 !bg-violet-600 hover:!bg-violet-700"><MessageCircle className="h-4 w-4" />{t({ uk: "Написати у Viber", en: "Message on Viber" })}</Button>
         </a>
-      </div>
+      </Card>
 
-      {/* Замовити дзвінок */}
-      <div className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"><PhoneCall className="h-6 w-6" /></div>
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Замовити дзвінок", en: "Request a call" })}</h2>
-        <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Залиште номер — менеджер передзвонить і допоможе.", en: "Leave your number — a manager will call you back." })}</p>
-
+      <Card
+        icon={<PhoneCall className="h-6 w-6" />}
+        tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"
+        title={t({ uk: "Дзвінок", en: "Call back" })}
+        text={t({ uk: "Залиште номер — менеджер передзвонить.", en: "Leave your number — a manager will call you back." })}
+      >
         {done ? (
-          <div className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-emerald-50 px-4 py-6 text-center dark:bg-emerald-950/40">
-            <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-            <p className="font-semibold text-emerald-800 dark:text-emerald-200">{t({ uk: "Заявку прийнято!", en: "Request received!" })}</p>
-            <p className="text-sm text-emerald-700 dark:text-emerald-300">{t({ uk: "Ми зателефонуємо вам найближчим часом.", en: "We'll call you shortly." })}</p>
+          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <Check className="h-4 w-4 shrink-0" />{t({ uk: "Прийнято — зателефонуємо найближчим часом.", en: "Received — we'll call you shortly." })}
           </div>
         ) : (
-          <form onSubmit={submit} className="mt-5 space-y-3">
-            <Input label={t({ uk: "Телефон", en: "Phone" })} type="tel" inputMode="numeric" prefix="+380" value={formatUaPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="67 123 45 67" required autoComplete="tel-national" />
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" variant="primary" size="lg" loading={busy} className="flex w-full items-center justify-center gap-2"><PhoneCall className="h-4 w-4" />{t({ uk: "Передзвоніть мені", en: "Call me back" })}</Button>
+          <form onSubmit={submit} className="space-y-2.5">
+            <Input type="tel" inputMode="numeric" prefix="+380" value={formatUaPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="67 123 45 67" aria-label={t({ uk: "Номер телефону", en: "Phone number" })} required autoComplete="tel-national" />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <Button type="submit" variant="primary" size="lg" loading={busy} className="flex w-full items-center justify-center gap-2 !bg-emerald-600 hover:!bg-emerald-700"><PhoneCall className="h-4 w-4" />{t({ uk: "Передзвоніть мені", en: "Call me back" })}</Button>
           </form>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

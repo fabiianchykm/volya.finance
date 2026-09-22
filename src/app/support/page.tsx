@@ -18,7 +18,7 @@ export default function SupportPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <h1 className="mb-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl"><T uk="Підтримка" en="Support" /></h1>
           <p className="mb-7 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
-            <T uk="Щось не виходить або є питання щодо поліса? Оберіть зручний спосіб звʼязку — ми на звʼязку щодня." en="Something not working or have a question about your policy? Pick a convenient way to reach us — we're available every day." />
+            <T uk="Оберіть зручний спосіб звʼязку — допоможемо з оформленням чи будь-яким питанням щодо поліса." en="Pick a convenient way to reach us — we'll help with checkout or any question about your policy." />
           </p>
           <SupportPageClient />
         </div>
