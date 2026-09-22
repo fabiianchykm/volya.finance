@@ -69,7 +69,7 @@ export function withJourney(route: string, handler: (req: NextRequest) => Promis
       const res = await handler(req);
       let resInfo: Outcome = { http: res.status };
       try { resInfo = pickResponse(res.status, await res.clone().json()); } catch { /* не JSON */ }
-      const line = { ...base, ...resInfo, ms: Date.now() - t0 };
+      const line: Outcome = { ...base, ...resInfo, ms: Date.now() - t0 };
       logJourney(String(reqInfo.action ?? route), line);
       // Збій на ПІЗНІХ кроках (рахунок/укладання) — одразу в dev-Telegram, щоб не
       // чекати на розбір логів: клієнт уже пройшов OTP, гроші поруч.
