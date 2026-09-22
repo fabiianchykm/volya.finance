@@ -4,6 +4,7 @@ import { guardRequest } from "@/lib/api-guard";
 import { trySendTelegram, escapeHtml } from "@/lib/telegram";
 import { saveLead } from "@/lib/leads";
 import { saveCalcLead } from "@/lib/calc-leads";
+import { sourceLine } from "@/lib/attribution";
 
 // Клієнтські події воронки → Telegram (+ БД для лідів):
 //   checkout_started → лід у БД (/admin/leads) + пінг у sales («почав оформлення»)
@@ -92,13 +93,14 @@ async function handlePost(req: NextRequest) {
       car,
       price,
       contact,
+      sourceLine(req),
     ].filter(Boolean);
     await trySendTelegram("sales", lines.join("\n"));
     return NextResponse.json({ success: true });
   }
 
   if (event === "payment_started") {
-    const lines = ["💳 <b>Розпочато оплату</b>", "", company, car, price, contact].filter(Boolean);
+    const lines = ["💳 <b>Розпочато оплату</b>", "", company, car, price, contact, sourceLine(req)].filter(Boolean);
     await trySendTelegram("sales", lines.join("\n"));
     return NextResponse.json({ success: true });
   }
@@ -110,6 +112,7 @@ async function handlePost(req: NextRequest) {
       car,
       price,
       contact,
+      sourceLine(req),
     ].filter(Boolean);
     await trySendTelegram("dev", lines.join("\n"));
     return NextResponse.json({ success: true });

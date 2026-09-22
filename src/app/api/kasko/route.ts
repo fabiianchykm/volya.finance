@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest } from "@/lib/api-guard";
 import { sendTelegram, escapeHtml, notifyDevError } from "@/lib/telegram";
+import { sourceLine } from "@/lib/attribution";
 import { withIdempotency } from "@/lib/idempotency";
 import { normalizePhone, isValidPhone } from "@/lib/phone";
 
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
     vehicle.number ? `🔢 Номер: <code>${escapeHtml(vehicle.number)}</code>` : null,
     vehicle.vin ? `🆔 VIN: <code>${escapeHtml(vehicle.vin)}</code>` : null,
     vehicle.cityName ? `📍 Місто: ${escapeHtml(vehicle.cityName)}` : null,
+    sourceLine(req),
   ].filter(Boolean);
 
   try {

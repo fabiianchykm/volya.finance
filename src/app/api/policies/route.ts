@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { savePolicy, getPoliciesByIdentities } from "@/lib/policies";
 import { resolveIdentities } from "@/lib/identity";
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
+import { sourceLine } from "@/lib/attribution";
 import { creditPolicyRewards } from "@/lib/referral";
 
 // POST — зберегти оформлений поліс під email клієнта (логін не обовʼязковий:
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
       customerName ? `👤 ${escapeHtml(String(customerName))}` : null,
       phone ? `📞 <code>${escapeHtml(String(phone))}</code>` : null,
       `📧 Email: <code>${escapeHtml(String(email))}</code>`,
+      sourceLine(req),
     ].filter(Boolean);
     await trySendTelegram("sales", saleLines.join("\n"));
 

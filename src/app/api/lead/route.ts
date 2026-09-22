@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { sendTelegram, trySendTelegram, escapeHtml } from "@/lib/telegram";
+import { sourceLine } from "@/lib/attribution";
 
 // Заявка на звʼязок (передзвонити / написати). Лід шлемо в sales-бот Telegram.
 // Приймаємо phone АБО email. Лід критичний — тому sendTelegram (кидає при збої):
@@ -41,7 +42,8 @@ export async function POST(req: NextRequest) {
     lines = [
       "📧 <b>Заявка: написати на email</b>",
       `✉️ <code>${escapeHtml(email)}</code>`,
-      source ? `🌐 Джерело: ${escapeHtml(source).slice(0, 60)}` : null,
+      source ? `🌐 Форма: ${escapeHtml(source).slice(0, 60)}` : null,
+      sourceLine(req),
     ].filter(Boolean) as string[];
   } else {
     // Нормалізуємо до локальних 9 цифр (приймаємо і формат із 380 / 80).
@@ -59,7 +61,8 @@ export async function POST(req: NextRequest) {
       `☎️ <code>${escapeHtml(full)}</code> (${escapeHtml(pretty)})`,
       name ? `👤 ${escapeHtml(name)}` : null,
       comment ? `💬 ${escapeHtml(comment)}` : null,
-      source ? `🌐 Джерело: ${escapeHtml(source).slice(0, 60)}` : null,
+      source ? `🌐 Форма: ${escapeHtml(source).slice(0, 60)}` : null,
+      sourceLine(req),
     ].filter(Boolean) as string[];
   }
 

@@ -4,6 +4,7 @@ import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { LangProvider } from "@/lib/i18n";
 import { ProfileSync } from "@/components/profile/ProfileSync";
+import { AttributionCapture } from "@/components/analytics/AttributionCapture";
 import { LoginProvider } from "@/components/auth/LoginProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/analytics/GoogleTagManager";
@@ -83,6 +84,7 @@ export default async function RootLayout({
         <LangProvider>
           <SessionProvider>
             <ProfileSync />
+            <AttributionCapture />
             <LoginProvider>{children}</LoginProvider>
           </SessionProvider>
           <ContactWidget />
