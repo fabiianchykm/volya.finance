@@ -178,6 +178,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
         onSubmit={handlePhoneSubmit}
         loading={submitting}
         error={submitError}
+        carLabel={vehicle?.mark ? [vehicle.mark, vehicle.model].filter(Boolean).join(" ") + (vehicle.year ? `, ${vehicle.year}` : "") : undefined}
       />
     </>
   );
