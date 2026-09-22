@@ -64,6 +64,9 @@ export async function POST(req: NextRequest) {
         );
       }
       const ok = await ukaskoService.checkOtp(orderId, otp);
+      // Результат перевірки — у лог: інакше зрив на кроці OTP не відрізнити від
+      // «ввели невірний код» (роут відповідає 200 в обох випадках).
+      console.error(`[otp check] order=${orderId} valid=${ok}`);
       return NextResponse.json({ success: true, valid: ok });
     }
 
