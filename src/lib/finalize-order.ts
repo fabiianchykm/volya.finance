@@ -60,6 +60,13 @@ export async function finalizeOrder(orderId: string, opts: { refCode?: string | 
   const inv = await ukaskoService.checkInvoice(orderId, product);
   if (inv.status_id !== 2) return { paid: false, uncertain: inv.uncertain === true, product, meta: pending?.meta ?? null };
 
+  // Уже укладено з сайту (Ukasko statusId=10 «укладений»), а pending не позначено —
+  // просто закриваємо запис, без алерту «оплачено, не видано».
+  if (inv.orderStatus === 10) {
+    await markPendingFinalized(orderId);
+    return { paid: true, issued: true, contractId: orderId, product };
+  }
+
   // Фоновий sweep за замовчуванням НЕ укладає сам (confirm:false) — лише повідомляє.
   if (opts.confirm === false) {
     return { paid: true, issued: false, product, error: "Оплату підтверджено (isPaid), але авто-укладання у sweep вимкнено — укладіть вручну або ввімкніть SWEEP_AUTO_CONFIRM=1.", meta: pending?.meta ?? null };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
+import { markPendingFinalized } from "@/lib/pending-orders";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
@@ -41,6 +42,8 @@ async function handlePost(req: NextRequest) {
         orderId ? `mk-confirm:${orderId}` : null,
         async () => {
           const result = await ukaskoService.confirmMiniKasko(orderId, data.otp);
+          // Укладено з сайту — закриваємо pending, щоб sweep не алертив «оплачено, не видано».
+          await markPendingFinalized(orderId).catch(() => {});
           return { status: 200, body: { success: true, data: result } };
         }
       );

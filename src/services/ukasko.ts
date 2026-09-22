@@ -946,7 +946,7 @@ export class UkaskoService {
     };
   }
 
-  async checkInvoice(orderId: string, product?: string): Promise<{ status_id: number; payed_at: string | null; uncertain?: boolean }> {
+  async checkInvoice(orderId: string, product?: string): Promise<{ status_id: number; payed_at: string | null; uncertain?: boolean; orderStatus?: number }> {
     // Статус оплати. Різні продукти Ukasko віддають його по-різному, а старий
     // виклик `/payments/{orderId}/check-invoice` на проді падає 500 (orderId у шляху —
     // некоректно). Тож пробуємо кілька коректних варіантів: GET /orders/{id}/get-invoice
@@ -992,7 +992,7 @@ export class UkaskoService {
           const paid = d.isPaid === true;
           uncertainSeen = uncertainSeen || (!paid && paidByInvoice);
           console.error(`[ukasko check-invoice] ${url} product=${product ?? "-"} → isPaid=${d.isPaid} orderStatus=${orderStatus} invoiceSignal=${paidByInvoice} payed_at=${payedAt} → paid=${paid}`);
-          if (paid) return { status_id: 2, payed_at: payedAt };
+          if (paid) return { status_id: 2, payed_at: payedAt, orderStatus };
         } catch (e) {
           if (e instanceof HttpError && e.status === 401) throw e; // токен протух — withAuth перевипустить
           console.error(`[ukasko check-invoice] ${url} — error:`, e instanceof Error ? e.message.slice(0, 200) : String(e));
