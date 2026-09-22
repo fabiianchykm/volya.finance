@@ -54,7 +54,6 @@ const TELEGRAM_URL = "https://t.me/volya_finance_bot";
 // поки профілів немає. TODO: замінити на реальні й проставити live, коли будуть.
 const SOCIALS = [
   { label: "Threads", href: "https://www.threads.com/@volya.finance", Icon: ThreadsIcon, live: true },
-  { label: "Telegram", href: TELEGRAM_URL, Icon: TelegramIcon, live: true },
   { label: "Instagram", href: "https://www.instagram.com/volya.finance", Icon: InstagramIcon, live: true },
   { label: "Facebook", href: "https://www.facebook.com/volya.finance", Icon: FacebookIcon },
 ];
@@ -88,10 +87,9 @@ export function FooterContact() {
             <a href="mailto:volya.finance.team@gmail.com" aria-label={t({ uk: "Написати на email", en: "Write to us by email" })} title={t({ uk: "Написати на email", en: "Write to us by email" })} className={btn}>
               <Mail className="h-5 w-5" />
             </a>
-            {/* Viber — заморожено (некликабельно): бот ще не готовий */}
-            <span role="img" aria-label="Viber" title="Viber" className={social}>
+            <a href="viber://chat?number=%2B380965092400" aria-label={t({ uk: "Написати у Viber", en: "Message us on Viber" })} title={t({ uk: "Написати у Viber", en: "Message us on Viber" })} className={btn}>
               <ViberIcon className="h-5 w-5" />
-            </span>
+            </a>
           </div>
         </div>
 
