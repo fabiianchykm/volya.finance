@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { DateInput } from "@/components/ui/DateInput";
 import { useI18n } from "@/lib/i18n";
 import {
-  listProfiles, fetchServerProfiles, putProfile, removeProfile,
+  listProfiles, fetchServerProfiles, putProfile, removeProfile, docFieldsByKind,
   type CustomerProfile, type DocKind, type DocFields,
 } from "@/lib/customer-profile";
 
@@ -51,7 +51,7 @@ function missingFields(p: CustomerProfile, t: (x: { uk: string; en: string }) =>
   if (!p.identificationCode) out.push(t({ uk: "ІПН", en: "tax ID" }));
   if (!p.phone) out.push(t({ uk: "телефон", en: "phone" }));
   if (!p.street || !p.house) out.push(t({ uk: "адреса", en: "address" }));
-  const hasDoc = Object.values(p.docByKind ?? {}).some((d) => d && (d.number || d.serial));
+  const hasDoc = Object.values(p.docByKind ?? {}).some((d) => d && (d.number || d.serial)) || !!(p.passportNumber || p.passportSerial);
   if (!hasDoc) out.push(t({ uk: "документ", en: "document" }));
   if (!p.surnameLat || !p.nameLat) out.push(t({ uk: "ПІБ латиницею", en: "name in Latin" }));
   return out;
@@ -188,7 +188,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ProfileForm({ initial, isNew, onCancel, onSaved }: { initial: CustomerProfile; isNew?: boolean; onCancel: () => void; onSaved: () => void }) {
   const { t } = useI18n();
-  const [f, setF] = useState<CustomerProfile>({ ...emptyProfile(), ...initial, docByKind: { ...(initial.docByKind ?? {}) } });
+  const [f, setF] = useState<CustomerProfile>(() => {
+    const byKind = { ...(initial.docByKind ?? {}) };
+    // Закордонний паспорт зі старих записів (лише passport*-поля) — показуємо у формі.
+    const foreign = docFieldsByKind(initial, "foreign");
+    if (foreign && (foreign.serial || foreign.number)) byKind.foreign = foreign;
+    return { ...emptyProfile(), ...initial, docByKind: byKind };
+  });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const set = (k: keyof CustomerProfile) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));

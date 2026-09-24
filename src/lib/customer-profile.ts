@@ -63,7 +63,13 @@ export type DocKind = "passport" | "idcard" | "foreign" | "license";
 
 /** Поля документа за канонічним типом-сутністю (для автозаповнення в checkout). */
 export function docFieldsByKind(p: CustomerProfile | null | undefined, kind: DocKind): DocFields | undefined {
-  return p?.docByKind?.[kind];
+  const d = p?.docByKind?.[kind];
+  if (d && (d.serial || d.number)) return d;
+  // Старі записи: закордонний паспорт лежав лише в passport*-полях.
+  if (kind === "foreign" && p && (p.passportSerial || p.passportNumber)) {
+    return { serial: p.passportSerial ?? "", number: p.passportNumber ?? "", issuedBy: p.passportIssuedBy ?? "", date: p.passportDate ?? "" };
+  }
+  return d;
 }
 
 const KEY = "volya_profiles";        // map: email(lower) → CustomerProfile
@@ -108,6 +114,17 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
         number: p.docNumber ?? prevByKind[docKind]?.number ?? "",
         issuedBy: p.docIssuedBy ?? prevByKind[docKind]?.issuedBy ?? "",
         date: p.docDate ?? prevByKind[docKind]?.date ?? "",
+      };
+    }
+    // Закордонний паспорт (туристичне шле його окремими passport*-полями) — дублюємо
+    // в канонічний docByKind.foreign, щоб кабінет «Мої дані», ЗК і житло бачили його.
+    if (p.passportSerial !== undefined || p.passportNumber !== undefined || p.passportDate !== undefined || p.passportIssuedBy !== undefined) {
+      const prevF = prevByKind.foreign;
+      docByKind.foreign = {
+        serial: p.passportSerial ?? prevF?.serial ?? "",
+        number: p.passportNumber ?? prevF?.number ?? "",
+        issuedBy: p.passportIssuedBy ?? prevF?.issuedBy ?? "",
+        date: p.passportDate ?? prevF?.date ?? "",
       };
     }
     // Явна нормалізація: обовʼязкові рядкові поля не мають бути undefined,
