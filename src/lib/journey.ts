@@ -32,7 +32,10 @@ export function logJourney(step: string, data: Outcome): void {
 function pickRequest(body: unknown): Outcome {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const order = (b.order && typeof b.order === "object" ? b.order : {}) as Record<string, unknown>;
+  const meta = (b.meta && typeof b.meta === "object" ? b.meta : {}) as Record<string, unknown>;
+  const company = meta.company ?? b.companyName ?? b.company ?? order.companyName ?? undefined;
   return {
+    company: typeof company === "string" ? company.slice(0, 60) : undefined,
     action: b.action ?? b.event ?? "-",
     orderId: b.orderId ?? order.orderId ?? b.contractId ?? "-",
     product: b.product ?? "-",
