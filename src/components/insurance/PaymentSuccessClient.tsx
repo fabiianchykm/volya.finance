@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle, Loader2, Download, ExternalLink, AlertCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
+import { downloadEndpointFor } from "@/lib/policy-download";
 
 // Сторінка, куди LiqPay повертає клієнта після оплати (result_url). Перевіряє
 // статус оплати, підтверджує поліс і показує результат. Без неї редирект LiqPay
@@ -20,6 +21,7 @@ export function PaymentSuccessClient() {
 
   const [phase, setPhase] = useState<Phase>("checking");
   const [contractId, setContractId] = useState<string | null>(null);
+  const [product, setProduct] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const ranRef = useRef(false);
@@ -53,7 +55,7 @@ export function PaymentSuccessClient() {
           });
           const json = await res.json();
           if (json.success && json.paid && json.contractId) {
-            if (!cancelled) { setContractId(json.contractId); setPhase("done"); }
+            if (!cancelled) { setContractId(json.contractId); setProduct(json.product ?? null); setPhase("done"); }
             return;
           }
           // не success або «ще не оплачено» → продовжуємо цикл (не спиняємось).
@@ -74,16 +76,18 @@ export function PaymentSuccessClient() {
   const downloadPdf = async () => {
     if (!contractId) return;
     setDownloading(true);
+    setError(null);
     try {
-      const res = await fetch("/api/insurance/contract", {
+      const res = await fetch(downloadEndpointFor(product), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "download", contractId }),
       });
       const json = await res.json();
       if (json.data?.contract) window.open(json.data.contract, "_blank");
+      else setError(json.error ?? t({ uk: "Договір ще формується. Спробуйте за 1–2 хвилини — він також є в кабінеті.", en: "The contract is still being generated. Try again in 1–2 minutes — it is also in your account." }));
     } catch {
-      // тихо — договір також доступний у кабінеті
+      setError(t({ uk: "Не вдалося завантажити. Договір також доступний у кабінеті.", en: "Download failed. The contract is also available in your account." }));
     } finally {
       setDownloading(false);
     }
@@ -118,6 +122,7 @@ export function PaymentSuccessClient() {
                   {t({ uk: "Завантажити поліс (PDF)", en: "Download policy (PDF)" })}
                 </Button>
               )}
+              {error && <p className="text-sm text-red-500">{error}</p>}
               <Link href="/policies">
                 <Button variant="outline" size="lg" className="flex w-full items-center justify-center gap-2">
                   <FileText className="h-4 w-4" />

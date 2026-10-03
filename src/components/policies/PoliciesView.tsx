@@ -7,6 +7,7 @@ import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2 }
 import { Button } from "@/components/ui/Button";
 import { useI18n, type Tr } from "@/lib/i18n";
 import type { PolicyRecord } from "@/lib/policies";
+import { downloadEndpointFor } from "@/lib/policy-download";
 
 interface PoliciesViewProps {
   loggedIn: boolean;
@@ -79,7 +80,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/insurance/contract", {
+      const res = await fetch(downloadEndpointFor(policy.product), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "download", contractId: policy.contractId }),
