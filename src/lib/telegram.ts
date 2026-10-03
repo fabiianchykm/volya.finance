@@ -4,6 +4,8 @@
 //
 // Спільний токен TELEGRAM_BOT_TOKEN, а маршрут визначає лише чат:
 //   sales → TELEGRAM_SALES_CHAT_ID, dev → TELEGRAM_DEV_CHAT_ID.
+// sales додатково дублюється в чати з TELEGRAM_SALES_CC_CHAT_IDS (id через кому) —
+// щоб ті самі події про оформлення бачив ще хтось, окрім продажника.
 // Бот має бути учасником обох чатів. chat_id — id отримувача: приватний чат = id
 // користувача; група = від'ємне число (напр. -1001234567890). @getidsbot / getUpdates.
 //
@@ -19,6 +21,26 @@ function creds(target: TelegramTarget): { token?: string; chatId?: string } {
         ? process.env.TELEGRAM_SALES_CHAT_ID
         : process.env.TELEGRAM_DEV_CHAT_ID,
   };
+}
+
+/** Додаткові отримувачі sales-подій (без основного чату й без дублів). */
+function ccChatIds(target: TelegramTarget, primary: string): string[] {
+  if (target !== "sales") return [];
+  const ids = (process.env.TELEGRAM_SALES_CC_CHAT_IDS ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+  return [...new Set(ids)].filter((id) => id !== primary);
+}
+
+async function postMessage(token: string, chatId: string, text: string): Promise<Response> {
+  return fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    }),
+  });
 }
 
 export function isTelegramConfigured(target: TelegramTarget): boolean {
@@ -42,16 +64,15 @@ export async function sendTelegram(target: TelegramTarget, text: string): Promis
     throw new Error(`Telegram (${target}) не налаштовано`);
   }
 
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-    }),
-  });
+  // Копії — best-effort: збій у додаткового отримувача не має валити основну доставку.
+  const [res] = await Promise.all([
+    postMessage(token, chatId, text),
+    ...ccChatIds(target, chatId).map((cc) =>
+      postMessage(token, cc, text)
+        .then(async (r) => { if (!r.ok) console.error(`[telegram:${target}] cc ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`); })
+        .catch((e) => console.error(`[telegram:${target}] cc send failed:`, e instanceof Error ? e.message : e))
+    ),
+  ]);
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");

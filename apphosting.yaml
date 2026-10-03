@@ -90,6 +90,10 @@ env:
     secret: telegram-sales-chat-id
   - variable: TELEGRAM_DEV_CHAT_ID
     secret: telegram-dev-chat-id
+  # Копія sales-подій (оформлює / оформив) власнику — той самий чат, що й dev
+  # (+380634514455). Кілька id — через кому; збіг із sales-чатом не дублюється.
+  - variable: TELEGRAM_SALES_CC_CHAT_IDS
+    secret: telegram-dev-chat-id
   # Telegram Gateway API — коди підтвердження на номер телефону (вхід за номером).
   - variable: TELEGRAM_GATEWAY_TOKEN
     secret: telegram-gateway-token
