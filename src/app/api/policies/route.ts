@@ -3,7 +3,8 @@ import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { auth } from "@/auth";
 import { savePolicy, getPoliciesByIdentities } from "@/lib/policies";
 import { resolveIdentities } from "@/lib/identity";
-import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
+import { notifyDevError } from "@/lib/telegram";
+import { notifyPolicyIssued } from "@/lib/issued-policy";
 import { sourceLine } from "@/lib/attribution";
 import { creditPolicyRewards } from "@/lib/referral";
 
@@ -36,22 +37,11 @@ export async function POST(req: NextRequest) {
       product: product ? String(product) : null,
     });
 
-    // Sales-бот: успішний онлайн-продаж ОСЦПВ. Не має ламати відповідь клієнту.
-    const car = [vehicle?.mark, vehicle?.model].filter(Boolean).join(" ") || "—";
-    const saleLines = [
-      `✅ <b>Оформлено ${escapeHtml(String(product ?? "ОСЦПВ"))}</b>`,
-      "",
-      `🏢 Компанія: ${escapeHtml(String(company ?? "—"))}`,
-      `🚙 Авто: ${escapeHtml(car)}${vehicle?.year ? `, ${vehicle.year}` : ""}`,
-      vehicle?.plate ? `🔢 Номер: <code>${escapeHtml(String(vehicle.plate))}</code>` : null,
-      typeof price === "number" ? `💰 Сума: <b>${price} грн</b>` : null,
-      startDate && endDate ? `📅 Період: ${escapeHtml(String(startDate))} — ${escapeHtml(String(endDate))}` : null,
-      customerName ? `👤 ${escapeHtml(String(customerName))}` : null,
-      phone ? `📞 <code>${escapeHtml(String(phone))}</code>` : null,
-      `📧 Email: <code>${escapeHtml(String(email))}</code>`,
-      sourceLine(req),
-    ].filter(Boolean);
-    await trySendTelegram("sales", saleLines.join("\n"));
+    // Sales-бот: успішний онлайн-продаж. Не має ламати відповідь клієнту.
+    await notifyPolicyIssued({
+      product: product ? String(product) : null, company, vehicle, price: typeof price === "number" ? price : null,
+      startDate, endDate, customerName, phone, email: String(email), sourceLine: sourceLine(req),
+    });
 
     // Бонуси за поліс: 1% покупцю + 5% реферу (ref-cookie). Спільна логіка з
     // /api/finalize; ідемпотентно за policyId, тож дублю не буде.

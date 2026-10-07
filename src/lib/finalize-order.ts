@@ -1,8 +1,7 @@
 import { ukaskoService } from "@/services/ukasko";
 import { withIdempotency } from "@/lib/idempotency";
 import { getPendingOrder, markPendingFinalized, type PendingMeta } from "@/lib/pending-orders";
-import { savePolicy } from "@/lib/policies";
-import { creditPolicyRewards } from "@/lib/referral";
+import { recordIssuedPolicy } from "@/lib/issued-policy";
 import { notifyDevError } from "@/lib/telegram";
 
 // Продукт-незалежне укладання після оплати. Спільне для /api/finalize (клієнт на
@@ -76,41 +75,8 @@ export async function finalizeOrder(orderId: string, opts: { refCode?: string | 
     const { body } = await withIdempotency(`finalize:${orderId}`, async () => {
       const { contractId } = await confirmByProduct(product, orderId, pending?.orderPayload ?? null);
 
-      // Зберігаємо поліс у кабінет + бонуси (best-effort, не валимо укладання).
-      const meta = pending?.meta;
-      if (meta?.email) {
-        try {
-          await savePolicy({
-            id: contractId || orderId,
-            email: String(meta.email),
-            phone: meta.phone ?? null,
-            customerName: meta.customerName ?? null,
-            customer: meta.customer ?? null,
-            contractId,
-            orderId,
-            company: meta.company ?? null,
-            vehicle: meta.vehicle ?? {},
-            price: typeof meta.price === "number" ? meta.price : null,
-            startDate: meta.startDate ?? null,
-            endDate: meta.endDate ?? null,
-            product,
-          });
-        } catch (e) {
-          await notifyDevError("finalize savePolicy", e);
-        }
-        try {
-          await creditPolicyRewards({
-            email: String(meta.email),
-            policyId: contractId || orderId,
-            price: typeof meta.price === "number" ? meta.price : null,
-            refCode: opts.refCode ?? null,
-          });
-        } catch (e) {
-          await notifyDevError("finalize rewards", e);
-        }
-      }
-
-      await markPendingFinalized(orderId);
+      // Кабінет + бонуси + sales-сповіщення + закриття pending (best-effort).
+      await recordIssuedPolicy({ orderId, contractId, product, meta: pending?.meta ?? null, refCode: opts.refCode ?? null });
       return { status: 200, body: { contractId } };
     });
     const contractId = (body as { contractId: string }).contractId;

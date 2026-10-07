@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
-import { markPendingFinalized } from "@/lib/pending-orders";
+import { recordIssuedPolicy } from "@/lib/issued-policy";
 import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
@@ -39,8 +39,8 @@ async function handlePost(req: NextRequest) {
         id ? `pets-confirm:${id}` : null,
         async () => {
           const result = await ukaskoService.confirmPetsOrder(id);
-          // Укладено з сайту — закриваємо pending, щоб sweep не алертив «оплачено, не видано».
-          await markPendingFinalized(id).catch(() => {});
+          // Кабінет + бонуси + sales-сповіщення + закриття pending (sweep не алертить).
+          await recordIssuedPolicy({ orderId: id, contractId: result.contractId, product: "pets" });
           return { status: 200, body: { success: true, data: result } };
         }
       );
