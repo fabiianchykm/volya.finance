@@ -191,3 +191,13 @@ export async function getPoliciesByIdentities(emails: string[], phones: string[]
   `;
   return rows.map(mapRow);
 }
+
+// Усі поліси для адмінки (без фільтра по власнику) — найновіші першими.
+export async function getAllPolicies(limit = 300): Promise<PolicyRecord[]> {
+  if (!sql) return [];
+  await ensureSchema();
+  const rows = await sql<PolicyRow[]>`
+    SELECT ${sql.unsafe(SELECT_COLS)} FROM policies ORDER BY created_at DESC LIMIT ${limit}
+  `;
+  return rows.map(mapRow);
+}

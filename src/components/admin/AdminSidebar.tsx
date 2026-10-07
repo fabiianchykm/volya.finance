@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, Users, Star, Filter } from "lucide-react";
+import { Calculator, Users, Star, Filter, ShieldCheck } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin/funnel", label: "Воронка", Icon: Filter },
   { href: "/admin/calculations", label: "Прорахунки", Icon: Calculator },
   { href: "/admin/leads", label: "Ліди", Icon: Users },
+  { href: "/admin/policies", label: "Поліси", Icon: ShieldCheck },
   { href: "/admin/reviews", label: "Відгуки", Icon: Star },
 ];
 
