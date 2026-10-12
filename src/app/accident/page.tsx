@@ -1,18 +1,20 @@
 import { Footer } from "@/components/layout/Footer";
 import { AccidentFlow } from "@/components/accident/AccidentFlow";
+import { AccidentSeoContent } from "@/components/accident/AccidentSeoContent";
 import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
 import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
 export const metadata = buildMetadata({
-  title: "Страхування від нещасних випадків онлайн — поліс НВ за 5 хвилин",
+  title: "Страхування від нещасних випадків онлайн — поліс НВ від 159 грн",
   description:
-    "Страхування від нещасних випадків онлайн: виплата при травмі, втраті працездатності чи загибелі. Для себе або дитини, Україна чи весь світ, від 10 днів до року. Порівняйте ціни страхових і оформіть поліс.",
+    "Страхування від нещасних випадків онлайн: виплата при травмі, інвалідності чи загибелі. Для дорослих, дітей і спортсменів, Україна або весь світ, від 10 днів до року. Поліс за 5 хвилин.",
   path: "/accident",
   keywords: [
     "страхування від нещасних випадків", "страхування нв", "поліс нв онлайн",
-    "страхування від нещасного випадку дитини", "страхування спортсменів", "особисте страхування",
+    "страхування від нещасного випадку дитини", "страхування дитини від нещасного випадку", "страхування спортсменів",
+    "страховка для спортсменів", "страхування НВ ціна", "особисте страхування", "страхування життя від нещасного випадку",
   ],
 });
 
@@ -27,6 +29,8 @@ export default function AccidentPage() {
             description:
               "Поліс страхування від нещасних випадків: виплата при травмі, втраті працездатності чи загибелі. Для дорослих і дітей, в Україні або по всьому світу.",
             path: "/accident",
+            audience: "Фізичні особи: дорослі, діти, спортсмени, працівники небезпечних професій",
+            priceFrom: 159,
           }),
           faqLd(FAQ_BY_PRODUCT["accident"]),
           breadcrumbLd([
@@ -37,6 +41,7 @@ export default function AccidentPage() {
       />
       <main className="flex-1">
         <AccidentFlow />
+        <AccidentSeoContent />
         <MarketingSections
           showFaq
           faqItems={FAQ_BY_PRODUCT["accident"]}

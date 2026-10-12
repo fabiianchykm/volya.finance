@@ -254,7 +254,7 @@ export function AccidentFlow() {
                   {t({ uk: "виплата, коли це справді потрібно", en: "a payout when it really matters" })}
                 </span>
               </h1>
-              <p className="mx-auto max-w-xl text-base text-zinc-300">{t({ uk: "Для себе чи дитини. Оберіть параметри — і побачите пропозиції з цінами.", en: "For yourself or your child. Choose your options — and see offers with prices." })}</p>
+              <p className="mx-auto max-w-xl text-base text-zinc-300">{t({ uk: "Поліс НВ онлайн для себе, дитини чи спортсмена — від 159 грн. Оберіть параметри і побачите ціну одразу.", en: "An accident policy online for yourself, your child or an athlete — from UAH 159. Choose your options and see the price right away." })}</p>
             </div>
 
             <form onSubmit={submit} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">

@@ -306,6 +306,30 @@ const FAQ_ACCIDENT: FaqItem[] = [
     answerEn:
       "No earlier than the day after purchase. The term is from 10 days to 1 year, the territory is Ukraine or worldwide.",
   },
+  {
+    question: "Скільки коштує поліс від нещасних випадків?",
+    answer:
+      "Від 159 грн: дитячий поліс на 10 днів зі страховою сумою 50 000 грн. Річний поліс для дорослого на 100 000 грн — близько 1 256 грн, з воєнними ризиками — близько 2 824 грн, для спортсмена-аматора — від 3 766 грн. Точну ціну показує калькулятор.",
+    questionEn: "How much does an accident policy cost?",
+    answerEn:
+      "From UAH 159: a 10-day child policy with an insured sum of UAH 50,000. An annual adult policy for UAH 100,000 is about UAH 1,256, with war risks about UAH 2,824, for an amateur athlete from UAH 3,766. The calculator shows the exact price.",
+  },
+  {
+    question: "Які документи потрібні для оформлення?",
+    answer:
+      "Паспорт або ID-картка та ІПН платника; якщо страхуєте іншу особу — її паспорт або ID-картка та ІПН. Поліс електронний: приходить на email і доступний у кабінеті.",
+    questionEn: "What documents are needed?",
+    answerEn:
+      "The payer's passport or ID card and tax number; if you insure another person — their passport or ID card and tax number. The policy is electronic: it arrives by email and is available in your account.",
+  },
+  {
+    question: "Що робити, якщо стався нещасний випадок?",
+    answer:
+      "Зверніться по медичну допомогу й отримайте документи про травму (виписка, лікарняний). Повідомте страхову компанію у строк, зазначений у договорі, та подайте заяву на виплату з медичними документами. Виплата надходить на картку застрахованої особи або вигодонабувача.",
+    questionEn: "What should I do if an accident happens?",
+    answerEn:
+      "Seek medical help and obtain documents about the injury (discharge summary, sick leave). Notify the insurer within the period stated in the contract and submit a claim with the medical documents. The payout is transferred to the insured person's or beneficiary's card.",
+  },
 ];
 
 export const FAQ_BY_PRODUCT: Record<string, FaqItem[]> = {

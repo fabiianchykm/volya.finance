@@ -68,7 +68,7 @@ export function organizationLd() {
     telephone: PHONE,
     areaServed: { "@type": "Country", name: "Україна" },
     description:
-      "Онлайн-оформлення автострахування: автоцивілка (ОСЦПВ/ОСАГО), КАСКО, Міні-КАСКО та Зелена карта. Порівняння цін від 18+ страхових компаній, офіційні поліси МТСБУ.",
+      "Онлайн-страхування в Україні: автоцивілка (ОСЦПВ/ОСАГО), КАСКО, Міні-КАСКО, Зелена карта, туристичне страхування, страхування від нещасних випадків, житла та тварин. Порівняння цін від 18+ страхових компаній, офіційні поліси МТСБУ.",
   };
 }
 
@@ -85,7 +85,16 @@ export function websiteLd() {
   };
 }
 
-export function serviceLd(input: { name: string; serviceType: string; description: string; path: string }) {
+export function serviceLd(input: {
+  name: string;
+  serviceType: string;
+  description: string;
+  path: string;
+  /** Для кого послуга; дефолт — автовласники (авто-продукти). */
+  audience?: string;
+  /** Мінімальна ціна в грн — Offer у JSON-LD (для «від N грн» у видачі). */
+  priceFrom?: number;
+}) {
   return {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -95,7 +104,18 @@ export function serviceLd(input: { name: string; serviceType: string; descriptio
     url: absoluteUrl(input.path),
     provider: { "@id": `${SITE_URL}/#organization` },
     areaServed: { "@type": "Country", name: "Україна" },
-    audience: { "@type": "Audience", audienceType: "Власники транспортних засобів" },
+    audience: { "@type": "Audience", audienceType: input.audience ?? "Власники транспортних засобів" },
+    ...(input.priceFrom
+      ? {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "UAH",
+            price: input.priceFrom,
+            url: absoluteUrl(input.path),
+            availability: "https://schema.org/InStock",
+          },
+        }
+      : {}),
   };
 }
 
