@@ -21,12 +21,12 @@ export interface FunnelTotals {
 
 const LABEL: Record<string, string> = {
   osago: "Автоцивілка", kasko: "КАСКО", "mini-kasko": "Міні-КАСКО",
-  greencard: "Зелена карта", tourism: "Туристичне", pets: "Тварини", housing: "Житло",
+  greencard: "Зелена карта", tourism: "Туристичне", pets: "Тварини", housing: "Житло", accident: "Нещасний випадок",
 };
 // Зворотне зіставлення людських назв лідів → канонічний ключ.
 const KEY_BY_LABEL: Record<string, string> = {
   "автоцивілка": "osago", "каско": "kasko", "міні-каско": "mini-kasko",
-  "зелена карта": "greencard", "туристичне": "tourism", "тварини": "pets", "житло": "housing",
+  "зелена карта": "greencard", "туристичне": "tourism", "тварини": "pets", "житло": "housing", "нещасний випадок": "accident",
 };
 function leadKey(product: string | null): string {
   const p = (product ?? "").trim().toLowerCase();

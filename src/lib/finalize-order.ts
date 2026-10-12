@@ -28,6 +28,10 @@ async function confirmByProduct(product: string, orderId: string, orderPayload: 
       const r = await ukaskoService.confirmPetsOrder(orderId);
       return { contractId: r.contractId };
     }
+    case "accident": {
+      const r = await ukaskoService.confirmAccidentOrder(orderId);
+      return { contractId: r.contractId };
+    }
     case "mini-kasko": {
       const r = await ukaskoService.confirmMiniKasko(orderId);
       return { contractId: r.contractId };

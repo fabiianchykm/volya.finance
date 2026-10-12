@@ -3,7 +3,7 @@
 // ОСЦПВ, і зберегти поліс у кабінет — навіть якщо клієнта редіректнуло з модалки.
 export interface PendingOrderInput {
   orderId: string;
-  product: "osago" | "tourism" | "greencard" | "housing" | "pets" | "mini-kasko";
+  product: "osago" | "tourism" | "greencard" | "housing" | "pets" | "mini-kasko" | "accident";
   order?: Record<string, unknown>; // повний order — потрібен лише туризму
   meta?: {
     email?: string | null;

@@ -7,6 +7,7 @@ const DOWNLOAD_ENDPOINTS: Record<string, string> = {
   home: "/api/home/order",
   pets: "/api/pets/order",
   "mini-kasko": "/api/mini-kasko/order",
+  accident: "/api/accident/order",
   // Чекаути житла/міні-КАСКО зберігають поліс з українською назвою продукту.
   "Житло": "/api/home/order",
   "Міні-КАСКО": "/api/mini-kasko/order",

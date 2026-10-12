@@ -17,7 +17,7 @@ interface CalcStat { product: string; runs: number; visitors: number }
 
 const PRODUCT_LABEL: Record<string, string> = {
   osago: "Автоцивілка", kasko: "КАСКО", "mini-kasko": "Міні-КАСКО",
-  greencard: "Зелена карта", tourism: "Туристичне", pets: "Тварини", housing: "Житло",
+  greencard: "Зелена карта", tourism: "Туристичне", pets: "Тварини", housing: "Житло", accident: "Нещасний випадок",
 };
 const label = (p: string) => PRODUCT_LABEL[p] ?? p;
 

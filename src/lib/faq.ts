@@ -265,6 +265,49 @@ const FAQ_HOUSING: FaqItem[] = [
   },
 ];
 
+const FAQ_ACCIDENT: FaqItem[] = [
+  {
+    question: "Що таке страхування від нещасних випадків?",
+    answer:
+      "Це особисте страхування: якщо застрахована особа отримає травму, тимчасову чи стійку втрату працездатності або загине внаслідок нещасного випадку, страхова виплачує гроші в межах страхової суми. Виплата не залежить від наявності інших полісів.",
+    questionEn: "What is accident insurance?",
+    answerEn:
+      "It is personal insurance: if the insured person suffers an injury, temporary or permanent disability, or dies as a result of an accident, the insurer pays out money within the insured sum. The payout does not depend on any other policies.",
+  },
+  {
+    question: "Кого можна застрахувати?",
+    answer:
+      "Себе або іншу особу — дитину чи родича — віком від 1 до 75 років. Поліс оформлюється на застраховану особу, а платником може бути ви.",
+    questionEn: "Who can be insured?",
+    answerEn:
+      "Yourself or another person — a child or relative — aged 1 to 75. The policy is issued for the insured person, and you can be the payer.",
+  },
+  {
+    question: "Яку страхову суму обрати?",
+    answer:
+      "Доступні фіксовані суми від 10 000 до 300 000 грн. Чим більша сума, тим більша виплата при страховому випадку й вища ціна поліса. Для спорту чи роботи з підвищеним ризиком варто обирати більшу суму.",
+    questionEn: "Which insured sum should I choose?",
+    answerEn:
+      "Fixed sums from UAH 10,000 to UAH 300,000 are available. The higher the sum, the bigger the payout in an insured event and the higher the premium. For sports or high-risk work it is worth choosing a larger sum.",
+  },
+  {
+    question: "Чи покриваються воєнні ризики, спорт, небезпечна робота?",
+    answer:
+      "Так, при розрахунку оберіть відповідний фактор: воєнні ризики, заняття спортом (із видом спорту та рівнем) або професію підвищеного ризику. Від цього залежать умови та ціна.",
+    questionEn: "Are war risks, sports or hazardous work covered?",
+    answerEn:
+      "Yes — when calculating, choose the relevant factor: war risks, sports (with the sport and level) or a high-risk profession. The terms and price depend on it.",
+  },
+  {
+    question: "Коли поліс починає діяти?",
+    answer:
+      "Не раніше наступного дня після оформлення. Строк — від 10 днів до 1 року, територія — Україна або весь світ.",
+    questionEn: "When does the policy take effect?",
+    answerEn:
+      "No earlier than the day after purchase. The term is from 10 days to 1 year, the territory is Ukraine or worldwide.",
+  },
+];
+
 export const FAQ_BY_PRODUCT: Record<string, FaqItem[]> = {
   osago: FAQ_OSAGO,
   kasko: FAQ_KASKO,
@@ -273,6 +316,7 @@ export const FAQ_BY_PRODUCT: Record<string, FaqItem[]> = {
   tourism: FAQ_TOURISM,
   pets: FAQ_PETS,
   housing: FAQ_HOUSING,
+  accident: FAQ_ACCIDENT,
 };
 
 export function faqFor(product: string): FaqItem[] {

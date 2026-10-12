@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, ArrowRight, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, HeartPulse, ArrowRight, type LucideIcon } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
 
 interface Product {
@@ -49,6 +49,12 @@ const products: Product[] = [
     title: { uk: "Тварини", en: "Pets" },
     desc: { uk: "Страхування котів і собак — ветеринарні витрати та ризики. Незабаром.", en: "Insurance for cats and dogs — veterinary costs and risks. Coming soon." },
     badge: { uk: "Скоро", en: "Soon" },
+  },
+  {
+    href: "/accident",
+    icon: HeartPulse,
+    title: { uk: "Нещасні випадки", en: "Accident" },
+    desc: { uk: "Виплата при травмі чи нещасному випадку. Україна або весь світ, від 10 днів до року.", en: "Payout for injury or accident. Ukraine or worldwide, from 10 days to a year." },
   },
 ];
 

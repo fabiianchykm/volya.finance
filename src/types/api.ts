@@ -367,3 +367,43 @@ export interface PetsOffer {
   earnings?: number;
   startFrom?: string;
 }
+
+// ── Нещасні випадки (НВ) ─────────────────────────────────────────────────────
+// Калькулятор POST /{mode}/insurance/calculator/accident. Дати — d.m.Y.
+export type AccidentPeriod = "10_days" | "15_days" | "30_days" | "3_month" | "6_month" | "9_month" | "12_month";
+export type AccidentProtection = "24_7" | "study_work_hours" | "sport_hours";
+export type AccidentFactor = "warRisk" | "sport" | "profession";
+export interface AccidentParams {
+  startDate: string;               // d.m.Y, не раніше завтра
+  birthDate: string;               // d.m.Y, вік 1–75
+  period: AccidentPeriod;
+  protectionPeriod: AccidentProtection;
+  sum: number;                     // 10000…300000 (фіксований перелік)
+  countryId: 1 | 2;                // 1 Україна, 2 весь світ
+  activeFactor: AccidentFactor;
+  warRisk?: boolean;
+  sportType?: string;              // код виду спорту з довідника
+  sportCategory?: string;          // код категорії спорту
+  profession?: "none" | "builder" | "electrician" | "firefighter" | "guard" | "other";
+  moduleId?: number | null;
+}
+export interface AccidentOffer {
+  offerId: string;
+  moduleId?: number;
+  companyId?: number;
+  companyName?: string;
+  companyNamePublic?: string;
+  price: number;
+  fullPrice?: number;
+  discountPrice?: number | null;
+  earnings?: number;
+  program?: string;
+  fromDate?: string;
+  term?: number;
+  insuranceSum?: number;
+  activeFactor?: string;
+  protectionPeriod?: string;
+  countryId?: number;
+  company?: { id?: number; logo?: string | null; publicName?: string; rating?: number | null; docProduct?: string | null; [k: string]: unknown };
+}
+export interface AccidentSport { id: number; code: string; name: string; coefficient?: number }

@@ -8,7 +8,7 @@ import type { PolicyRecord } from "@/lib/policies";
 
 const PRODUCT_LABELS: Record<string, string> = {
   osago: "Автоцивілка", greencard: "Зелена карта", tourism: "Туристичне", housing: "Житло", home: "Житло",
-  pets: "Тварини", "mini-kasko": "Міні-КАСКО", kasko: "КАСКО",
+  pets: "Тварини", "mini-kasko": "Міні-КАСКО", kasko: "КАСКО", accident: "Нещасний випадок",
 };
 
 export function AdminPolicies() {

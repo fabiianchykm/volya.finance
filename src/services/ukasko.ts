@@ -14,6 +14,9 @@ import type {
   TourismParams,
   PetsOffer,
   PetsParams,
+  AccidentOffer,
+  AccidentParams,
+  AccidentSport,
 } from "@/types/api";
 
 const isDev = process.env.UKASKO_ENV === "dev";
@@ -430,6 +433,82 @@ export class UkaskoService {
         return r;
       }), 4, 1500, true) as { data: { contract?: string; mtsbuCode?: string } };
       return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode };
+    } catch {
+      throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
+    }
+  }
+
+  // ── Нещасні випадки (НВ) ───────────────────────────────────────────────
+  // Є лише на проді (uconnect); devconnect віддає 404. Довідники: види спорту з
+  // пошуком; решта (періоди, суми, категорії спорту, професії) — фіксовані
+  // переліки з документації, захардкожені у AccidentFlow.
+  async getAccidentSports(query: string): Promise<AccidentSport[]> {
+    const q = query ? `?query=${encodeURIComponent(query)}` : "";
+    const raw = await withRetry(() =>
+      this.withAuth((token) => getJson(`${BASE_URL}/insurance/accident/directories/sports${q}`, token))
+    ) as Record<string, unknown>;
+    const data = raw.data;
+    return Array.isArray(data) ? (data as AccidentSport[]) : [];
+  }
+
+  // Калькулятор НВ → масив пропозицій. 500 ретраїмо (батч по СК, як у ЗК).
+  async getAccidentOffers(params: AccidentParams): Promise<AccidentOffer[]> {
+    const raw = await withRetry(
+      () => this.withAuth((token) => postJson(`${BASE_URL}/insurance/calculator/accident`, params, token)),
+      3, 700, true
+    ) as Record<string, unknown>;
+    const data = raw.data;
+    return Array.isArray(data) ? (data as AccidentOffer[]).filter((o) => o?.offerId && o.price > 0) : [];
+  }
+
+  // Заявлення НВ: order/create з params.statusId:5 (сформована заявка — готова
+  // до OTP та оплати) → orderId. Спільні OTP/оплата по orderId, як у ЗК/тварин.
+  async declareAccidentOrder(orderData: Record<string, unknown>): Promise<{ id: string; statusId?: number; status?: string }> {
+    const raw = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/accident/order/create`,
+      { ...orderData, orderId: orderData.orderId ?? null, params: { statusId: 5 } },
+      token
+    )) as Record<string, unknown>;
+    const status = raw.status as string | undefined;
+    const msg = raw.message as string | undefined;
+    if (status === "error" || status === "validation" || (msg && msg.includes('"result":false'))) {
+      console.error("[accident declare] rejected. raw:", JSON.stringify(raw).slice(0, 800));
+      let clean = "";
+      if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+        clean = Object.values(raw.data as Record<string, unknown>).flat().map(String).join("; ");
+      }
+      throw new Error(clean || `Страхова відхилила заявку: ${(msg ?? "").slice(0, 200)}`);
+    }
+    const first = (raw as { data?: Array<{ id: string; statusId?: number; status?: string }> }).data?.[0];
+    if (!first?.id) {
+      console.error("[accident declare] empty. raw:", JSON.stringify(raw).slice(0, 800));
+      throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    }
+    return first;
+  }
+
+  async confirmAccidentOrder(orderId: string): Promise<{ contractId: string; status?: string; agreementNum?: string | null }> {
+    await this.assertPaid(orderId, "accident");
+    const data = await this.withAuth((token) => postJson(
+      `${BASE_URL}/insurance/accident/contract/confirm`,
+      // Оплата пройшла через рахунок платіжного шлюзу (LiqPay), не з балансу агента.
+      { orderId, usedPaymentSystem: true, isSendPhoneMessage: false, skipEmail: false },
+      token
+    )) as { data: [{ contractId: string; status?: string; agreementNum?: string | null }] };
+    const first = data.data?.[0];
+    if (!first?.contractId) throw new Error("Страхова не повернула номер договору. Зверніться в підтримку.");
+    return first;
+  }
+
+  async takeAccidentContract(contractId: string): Promise<{ contract?: string; mtsbuLink?: string | null; mtsbuCode?: string | null }> {
+    // PDF генерується не миттєво — повторюємо, поки зʼявиться (див. downloadContract).
+    try {
+      const data = await withRetry(() => this.withAuth(async (token) => {
+        const r = await postJson(`${BASE_URL}/insurance/accident/contract/take`, { contractId, orderType: 12 }, token) as { data?: { contract?: string | null; mtsbuCode?: string | null; mtsbuLink?: string | null } };
+        if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий");
+        return r;
+      }), 4, 1500, true) as { data: { contract?: string; mtsbuCode?: string | null; mtsbuLink?: string | null } };
+      return { contract: data.data?.contract, mtsbuCode: data.data?.mtsbuCode ?? null, mtsbuLink: data.data?.mtsbuLink ?? null };
     } catch {
       throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
     }

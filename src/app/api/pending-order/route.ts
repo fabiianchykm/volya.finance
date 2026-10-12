@@ -6,7 +6,7 @@ import { savePendingOrder, type PendingProduct, type PendingMeta } from "@/lib/p
 // Реєстрація контексту фіналізації одразу після declare. Дозволяє укласти договір
 // на /payment-success для будь-якого продукту (не лише ОСЦПВ). Best-effort: якщо БД
 // не налаштована або запис не вдався — не блокуємо оформлення.
-const PRODUCTS: PendingProduct[] = ["osago", "tourism", "greencard", "housing", "pets", "mini-kasko"];
+const PRODUCTS: PendingProduct[] = ["osago", "tourism", "greencard", "housing", "pets", "mini-kasko", "accident"];
 
 async function handlePost(req: NextRequest) {
   try {

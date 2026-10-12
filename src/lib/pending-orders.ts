@@ -3,7 +3,7 @@ import { sql, ensureSchema } from "./db";
 // Контекст фіналізації замовлення після оплати. Зберігається при declare, зчитується
 // на /payment-success (через /api/finalize), щоб укласти договір для БУДЬ-ЯКОГО
 // продукту й зберегти поліс — навіть якщо клієнта редіректнуло з модалки оплати.
-export type PendingProduct = "osago" | "tourism" | "greencard" | "housing" | "pets" | "mini-kasko";
+export type PendingProduct = "osago" | "tourism" | "greencard" | "housing" | "pets" | "mini-kasko" | "accident";
 
 export interface PendingMeta {
   email?: string | null;

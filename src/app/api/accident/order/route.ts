@@ -1,0 +1,63 @@
+import { NextRequest, NextResponse } from "next/server";
+import { withJourney } from "@/lib/journey";
+import { ukaskoService } from "@/services/ukasko";
+import { recordIssuedPolicy } from "@/lib/issued-policy";
+import { guardRequest } from "@/lib/api-guard";
+import { withIdempotency } from "@/lib/idempotency";
+import { notifyDevError } from "@/lib/telegram";
+
+// Флоу НВ: declare (order/create statusId:5) → orderId → [спільні OTP та оплата
+// по orderId] → confirm (accident/contract/confirm) → download (accident/contract/take).
+
+async function handlePost(req: NextRequest) {
+  try {
+    const blocked = guardRequest(req, { name: "accident-order", limit: 15, windowMs: 10 * 60 * 1000 });
+    if (blocked) return blocked;
+
+    const body = await req.json();
+    const { action, order, orderId, contractId } = body as {
+      action: string;
+      order?: Record<string, unknown>;
+      orderId?: string;
+      contractId?: string;
+    };
+    const idem = req.headers.get("idempotency-key");
+
+    if (action === "declare") {
+      if (!order) return NextResponse.json({ success: false, error: "Немає даних заявки" }, { status: 400 });
+      const key = idem ? `accident-declare:${idem}` : null;
+      const { status, body: resBody } = await withIdempotency(key, async () => {
+        const result = await ukaskoService.declareAccidentOrder(order);
+        return { status: 200, body: { success: true, data: result } };
+      });
+      return NextResponse.json(resBody, { status });
+    }
+
+    if (action === "confirm") {
+      const id = String(orderId ?? "");
+      const { status, body: resBody } = await withIdempotency(
+        id ? `accident-confirm:${id}` : null,
+        async () => {
+          const result = await ukaskoService.confirmAccidentOrder(id);
+          // Кабінет + бонуси + sales-сповіщення + закриття pending (sweep не алертить).
+          await recordIssuedPolicy({ orderId: id, contractId: result.contractId, product: "accident" });
+          return { status: 200, body: { success: true, data: result } };
+        }
+      );
+      return NextResponse.json(resBody, { status });
+    }
+
+    if (action === "download") {
+      const result = await ukaskoService.takeAccidentContract(String(contractId ?? ""));
+      return NextResponse.json({ success: true, data: result });
+    }
+
+    return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    await notifyDevError("accident order", error);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
+  }
+}
+
+export const POST = withJourney("accident/order", handlePost);

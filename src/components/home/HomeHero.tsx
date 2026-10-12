@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, ArrowRight, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, ArrowRight, type LucideIcon } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
 
 interface Product {
@@ -21,6 +21,7 @@ const products: Product[] = [
   { href: "/tourism", icon: Plane, title: { uk: "Туристичне", en: "Travel insurance" }, desc: { uk: "Медичний захист у подорожі за кордон — для віз і виїзду.", en: "Medical protection while travelling abroad — for visas and trips." } },
   { href: "/pets", icon: PawPrint, title: { uk: "Тварини", en: "Pets" }, desc: { uk: "Страхування котів і собак — ветеринарні витрати та ризики.", en: "Insurance for cats and dogs — veterinary costs and risks." } },
   { href: "/housing", icon: Home, title: { uk: "Житло", en: "Property" }, desc: { uk: "Захист квартири чи будинку — від пожежі, затоплення та інших ризиків.", en: "Protection for a flat or house — from fire, flooding and other risks." } },
+  { href: "/accident", icon: HeartPulse, title: { uk: "Нещасні випадки", en: "Accident" }, desc: { uk: "Виплата при травмі чи нещасному випадку — Україна або весь світ.", en: "Payout for injury or accident — Ukraine or worldwide." } },
 ];
 
 // Герой-хаб: кольоровий блок із заголовком («перелив» градієнта індиго/віолет),
