@@ -452,13 +452,18 @@ export class UkaskoService {
   }
 
   // Калькулятор НВ → масив пропозицій. 500 ретраїмо (батч по СК, як у ЗК).
-  async getAccidentOffers(params: AccidentParams): Promise<AccidentOffer[]> {
+  async getAccidentOffers(params: AccidentParams): Promise<{ offers: AccidentOffer[]; errorInfo: unknown[] }> {
     const raw = await withRetry(
       () => this.withAuth((token) => postJson(`${BASE_URL}/insurance/calculator/accident`, params, token)),
       3, 700, true
     ) as Record<string, unknown>;
     const data = raw.data;
-    return Array.isArray(data) ? (data as AccidentOffer[]).filter((o) => o?.offerId && o.price > 0) : [];
+    const offers = Array.isArray(data) ? (data as AccidentOffer[]).filter((o) => o?.offerId && o.price > 0) : [];
+    const errorInfo = Array.isArray(raw.errorInfo) ? (raw.errorInfo as unknown[]) : [];
+    // Порожня видача — лог сирої відповіді: СК (ІНГО) мовчки відхиляє деякі
+    // комбінації (напр. вид спорту), і причина живе лише в errorInfo.
+    if (offers.length === 0) console.error("[accident calc] empty. params:", JSON.stringify(params), "raw:", JSON.stringify(raw).slice(0, 1200));
+    return { offers, errorInfo };
   }
 
   // Заявлення НВ: order/create з params.statusId:5 (сформована заявка — готова

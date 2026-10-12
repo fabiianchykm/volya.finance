@@ -49,8 +49,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const offers = await ukaskoService.getAccidentOffers(params);
-    return NextResponse.json({ success: true, offers });
+    const { offers, errorInfo } = await ukaskoService.getAccidentOffers(params);
+    // errorInfo — пояснення СК, чому немає пропозицій (діагностика; клієнту не показуємо).
+    return NextResponse.json({ success: true, offers, errorInfo });
   } catch (e) {
     console.error("[accident] calc error:", e instanceof Error ? e.message : e);
     await notifyDevError("accident calculator", e);
