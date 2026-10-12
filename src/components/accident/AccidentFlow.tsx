@@ -54,15 +54,10 @@ export const ACC_PROFESSIONS: { value: NonNullable<AccidentParams["profession"]>
   { value: "guard", label: "Охоронець / інкасатор", en: "Security guard / cash courier" },
   { value: "other", label: "Інша професія підвищеної небезпеки", en: "Other hazardous profession" },
 ];
-export const ACC_SPORT_CATEGORIES: { value: string; label: string; en: string }[] = [
-  { value: "10236763", label: "Аматорський", en: "Amateur" },
-  { value: "10236764", label: "Професійний", en: "Professional" },
-  { value: "10236765", label: "Аматорський, підвищений ризик", en: "Amateur, elevated risk" },
-  { value: "10236766", label: "Професійний, підвищений ризик", en: "Professional, elevated risk" },
-  { value: "10236767", label: "Аматорський, високий ризик", en: "Amateur, high risk" },
-  { value: "10236768", label: "Професійний, високий ризик", en: "Professional, high risk" },
-  { value: "10236769", label: "Екстремальний, аматорський", en: "Extreme, amateur" },
-  { value: "10236770", label: "Екстремальний, професійний", en: "Extreme, professional" },
+// Групу ризику виду спорту (S0/S1/S2/SE) підбирає сервер; клієнт обирає лише рівень.
+export const ACC_SPORT_LEVELS: { value: "amateur" | "pro"; label: string; en: string }[] = [
+  { value: "amateur", label: "Аматор", en: "Amateur" },
+  { value: "pro", label: "Професіонал", en: "Professional" },
 ];
 
 export interface AccidentForm {
@@ -75,7 +70,7 @@ export interface AccidentForm {
   risk: RiskChoice;
   sportType: string;          // код
   sportName: string;          // назва для відображення
-  sportCategory: string;
+  sportLevel: "amateur" | "pro";
   profession: NonNullable<AccidentParams["profession"]>;
 }
 
@@ -95,7 +90,8 @@ export function toAccidentParams(f: AccidentForm): AccidentParams {
     sum: f.sum, countryId: f.countryId, activeFactor: "profession", profession: "none",
   };
   if (f.risk === "warRisk") return { ...base, activeFactor: "warRisk", warRisk: true, profession: undefined };
-  if (f.risk === "sport") return { ...base, activeFactor: "sport", sportType: f.sportType, sportCategory: f.sportCategory, profession: undefined };
+  // sportCategory підставить сервер (група ризику спорту невідома наперед).
+  if (f.risk === "sport") return { ...base, activeFactor: "sport", sportType: f.sportType, profession: undefined };
   if (f.risk === "profession") return { ...base, activeFactor: "profession", profession: f.profession };
   return base;
 }
@@ -116,11 +112,13 @@ export function AccidentFlow() {
   useFlowReset(() => setStep("form"));
   const [f, setF] = useState<AccidentForm>({
     birthDate: "", startDate: uaDate(tomorrow()), period: "12_month", sum: 100000, countryId: 1,
-    protectionPeriod: "24_7", risk: "none", sportType: "", sportName: "", sportCategory: "10236763", profession: "builder",
+    protectionPeriod: "24_7", risk: "none", sportType: "", sportName: "", sportLevel: "amateur", profession: "builder",
   });
   const patch = (p: Partial<AccidentForm>) => setF((s) => ({ ...s, ...p }));
 
   const [offers, setOffers] = useState<AccidentOffer[]>([]);
+  // Параметри, з якими СК реально порахувала (зі sportCategory) — ідуть у searchInfo заявки.
+  const [calcParams, setCalcParams] = useState<AccidentParams | null>(null);
   const [selectedOffer, setSelectedOffer] = useState<AccidentOffer | null>(null);
   // Відновлення оформлення після перезавантаження вкладки (див. lib/checkout-resume).
   const [resumeCtx, setResumeCtx] = useState<AccidentCheckoutCtx | null>(null);
@@ -157,13 +155,15 @@ export function AccidentFlow() {
       const res = await fetch("/api/accident", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(params),
+        body: JSON.stringify({ ...params, sportLevel: form.risk === "sport" ? form.sportLevel : undefined }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }));
       const list: AccidentOffer[] = (data.offers ?? []).filter((o: AccidentOffer) => o && o.price > 0);
       list.sort((a, b) => a.price - b.price);
       setOffers(list);
+      setCalcParams((data.params as AccidentParams) ?? params);
+      if (list.length === 0 && typeof data.hint === "string") setError(data.hint);
     } catch (err) {
       setError(err instanceof Error ? err.message : t({ uk: "Не вдалося отримати пропозиції.", en: "Could not fetch offers." }));
     } finally {
@@ -192,7 +192,7 @@ export function AccidentFlow() {
       countryId: g("countryId") === "2" ? 2 : 1,
       protectionPeriod: (ACC_PROTECTION.some((p) => p.value === g("protectionPeriod")) ? g("protectionPeriod") : "24_7") as AccidentProtection,
       risk: (ACC_RISKS.some((r) => r.value === g("risk")) ? g("risk") : "none") as RiskChoice,
-      sportType: g("sportType"), sportName: g("sportName"), sportCategory: g("sportCategory") || "10236763",
+      sportType: g("sportType"), sportName: g("sportName"), sportLevel: g("sportLevel") === "pro" ? "pro" : "amateur",
       profession: (ACC_PROFESSIONS.some((p) => p.value === g("profession")) ? g("profession") : "builder") as AccidentForm["profession"],
     };
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -226,7 +226,7 @@ export function AccidentFlow() {
               />
             ) : (resumeCtx || selectedOffer) ? (
               <AccidentCheckout
-                ctx={resumeCtx ?? ({ offer: selectedOffer!, form: f, params: toAccidentParams(f) } satisfies AccidentCheckoutCtx)}
+                ctx={resumeCtx ?? ({ offer: selectedOffer!, form: f, params: calcParams ?? toAccidentParams(f) } satisfies AccidentCheckoutCtx)}
                 onBack={() => { if (resumeCtx) { clearResume("checkout_resume_accident"); setResumeCtx(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }}
               />
             ) : null}
@@ -327,9 +327,16 @@ export function AccidentFlow() {
                   <SportPicker value={f.sportName} onPick={(code, name) => patch({ sportType: code, sportName: name })} onClear={() => patch({ sportType: "", sportName: "" })} />
                   <div>
                     <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Рівень", en: "Level" })}</label>
-                    <select value={f.sportCategory} onChange={(e) => patch({ sportCategory: e.target.value })} className={selectClass}>
-                      {ACC_SPORT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{t({ uk: c.label, en: c.en })}</option>)}
-                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ACC_SPORT_LEVELS.map((l) => (
+                        <button key={l.value} type="button" onClick={() => patch({ sportLevel: l.value })}
+                          className={`flex h-11 items-center justify-center rounded-xl border text-sm font-medium transition-colors ${
+                            f.sportLevel === l.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
+                          }`}>
+                          {t({ uk: l.label, en: l.en })}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -444,8 +451,8 @@ function AccidentOffers({ offers, loading, error, summary, onBack, onSelect }: {
         <SearchingInsurers />
       ) : error || cards.length === 0 ? (
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }) : t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? t({ uk: "Спробуйте ще раз або змініть параметри.", en: "Try again or change your parameters." }) : t({ uk: "Спробуйте іншу суму, строк або фактор ризику.", en: "Try a different sum, term or risk factor." })}</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ?? t({ uk: "Спробуйте іншу суму, строк або фактор ризику.", en: "Try a different sum, term or risk factor." })}</p>
           <Button variant="secondary" size="md" onClick={onBack} className="mt-5">{t({ uk: "Змінити параметри", en: "Change parameters" })}</Button>
         </div>
       ) : (
