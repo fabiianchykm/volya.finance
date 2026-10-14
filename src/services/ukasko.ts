@@ -65,12 +65,22 @@ const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
 // Помилка HTTP зі збереженим статусом — щоб логіка вище могла відрізнити
-// протухлий токен (401) від інших збоїв і перевипустити його.
+// протухлий токен від інших збоїв і перевипустити його.
 class HttpError extends Error {
   constructor(public status: number, message: string) {
     super(message);
     this.name = "HttpError";
   }
+}
+
+// Протухлий/невалідний токен. Dev віддає 401, а ПРОД (uconnect.com.ua) — 403 з
+// тілом {"status":"auth","message":"Unauthenticated."}. Інцидент 2026-10-14:
+// перевипуск був лише на 401, тому після закінчення терміну дії токена ВСІ
+// калькулятори й довідники на проді падали до рестарту інстансу.
+function isAuthExpired(e: unknown): boolean {
+  if (!(e instanceof HttpError)) return false;
+  if (e.status === 401) return true;
+  return e.status === 403 && /unauthenticated|unauthori[sz]ed|"status":"auth"/i.test(e.message);
 }
 
 // 502/503/504 від Ukasko/Cloudflare — зазвичай тимчасові (origin перевантажений
@@ -255,15 +265,17 @@ export class UkaskoService {
   }
 
   /**
-   * Виконує авторизований запит. Якщо токен протух (401), перевипускає його
-   * і повторює запит один раз. Інакше кешований токен жив би до рестарту процесу.
+   * Виконує авторизований запит. Якщо токен протух (401 на dev / 403 Unauthenticated
+   * на проді), перевипускає його і повторює запит один раз. Інакше кешований токен
+   * жив би до рестарту процесу.
    */
   private async withAuth<T>(fn: (token: string) => Promise<T>): Promise<T> {
     const token = await this.getToken();
     try {
       return await fn(token);
     } catch (e) {
-      if (e instanceof HttpError && e.status === 401) {
+      if (isAuthExpired(e)) {
+        console.error("[ukasko auth] токен протух — перевипускаємо:", e instanceof Error ? e.message.slice(0, 160) : String(e));
         this.invalidateToken();
         const fresh = await this.authenticate();
         return await fn(fresh);
@@ -1013,7 +1025,7 @@ export class UkaskoService {
           console.error(`[ukasko get-invoice] ${method} ${url} — no invoiceLink. raw:`, JSON.stringify(raw).slice(0, 500));
         } catch (e) {
           // Протухлий токен пробрасуємо нагору — withAuth перевипустить і повторить.
-          if (e instanceof HttpError && e.status === 401) throw e;
+          if (isAuthExpired(e)) throw e;
           console.error(`[ukasko get-invoice] ${method} ${url} — error:`, e instanceof Error ? e.message.slice(0, 300) : String(e));
           // Інші збої цієї спроби — пробуємо наступний ендпоінт.
         }
@@ -1078,7 +1090,7 @@ export class UkaskoService {
           console.error(`[ukasko check-invoice] ${url} product=${product ?? "-"} → isPaid=${d.isPaid} orderStatus=${orderStatus} invoiceSignal=${paidByInvoice} payed_at=${payedAt} → paid=${paid}`);
           if (paid) return { status_id: 2, payed_at: payedAt, orderStatus };
         } catch (e) {
-          if (e instanceof HttpError && e.status === 401) throw e; // токен протух — withAuth перевипустить
+          if (isAuthExpired(e)) throw e; // токен протух — withAuth перевипустить
           console.error(`[ukasko check-invoice] ${url} — error:`, e instanceof Error ? e.message.slice(0, 200) : String(e));
         }
       }
