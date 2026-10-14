@@ -143,3 +143,20 @@ export function breadcrumbLd(items: { name: string; path: string }[]) {
     })),
   };
 }
+
+export function articleLd(input: { title: string; description: string; path: string; date: string; dateModified?: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: input.title,
+    description: input.description,
+    url: absoluteUrl(input.path),
+    mainEntityOfPage: absoluteUrl(input.path),
+    datePublished: input.date,
+    dateModified: input.dateModified ?? input.date,
+    inLanguage: "uk-UA",
+    image: `${SITE_URL}/opengraph-image`,
+    author: { "@id": `${SITE_URL}/#organization` },
+    publisher: { "@id": `${SITE_URL}/#organization` },
+  };
+}

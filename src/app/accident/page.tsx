@@ -1,6 +1,7 @@
 import { Footer } from "@/components/layout/Footer";
 import { AccidentFlow } from "@/components/accident/AccidentFlow";
 import { AccidentSeoContent } from "@/components/accident/AccidentSeoContent";
+import { RelatedPosts } from "@/components/blog/RelatedPosts";
 import { MarketingSections } from "@/components/sections/MarketingSections";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
@@ -42,6 +43,7 @@ export default function AccidentPage() {
       <main className="flex-1">
         <AccidentFlow />
         <AccidentSeoContent />
+        <RelatedPosts product="accident" title="Корисні статті про страхування від нещасних випадків" />
         <MarketingSections
           showFaq
           faqItems={FAQ_BY_PRODUCT["accident"]}

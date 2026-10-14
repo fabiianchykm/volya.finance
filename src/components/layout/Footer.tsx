@@ -58,7 +58,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
   ],
   media: [
     // Заморожені (порожні, контент готується) — некликабельні.
-    { label: "Блог", labelEn: "Blog", href: "/blog", frozen: true },
+    { label: "Блог", labelEn: "Blog", href: "/blog" },
     { label: "Новини", labelEn: "News", href: "/news", frozen: true },
     { label: "Статистика", labelEn: "Statistics", href: "/statistics", frozen: true },
     { label: "Звіти", labelEn: "Reports", href: "/reports", frozen: true },

@@ -6,7 +6,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PostBody } from "@/components/blog/PostBody";
 import { getPost, getPosts, formatPostDate, CATEGORY_LABEL } from "@/lib/blog";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, articleLd, breadcrumbLd } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export function generateStaticParams() {
   return getPosts().map((p) => ({ slug: p.slug }));
@@ -29,6 +30,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   return (
     <>
+      <JsonLd
+        data={[
+          articleLd({ title: post.title, description: post.excerpt, path: `/blog/${post.slug}`, date: post.date }),
+          breadcrumbLd([{ name: "Головна", path: "/" }, { name: backLabel, path: backHref }, { name: post.title, path: `/blog/${post.slug}` }]),
+        ]}
+      />
       <Navbar solid />
       <main className="flex-1 pt-24 pb-16">
         <div className="mx-auto max-w-2xl px-4 sm:px-6">

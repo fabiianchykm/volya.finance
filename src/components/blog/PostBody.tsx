@@ -1,4 +1,20 @@
 import { Fragment } from "react";
+import Link from "next/link";
+
+// Інлайн-посилання [текст](/шлях) — внутрішні через Link, зовнішні — <a>.
+function inline(text: string) {
+  const parts: React.ReactNode[] = [];
+  const re = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+  let last = 0; let m: RegExpExecArray | null; let k = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    const cls = "font-medium text-indigo-600 dark:text-indigo-400 hover:underline";
+    parts.push(m[2].startsWith("/") ? <Link key={k++} href={m[2]} className={cls}>{m[1]}</Link> : <a key={k++} href={m[2]} className={cls} rel="noopener">{m[1]}</a>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
 
 // Простий рендер контенту допису: порожній рядок — новий абзац; "## " — підзаголовок;
 // рядки "- " поспіль — маркований список. Без зовнішніх markdown-залежностей.
@@ -22,7 +38,7 @@ export function PostBody({ content }: { content: string }) {
               {lines.map((l, j) => (
                 <li key={j} className="flex gap-2 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                  {l.trim().slice(2)}
+                  <span>{inline(l.trim().slice(2))}</span>
                 </li>
               ))}
             </ul>
@@ -32,7 +48,7 @@ export function PostBody({ content }: { content: string }) {
           <p key={i} className="text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">
             {lines.map((l, j) => (
               <Fragment key={j}>
-                {l}
+                {inline(l)}
                 {j < lines.length - 1 && <br />}
               </Fragment>
             ))}
