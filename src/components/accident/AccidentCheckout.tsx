@@ -19,7 +19,7 @@ import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resum
 import { useI18n } from "@/lib/i18n";
 import { SupportCTA } from "@/components/ui/SupportCTA";
 import type { AccidentForm } from "./AccidentFlow";
-import { ACC_PERIODS } from "./AccidentFlow";
+import { ACC_PERIODS, ACC_PACKAGES } from "./AccidentFlow";
 
 // Анкета оформлення НВ: платник (страхувальник) + за потреби інша застрахована
 // особа (дитина/родич) → order/create (statusId:5) → OTP → оплата → confirm → поліс.
@@ -35,7 +35,10 @@ const DOC_TYPES = [
   { t: 3 as const, label: "ID-карта", en: "ID card" },
   { t: 1 as const, label: "Паспорт (книжечка)", en: "Passport (booklet)" },
 ];
-type DocType = 1 | 3;
+// Свідоцтво про народження (type 14, API 14.10.2026) — лише для застрахованої
+// дитини до 14 років; платнику недоступне. Серія (напр. І-БК) → serial.
+const CHILD_DOC = { t: 14 as const, label: "Свідоцтво про народження", en: "Birth certificate" };
+type DocType = 1 | 3 | 14;
 
 interface Person {
   surname: string; name: string; patronymic: string;
@@ -55,6 +58,7 @@ function formatUaPhone(digits: string): string {
 const fullName = (p: Person) => [p.surname, p.name, p.patronymic].filter(Boolean).join(" ");
 
 // AccidentPerson за схемою Ukasko. ID-картка: серія порожня, «Запис №» → unzr.
+// Свідоцтво про народження (14): серія + номер, без unzr.
 function toApiPerson(p: Person): Record<string, unknown> {
   const isId = p.docType === 3;
   return {
@@ -188,7 +192,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
       identificationCode: payer.identificationCode,
       dateBirth: payer.dateBirth,
       street: payer.street, house: payer.house,
-      docType: payer.docType, docKind: payer.docType === 1 ? "passport" : "idcard",
+      docType: payer.docType as 1 | 3, docKind: payer.docType === 1 ? "passport" : "idcard",
       docSerial: payer.docSerial, docNumber: payer.docNumber, docIssuedBy: payer.docIssuedBy, docDate: payer.docDate,
       cityQuery: payer.city,
     });
@@ -215,7 +219,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
           company, price: ctx.offer.price, productLabel: "Нещасний випадок",
           startDate: ctx.form.startDate,
           endDate: null,
-          vehicle: { mark: t({ uk: "Нещасний випадок", en: "Accident" }), model: `${ctx.form.sum.toLocaleString("uk-UA")} грн · ${per ? per.label : ""}` },
+          vehicle: { mark: t({ uk: "Нещасний випадок", en: "Accident" }), model: `${ctx.form.sum.toLocaleString("uk-UA")} грн · ${per ? per.label : ""} · ${ctx.params.selectedPackage === "child" ? "дитяча" : ACC_PACKAGES.find((x) => x.value === ctx.params.selectedPackage)?.label ?? ""}` },
         },
       });
       await fetch("/api/insurance/otp", {
@@ -299,13 +303,13 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
 
         {/* Документ */}
         <p className="mb-3 mt-5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Документ", en: "Document" })}</p>
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:max-w-sm">
-          {DOC_TYPES.map(({ t: dt, label, en }) => (
-            <button key={dt} type="button" onClick={() => (isPayer ? changeDocType(dt) : patch({ docType: dt }))} className={`min-h-11 px-3 py-2 ${toggleCls(p.docType === dt)}`}>{t({ uk: label, en })}</button>
+        <div className={`mb-4 grid gap-2 ${isPayer ? "grid-cols-2 sm:max-w-sm" : "grid-cols-3 sm:max-w-lg"}`}>
+          {(isPayer ? DOC_TYPES : [...DOC_TYPES, CHILD_DOC]).map(({ t: dt, label, en }) => (
+            <button key={dt} type="button" onClick={() => (isPayer ? changeDocType(dt as 1 | 3) : patch({ docType: dt }))} className={`min-h-11 px-3 py-2 ${toggleCls(p.docType === dt)}`}>{t({ uk: label, en })}</button>
           ))}
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label={p.docType === 3 ? t({ uk: "Запис № (УНЗР)", en: "Record No. (UNZR)" }) : t({ uk: "Серія", en: "Series" })} value={p.docSerial} onChange={set("docSerial")} required={p.docType === 1} />
+          <Input label={p.docType === 3 ? t({ uk: "Запис № (УНЗР)", en: "Record No. (UNZR)" }) : t({ uk: "Серія", en: "Series" })} value={p.docSerial} onChange={set("docSerial")} required={p.docType === 1 || p.docType === 14} placeholder={p.docType === 14 ? "І-БК" : undefined} />
           <Input label={t({ uk: "Номер документа", en: "Document number" })} value={p.docNumber} onChange={set("docNumber")} required />
         </div>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -348,7 +352,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Кого страхуємо", en: "Who is insured" })}</p>
           <div className="grid grid-cols-2 gap-2 sm:max-w-md">
             <button type="button" onClick={() => setOther(false)} className={toggleCls(!other)}>{t({ uk: "Себе", en: "Myself" })}</button>
-            <button type="button" onClick={() => setOther(true)} className={toggleCls(other)}>{t({ uk: "Іншу особу (дитину)", en: "Another person (child)" })}</button>
+            <button type="button" onClick={() => { setOther(true); setPayer((s) => (s.dateBirth === ctx.form.birthDate ? { ...s, dateBirth: "" } : s)); }} className={toggleCls(other)}>{t({ uk: "Іншу особу (дитину)", en: "Another person (child)" })}</button>
           </div>
         </div>
 

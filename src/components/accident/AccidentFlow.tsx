@@ -4,14 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
-import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Shield, Globe, Search } from "lucide-react";
+import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Shield, Globe, Search, Check, Lock } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { OfferCard } from "@/components/insurance/OfferCard";
 import { SearchingInsurers } from "@/components/insurance/SearchingInsurers";
 import { AccidentCheckout, type AccidentCheckoutCtx } from "./AccidentCheckout";
-import type { AccidentOffer, AccidentParams, AccidentPeriod, AccidentProtection, InsuranceOffer } from "@/types/api";
+import type { AccidentFactor, AccidentOffer, AccidentPackage, AccidentParams, AccidentPeriod, AccidentProtection, AccidentRisks, InsuranceOffer } from "@/types/api";
 import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n } from "@/lib/i18n";
 
@@ -38,15 +38,22 @@ export const ACC_COUNTRIES: { value: 1 | 2; label: string; en: string }[] = [
   { value: 1, label: "Україна", en: "Ukraine" },
   { value: 2, label: "Весь світ", en: "Worldwide" },
 ];
-// Фактор ризику у формі: «без особливих ризиків» = profession:none (у API немає
-// окремого «нічого»); решта — як у документації.
-export type RiskChoice = "none" | "warRisk" | "sport" | "profession";
+// Діяльність (один вибір) + воєнні ризики окремим перемикачем: API приймає
+// кілька факторів одночасно (activeFactors). «Без особливих» = profession:none.
+export type RiskChoice = "none" | "sport" | "profession";
 export const ACC_RISKS: { value: RiskChoice; label: string; en: string }[] = [
   { value: "none", label: "Без особливих ризиків", en: "No special risks" },
-  { value: "warRisk", label: "Воєнні ризики", en: "War risks" },
   { value: "sport", label: "Заняття спортом", en: "Sports" },
   { value: "profession", label: "Небезпечна професія", en: "Hazardous profession" },
 ];
+// Пакети ризиків ІНГО для дорослих (дітям до 18 — лише дитяча програма, без вибору).
+export const ACC_PACKAGES: { value: Exclude<AccidentPackage, "child">; label: string; en: string; hint: string; hintEn: string }[] = [
+  { value: "adults", label: "Стандарт", en: "Standard", hint: "Смерть, інвалідність 1–3 гр., тілесні ушкодження від НВ", hintEn: "Death, disability groups 1–3, injuries from an accident" },
+  { value: "sick_leave", label: "Лікарняні", en: "Sick leave", hint: "+ виплата за кожен день лікарняного після НВ (0,3% суми/день)", hintEn: "+ a payout for each sick-leave day after an accident (0.3% of the sum/day)" },
+  { value: "complex", label: "Комплекс", en: "Complex", hint: "НВ + смерть і інвалідність від хвороби, лікарняні з будь-якої причини (0,1%/день)", hintEn: "Accident + death and disability from illness, sick leave for any cause (0.1%/day)" },
+];
+// Ризики, які клієнт вмикає/вимикає в межах пакета (решта — фіксовані).
+export interface RiskToggles { groupThree: boolean; injuries: boolean; tempDisability: boolean; disabledChild: boolean }
 export const ACC_PROFESSIONS: { value: NonNullable<AccidentParams["profession"]>; label: string; en: string }[] = [
   { value: "builder", label: "Будівельник / монтажник", en: "Builder / fitter" },
   { value: "electrician", label: "Електрик / енергетик", en: "Electrician / power engineer" },
@@ -54,10 +61,11 @@ export const ACC_PROFESSIONS: { value: NonNullable<AccidentParams["profession"]>
   { value: "guard", label: "Охоронець / інкасатор", en: "Security guard / cash courier" },
   { value: "other", label: "Інша професія підвищеної небезпеки", en: "Other hazardous profession" },
 ];
-// Групу ризику виду спорту (S0/S1/S2/SE) підбирає сервер; клієнт обирає лише рівень.
-export const ACC_SPORT_LEVELS: { value: "amateur" | "pro"; label: string; en: string }[] = [
+// Рівень спорту — рядком, як у поточному API (групу ризику S0–SE СК визначає сама за видом).
+export type SportLevel = "amateur" | "professional";
+export const ACC_SPORT_LEVELS: { value: SportLevel; label: string; en: string }[] = [
   { value: "amateur", label: "Аматор", en: "Amateur" },
-  { value: "pro", label: "Професіонал", en: "Professional" },
+  { value: "professional", label: "Професіонал", en: "Professional" },
 ];
 
 export interface AccidentForm {
@@ -68,10 +76,16 @@ export interface AccidentForm {
   countryId: 1 | 2;
   protectionPeriod: AccidentProtection;
   risk: RiskChoice;
+  warRisk: boolean;           // воєнні ризики — додається до будь-якої діяльності
   sportType: string;          // код
   sportName: string;          // назва для відображення
-  sportLevel: "amateur" | "pro";
+  sportLevel: SportLevel;
   profession: NonNullable<AccidentParams["profession"]>;
+  pkg: Exclude<AccidentPackage, "child">;  // для дорослих; дитині сервер ставить child
+  groupThree: boolean;        // інвалідність 3 гр. (adults, sick_leave)
+  injuries: boolean;          // тілесні ушкодження (adults, child)
+  tempDisability: boolean;    // лікарняні 0,3%/день (sick_leave)
+  disabledChild: boolean;     // «дитина з інвалідністю» (child)
 }
 
 const selectClass =
@@ -83,17 +97,68 @@ const fmtSum = (n: number) => `${n.toLocaleString("uk-UA")} грн`;
 const uaDate = (d: Date) => { const p = (n: number) => String(n).padStart(2, "0"); return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`; };
 const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); return d; };
 
+// Вік у повних роках на дату початку; дитина = <18 (у API окрема програма).
+export function accidentAge(f: Pick<AccidentForm, "birthDate" | "startDate">): number | null {
+  const b = parseUaDate(f.birthDate); const s = parseUaDate(f.startDate);
+  if (!b || !s) return null;
+  let a = s.getFullYear() - b.getFullYear();
+  if (s.getMonth() < b.getMonth() || (s.getMonth() === b.getMonth() && s.getDate() < b.getDate())) a--;
+  return a;
+}
+export const isChildForm = (f: AccidentForm) => { const a = accidentAge(f); return a !== null && a < 18; };
+
+// Набір ризиків для API з пакета і перемикачів. Перевірено на проді ІНГО:
+// смерть + інвалідність 1–2 гр. — база (3 гр. потребує 1–2), тілесні ушкодження
+// не дозволені в «Комплексі», «Комплекс» вимагає повний набір ризиків хвороби.
+export function toAccidentRisks(f: AccidentForm, child: boolean): AccidentRisks {
+  const Y = "Y" as const, N = "N" as const;
+  if (child) return { RiskDeathAccident: Y, RiskDisabledChild: f.disabledChild ? Y : N, RiskInjuriesAccident: f.injuries ? Y : N };
+  const base: AccidentRisks = { RiskDeathAccident: Y, RiskGroupOneАccident: Y, RiskGroupTwoАccident: Y, RiskGroupThreeАccident: f.groupThree ? Y : N };
+  if (f.pkg === "sick_leave") return { ...base, RiskTemporaryDisability: { TemporaryDisability03P: f.tempDisability ? Y : N } };
+  if (f.pkg === "complex") return {
+    ...base, RiskGroupThreeАccident: Y, RiskInjuriesAccident: N,
+    RiskDeathIllness: Y, RiskGroupOneIllness: Y, RiskGroupTwoIllness: Y, RiskGroupThreeIllness: Y,
+    RiskTemporaryDisability: { TemporaryDisability01P: Y },
+  };
+  return { ...base, RiskInjuriesAccident: f.injuries ? Y : N };
+}
+
 // Параметри калькулятора з форми (саме вони ж ідуть у searchInfo заявки).
 export function toAccidentParams(f: AccidentForm): AccidentParams {
-  const base: AccidentParams = {
+  const child = isChildForm(f);
+  const factors: AccidentFactor[] = [];
+  if (f.warRisk) factors.push("warRisk");
+  if (f.risk === "sport") factors.push("sport");
+  if (f.risk === "profession" && !child) factors.push("profession");
+  const p: AccidentParams = {
     startDate: f.startDate, birthDate: f.birthDate, period: f.period, protectionPeriod: f.protectionPeriod,
-    sum: f.sum, countryId: f.countryId, activeFactor: "profession", profession: "none",
+    sum: f.sum, countryId: f.countryId,
+    activeFactor: factors[0] ?? "profession",
+    selectedPackage: child ? "child" : f.pkg,
+    accidentRisks: toAccidentRisks(f, child),
   };
-  if (f.risk === "warRisk") return { ...base, activeFactor: "warRisk", warRisk: true, profession: undefined };
-  // sportCategory підставить сервер (група ризику спорту невідома наперед).
-  if (f.risk === "sport") return { ...base, activeFactor: "sport", sportType: f.sportType, profession: undefined };
-  if (f.risk === "profession") return { ...base, activeFactor: "profession", profession: f.profession };
-  return base;
+  if (factors.length > 1) p.activeFactors = factors;
+  if (f.warRisk) p.warRisk = true;
+  if (f.risk === "sport") { p.sportType = f.sportType; p.sportCategory = f.sportLevel; }
+  if (f.risk === "profession" && !child) p.profession = f.profession;
+  if (!factors.length) p.profession = "none";
+  return p;
+}
+
+// Людський перелік покриття — для екрана пропозицій і зведення в заявці.
+export function coverageLabels(f: AccidentForm, t: (tr: { uk: string; en: string }) => string): string[] {
+  const child = isChildForm(f);
+  const out = [t({ uk: "Смерть від НВ", en: "Death from an accident" })];
+  if (child) {
+    if (f.disabledChild) out.push(t({ uk: "Дитина з інвалідністю", en: "Child disability" }));
+    if (f.injuries) out.push(t({ uk: "Тілесні ушкодження", en: "Injuries" }));
+    return out;
+  }
+  out.push(f.groupThree || f.pkg === "complex" ? t({ uk: "Інвалідність 1–3 гр.", en: "Disability groups 1–3" }) : t({ uk: "Інвалідність 1–2 гр.", en: "Disability groups 1–2" }));
+  if (f.pkg === "adults" && f.injuries) out.push(t({ uk: "Тілесні ушкодження", en: "Injuries" }));
+  if (f.pkg === "sick_leave" && f.tempDisability) out.push(t({ uk: "Лікарняні 0,3%/день", en: "Sick leave 0.3%/day" }));
+  if (f.pkg === "complex") out.push(t({ uk: "Смерть та інвалідність від хвороби", en: "Death and disability from illness" }), t({ uk: "Лікарняні 0,1%/день", en: "Sick leave 0.1%/day" }));
+  return out;
 }
 
 function toInsuranceOffer(o: AccidentOffer): InsuranceOffer {
@@ -112,7 +177,8 @@ export function AccidentFlow() {
   useFlowReset(() => setStep("form"));
   const [f, setF] = useState<AccidentForm>({
     birthDate: "", startDate: uaDate(tomorrow()), period: "12_month", sum: 100000, countryId: 1,
-    protectionPeriod: "24_7", risk: "none", sportType: "", sportName: "", sportLevel: "amateur", profession: "builder",
+    protectionPeriod: "24_7", risk: "none", warRisk: false, sportType: "", sportName: "", sportLevel: "amateur", profession: "builder",
+    pkg: "adults", groupThree: true, injuries: true, tempDisability: true, disabledChild: true,
   });
   const patch = (p: Partial<AccidentForm>) => setF((s) => ({ ...s, ...p }));
 
@@ -130,15 +196,10 @@ export function AccidentFlow() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Вік 1–75 повних років на дату початку (вимога API).
-  const ageAtStart = (() => {
-    const b = parseUaDate(f.birthDate); const s = parseUaDate(f.startDate);
-    if (!b || !s) return null;
-    let a = s.getFullYear() - b.getFullYear();
-    if (s.getMonth() < b.getMonth() || (s.getMonth() === b.getMonth() && s.getDate() < b.getDate())) a--;
-    return a;
-  })();
+  // Вік 1–75 повних років на дату початку (вимога API); <18 — дитяча програма.
+  const ageAtStart = accidentAge(f);
   const ageOk = ageAtStart !== null && ageAtStart >= 1 && ageAtStart <= 75;
+  const child = ageAtStart !== null && ageAtStart < 18;
   const valid = ageOk && !!parseUaDate(f.startDate) && (f.risk !== "sport" || !!f.sportType);
 
   const runCalc = async (form: AccidentForm) => {
@@ -150,12 +211,12 @@ export function AccidentFlow() {
     const sp = new URLSearchParams({ step: "offers", ...Object.fromEntries(Object.entries({ ...form, sum: String(form.sum), countryId: String(form.countryId) }).filter(([, v]) => v !== "" && v !== undefined)) });
     window.history.replaceState(null, "", `?${sp.toString()}`);
     trackEvent("calculate_cost", { product: "accident" });
-    trackCalc("accident", { period: form.period, sum: form.sum, countryId: form.countryId, protection: form.protectionPeriod, risk: form.risk });
+    trackCalc("accident", { period: form.period, sum: form.sum, countryId: form.countryId, protection: form.protectionPeriod, risk: form.risk, warRisk: form.warRisk, pkg: params.selectedPackage });
     try {
       const res = await fetch("/api/accident", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...params, sportLevel: form.risk === "sport" ? form.sportLevel : undefined }),
+        body: JSON.stringify(params),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Could not fetch offers" }));
@@ -192,8 +253,12 @@ export function AccidentFlow() {
       countryId: g("countryId") === "2" ? 2 : 1,
       protectionPeriod: (ACC_PROTECTION.some((p) => p.value === g("protectionPeriod")) ? g("protectionPeriod") : "24_7") as AccidentProtection,
       risk: (ACC_RISKS.some((r) => r.value === g("risk")) ? g("risk") : "none") as RiskChoice,
-      sportType: g("sportType"), sportName: g("sportName"), sportLevel: g("sportLevel") === "pro" ? "pro" : "amateur",
+      warRisk: g("warRisk") === "true" || g("risk") === "warRisk",
+      sportType: g("sportType"), sportName: g("sportName"), sportLevel: g("sportLevel") === "pro" || g("sportLevel") === "professional" ? "professional" : "amateur",
       profession: (ACC_PROFESSIONS.some((p) => p.value === g("profession")) ? g("profession") : "builder") as AccidentForm["profession"],
+      pkg: (ACC_PACKAGES.some((p) => p.value === g("pkg")) ? g("pkg") : "adults") as AccidentForm["pkg"],
+      groupThree: g("groupThree") !== "false", injuries: g("injuries") !== "false",
+      tempDisability: g("tempDisability") !== "false", disabledChild: g("disabledChild") !== "false",
     };
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setF(restored);
@@ -205,8 +270,15 @@ export function AccidentFlow() {
     const per = ACC_PERIODS.find((p) => p.value === f.period);
     const ctry = ACC_COUNTRIES.find((c) => c.value === f.countryId);
     const risk = ACC_RISKS.find((r) => r.value === f.risk);
-    return [fmtSum(f.sum), per ? t({ uk: per.label, en: per.en }) : "", ctry ? t({ uk: ctry.label, en: ctry.en }) : "", f.risk !== "none" && risk ? t({ uk: risk.label, en: risk.en }) : ""].filter(Boolean).join(" · ");
+    const pkg = ACC_PACKAGES.find((p) => p.value === f.pkg);
+    return [
+      fmtSum(f.sum), per ? t({ uk: per.label, en: per.en }) : "", ctry ? t({ uk: ctry.label, en: ctry.en }) : "",
+      child ? t({ uk: "Дитяча програма", en: "Child programme" }) : pkg ? t({ uk: pkg.label, en: pkg.en }) : "",
+      f.risk !== "none" && risk ? t({ uk: risk.label, en: risk.en }) : "",
+      f.warRisk ? t({ uk: "Воєнні ризики", en: "War risks" }) : "",
+    ].filter(Boolean).join(" · ");
   })();
+  const coverage = coverageLabels(f, t);
 
   // ── Світлий екран: пропозиції / оформлення ──
   if (step === "offers" || step === "checkout") {
@@ -221,6 +293,7 @@ export function AccidentFlow() {
                 loading={loading}
                 error={error}
                 summary={summary}
+                coverage={coverage}
                 onBack={() => { setError(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
@@ -308,10 +381,53 @@ export function AccidentFlow() {
                 </div>
               </div>
 
+              {/* Пакет ризиків (дорослі) / дитяча програма + перемикачі ризиків */}
+              <div className="mt-5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/40 p-4">
+                <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Що покриває поліс", en: "What the policy covers" })}</label>
+                {child ? (
+                  <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Вік до 18 років — дитяча програма ІНГО.", en: "Under 18 — INGO child programme." })}</p>
+                ) : (
+                  <div className="mb-3 grid grid-cols-3 gap-2">
+                    {ACC_PACKAGES.map((p) => (
+                      <button key={p.value} type="button" onClick={() => patch({ pkg: p.value })} title={t({ uk: p.hint, en: p.hintEn })}
+                        className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-medium leading-tight transition-colors sm:text-sm ${
+                          f.pkg === p.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
+                        }`}>
+                        {t({ uk: p.label, en: p.en })}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!child && <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: ACC_PACKAGES.find((p) => p.value === f.pkg)!.hint, en: ACC_PACKAGES.find((p) => p.value === f.pkg)!.hintEn })}</p>}
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <RiskRow locked checked label={t({ uk: "Смерть від нещасного випадку", en: "Death from an accident" })} />
+                  {child ? (
+                    <>
+                      <RiskRow checked={f.disabledChild} onChange={(v) => patch({ disabledChild: v })} label={t({ uk: "Встановлення інвалідності дитині", en: "Child disability" })} />
+                      <RiskRow checked={f.injuries} onChange={(v) => patch({ injuries: v })} label={t({ uk: "Тілесні ушкодження (травми)", en: "Injuries" })} />
+                    </>
+                  ) : f.pkg === "complex" ? (
+                    <>
+                      <RiskRow locked checked label={t({ uk: "Інвалідність 1–3 гр. від НВ", en: "Disability groups 1–3 (accident)" })} />
+                      <RiskRow locked checked label={t({ uk: "Смерть від хвороби", en: "Death from illness" })} />
+                      <RiskRow locked checked label={t({ uk: "Інвалідність 1–3 гр. від хвороби", en: "Disability groups 1–3 (illness)" })} />
+                      <RiskRow locked checked label={t({ uk: "Лікарняні з будь-якої причини, 0,1%/день", en: "Sick leave for any cause, 0.1%/day" })} />
+                    </>
+                  ) : (
+                    <>
+                      <RiskRow locked checked label={t({ uk: "Інвалідність 1–2 гр. від НВ", en: "Disability groups 1–2 (accident)" })} />
+                      <RiskRow checked={f.groupThree} onChange={(v) => patch({ groupThree: v })} label={t({ uk: "Інвалідність 3 гр. від НВ", en: "Disability group 3 (accident)" })} />
+                      {f.pkg === "adults" && <RiskRow checked={f.injuries} onChange={(v) => patch({ injuries: v })} label={t({ uk: "Тілесні ушкодження (травми)", en: "Injuries" })} />}
+                      {f.pkg === "sick_leave" && <RiskRow checked={f.tempDisability} onChange={(v) => patch({ tempDisability: v })} label={t({ uk: "Лікарняні після НВ, 0,3%/день", en: "Sick leave after an accident, 0.3%/day" })} />}
+                    </>
+                  )}
+                </div>
+              </div>
+
               <div className="mt-4">
-                <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Фактор ризику", en: "Risk factor" })}</label>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {ACC_RISKS.map((r) => (
+                <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Діяльність", en: "Activity" })}</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {ACC_RISKS.filter((r) => !(child && r.value === "profession")).map((r) => (
                     <button key={r.value} type="button" onClick={() => patch({ risk: r.value })}
                       className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-medium leading-tight transition-colors sm:text-sm ${
                         f.risk === r.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
@@ -350,6 +466,10 @@ export function AccidentFlow() {
                 </div>
               )}
 
+              <div className="mt-4">
+                <RiskRow checked={f.warRisk} onChange={(v) => patch({ warRisk: v })} label={t({ uk: "Додати воєнні ризики (обстріли, вибухи, міни)", en: "Add war risks (shelling, explosions, mines)" })} />
+              </div>
+
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
               <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!valid || loading} className="mt-5 w-full">
@@ -362,6 +482,23 @@ export function AccidentFlow() {
         </div>
       </section>
     </>
+  );
+}
+
+// Рядок ризику: перемикач або зафіксований (входить у пакет завжди).
+function RiskRow({ label, checked, locked, onChange }: { label: string; checked: boolean; locked?: boolean; onChange?: (v: boolean) => void }) {
+  return (
+    <button type="button" disabled={locked} onClick={() => onChange?.(!checked)} aria-pressed={checked}
+      className={`flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
+        locked ? "cursor-default border-zinc-100 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 text-zinc-500 dark:text-zinc-400"
+          : checked ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200"
+          : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
+      }`}>
+      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? "border-indigo-500 bg-indigo-600 text-white" : "border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800"}`}>
+        {locked ? <Lock className="h-3 w-3" /> : checked ? <Check className="h-3.5 w-3.5" /> : null}
+      </span>
+      <span className="leading-tight">{label}</span>
+    </button>
   );
 }
 
@@ -400,11 +537,12 @@ function SportPicker({ value, onPick, onClear }: { value: string; onPick: (code:
   );
 }
 
-function AccidentOffers({ offers, loading, error, summary, onBack, onSelect }: {
+function AccidentOffers({ offers, loading, error, summary, coverage, onBack, onSelect }: {
   offers: AccidentOffer[];
   loading: boolean;
   error: string | null;
   summary: string;
+  coverage: string[];
   onBack: () => void;
   onSelect: (o: AccidentOffer) => void;
 }) {
@@ -423,6 +561,13 @@ function AccidentOffers({ offers, loading, error, summary, onBack, onSelect }: {
           <span className="font-medium text-zinc-600 dark:text-zinc-300">{t({ uk: "Нещасні випадки", en: "Accident insurance" })}</span>
         </div>
         <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {coverage.map((c) => (
+            <span key={c} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+              <Check className="h-3 w-3" /> {c}
+            </span>
+          ))}
+        </div>
       </div>
 
       {!loading && cards.length > 0 && (

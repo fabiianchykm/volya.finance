@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { HeartPulse, Baby, Dumbbell, HardHat, Globe, Clock, Banknote, FileText } from "lucide-react";
+import { HeartPulse, Baby, Dumbbell, HardHat, Globe, Clock, Banknote, FileText, Shield } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 // SEO-контент для /accident: індексований текст про продукт (що покриває, для кого,
@@ -10,10 +10,11 @@ import { useI18n } from "@/lib/i18n";
 // Ціни — реальні з калькулятора ІНГО на момент запуску (жовтень 2026); орієнтовні.
 
 const COVER = [
-  { icon: HeartPulse, uk: "Травма внаслідок нещасного випадку — виплата за таблицею страховика у відсотках від страхової суми.", en: "Injury caused by an accident — a payout per the insurer's table as a percentage of the insured sum." },
-  { icon: FileText, uk: "Тимчасова втрата працездатності — лікарняний через нещасний випадок.", en: "Temporary disability — sick leave caused by an accident." },
-  { icon: Banknote, uk: "Стійка втрата працездатності (інвалідність) — виплата залежно від групи.", en: "Permanent disability — a payout depending on the disability group." },
-  { icon: HeartPulse, uk: "Смерть внаслідок нещасного випадку — 100% страхової суми вигодонабувачам.", en: "Death caused by an accident — 100% of the insured sum to the beneficiaries." },
+  { icon: HeartPulse, uk: "Смерть внаслідок нещасного випадку — 100% страхової суми вигодонабувачам (базовий ризик у кожному пакеті).", en: "Death caused by an accident — 100% of the insured sum to the beneficiaries (the base risk in every package)." },
+  { icon: Banknote, uk: "Інвалідність 1, 2 або 3 групи внаслідок НВ — виплата у відсотках від суми залежно від групи; 3 групу можна додати або прибрати.", en: "Disability group 1, 2 or 3 caused by an accident — a payout as a percentage of the sum by group; group 3 can be added or removed." },
+  { icon: HeartPulse, uk: "Тілесні ушкодження (травми) — виплата за таблицею страховика; вмикається окремо.", en: "Injuries — a payout per the insurer's table; switched on separately." },
+  { icon: FileText, uk: "Лікарняні: 0,3% страхової суми за кожен день непрацездатності після НВ (пакет «Лікарняні»).", en: "Sick leave: 0.3% of the insured sum for each day of incapacity after an accident (the “Sick leave” package)." },
+  { icon: Shield, uk: "Пакет «Комплекс»: додатково смерть та інвалідність від хвороби і лікарняні з будь-якої причини (0,1%/день).", en: "The “Complex” package: additionally death and disability from illness and sick leave for any cause (0.1%/day)." },
 ];
 
 const WHO = [
@@ -26,8 +27,11 @@ const WHO = [
 const PRICES = [
   { uk: "Дитина, 10 днів, 50 000 грн", en: "Child, 10 days, UAH 50,000", price: "159" },
   { uk: "Дитина, 1 рік, 50 000 грн", en: "Child, 1 year, UAH 50,000", price: "800" },
-  { uk: "Дорослий, 1 рік, 100 000 грн", en: "Adult, 1 year, UAH 100,000", price: "1 256" },
-  { uk: "Дорослий, 1 рік, 100 000 грн, воєнні ризики", en: "Adult, 1 year, UAH 100,000, war risks", price: "2 824" },
+  { uk: "Дорослий, 1 рік, 100 000 грн, лише смерть та інвалідність 1–2 гр.", en: "Adult, 1 year, UAH 100,000, death and disability 1–2 only", price: "424" },
+  { uk: "Дорослий, 1 рік, 100 000 грн, «Стандарт» (+ 3 гр., травми)", en: "Adult, 1 year, UAH 100,000, “Standard” (+ group 3, injuries)", price: "1 256" },
+  { uk: "Дорослий, 1 рік, 100 000 грн, «Лікарняні»", en: "Adult, 1 year, UAH 100,000, “Sick leave”", price: "1 223" },
+  { uk: "Дорослий, 1 рік, 100 000 грн, «Комплекс»", en: "Adult, 1 year, UAH 100,000, “Complex”", price: "2 658" },
+  { uk: "Дорослий, 1 рік, 100 000 грн, «Стандарт» + воєнні ризики", en: "Adult, 1 year, UAH 100,000, “Standard” + war risks", price: "2 824" },
   { uk: "Футбол (аматор), 1 рік, 100 000 грн", en: "Football (amateur), 1 year, UAH 100,000", price: "3 766" },
 ];
 
@@ -105,7 +109,8 @@ export function AccidentSeoContent() {
                 { icon: Banknote, k: { uk: "Страхова сума", en: "Insured sum" }, v: { uk: "10 000 – 300 000 грн, фіксовані варіанти.", en: "UAH 10,000 – 300,000, fixed options." } },
                 { icon: Globe, k: { uk: "Територія", en: "Territory" }, v: { uk: "Україна або весь світ.", en: "Ukraine or worldwide." } },
                 { icon: Clock, k: { uk: "Час дії захисту", en: "Coverage hours" }, v: { uk: "Цілодобово, лише в години навчання/роботи або лише під час тренувань і змагань.", en: "Around the clock, during study/work hours only, or during training and competitions only." } },
-                { icon: HeartPulse, k: { uk: "Вік застрахованого", en: "Insured age" }, v: { uk: "Від 1 до 75 років.", en: "From 1 to 75 years." } },
+                { icon: HeartPulse, k: { uk: "Вік застрахованого", en: "Insured age" }, v: { uk: "Від 1 до 75 років; до 18 років — дитяча програма.", en: "From 1 to 75 years; under 18 — the child programme." } },
+                { icon: Shield, k: { uk: "Пакети ризиків", en: "Risk packages" }, v: { uk: "«Стандарт» (смерть, інвалідність 1–3 гр., травми), «Лікарняні» (+0,3%/день), «Комплекс» (+ хвороба). Окремі ризики вмикаються в калькуляторі.", en: "“Standard” (death, disability 1–3, injuries), “Sick leave” (+0.3%/day), “Complex” (+ illness). Individual risks are toggled in the calculator." } },
               ].map((row) => (
                 <div key={row.k.uk} className="flex gap-3 rounded-xl bg-white dark:bg-zinc-900 p-4 ring-1 ring-zinc-200/50 dark:ring-zinc-700">
                   <row.icon className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" aria-hidden />
@@ -123,8 +128,8 @@ export function AccidentSeoContent() {
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
               {t({
-                uk: "Ціна залежить від віку, строку, страхової суми, території та фактора ризику (спорт, воєнні ризики, професія). Орієнтовні ціни ІНГО:",
-                en: "The price depends on age, term, insured sum, territory and risk factor (sports, war risks, occupation). Indicative INGO prices:",
+                uk: "Ціна залежить від віку, строку, страхової суми, території, обраних ризиків (пакет «Стандарт», «Лікарняні» чи «Комплекс», інвалідність 3 групи, травми) та факторів ризику — спорт, воєнні ризики, професія. Орієнтовні ціни ІНГО:",
+                en: "The price depends on age, term, insured sum, territory, chosen risks (the “Standard”, “Sick leave” or “Complex” package, disability group 3, injuries) and risk factors — sports, war risks, occupation. Indicative INGO prices:",
               })}
             </p>
             <div className="mt-4 overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-zinc-200/50 dark:ring-zinc-700">

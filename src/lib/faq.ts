@@ -291,12 +291,20 @@ const FAQ_ACCIDENT: FaqItem[] = [
       "Fixed sums from UAH 10,000 to UAH 300,000 are available. The higher the sum, the bigger the payout in an insured event and the higher the premium. For sports or high-risk work it is worth choosing a larger sum.",
   },
   {
+    question: "Які ризики входять у поліс і чи є інвалідність 1–2 групи?",
+    answer:
+      "Так. Базовий набір — смерть від нещасного випадку та інвалідність 1–2 групи. У калькуляторі можна додати інвалідність 3 групи і тілесні ушкодження (травми), обрати пакет «Лікарняні» (виплата 0,3% суми за день непрацездатності) або «Комплекс» (додатково смерть та інвалідність від хвороби). Для дітей до 18 років — дитяча програма: смерть від НВ, встановлення інвалідності дитині, травми.",
+    questionEn: "Which risks are covered, and are disability groups 1–2 included?",
+    answerEn:
+      "Yes. The base set is death from an accident and disability groups 1–2. In the calculator you can add disability group 3 and injuries, or choose the “Sick leave” package (0.3% of the sum per day of incapacity) or “Complex” (additionally death and disability from illness). For children under 18 there is a child programme: death from an accident, child disability, injuries.",
+  },
+  {
     question: "Чи покриваються воєнні ризики, спорт, небезпечна робота?",
     answer:
-      "Так, при розрахунку оберіть відповідний фактор: воєнні ризики, заняття спортом (із видом спорту та рівнем) або професію підвищеного ризику. Від цього залежать умови та ціна.",
+      "Так. При розрахунку оберіть діяльність — заняття спортом (із видом спорту та рівнем) або професію підвищеного ризику — і за потреби додайте воєнні ризики; їх можна поєднувати. Від цього залежать умови та ціна.",
     questionEn: "Are war risks, sports or hazardous work covered?",
     answerEn:
-      "Yes — when calculating, choose the relevant factor: war risks, sports (with the sport and level) or a high-risk profession. The terms and price depend on it.",
+      "Yes. When calculating, choose your activity — sports (with the sport and level) or a high-risk profession — and add war risks if needed; they can be combined. The terms and price depend on it.",
   },
   {
     question: "Коли поліс починає діяти?",

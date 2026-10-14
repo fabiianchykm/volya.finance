@@ -373,6 +373,25 @@ export interface PetsOffer {
 export type AccidentPeriod = "10_days" | "15_days" | "30_days" | "3_month" | "6_month" | "9_month" | "12_month";
 export type AccidentProtection = "24_7" | "study_work_hours" | "sport_hours";
 export type AccidentFactor = "warRisk" | "sport" | "profession";
+// Пакети ризиків ІНГО (оновлення API 14.10.2026): adults — програма B (НВ),
+// sick_leave — A (лікарняні, ТВП 0,3%/день), complex — D (НВ + хвороба),
+// child — C (дитяча, вік 1–17; для дітей інших пакетів немає).
+export type AccidentPackage = "adults" | "sick_leave" | "complex" | "child";
+export type YN = "Y" | "N";
+// ⚠️ У ключах RiskGroup…Аccident у Ukasko КИРИЛИЧНА «А» — так в API, не чіпати.
+export interface AccidentRisks {
+  RiskDeathAccident?: YN;          // смерть від НВ — завжди Y (обовʼязковий)
+  RiskGroupOneАccident?: YN;       // інвалідність 1 гр. від НВ
+  RiskGroupTwoАccident?: YN;       // інвалідність 2 гр. від НВ
+  RiskGroupThreeАccident?: YN;     // інвалідність 3 гр. від НВ (потребує 1–2)
+  RiskInjuriesAccident?: YN;       // тілесні ушкодження (не для complex)
+  RiskDeathIllness?: YN;           // смерть від хвороби (complex)
+  RiskGroupOneIllness?: YN;
+  RiskGroupTwoIllness?: YN;
+  RiskGroupThreeIllness?: YN;
+  RiskDisabledChild?: YN;          // «дитина з інвалідністю» (child)
+  RiskTemporaryDisability?: { TemporaryDisability03P?: YN; TemporaryDisability01P?: YN };
+}
 export interface AccidentParams {
   startDate: string;               // d.m.Y, не раніше завтра
   birthDate: string;               // d.m.Y, вік 1–75
@@ -381,10 +400,13 @@ export interface AccidentParams {
   sum: number;                     // 10000…300000 (фіксований перелік)
   countryId: 1 | 2;                // 1 Україна, 2 весь світ
   activeFactor: AccidentFactor;
+  activeFactors?: AccidentFactor[]; // кілька факторів одночасно (пріоритет над activeFactor)
   warRisk?: boolean;
   sportType?: string;              // код виду спорту з довідника
-  sportCategory?: string;          // код категорії спорту
+  sportCategory?: "amateur" | "professional" | string; // рівень (рядок; старі числові коди теж приймаються)
   profession?: "none" | "builder" | "electrician" | "firefighter" | "guard" | "other";
+  selectedPackage?: AccidentPackage;
+  accidentRisks?: AccidentRisks;
   moduleId?: number | null;
 }
 export interface AccidentOffer {
