@@ -18,6 +18,7 @@ import type {
   AccidentParams,
   AccidentSport,
 } from "@/types/api";
+import { notifyDevError } from "@/lib/telegram";
 
 const isDev = process.env.UKASKO_ENV === "dev";
 
@@ -233,6 +234,15 @@ async function getJson(url: string, token: string): Promise<unknown> {
 export class UkaskoService {
   private token: string | null = null;
 
+  // Відхилений логін (403 UnAuthorised = невірний пароль / заблокований акаунт).
+  // Інцидент 12–14.10.2026: Ukasko змінив пароль, два дні ВСІ калькулятори мовчки
+  // падали, а бот нічого не казав. Тепер: тривога в dev-чат (не частіше ніж раз на
+  // годину) і пауза між спробами логіну, щоб не довбати Ukasko кожним запитом.
+  private authRejectedAt = 0;
+  private authAlertAt = 0;
+  private static readonly AUTH_RETRY_MS = 60_000;
+  private static readonly AUTH_ALERT_MS = 60 * 60_000;
+
   async authenticate(): Promise<string> {
     // trim: секрети, вставлені через CLI, інколи мають хвостовий пробіл/перенос рядка —
     // Ukasko тоді відповідає 403 UnAuthorised, хоча пароль правильний.
@@ -243,7 +253,28 @@ export class UkaskoService {
       throw new Error("Не задані UKASKO_EMAIL / UKASKO_PASSWORD в .env.local");
     }
 
-    const resp = await postForm(`${AUTH_URL}/auth/login`, { email, password }) as { data: AuthResponse } | AuthResponse;
+    const now = Date.now();
+    if (now - this.authRejectedAt < UkaskoService.AUTH_RETRY_MS) {
+      throw new Error("Ukasko відхилив логін (невірний пароль або заблокований акаунт); повтор за хвилину");
+    }
+
+    let resp: { data: AuthResponse } | AuthResponse;
+    try {
+      resp = await postForm(`${AUTH_URL}/auth/login`, { email, password }) as { data: AuthResponse } | AuthResponse;
+    } catch (e) {
+      if (e instanceof HttpError && (e.status === 401 || e.status === 403)) {
+        this.authRejectedAt = now;
+        if (now - this.authAlertAt > UkaskoService.AUTH_ALERT_MS) {
+          this.authAlertAt = now;
+          console.error("[ukasko auth] ЛОГІН ВІДХИЛЕНО — перевірте UKASKO_EMAIL/UKASKO_PASSWORD:", e.message.slice(0, 200));
+          void notifyDevError(
+            "Ukasko ЛОГІН ВІДХИЛЕНО — усі калькулятори не працюють. Перевірте пароль акаунта (секрет ukasko-password) або чи не заблокований акаунт",
+            e,
+          ).catch(() => {});
+        }
+      }
+      throw e;
+    }
 
     const token = (resp as { data: AuthResponse }).data?.token ?? (resp as AuthResponse).token;
 
@@ -252,6 +283,7 @@ export class UkaskoService {
     }
 
     this.token = token;
+    this.authRejectedAt = 0;
     return token;
   }
 
