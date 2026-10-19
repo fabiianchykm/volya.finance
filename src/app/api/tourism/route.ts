@@ -42,6 +42,13 @@ export async function POST(req: NextRequest) {
   if (!params.country.id || !params.days || !params.tourists || !params.birthDates.length || !/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(params.date)) {
     return NextResponse.json({ success: false, error: "Заповніть усі поля" }, { status: 400 });
   }
+  // Початок дії — не раніше завтра (на «сьогодні» СК пропозицій не віддають).
+  {
+    const [d, m, y] = params.date.split(".").map(Number);
+    const start = new Date(y, m - 1, d);
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(0, 0, 0, 0);
+    if (start < tomorrow) return NextResponse.json({ success: false, error: "Дата початку поліса — не раніше завтра." }, { status: 400 });
+  }
 
   // Ключ кешу — нормалізовані параметри (дати народження сортуємо, щоб порядок
   // туристів не плодив різні ключі на однаковий кошик).

@@ -270,7 +270,11 @@ export function TourismFlow() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const today = new Date();
+  // Початок дії — не раніше завтра: на «сьогодні» страхові не віддають
+  // пропозицій (поліс набуває чинності з наступного дня).
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
   const maxStart = new Date();
   maxStart.setFullYear(maxStart.getFullYear() + 1);
 
@@ -280,18 +284,20 @@ export function TourismFlow() {
 
   const startD = parseUaDate(startDate);
   const endD = parseUaDate(endDate);
+  const startTooEarly = !!startD && startD < tomorrow;
   // Мультивіза: days = обраний ліміт (без дати завершення). Звичайний: з діапазону дат.
   const days = multiVisa ? tripDays : (startD && endD ? daysBetween(startD, endD) : 0);
   const birthOk = birthDates.every((b) => parseUaDate(b));
-  const valid = multiVisa
+  const valid = !startTooEarly && (multiVisa
     ? !!startD && days > 0 && birthOk
-    : !!startD && !!endD && days > 0 && birthOk;
+    : !!startD && !!endD && days > 0 && birthOk);
 
   const runCalc = async (zid: string, sUa: string, eUa: string, births: string[], multi: boolean, tDays: number) => {
     const sD = parseUaDate(sUa);
     const eD = parseUaDate(eUa);
     const d = multi ? tDays : (sD && eD ? daysBetween(sD, eD) : 0);
     if (!sD || d <= 0 || !births.every((b) => parseUaDate(b)) || (!multi && !eD)) return;
+    if (sD < tomorrow) { setError(t({ uk: "Дата початку поліса — не раніше завтра.", en: "The policy start date must be tomorrow or later." })); return; }
     setLoading(true);
     setError(null);
     // Одразу переходимо на екран пропозицій із індикатором завантаження (як в ОСЦПВ),
@@ -366,8 +372,11 @@ export function TourismFlow() {
     const tDays = Number(sp.get("tripDays")) || 30;
     const births = (sp.get("births") || "").split(",").filter(Boolean);
     if (!s || births.length === 0) return;
+    const sD = parseUaDate(s);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setZoneId(zid); setStartDate(s); setEndDate(en); setMultiVisa(multi); setTripDays(tDays); setBirthDates(births);
+    // Застаріла дата початку (посилання відкрили пізніше) — лишаємо форму, хай оберуть нову.
+    if (!sD || sD < tomorrow) { window.history.replaceState(null, "", window.location.pathname); return; }
     void runCalc(zid, s, en, births, multi, tDays);
      
   }, []);
@@ -452,12 +461,13 @@ export function TourismFlow() {
                 {multiVisa ? (
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Дата початку", en: "Start date" })}</label>
-                    <DateInput value={startDate} onChange={setStartDate} minDate={today} maxDate={maxStart} />
+                    <DateInput value={startDate} onChange={setStartDate} minDate={tomorrow} maxDate={maxStart} error={startTooEarly ? t({ uk: "Не раніше завтра", en: "Tomorrow or later" }) : undefined} />
                   </div>
                 ) : (
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Дати поїздки", en: "Trip dates" })}{days > 0 && <span className="text-zinc-400 dark:text-zinc-500">· {days} {t({ uk: "дн.", en: "days" })}</span>}</label>
-                    <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={today} maxDate={maxStart} />
+                    <DateRangeInput start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} minDate={tomorrow} maxDate={maxStart} />
+                    {startTooEarly && <p className="mt-1.5 text-xs text-red-500">{t({ uk: "Початок поїздки — не раніше завтра.", en: "The trip must start tomorrow or later." })}</p>}
                   </div>
                 )}
                 {multiVisa && (
