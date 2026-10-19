@@ -29,6 +29,11 @@ export async function POST(req: NextRequest) {
   if (!params.country || !params.periodOption || !params.carType || !/^\d{4}-\d{2}-\d{2}$/.test(params.startDate)) {
     return NextResponse.json({ success: false, error: "Заповніть усі поля" }, { status: 400 });
   }
+  // З 19.10.2026 Ukasko відхиляє калькулятор без держномера (422 «carNumber обовʼязковий»).
+  if (!params.carNumber || params.carNumber.replace(/\s/g, "").length < 6) {
+    return NextResponse.json({ success: false, error: "Вкажіть державний номер авто" }, { status: 400 });
+  }
+  params.carNumber = params.carNumber.toUpperCase().replace(/\s/g, "");
 
   try {
     const offers = await ukaskoService.getGreenCardOffers(params);

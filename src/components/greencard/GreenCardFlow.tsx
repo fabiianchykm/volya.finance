@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, ArrowRight, Car, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Globe, FileText, CreditCard, Download } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, Car, Hash, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Globe, FileText, CreditCard, Download } from "lucide-react";
 import { HeroSteps } from "@/components/sections/HeroSteps";
 import { useI18n } from "@/lib/i18n";
 
@@ -58,13 +58,20 @@ const CAR_TYPES = [
 const selectClass =
   "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
 
+// Держномер: верхній регістр, без пробілів, кирилиця → латиниця (як у ОСЦПВ).
+const CYR_TO_LAT: Record<string, string> = { "А": "A", "В": "B", "С": "C", "Е": "E", "Н": "H", "І": "I", "К": "K", "М": "M", "О": "O", "Р": "P", "Т": "T", "Х": "X" };
+export const normalizePlate = (v: string) => v.toUpperCase().replace(/\s/g, "").split("").map((c) => CYR_TO_LAT[c] ?? c).join("").replace(/[^A-Z0-9]/g, "");
+
 export function GreenCardFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
   useFlowReset(() => setStep("params"));
 
-  // Для ЦІНИ достатньо типу авто; номер/марку/модель збираємо на кроці оформлення.
+  // З 19.10.2026 Ukasko вимагає держномер уже в калькуляторі (422 carNumber
+  // обовʼязковий); марку/модель і далі збираємо на кроці оформлення.
   const [carType, setCarType] = useState("B");
+  const [plate, setPlate] = useState("");
+  const plateOk = plate.length >= 6;
 
   const [territory, setTerritory] = useState("60");
   const [startDate, setStartDate] = useState("");
@@ -100,16 +107,16 @@ export function GreenCardFlow() {
 
   // Розрахунок за явними параметрами (щоб можна було відновити з URL). Несенситивні
   // параметри (тип авто, територія, дати) пишемо в URL — reload одразу дасть пропозиції.
-  const runCalc = async (ct: string, terr: string, sUa: string, eUa: string) => {
+  const runCalc = async (ct: string, terr: string, sUa: string, eUa: string, num: string) => {
     const sD = parseUaDate(sUa);
     const eD = parseUaDate(eUa);
     const per = sD && eD ? periodFromDays(daysBetween(sD, eD)) : null;
-    if (!sD || !per) return;
+    if (!sD || !per || num.length < 6) return;
     setError(null);
     setOffers([]);
     setOffersLoading(true);
     setStep("offers");
-    window.history.replaceState(null, "", `?step=offers&carType=${ct}&territory=${terr}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}`);
+    window.history.replaceState(null, "", `?step=offers&carType=${ct}&territory=${terr}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}&plate=${encodeURIComponent(num)}`);
     trackEvent("calculate_cost", { product: "greencard" });
     trackCalc("greencard", { carType: ct, territory: terr, start: sUa, end: eUa });
     try {
@@ -123,8 +130,7 @@ export function GreenCardFlow() {
           startDate: iso,
           periodOption: per.value,
           carType: ct,
-          // carNumber на калькуляторі не шлемо — ціна ЗК від номера не залежить
-          // (лише тип авто + країна + період). Реальний номер збираємо на оформленні.
+          carNumber: num,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -141,8 +147,8 @@ export function GreenCardFlow() {
 
   const calc = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!startD || !period) return;
-    void runCalc(carType, territory, startDate, endDate);
+    if (!startD || !period || !plateOk) return;
+    void runCalc(carType, territory, startDate, endDate, plate);
   };
 
   // Відновлення з URL при перезавантаженні (крок оформлення не відновлюємо).
@@ -153,10 +159,13 @@ export function GreenCardFlow() {
     const sp = new URLSearchParams(window.location.search);
     const ct = sp.get("carType"); const terr = sp.get("territory");
     const s = sp.get("start"); const en = sp.get("end");
+    const num = normalizePlate(sp.get("plate") ?? "");
     if (sp.get("step") === "offers" && ct && terr && s && en) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCarType(ct); setTerritory(terr); setStartDate(s); setEndDate(en);
-      void runCalc(ct, terr, s, en);
+      setCarType(ct); setTerritory(terr); setStartDate(s); setEndDate(en); setPlate(num);
+      // Без номера (старе посилання) — лишаємо форму, хай допишуть номер.
+      if (num.length >= 6) void runCalc(ct, terr, s, en, num);
+      else window.history.replaceState(null, "", window.location.pathname);
     }
      
   }, []);
@@ -164,8 +173,8 @@ export function GreenCardFlow() {
   const checkoutCtx = (offer: GreenCardOffer): GreenCardContext => ({
     offer, country: Number(territory), periodOption: period?.value ?? 15,
     carType, startDate,
-    // Дані авто (номер/марка/модель) користувач заповнить на кроці оформлення.
-    vehicle: { number: "", vin: "", year: 0, model: "", mark: "", autoCategory: carType, cityId: 1, cityName: "", zone: 1 } as VehicleData,
+    // Номер уже введено в калькуляторі; марку/модель користувач заповнить на кроці оформлення.
+    vehicle: { number: plate, vin: "", year: 0, model: "", mark: "", autoCategory: carType, cityId: 1, cityName: "", zone: 1 } as VehicleData,
   });
 
   // ── Світлий екран: пропозиції / оформлення (як OSAGO OffersSection) ──
@@ -213,14 +222,19 @@ export function GreenCardFlow() {
                   {t({ uk: "страховка для виїзду за кордон", en: "insurance for travel abroad" })}
                 </span>
               </h1>
-              <p className="mx-auto max-w-xl text-base text-zinc-300">{t({ uk: "Оберіть тип авто, напрямок і дати — і побачите ціни страхових.", en: "Choose your vehicle type, destination and dates — and see insurers' prices." })}</p>
+              <p className="mx-auto max-w-xl text-base text-zinc-300">{t({ uk: "Введіть номер авто, оберіть напрямок і дати — і побачите ціни страхових.", en: "Enter your plate, choose the destination and dates — and see insurers' prices." })}</p>
             </div>
 
             {step === "params" && <HeroSteps steps={GC_STEPS.map((s) => ({ icon: s.icon, label: t({ uk: s.label, en: s.en }) }))} />}
 
             {step === "params" && (
               <form onSubmit={calc} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Hash className="h-3.5 w-3.5" /> {t({ uk: "Держномер авто", en: "Licence plate" })}</label>
+                    <input type="text" value={plate} onChange={(e) => setPlate(normalizePlate(e.target.value))} placeholder="AA1234BB" autoComplete="off" spellCheck={false} required minLength={6} maxLength={10}
+                      className={`${selectClass} font-mono tracking-[0.2em] uppercase placeholder:tracking-normal placeholder:font-sans`} />
+                  </div>
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Car className="h-3.5 w-3.5" /> {t({ uk: "Тип авто", en: "Vehicle type" })}</label>
                     <select value={carType} onChange={(e) => setCarType(e.target.value)} className={selectClass}>
@@ -245,7 +259,7 @@ export function GreenCardFlow() {
 
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-                <Button type="submit" variant="primary" size="lg" disabled={!period} className="mt-5 w-full">
+                <Button type="submit" variant="primary" size="lg" disabled={!period || !plateOk} className="mt-5 w-full">
                   <span className="flex items-center gap-2">
                     {t({ uk: "Розрахувати вартість", en: "Calculate cost" })} <ArrowRight className="h-5 w-5" />
                   </span>
