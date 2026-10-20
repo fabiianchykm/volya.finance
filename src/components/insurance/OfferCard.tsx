@@ -206,10 +206,12 @@ function AutolawyerSelect({ lawyers, selectedId, onSelect }: {
 
 // Кастомний дропдаун «Додаткове покриття» (ДЦВ) — той самий дизайн, що й Автоюрист:
 // у списку під сумою покриття є короткий опис. Суми/ціни — з API (offer.listDgo).
-function CoverageSelect({ dgoList, selectedId, onSelect }: {
+function CoverageSelect({ dgoList, selectedId, onSelect, required }: {
   dgoList: DgoOffer[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /** СК оформлює поліс лише разом із ДЦВ — варіант «без покриття» не пропонуємо. */
+  required?: boolean;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -226,6 +228,8 @@ function CoverageSelect({ dgoList, selectedId, onSelect }: {
   const selected = dgoList.find((d) => d.id === selectedId) ?? null;
   const cov = (d: DgoOffer) => `+${Number(d.coverage).toLocaleString("uk-UA")} ₴`;
   const cost = (d: DgoOffer) => `+${formatPrice(Number(d.cost))}`;
+  // ДЦВ надає інша компанія (v2: sameCompany=false) — кажемо яка.
+  const otherCompany = dgoList.find((d) => d.sameCompany === false && d.companyName)?.companyName ?? null;
 
   return (
     <div className="relative w-full" ref={ref}>
@@ -242,16 +246,27 @@ function CoverageSelect({ dgoList, selectedId, onSelect }: {
         )}
       >
         <span className="truncate">
-          {selected ? `${t({ uk: "Покриття", en: "Coverage" })} ${cov(selected)} — ${cost(selected)}` : t({ uk: "Додаткове покриття", en: "Additional coverage" })}
+          {selected ? `${t({ uk: "Покриття", en: "Coverage" })} ${cov(selected)} — ${cost(selected)}` : required ? t({ uk: "Оберіть покриття ДЦВ", en: "Choose DGO coverage" }) : t({ uk: "Додаткове покриття", en: "Additional coverage" })}
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500", open && "rotate-180")} />
       </button>
 
       {open && (
         <div role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
-          <button type="button" onClick={() => { onSelect(null); setOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-zinc-500 transition-colors hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800/60">
-            {t({ uk: "Без додаткового покриття", en: "No extra coverage" })}
-          </button>
+          {required ? (
+            <p className="px-3 py-1.5 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
+              {t({ uk: "Ця страхова оформлює поліс лише разом із ДЦВ", en: "This insurer issues the policy only together with DGO" })}
+            </p>
+          ) : (
+            <button type="button" onClick={() => { onSelect(null); setOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-zinc-500 transition-colors hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800/60">
+              {t({ uk: "Без додаткового покриття", en: "No extra coverage" })}
+            </button>
+          )}
+          {otherCompany && (
+            <p className="px-3 pb-1 text-[11px] leading-snug text-zinc-400 dark:text-zinc-500">
+              {t({ uk: `ДЦВ надає ${formatCompanyName(otherCompany)}`, en: `DGO provided by ${formatCompanyName(otherCompany)}` })}
+            </p>
+          )}
           {dgoList.map((d) => {
             const active = d.id === selectedId;
             return (
@@ -328,7 +343,10 @@ export function OfferCard({
 
   // «Стара» ціна (до знижки) + відсоток — лише для ОСЦПВ (discountEligible).
   const companyMatchName = [offer.company.publicName, (offer.company as { companyName?: string }).companyName].filter(Boolean).join(" ");
-  const ageBasis = showAgeBasis ? osagoAgeBasis(companyMatchName) : null;
+  // v2 віддає підказку прямо в пропозиції (driverAgeHint); фолбек — таблиця за назвою СК.
+  const ageBasis = showAgeBasis
+    ? (offer.driverAgeHint ? { kind: offer.ageSemantic ?? "driver", uk: offer.driverAgeHint, en: offer.driverAgeHint } : osagoAgeBasis(companyMatchName))
+    : null;
   // Slug сторінки страхової (де можна читати/лишати відгуки) — за назвою компанії.
   const insurerSlug = INSURERS.find((i) => i.match.test(companyMatchName))?.slug ?? null;
   // Для адміна підсвічуємо СК, для яких основа розрахунку ще НЕ задана (немає правила
@@ -353,7 +371,7 @@ export function OfferCard({
     { label: "Загальні умови страхового продукту", en: "General insurance product terms", url: offer.company.docZusp },
   ].filter((d): d is { label: string; en: string; url: string } => !!d.url && d.url.trim().length > 0);
   const hasDocs = docs.length > 0;
-  const hasFacts = offer.company.directSettlement === 1 || offer.company.compensationDays > 0;
+  const hasFacts = offer.company.directSettlement === 1 || (offer.company.compensationDays ?? 0) > 0;
 
   // Рейтинг страховика прибрано: API віддавав некоректні/уніфіковані дані.
 
@@ -399,7 +417,7 @@ export function OfferCard({
 
       {/* «Додаткове покриття» — кастомний дропдаун (як Автоюрист), з описом під пунктами. */}
       {dgoList.length > 0 && (
-        <CoverageSelect dgoList={dgoList} selectedId={selectedDgoId} onSelect={onSelectDgo} />
+        <CoverageSelect dgoList={dgoList} selectedId={selectedDgoId} onSelect={onSelectDgo} required={offer.dgoRequired === true} />
       )}
     </div>
   );
@@ -663,7 +681,7 @@ export function OfferCard({
           )}
 
           {/* «Умови виплат» — окремий dropdown (між Базові опції та Документи) */}
-          {offer.company.compensationDays > 0 && (
+          {(offer.company.compensationDays ?? 0) > 0 && (
             <DetailsDropdown label={t({ uk: "Умови виплат", en: "Payout terms" })} open={openDetail === "term"} onToggle={() => toggleDetail("term")}>
               <span className="text-xs text-zinc-700 dark:text-zinc-200">
                 {t({ uk: `Виплата до ${offer.company.compensationDays} днів`, en: `Payout within ${offer.company.compensationDays} days` })}

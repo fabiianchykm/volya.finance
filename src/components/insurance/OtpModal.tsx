@@ -29,7 +29,8 @@ function normalizeOtp(raw: string): string {
 interface OtpModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (otp: string) => void;
+  /** otpDgo — окремий код для підпису договору ДЦВ (ОСЦПВ v2, якщо СК його видала). */
+  onConfirm: (otp: string, otpDgo?: string) => void;
   onResend: () => void;
   email: string;
   loading?: boolean;
@@ -38,20 +39,27 @@ interface OtpModalProps {
    *  Коли min≠max — показуємо одне текстове поле (комірки не годяться для змінної довжини). */
   minLength?: number;
   maxLength?: number;
+  /** ОСЦПВ v2 з ДЦВ: СК видала другий код «для підпису ДЦВ» (у тому ж листі) — показуємо
+   *  окреме поле. length — к-сть символів (null = невідома; код може містити кирилицю). */
+  dgoCode?: { length: number | null } | null;
 }
 
-export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, error, minLength = 6, maxLength = 6 }: OtpModalProps) {
+export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, error, minLength = 6, maxLength = 6, dgoCode }: OtpModalProps) {
   const { t } = useI18n();
   const variable = maxLength !== minLength;
   const boxes = minLength; // к-сть комірок у фіксованому режимі
   const [digits, setDigits] = useState<string[]>(() => Array(boxes).fill(""));
   const [code, setCode] = useState(""); // режим змінної довжини (одне поле)
+  const [dgo, setDgo] = useState("");   // код ДЦВ (без транслітерації — може бути «ДЦВ666851»)
   const refs = useRef<(HTMLInputElement | null)[]>([]);
+  // З кодом ДЦВ авто-сабміт по останній комірці вимкнено — потрібні обидва коди.
+  const needDgo = !!dgoCode;
+  const dgoOk = !needDgo || (dgoCode?.length ? dgo.length === dgoCode.length : dgo.length >= 4);
 
   useEffect(() => {
     if (open) {
       // Reset only when opening to ensure clean state
-      const timer = setTimeout(() => { setDigits(Array(boxes).fill("")); setCode(""); }, 0);
+      const timer = setTimeout(() => { setDigits(Array(boxes).fill("")); setCode(""); setDgo(""); }, 0);
       return () => clearTimeout(timer);
     }
   }, [open, boxes]);
@@ -69,7 +77,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
       next.every((d) => d !== "") &&
       digits.filter((d) => d === "").length === 1 &&
       digits[i] === "";
-    if (justCompleted && !loading) {
+    if (justCompleted && !loading && !needDgo) {
       onConfirm(next.join(""));
     }
   };
@@ -85,11 +93,12 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
     if (text.length === boxes) {
       const next = text.split("");
       setDigits(next);
-      if (!loading) onConfirm(text);
+      if (!loading && !needDgo) onConfirm(text);
     }
   };
 
-  const canSubmit = variable ? code.length >= minLength && code.length <= maxLength : digits.every((d) => d !== "");
+  const canSubmit = (variable ? code.length >= minLength && code.length <= maxLength : digits.every((d) => d !== "")) && dgoOk;
+  const submit = () => onConfirm(variable ? code : digits.join(""), needDgo ? dgo : undefined);
 
   return (
     <Modal open={open} onClose={onClose} title={t({ uk: "Підтвердіть email", en: "Confirm email" })} size="sm" preventOutsideClose>
@@ -114,7 +123,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
               aria-label={t({ uk: "Код підтвердження", en: "Confirmation code" })}
               value={code}
               onChange={(e) => setCode(normalizeOtp(e.target.value).slice(0, maxLength))}
-              onKeyDown={(e) => { if (e.key === "Enter" && canSubmit && !loading) onConfirm(code); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && canSubmit && !loading) submit(); }}
               placeholder={t({ uk: "Введіть код із листа", en: "Enter the code from the email" })}
               className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-center text-xl font-bold tracking-[0.3em] text-zinc-900 outline-none transition-colors focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             />
@@ -145,6 +154,29 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           </div>
         )}
 
+        {needDgo && (
+          <div className="space-y-1.5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-900 dark:bg-indigo-950/30">
+            <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              {t({ uk: "Код для підпису договору ДЦВ (з того самого листа)", en: "Code to sign the DGO contract (from the same email)" })}
+            </label>
+            <input
+              type="text"
+              inputMode="text"
+              aria-label={t({ uk: "Код ДЦВ", en: "DGO code" })}
+              value={dgo}
+              onChange={(e) => setDgo(e.target.value.replace(/\s/g, "").toUpperCase().slice(0, dgoCode?.length ?? 16))}
+              onKeyDown={(e) => { if (e.key === "Enter" && canSubmit && !loading) submit(); }}
+              placeholder={t({ uk: "напр. ДЦВ666851", en: "e.g. ДЦВ666851" })}
+              className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-center text-base font-bold tracking-[0.2em] text-zinc-900 outline-none transition-colors focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            />
+            <p className="text-center text-[11px] text-zinc-400 dark:text-zinc-500">
+              {dgoCode?.length
+                ? t({ uk: `Код ДЦВ складається з ${dgoCode.length} символів`, en: `The DGO code has ${dgoCode.length} characters` })
+                : t({ uk: "Другий рядок у листі: «Код для підпису ДЦВ: …»", en: "Second line in the email: “Code to sign DGO: …”" })}
+            </p>
+          </div>
+        )}
+
         {error && (
           <div className="text-center">
             <p className="text-sm font-medium text-red-500">{error}</p>
@@ -156,7 +188,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           variant="primary"
           size="md"
           loading={loading}
-          onClick={() => onConfirm(variable ? code : digits.join(""))}
+          onClick={submit}
           disabled={!canSubmit || loading}
           className="w-full"
         >

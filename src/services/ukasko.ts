@@ -2,8 +2,6 @@ import type {
   AuthResponse,
   CarInfo,
   City,
-  OffersResponse,
-  CalculatorParams,
   GreenCardOffer,
   GreenCardParams,
   MiniKaskoOffer,
@@ -17,6 +15,12 @@ import type {
   AccidentOffer,
   AccidentParams,
   AccidentSport,
+  OsagoV2CalcParams,
+  OsagoV2Offer,
+  OsagoV2OrderRequest,
+  OsagoV2OrderResult,
+  V2PaymentSystem,
+  V2PaymentStatus,
 } from "@/types/api";
 import { notifyDevError } from "@/lib/telegram";
 
@@ -35,6 +39,10 @@ const AUTH_URL = isDev
   ? "https://devconnect.ukasko.ua/api"
   : "https://uconnect.com.ua/api";
 
+// API v2 (ОСЦПВ/ЗК/туризм v2 + платежі v2) — без сегмента {mode}: режим test/prod
+// визначається налаштуваннями сервера Ukasko. Специфікація:
+// https://devconnect.ukasko.ua/docs/api-v2.json
+const V2_BASE = `${AUTH_URL}/v2`;
 // Міні-КАСКО НЕ має {test/prod}-префікса — ендпоінти живуть просто під /api.
 const MINI_BASE = `${AUTH_URL}/insurance/mini-kasko`;
 // Страхування житла — з префіксом {mode} (як ОСЦПВ): /api/prod|test/insurance/home.
@@ -44,14 +52,6 @@ const HOME_BASE = `${BASE_URL}/insurance/home`;
 // 18 ОРАНТА, 29 ІНГО, 31 АРКС. Використовуються лише для деградованого fallback
 // getGreenCardOffers, коли повний батч калькулятора падає через один модуль.
 const GC_MODULE_IDS = [9, 10, 11, 17, 18, 29, 31];
-
-// Пільгове ОСЦПВ поки не підтримане end-to-end (див. declarePolicy): Ukasko вимагає
-// поле `privilege` + пільговий документ. До впровадження (B) — чесне, дійове
-// повідомлення замість краш-маскування «оберіть іншу СК».
-const PRIVILEGE_ERROR_RE = /undefined index:\s*privilege|DDocumentType|документ.{0,60}пільг|пільг.{0,60}документ/i;
-const PRIVILEGE_UNSUPPORTED_MSG =
-  "Оформлення поліса з пільгою поки що доступне лише через менеджера. " +
-  "Зверніться в підтримку — ми оформимо зі знижкою.";
 
 // Апстрім-збої Ukasko↔СК/МТСБУ (таймаути, недоступність import-policy.mtsbu.ua):
 // declare повертає порожньо з таким текстом у message. Це НЕ «оберіть іншу СК»
@@ -72,6 +72,36 @@ class HttpError extends Error {
     super(message);
     this.name = "HttpError";
   }
+}
+
+// 422 від Ukasko: невалідні параметри (дата, місто без зони, категорія…). Текст уже
+// людський (українською) — роути показують його клієнту як 400, без алерту в dev-чат.
+export class UkaskoValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UkaskoValidationError";
+  }
+}
+
+// Розбирає тіло помилки Ukasko з HttpError.message ("[POST url] 422: {json}").
+// v2 віддає {status:"validation", message, data:{field:[msg]}} або {status:"error", message}.
+function ukaskoErrorBody(e: unknown): { status?: string; message?: string; data?: unknown } | null {
+  if (!(e instanceof HttpError)) return null;
+  const i = e.message.indexOf("{");
+  if (i < 0) return null;
+  try { return JSON.parse(e.message.slice(i)) as { status?: string; message?: string; data?: unknown }; }
+  catch { return null; }
+}
+
+// Людський текст помилки Ukasko: для validation — усі повідомлення полів, інакше message.
+function ukaskoErrorText(e: unknown): string {
+  const b = ukaskoErrorBody(e);
+  if (!b) return e instanceof Error ? e.message : String(e);
+  if (b.data && typeof b.data === "object" && !Array.isArray(b.data)) {
+    const msgs = Object.values(b.data as Record<string, unknown>).flat().map(String).filter(Boolean);
+    if (msgs.length) return msgs.join(" ");
+  }
+  return b.message || (e instanceof Error ? e.message : String(e));
 }
 
 // Протухлий/невалідний токен. Dev віддає 401, а ПРОД (uconnect.com.ua) — 403 з
@@ -146,7 +176,7 @@ async function postForm(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new HttpError(res.status, `[POST ${target}] ${res.status}: ${text.slice(0, 400)}`);
+      throw new HttpError(res.status, `[POST ${target}] ${res.status}: ${text.slice(0, 1500)}`);
     }
 
     return res.json();
@@ -194,7 +224,7 @@ async function postJson(
         const d = (data ?? {}) as { offerId?: unknown; moduleId?: unknown };
         console.error(`[ukasko POST 5xx] ${target} offerId=${d.offerId ?? "-"} moduleId=${d.moduleId ?? "-"} raw:`, text.slice(0, 500));
       }
-      throw new HttpError(res.status, `[POST ${target}] ${res.status}: ${text.slice(0, 400)}`);
+      throw new HttpError(res.status, `[POST ${target}] ${res.status}: ${text.slice(0, 1500)}`);
     }
 
     return res.json();
@@ -223,7 +253,7 @@ async function getJson(url: string, token: string): Promise<unknown> {
     if (res.status >= 500) {
       console.error(`[ukasko GET 5xx] ${url.slice(0, 160)} raw:`, text.slice(0, 400));
     }
-    throw new HttpError(res.status, `[GET ${url}] ${res.status}: ${text.slice(0, 400)}`);
+    throw new HttpError(res.status, `[GET ${url}] ${res.status}: ${text.slice(0, 1500)}`);
   }
 
   return res.json();
@@ -355,23 +385,23 @@ export class UkaskoService {
     return Array.isArray(raw.data) ? raw.data as City[] : [];
   }
 
-  async getOffers(params: CalculatorParams): Promise<OffersResponse> {
-    // Don't encode keys — PHP APIs expect literal car[year]=... not car%5Byear%5D=...
-    const qs = Object.entries(params)
-      .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
-      .join("&");
-    // Калькулятор важкий — Ukasko інколи віддає 504. Ретраїмо тимчасові 5xx.
-    const raw = await withRetry(() =>
-      this.withAuth((token) => getJson(`${BASE_URL}/insurance/calculator/osago?${qs}`, token))
-    ) as Record<string, unknown>;
-
-    // Ukasko wraps responses in { data: ... } consistently (same as getCarByPlate, getCities).
-    // Detect: if raw.data is a non-array object → wrapped; if raw.data is an array → direct OffersResponse.
-    const inner = raw.data;
-    if (inner !== null && inner !== undefined && !Array.isArray(inner) && typeof inner === "object") {
-      return inner as unknown as OffersResponse;
+  // Калькулятор ОСЦПВ v2: пласкі поля (без car[] і zone), усі три дати народження
+  // одразу (кожна СК сама бере ту, за якою рахує — ageSemantic у відповіді), carNumber
+  // обов'язковий. Пропозиції кешуються Ukasko до кінця доби; offerId — для order/create.
+  // Важкий запит (14+ СК) — ретраїмо тимчасові 5xx; 422 (валідація) не ретраїмо.
+  async getOsagoOffersV2(params: OsagoV2CalcParams): Promise<{ offers: OsagoV2Offer[]; errorInfo: unknown[] }> {
+    let raw: { data?: OsagoV2Offer[]; errorInfo?: unknown[] };
+    try {
+      raw = await withRetry(
+        () => this.withAuth((token) => postJson(`${V2_BASE}/insurance/oscpv/calculate`, params, token)),
+        3, 700, true,
+      ) as typeof raw;
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 422) throw new UkaskoValidationError(ukaskoErrorText(e));
+      throw e;
     }
-    return raw as unknown as OffersResponse;
+    const offers = Array.isArray(raw?.data) ? raw.data.filter((o) => o?.offerId && o.company?.id) : [];
+    return { offers, errorInfo: Array.isArray(raw?.errorInfo) ? raw.errorInfo : [] };
   }
 
   // Калькулятор «Зелена карта»: POST з JSON-параметрами → масив пропозицій.
@@ -928,90 +958,60 @@ export class UkaskoService {
     return Array.isArray(raw?.data) ? raw.data : [];
   }
 
-  async createDraft(orderData: Record<string, unknown>): Promise<{ id: string; status: string }> {
-    const data = await this.withAuth((token) => postJson(
-      `${BASE_URL}/insurance/order/osago`,
-      { ...orderData, statusId: 1 },
-      token
-    )) as { data: [{ id: string; status: string }] };
-    return data.data[0];
-  }
-
-  async declarePolicy(
-    orderData: Record<string, unknown>
-  ): Promise<{ id: string; status: string; mtsbuLink?: string }> {
-    const payload = { ...orderData, statusId: 2 } as Record<string, unknown>;
-    let raw: Record<string, unknown>;
+  // Заявлення ОСЦПВ v2: сервер створює заявку, ОДРАЗУ декларує її в СК (номер МТСБУ,
+  // statusId=5) і надсилає OTP на email страхувальника. Договір НЕ укладається — це
+  // робить order/confirm після оплати. 422 — валідація / протухлий офер / відмова СК
+  // (заявка лишається чернеткою, текст СК у message). НЕ ретраїти (дублі декларацій).
+  async createOsagoOrderV2(payload: OsagoV2OrderRequest): Promise<OsagoV2OrderResult> {
+    let raw: { message?: string; data?: OsagoV2OrderResult[] };
     try {
-      raw = await this.withAuth((token) => postJson(
-        `${BASE_URL}/insurance/order/osago`,
-        payload,
-        token
-      )) as Record<string, unknown>;
+      raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/oscpv/order/create`, payload, token)) as typeof raw;
     } catch (e) {
-      // Деякі модулі страхових (напр. ІНТЕР-ПОЛІС) при невалідних даних падають
-      // 500-кою з PHP-помилкою ("Undefined offset", "Server Error") замість чистої
-      // валідації. Показуємо дружнє повідомлення замість технічного сміття.
-      const m = e instanceof Error ? e.message : String(e);
-      // Сирий 5xx-текст модуля СК логується централізовано в postJson (див. нижче),
-      // тож тут лише перетворюємо технічне сміття на дружнє повідомлення.
-      // Пільгове ОСЦПВ поки не підтримане end-to-end: Ukasko вимагає поле `privilege`
-      // + пільговий документ, яких ми ще не шлемо, тож declare падає «Undefined index:
-      // privilege». Не маскуємо під «оберіть іншу СК» (це вводить в оману) — даємо
-      // клієнту дію: оформити з пільгою через менеджера. TODO: прибрати після (B).
-      if (PRIVILEGE_ERROR_RE.test(m)) throw new Error(PRIVILEGE_UNSUPPORTED_MSG);
-      if (/undefined offset|server error|undefined (index|array key)/i.test(m)) {
+      const text = ukaskoErrorText(e);
+      console.error("[ukasko oscpv v2 create] rejected:", e instanceof Error ? e.message.slice(0, 800) : String(e));
+      if (e instanceof HttpError && e.status === 422) {
+        // Текст Ukasko/СК уже людський («Пропозиція застаріла», «Помилка декларування…»).
+        throw new Error(text);
+      }
+      if (UPSTREAM_TIMEOUT_RE.test(text)) throw new Error(UPSTREAM_UNAVAILABLE_MSG);
+      if (e instanceof HttpError && e.status === 500) {
+        // Чорний список СК / блокування акаунта / внутрішня помилка модуля СК.
+        if (/чорн|black|блокуван/i.test(text)) throw new Error("Страхова компанія відхилила заявку. Оберіть, будь ласка, іншу пропозицію або зверніться в підтримку.");
         throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
       }
       throw e;
     }
-
-    // Ukasko може повернути помилку валідації в кількох формах: status:"error",
-    // message з "result":false, або просто текст повідомлення. Розбираємо всі.
-    const status = raw.status as string | undefined;
-    const msg = raw.message as string | undefined;
-
-    // Витягує людський текст помилки з довільної структури Ukasko-відповіді.
-    const extractError = (source: string): string | null => {
-      try {
-        const p = JSON.parse(source) as Record<string, unknown>;
-        const errorsObj = p.errors as Record<string, unknown> | undefined;
-        const fromErrors = errorsObj
-          ? Object.values(errorsObj).flat().map(String).join("; ")
-          : "";
-        const candidate =
-          (p.error as string) || (p.message as string) || (p.msg as string) ||
-          (p.text as string) || fromErrors || "";
-        return candidate.trim() || null;
-      } catch {
-        return null;
-      }
-    };
-
-    if ((msg && msg.includes('"result":false')) || status === "error") {
-      const rawText = msg ?? JSON.stringify(raw);
-      // Логуємо СИРУ відповідь — щоб бачити реальну причину відмови в Cloud Logging.
-      console.error("[ukasko declare] rejected. raw:", rawText.slice(0, 800));
-      if (PRIVILEGE_ERROR_RE.test(rawText)) throw new Error(PRIVILEGE_UNSUPPORTED_MSG);
-      if (/undefined offset|server error/i.test(rawText)) {
-        throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Будь ласка, оберіть іншу пропозицію.");
-      }
-      const clean = extractError(rawText) || (msg && !msg.startsWith("{") ? msg : null);
-      throw new Error(clean || `Страхова відхилила заявку: ${rawText.slice(0, 200)}`);
-    }
-
-    const data = raw as { data: [{ id: string; status: string; mtsbuLink?: string }] };
-    if (!data.data?.[0]) {
-      const rawStr = JSON.stringify(raw);
-      console.error("[ukasko declare] empty data. raw:", rawStr.slice(0, 800));
-      // Пільгове ОСЦПВ: Ukasko вимагає документ пільги в формі, яку ми ще не
-      // підтверджено надсилаємо (osago order не задокументований) → ведемо на менеджера.
-      if (PRIVILEGE_ERROR_RE.test(rawStr)) throw new Error(PRIVILEGE_UNSUPPORTED_MSG);
-      // Таймаут/недоступність МТСБУ чи СК — чесне «тимчасово недоступні», а не «оберіть іншу».
-      if (UPSTREAM_TIMEOUT_RE.test(rawStr)) throw new Error(UPSTREAM_UNAVAILABLE_MSG);
+    const d = raw?.data?.[0];
+    if (!d?.id) {
+      console.error("[ukasko oscpv v2 create] empty data. raw:", JSON.stringify(raw).slice(0, 800));
       throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
     }
-    return data.data[0];
+    return { ...d, message: raw.message };
+  }
+
+  // OTP v2: перевірка коду з листа (+ код ДЦВ, якщо СК видала окремий). 422 = невірний /
+  // прострочений код або не передано otpDgo — повертаємо valid:false з текстом Ukasko.
+  async verifyOsagoOtpV2(orderId: string, otp: string, otpDgo?: string | null): Promise<{ valid: boolean; error?: string }> {
+    try {
+      const raw = await this.withAuth((token) => postJson(
+        `${V2_BASE}/insurance/oscpv/order/verify-otp`,
+        { orderId, otp, ...(otpDgo ? { otpDgo } : {}) },
+        token,
+      )) as { status?: string; data?: { verified?: boolean } };
+      return { valid: raw?.data?.verified === true || raw?.status === "success" };
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 422) return { valid: false, error: ukaskoErrorText(e) };
+      throw e;
+    }
+  }
+
+  // Повторна відправка OTP v2: генерує НОВИЙ основний код (код ДЦВ лишається той самий).
+  async resendOsagoOtpV2(orderId: string): Promise<{ otpSent: boolean; otpLength: number | null; otpDgoRequired: boolean; otpDgoLength: number | null }> {
+    const raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/oscpv/order/resend-otp`, { orderId }, token)) as {
+      data?: { otpSent?: boolean; otpLength?: number | null; otpDgoRequired?: boolean; otpDgoLength?: number | null };
+    };
+    const d = raw?.data ?? {};
+    return { otpSent: d.otpSent === true, otpLength: d.otpLength ?? null, otpDgoRequired: d.otpDgoRequired === true, otpDgoLength: d.otpDgoLength ?? null };
   }
 
   async sendOtp(orderId: string, type: 1 | 2 = 1): Promise<void> {
@@ -1026,6 +1026,57 @@ export class UkaskoService {
     )) as Record<string, unknown>;
     const d = data.data as string | undefined;
     return d === "OK";
+  }
+
+  // ─── Платежі v2 (/v2/orders/{orderId}/…) — для заявок ОСЦПВ v2 ──────────────────
+
+  async getPaymentSystemsV2(orderId: string): Promise<V2PaymentSystem[]> {
+    const raw = await this.withAuth((token) => getJson(`${V2_BASE}/orders/${encodeURIComponent(orderId)}/payment-systems`, token)) as { data?: V2PaymentSystem[] };
+    return Array.isArray(raw?.data) ? raw.data : [];
+  }
+
+  // Створює інвойс і платіж у платіжній системі → посилання на сторінку оплати.
+  // Callback та опитування платіжки — на боці Ukasko; нам достатньо payment-status.
+  // 409 — заявка вже сплачена (повертаємо alreadyPaid, без нового інвойсу).
+  async getInvoiceV2(orderId: string, resultUrl: string): Promise<{ invoiceLink?: string; invoiceId?: string; amount?: number; provider?: string; alreadyPaid?: boolean }> {
+    const systems = (await this.getPaymentSystemsV2(orderId)).filter((p) => p.is_enabled !== false);
+    const system = systems.find((p) => /liqpay/i.test(p.code)) ?? systems[0];
+    if (!system) throw new Error("Для цієї заявки немає доступних платіжних систем. Зверніться до підтримки.");
+    // Комісію еквайрингу платить клієнт (як і в v1-флоу), якщо система це дозволяє.
+    const paidBy = system.available_options?.includes("client") ? "client" : (system.available_options?.[0] ?? "client");
+    try {
+      const raw = await this.withAuth((token) => postJson(
+        `${V2_BASE}/orders/${encodeURIComponent(orderId)}/checkout`,
+        { provider: system.code, paidBy, resultUrl },
+        token,
+      )) as { data?: { invoiceId?: string; invoiceLink?: string; amount?: number; provider?: string } };
+      const d = raw?.data ?? {};
+      if (!d.invoiceLink) {
+        console.error("[ukasko checkout v2] no invoiceLink. raw:", JSON.stringify(raw).slice(0, 500));
+        throw new Error("Платіжна система не повернула посилання на оплату. Спробуйте ще раз.");
+      }
+      return { invoiceLink: d.invoiceLink, invoiceId: d.invoiceId, amount: d.amount, provider: d.provider };
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 409) return { alreadyPaid: true };
+      if (e instanceof HttpError && e.status === 422) throw new Error(ukaskoErrorText(e));
+      throw e;
+    }
+  }
+
+  // Уніфікований статус оплати v2. Для v1-заявок (ЗК/туризм/… старого флоу) — 404 →
+  // null, і викликач падає на legacy get-invoice. Виклик попутно запускає опитування
+  // платіжної системи на боці Ukasko.
+  async paymentStatusV2(orderId: string): Promise<V2PaymentStatus | null> {
+    try {
+      const raw = await this.withAuth((token) => getJson(`${V2_BASE}/orders/${encodeURIComponent(orderId)}/payment-status`, token)) as { data?: V2PaymentStatus };
+      return raw?.data?.status ? raw.data : null;
+    } catch (e) {
+      if (isAuthExpired(e)) throw e;
+      if (!(e instanceof HttpError && e.status === 404)) {
+        console.error("[ukasko payment-status v2] error:", e instanceof Error ? e.message.slice(0, 200) : String(e));
+      }
+      return null;
+    }
   }
 
   async getInvoice(orderId: string, resultUrl: string) {
@@ -1084,6 +1135,14 @@ export class UkaskoService {
     // Перевірено на проді: статус оплати живе в GET /api/orders/{id}/get-invoice
     // (поле statusId). /prod-префікс і /payments/*-варіанти дають 404/405, тож не
     // використовуємо. BASE лишаємо запасним на випадок відмінностей середовищ.
+    // Спершу — уніфікований статус v2 (заявки ОСЦПВ v2 та інших v2-продуктів): paid
+    // означає, що платіжна система підтвердила оплату й можна укладати. Для v1-заявок
+    // віддає 404 → null, і йдемо далі legacy-шляхом (isPaid у get-invoice).
+    const v2 = await this.paymentStatusV2(orderId);
+    if (v2) {
+      console.error(`[ukasko payment-status v2] order=${orderId} product=${product ?? "-"} → ${v2.status} provider=${v2.provider ?? "-"} paidAt=${v2.paidAt ?? "-"}`);
+      if (v2.status === "paid") return { status_id: 2, payed_at: v2.paidAt, orderStatus: 0 };
+    }
     const urls = [
       `${AUTH_URL}/orders/${orderId}/get-invoice`,
       `${BASE_URL}/orders/${orderId}/get-invoice`,
@@ -1146,27 +1205,49 @@ export class UkaskoService {
     }
   }
 
-  async confirmPolicy(orderId: string) {
+  // Укладення ОСЦПВ після оплати. Спершу v2 (order/confirm: ідемпотентний, сам
+  // перевіряє OTP і оплату); якщо Ukasko каже, що заявка не v2 (старий флоу — заявки,
+  // створені до переходу на v2, які ще добирає sweep) — v1 contract/confirm.
+  // ПЛАТІЖНИЙ ШЛАГБАУМ (assertPaid) лишається нашим — не покладаємось лише на Ukasko.
+  async confirmPolicy(orderId: string): Promise<{ contractId: string; status?: string }> {
     await this.assertPaid(orderId, "osago");
-    const data = await this.withAuth((token) => postJson(
-      `${BASE_URL}/insurance/contract/confirm`,
-      { orderId },
-      token
-    )) as { data: [{ contractId: string; status: string }] };
-    return data.data[0];
+    try {
+      const raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/oscpv/order/confirm`, { orderId }, token)) as { data?: [{ contractId: string; status?: string }] };
+      const d = raw?.data?.[0];
+      if (!d?.contractId) throw new Error("Порожня відповідь при укладенні договору. Зверніться до підтримки.");
+      return d;
+    } catch (e) {
+      const text = ukaskoErrorText(e);
+      if (e instanceof HttpError && e.status === 422 && /v2|не є|is not/i.test(text)) {
+        console.error(`[ukasko confirm] order=${orderId} не v2-заявка → v1 contract/confirm`);
+        const data = await this.withAuth((token) => postJson(`${BASE_URL}/insurance/contract/confirm`, { orderId }, token)) as { data: [{ contractId: string; status: string }] };
+        return data.data[0];
+      }
+      console.error(`[ukasko confirm v2] order=${orderId} error:`, e instanceof Error ? e.message.slice(0, 600) : String(e));
+      if (e instanceof HttpError && (e.status === 422 || e.status === 500)) throw new Error(text);
+      throw e;
+    }
   }
 
-  async downloadContract(contractId: string) {
-    // Одразу після оплати Ukasko ще генерує PDF → contract/take віддає 500 «ще не
-    // готовий» або 200 з порожнім contract. Повторюємо з паузою (download ідемпотентний,
-    // retry500), порожній contract = «ще не готово». Далі — чесне повідомлення.
+  // Завантаження поліса: v2 contract/take (PDF + номер МТСБУ + посилання + extraFiles,
+  // зокрема договір ДЦВ — contractDgoFile). Для договорів старого флоу (кабінет, старі
+  // поліси) v2 віддає 404 → v1 contract/take. Одразу після оплати PDF ще генерується
+  // (500 «ще не готовий» / порожній contract) → кілька повторів з паузою.
+  async downloadContract(contractId: string): Promise<{ contract: string; mtsbuLink?: string | null; mtsbuCode?: string | null; extraFiles?: Record<string, string> | null }> {
+    type Take = { data?: { contract?: string | null; mtsbuLink?: string | null; mtsbuCode?: string | null; extraFiles?: Record<string, string> | null } };
     try {
       const data = await withRetry(() => this.withAuth(async (token) => {
-        const r = await postForm(`${BASE_URL}/insurance/contract/take`, { contractId, orderType: "1" }, token) as { data?: { mtsbuLink?: string; contract?: string } };
+        let r: Take;
+        try {
+          r = await postJson(`${V2_BASE}/insurance/oscpv/contract/take`, { contractId }, token) as Take;
+        } catch (e) {
+          if (!(e instanceof HttpError && (e.status === 404 || e.status === 422))) throw e;
+          r = await postForm(`${BASE_URL}/insurance/contract/take`, { contractId, orderType: "1" }, token) as Take;
+        }
         if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий (порожній contract)");
         return r;
-      }), 4, 1500, true) as { data: { mtsbuLink: string; contract: string } };
-      return data.data;
+      }), 4, 1500, true);
+      return { ...data.data, contract: data.data!.contract! };
     } catch {
       throw new Error("Договір ще формується. Ми вже надіслали його на ваш email — спробуйте завантажити тут за 1–2 хвилини.");
     }

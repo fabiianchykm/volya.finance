@@ -163,8 +163,9 @@ export function InsuranceFlow() {
     const missing: string[] = [];
     if (!vehicle.autoCategory) missing.push("autoCategory");
     if (!vehicle.year || vehicle.year < 1900 || vehicle.year > new Date().getFullYear() + 1) missing.push(`year=${vehicle.year}`);
-    if (!vehicle.cityId) missing.push("cityId (registrationPlaceId)");
-    if (vehicle.zone === undefined || vehicle.zone === null || vehicle.zone < 0) missing.push(`zone=${vehicle.zone}`);
+    // Зону з v2 не передаємо — Ukasko виводить її з міста реєстрації (cityId).
+    if (!vehicle.cityId) missing.push("cityId");
+    if (!(vehicle.number || state.plate)) missing.push("carNumber");
     if (!period) missing.push("periodId");
 
     if (missing.length > 0) {
@@ -216,17 +217,18 @@ export function InsuranceFlow() {
       tomorrow.setDate(tomorrow.getDate() + 1);
       const startDate = `${String(tomorrow.getDate()).padStart(2, "0")}.${String(tomorrow.getMonth() + 1).padStart(2, "0")}.${tomorrow.getFullYear()}`;
 
+      // Параметри калькулятора ОСЦПВ v2: місто (зона виводиться сервером), держномер
+      // (обов'язковий), марка/рік (тариф окремих СК) і всі три дати народження разом.
       const paramsObj = {
         autoCategoryType: vehicle.autoCategory,
-        customerType: String(buyer.customerType),
-        registrationPlaceId: String(vehicle.cityId),
-        zone: String(vehicle.zone),
+        cityId: String(vehicle.cityId),
         startDate,
         customerPrivilege: String(buyer.privilegeId),
-        registrationType: "1",
         period_id: String(periodId),
         carYear: String(vehicle.year),
-        carBirthdayAt: buyer.birthDate,
+        carNumber: vehicle.number || state.plate,
+        carBrand: vehicle.mark ?? "",
+        ownerBirthday: buyer.birthDate,
         policyholderBirthday: buyer.policyholderBirthDate ?? "",
         youngestBirthday: buyer.youngestBirthDate ?? "",
       };

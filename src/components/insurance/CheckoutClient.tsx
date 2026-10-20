@@ -18,13 +18,12 @@ import { ProfilePicker } from "./ProfilePicker";
 // Локальні числові коди документів ОСЦПВ → канонічний тип-сутність.
 const OSAGO_DOC_KIND: Record<1 | 3 | 4, DocKind> = { 1: "passport", 3: "idcard", 4: "license" };
 import { useSession } from "next-auth/react";
-import type { InsuranceOffer, Customer } from "@/types/api";
+import type { InsuranceOffer, Customer, OsagoV2OrderRequest, OsagoV2OrderResult } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData, type VehicleDetails } from "@/types/insurance";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
 import { cityShort, cityLong } from "@/lib/utils";
-import { toUkaskoPhone } from "@/lib/phone";
 import { SupportCTA } from "@/components/ui/SupportCTA";
-import { osagoDobForCompany } from "@/lib/osago-age-basis";
+import { formatPrice } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
 // Відображення телефону групами: "671234567" → "67 123 45 67" (зберігаємо цифри).
@@ -65,6 +64,9 @@ export function CheckoutClient() {
   // Data state
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  // Результат заявлення v2: ціна після декларування (може відрізнятись від оферу),
+  // довжина OTP, чи потрібен окремий код ДЦВ, вартість ДЦВ/автоюриста.
+  const [order, setOrder] = useState<OsagoV2OrderResult | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
   // Лід у sales-Telegram шлемо ОДИН раз — щойно клієнт заповнив контакти (до declare),
   // щоб оператор мав телефон навіть якщо клієнт застрягне на перевірці оффера/оплаті.
@@ -74,6 +76,8 @@ export function CheckoutClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [priceNotice, setPriceNotice] = useState<string | null>(null);
+  // Попередження СК при декларуванні: на це авто вже є чинні поліси, які буде розірвано.
+  const [warning, setWarning] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -98,12 +102,13 @@ export function CheckoutClient() {
         setSelectedAutolawyerId(parsed.selectedAutolawyerId || null);
         // Повернення після перезавантаження (пошта/SMS за кодом): відновлюємо крок,
         // дані клієнта й orderId — щоб не проходити все спочатку.
-        const r = readResume<{ step: "vehicle" | "otp" | "payment"; customer: Customer | null; buyer?: BuyerData; vehicle?: VehicleData; orderId: string | null }>("checkout_resume_osago");
+        const r = readResume<{ step: "vehicle" | "otp" | "payment"; customer: Customer | null; buyer?: BuyerData; vehicle?: VehicleData; orderId: string | null; order?: OsagoV2OrderResult | null }>("checkout_resume_osago");
         if (r && (r.step === "vehicle" || r.orderId)) {
           if (r.customer) setCustomer(r.customer);
           if (r.buyer) setBuyer(r.buyer);
           if (r.vehicle) setVehicle(r.vehicle);
           if (r.orderId) setOrderId(r.orderId);
+          if (r.order) setOrder(r.order);
           leadPingedRef.current = true;
           setStep(r.step);
         }
@@ -120,15 +125,15 @@ export function CheckoutClient() {
   useResumeSnapshot(
     "checkout_resume_osago",
     loaded && (step === "vehicle" || ((step === "otp" || step === "payment") && orderId))
-      ? { step, customer, buyer, vehicle, orderId }
+      ? { step, customer, buyer, vehicle, orderId, order }
       : null
   );
 
   // Повідомлення (помилка/зміна ціни) рендеряться нагорі — підкручуємо до них,
   // бо кнопка «Продовжити» внизу довгої форми й інакше результат лишається поза екраном.
   useEffect(() => {
-    if (error || priceNotice) window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [error, priceNotice]);
+    if (error || priceNotice || warning) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [error, priceNotice, warning]);
 
   // Трекінг воронки для Telegram (fire-and-forget). Крок і контекст тримаємо у ref,
   // щоб слухач pagehide читав актуальні значення без переприв'язки листенера.
@@ -189,52 +194,54 @@ export function CheckoutClient() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Перераховуємо ціну обраного оффера перед оформленням під РЕАЛЬНІ дані страхувальника
-  // (дата народження впливає на ціну!). Раніше рахували з buyer.birthDate — дефолтною
-  // 01.01.1990, тож різниця не ловилась і клієнт міг оплатити не ту суму.
+  // Сума до оплати: ОСЦПВ + ДЦВ + автоюрист. Після заявлення — з відповіді Ukasko
+  // (ціна після декларування може відрізнятись від оферу), до того — з оферу.
+  const offerTotal = (o: InsuranceOffer, dgoId: string | null, lawId: string | null) =>
+    o.price +
+    (dgoId ? Number(o.listDgo?.find((d) => d.id === dgoId)?.cost ?? 0) : 0) +
+    (lawId ? (o.listAutolawyer?.find((a) => a.id === lawId)?.price ?? 0) : 0);
+  const orderTotal = order
+    ? order.price + (order.dgo?.price ?? 0) + (order.autolawyer?.price ?? 0)
+    : offerTotal(offer, selectedDgoId, selectedAutolawyerId);
+
+  // Перераховуємо обрану пропозицію перед оформленням під РЕАЛЬНІ дані страхувальника:
+  // v2-калькулятор приймає всі три дати народження разом (кожна СК бере свою) і РНОКПП
+  // (персональний тариф ARX/Інтер-Поліс). Так ціна перед оплатою збігається з тією,
+  // яку СК нарахує при декларуванні. Заодно отримуємо СВІЖИЙ offerId (пропозиція
+  // дійсна до кінця доби; варіанти ДЦВ/автоюриста теж).
   const revalidateOffer = async (): Promise<InsuranceOffer | null> => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const startDate = `${String(tomorrow.getDate()).padStart(2, "0")}.${String(tomorrow.getMonth() + 1).padStart(2, "0")}.${tomorrow.getFullYear()}`;
-
-    // Ця СК рахує ціну за віком конкретної особи (власник/страхувальник/наймолодший —
-    // osago-age-basis). Беремо саме ЇЇ дату, щоб перерахунок збігся з ціною у видачі.
-    // Страхувальник — реальна ДН із форми checkout (фолбек — введена в калькуляторі).
-    const realPolicyholder = customer?.dateBirth ? unixToUaDate(customer.dateBirth) : (buyer.policyholderBirthDate || buyer.birthDate);
-    const dobs = {
-      owner: buyer.birthDate,
-      policyholder: realPolicyholder,
-      youngest: buyer.youngestBirthDate || buyer.birthDate,
-    };
-    const companyName = [offer.companyNamePublic, offer.companyName].filter(Boolean).join(" ");
-    const effectiveDob = osagoDobForCompany(companyName, dobs) || realPolicyholder;
+    const realPolicyholder = customer?.dateBirth ? unixToUaDate(customer.dateBirth) : (buyer.policyholderBirthDate || "");
 
     const paramsObj = {
       autoCategoryType: vehicle.autoCategory,
-      customerType: String(buyer.customerType),
-      registrationPlaceId: String(vehicle.cityId),
-      zone: String(vehicle.zone),
+      cityId: String(vehicle.cityId),
       startDate,
       customerPrivilege: String(buyer.privilegeId),
-      registrationType: "1",
       period_id: String(periodId),
       carYear: String(vehicle.year),
-      carBirthdayAt: effectiveDob,
+      carNumber: vehicle.number,
+      carBrand: vehicle.mark ?? "",
+      ownerBirthday: buyer.birthDate,
+      policyholderBirthday: realPolicyholder,
+      youngestBirthday: buyer.youngestBirthDate || realPolicyholder,
+      identificationCode: customer?.identificationCode ?? "",
+      nocache: "1",
     };
 
-    // Матчимо ЛИШЕ за companyId (стабільний). УВАГА: externalIdTariff — це JSON
-    // коефіцієнтів, що ЗМІНЮЄТЬСЯ з датою народження (K4 = вік) і містить саму ціну,
-    // тож матч по ньому падав при зміні ДН → ціна не оновлювалась. Для ОСЦПВ один
-    // базовий офер на компанію, тож companyId однозначний.
-    const matches = (o: InsuranceOffer) => o.companyId === offer.companyId;
+    // Матчимо за СК (+ тариф, якщо в СК кілька програм). companyId стабільний між
+    // калькуляціями, offerId — ні.
+    const sameCompany = (o: InsuranceOffer) => o.companyId === offer.companyId;
+    const sameTariff = (o: InsuranceOffer) => sameCompany(o) && (o.tariffName ?? "") === (offer.tariffName ?? "");
 
     for (let attempt = 0; attempt < 3; attempt++) {
-      // nocache — щоб отримати СВІЖИЙ offerId (кешований міг протухнути → 422).
       // Обгортаємо у try: мобільний обриває довгий запит («Load failed»/TypeError) —
       // не валимо весь розрахунок, а пробуємо ще раз (пауза між спробами).
       let json: { success?: boolean; data?: { data?: InsuranceOffer[] } };
       try {
-        const res = await fetch(`/api/insurance/offers?${new URLSearchParams({ ...paramsObj, nocache: "1" })}`);
+        const res = await fetch(`/api/insurance/offers?${new URLSearchParams(paramsObj)}`);
         json = await res.json();
       } catch {
         if (attempt < 2) await new Promise((r) => setTimeout(r, 1200));
@@ -242,10 +249,22 @@ export function CheckoutClient() {
       }
       if (!json.success) continue; // тимчасовий збій — пробуємо ще раз
       const list: InsuranceOffer[] = Array.isArray(json.data?.data) ? json.data.data : [];
-      const found = list.find(matches);
+      const found = list.find(sameTariff) ?? list.find(sameCompany);
       if (found) return found;
     }
     return null;
+  };
+
+  // Переносимо вибір ДЦВ/автоюриста на свіжу пропозицію: id варіантів (ULID) щодня
+  // нові, тож матчимо за лімітом покриття та номером програми.
+  const remapExtras = (fresh: InsuranceOffer) => {
+    const curDgo = selectedDgoId ? offer.listDgo?.find((d) => d.id === selectedDgoId) : null;
+    let dgo = curDgo ? fresh.listDgo?.find((d) => Number(d.coverage) === Number(curDgo.coverage)) ?? null : null;
+    // СК оформлює лише з ДЦВ — без вибору беремо найдешевший варіант.
+    if (!dgo && fresh.dgoRequired) dgo = fresh.listDgo?.[0] ?? null;
+    const curLaw = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
+    const law = curLaw ? fresh.listAutolawyer?.find((a) => a.program === curLaw.program) ?? null : null;
+    return { dgoId: dgo?.id ?? null, lawId: law?.id ?? null };
   };
 
   const handleVehicleSubmit = async (details: VehicleDetails) => {
@@ -262,10 +281,9 @@ export function CheckoutClient() {
     setLoading(true);
     setError(null);
     setPriceNotice(null);
+    setWarning(null);
     try {
-      // Обовʼязково беремо СВІЖИЙ offerId: пропозиції ОСЦПВ мають короткий термін
-      // життя, і застарілий offerId Ukasko відхиляє з 422 «offer id не коректне».
-      // Тож НЕ declare-имось зі старим — якщо свіжого нема, просимо повторити.
+      // Свіжа пропозиція під реальні дані (ДН страхувальника, РНОКПП) + свіжий offerId.
       const fresh = await revalidateOffer();
       if (!fresh) {
         setError(t({
@@ -275,118 +293,116 @@ export function CheckoutClient() {
         setLoading(false);
         return;
       }
-      if (fresh.price !== offer.price) {
+      const extras = remapExtras(fresh);
+      const wasTotal = offerTotal(offer, selectedDgoId, selectedAutolawyerId);
+      const nowTotal = offerTotal(fresh, extras.dgoId, extras.lawId);
+      if (nowTotal !== wasTotal) {
         setOffer(fresh);
+        setSelectedDgoId(extras.dgoId);
+        setSelectedAutolawyerId(extras.lawId);
         setPriceNotice(
           t({
             uk:
-              `Страхова компанія перерахувала вартість поліса за вказаною датою народження. ` +
-              `Актуальна ціна: ${fresh.price} грн (у пропозиції — ${offer.price} грн). ` +
-              `Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`,
+              `Страхова компанія перерахувала вартість за вказаними даними страхувальника. ` +
+              `Актуальна сума: ${formatPrice(nowTotal)} (у пропозиції — ${formatPrice(wasTotal)}). ` +
+              `Перевірте суму й натисніть «Продовжити», щоб перейти до підтвердження.`,
             en:
-              `The insurance company recalculated the policy price based on the specified date of birth. ` +
-              `Current price: ${fresh.price} UAH (in the offer — ${offer.price} UAH). ` +
-              `Check the amount and click "Continue" to proceed to payment.`,
+              `The insurer recalculated the price based on the policyholder details. ` +
+              `Current total: ${formatPrice(nowTotal)} (in the offer — ${formatPrice(wasTotal)}). ` +
+              `Check the amount and click "Continue" to proceed.`,
           })
         );
         return;
       }
+      if (fresh.offerId !== offer.offerId || extras.dgoId !== selectedDgoId || extras.lawId !== selectedAutolawyerId) {
+        setOffer(fresh);
+        setSelectedDgoId(extras.dgoId);
+        setSelectedAutolawyerId(extras.lawId);
+      }
 
-      // draft + declare для конкретного (свіжого) оффера. Кожна спроба — свій ключ
-      // ідемпотентності (новий draft), щоб авто-повтор не впирався в дедуплікацію.
-      const draftAndDeclare = async (ord: InsuranceOffer): Promise<string> => {
-        const idemKey = crypto.randomUUID();
-        const payload = buildOrderPayload(
-          mergedVehicle,
-          ord,
-          periodId,
-          selectedDgoId,
-          selectedAutolawyerId,
-          customer,
-          details,
-          buyer.privilegeId
-        );
-        // 5a. Створити чернетку
-        const draftRes = await fetch("/api/insurance/order", {
+      // Заявлення v2: один виклик = заявка + декларація в СК (номер МТСБУ) + OTP на
+      // email. Кожна спроба — свій ключ ідемпотентності, щоб авто-повтор не впирався
+      // в дедуплікацію, а подвійний клік — не створював другу декларацію.
+      const createOrder = async (ord: InsuranceOffer, dgoId: string | null, lawId: string | null): Promise<OsagoV2OrderResult> => {
+        const payload = buildOrderPayloadV2(mergedVehicle, ord, dgoId, lawId, customer, details, buyer);
+        const res = await fetch("/api/insurance/order", {
           method: "POST",
-          headers: { "content-type": "application/json", "idempotency-key": idemKey },
-          body: JSON.stringify({ action: "draft", ...payload }),
+          headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+          body: JSON.stringify({ action: "create", ...payload }),
         });
-        const draftJson = await draftRes.json();
-        if (!draftJson.success) throw new Error(draftJson.error ?? t({ uk: "Помилка створення чернетки", en: "Error creating draft" }));
-        const id = draftJson.data.id;
-        // 5b. Заявити поліс
-        const declareRes = await fetch("/api/insurance/order", {
-          method: "POST",
-          headers: { "content-type": "application/json", "idempotency-key": idemKey },
-          body: JSON.stringify({ action: "declare", ...payload, orderId: id }),
-        });
-        const declareJson = await declareRes.json();
-        if (!declareJson.success) throw new Error(declareJson.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
-        return declareJson.data?.id ?? id;
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
+        return json.data as OsagoV2OrderResult;
       };
 
-      // Транзієнтні збої Ukasko, що зникають після одного повтору зі свіжим оффером:
-      //  • «offer id не коректне» — оффер протух між розрахунком і замовленням;
-      //  • «Порожня відповідь від сервера» — модуль СК флапнув (200 з порожнім data).
-      // Один авто-повтор робить обидва непомітними для клієнта (інакше — «до оплати
-      // не доходить»).
+      // Транзієнтні збої, що зникають після одного повтору зі свіжою пропозицією:
+      // протухлий offerId/варіант ДЦВ, порожня відповідь модуля СК, мережевий обрив.
       const isRetryable = (e: unknown) =>
-        e instanceof TypeError || // мережевий обрив (Load failed / Failed to fetch)
-        /offer\s*id|offerid|не\s*коректн|порожн[яю]\s*відповід|empty|тимчасов[ао]\s*недоступн|недоступн|load failed|fetch failed|network/i.test(e instanceof Error ? e.message : String(e));
+        e instanceof TypeError ||
+        /offer\s*id|offerid|пропозиці\w*\s+(застарі|не\s*знайден|не\s*дійсн)|не\s*коректн|порожн[яю]\s*відповід|empty|тимчасов[ао]\s*недоступн|load failed|fetch failed|network/i.test(e instanceof Error ? e.message : String(e));
 
-      let declaredId: string;
+      let created: OsagoV2OrderResult;
       try {
-        declaredId = await draftAndDeclare(fresh);
+        created = await createOrder(fresh, extras.dgoId, extras.lawId);
       } catch (firstErr) {
         if (!isRetryable(firstErr)) throw firstErr;
         const fresh2 = await revalidateOffer();
         if (!fresh2) throw firstErr;
-        if (fresh2.price !== offer.price) {
+        const extras2 = remapExtras(fresh2);
+        const total2 = offerTotal(fresh2, extras2.dgoId, extras2.lawId);
+        if (total2 !== wasTotal) {
           setOffer(fresh2);
+          setSelectedDgoId(extras2.dgoId);
+          setSelectedAutolawyerId(extras2.lawId);
           setPriceNotice(
             t({
-              uk:
-                `Страхова компанія перерахувала вартість поліса. ` +
-                `Актуальна ціна: ${fresh2.price} грн (у пропозиції — ${offer.price} грн). ` +
-                `Перевірте суму й натисніть «Продовжити», щоб перейти до оплати.`,
-              en:
-                `The insurer recalculated the policy price. ` +
-                `Current price: ${fresh2.price} UAH (in the offer — ${offer.price} UAH). ` +
-                `Check the amount and click "Continue" to proceed to payment.`,
+              uk: `Страхова компанія перерахувала вартість поліса. Актуальна сума: ${formatPrice(total2)} (у пропозиції — ${formatPrice(wasTotal)}). Перевірте суму й натисніть «Продовжити».`,
+              en: `The insurer recalculated the policy price. Current total: ${formatPrice(total2)} (in the offer — ${formatPrice(wasTotal)}). Check the amount and click "Continue".`,
             })
           );
           setLoading(false);
           return;
         }
-        declaredId = await draftAndDeclare(fresh2);
+        created = await createOrder(fresh2, extras2.dgoId, extras2.lawId);
       }
+
+      const total = created.price + (created.dgo?.price ?? 0) + (created.autolawyer?.price ?? 0);
+
+      // СК при декларуванні нарахувала іншу премію (персональний тариф за ІПН, інший
+      // вік, оновлений тариф) — заявка вже несе ціну СК, саме вона піде в рахунок.
+      if (created.priceChanged && created.previousPrice != null) {
+        setPriceNotice(
+          t({
+            uk: `Страхова компанія уточнила вартість при реєстрації поліса: ${formatPrice(created.price)} замість ${formatPrice(created.previousPrice)}. До оплати — ${formatPrice(total)}.`,
+            en: `The insurer adjusted the price when registering the policy: ${formatPrice(created.price)} instead of ${formatPrice(created.previousPrice)}. Amount due — ${formatPrice(total)}.`,
+          })
+        );
+      }
+      if (created.warningCancelMessage) setWarning(created.warningCancelMessage);
 
       // Контекст фіналізації — щоб /payment-success уклав поліс і зберіг його в
       // кабінет навіть якщо клієнта редіректнуло з модалки оплати.
       registerPendingOrder({
-        orderId: declaredId, product: "osago",
+        orderId: created.id, product: "osago",
         meta: {
           email: customer?.email, phone: customer?.phone,
           customerName: [customer?.surname, customer?.name, customer?.patronymic].filter(Boolean).join(" "),
-          company: offer?.companyNamePublic || offer?.companyName,
-          price: offer?.price,
+          company: fresh.companyNamePublic || fresh.companyName,
+          price: total,
           vehicle: { mark: mergedVehicle.mark, model: mergedVehicle.model, year: mergedVehicle.year, plate: mergedVehicle.number },
-          startDate: offer?.startDate, endDate: offer?.endDate,
+          startDate: fresh.startDate, endDate: fresh.endDate,
           productLabel: "Автоцивілка",
         },
       });
 
-      // Надіслати OTP на email
-      await fetch("/api/insurance/otp", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "send", orderId: declaredId }),
-      });
-
-      // Лід у sales-Telegram уже надіслано в handleCustomerSubmit (з телефоном, раніше).
-      setOrderId(declaredId);
+      // OTP уже надіслано на email у момент заявлення (otpSent). Якщо ні — модалка
+      // одразу пропонує «Надіслати повторно».
+      setOrder(created);
+      setOrderId(created.id);
       setStep("otp");
+      if (!created.otpSent) {
+        setError(t({ uk: "Код підтвердження не вдалося надіслати. Натисніть «Надіслати повторно».", en: "The confirmation code could not be sent. Click \"Resend\"." }));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
@@ -394,7 +410,7 @@ export function CheckoutClient() {
     }
   };
 
-  const handleOtpConfirm = async (otp: string) => {
+  const handleOtpConfirm = async (otp: string, otpDgo?: string) => {
     if (!orderId) return;
     setLoading(true);
     setError(null);
@@ -402,11 +418,15 @@ export function CheckoutClient() {
       const res = await fetch("/api/insurance/otp", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "check", orderId, otp }),
+        body: JSON.stringify({ action: "check", orderId, otp, otpDgo: otpDgo || undefined, v2: true }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-      if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
+      if (!json.valid) {
+        // Ukasko пояснює, що саме не так (прострочений, не збігається код ДЦВ…).
+        const reason = typeof json.reason === "string" && json.reason.trim() ? json.reason.trim() : "";
+        throw new Error(reason || t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
+      }
 
       setStep("payment");
 
@@ -438,7 +458,7 @@ export function CheckoutClient() {
       trackEvent("begin_checkout", {
         product: "osago",
         currency: "UAH",
-        value: offer.price,
+        value: orderTotal,
         company: offer.companyNamePublic || offer.companyName,
       });
 
@@ -451,7 +471,7 @@ export function CheckoutClient() {
           step: "payment",
           context: {
             company: offer.companyNamePublic || offer.companyName,
-            price: offer.price,
+            price: orderTotal,
             car: [vehicle.mark, vehicle.model].filter(Boolean).join(" "),
             plate: vehicle.number,
             phone: customer?.phone,
@@ -474,7 +494,7 @@ export function CheckoutClient() {
     trackEvent("purchase", {
       product: "osago",
       currency: "UAH",
-      value: offer?.price,
+      value: orderTotal,
       company: offer?.companyNamePublic || offer?.companyName,
       transaction_id: cId,
     });
@@ -496,9 +516,10 @@ export function CheckoutClient() {
           orderId,
           company: offer.companyNamePublic || offer.companyName,
           vehicle: { mark: vehicle.mark, model: vehicle.model, year: vehicle.year, plate: vehicle.number },
-          price: offer.price,
+          price: orderTotal,
           startDate: offer.startDate,
           endDate: offer.endDate,
+          product: "osago",
         }),
       }).catch(() => {});
     }
@@ -531,6 +552,11 @@ export function CheckoutClient() {
       {priceNotice && step !== "otp" && (
         <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
           <span className="font-semibold">{t({ uk: "Увага: ", en: "Attention: " })}</span>{priceNotice}
+        </div>
+      )}
+      {warning && (
+        <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
+          <span className="font-semibold">{t({ uk: "Попередження страхової: ", en: "Insurer warning: " })}</span>{warning}
         </div>
       )}
       {error && step !== "otp" && (
@@ -573,15 +599,31 @@ export function CheckoutClient() {
         onClose={() => setStep("vehicle")}
         onConfirm={handleOtpConfirm}
         onResend={async () => {
-          if (orderId) await fetch("/api/insurance/otp", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ action: "send", orderId }),
-          });
+          if (!orderId) return;
+          setError(null);
+          try {
+            const res = await fetch("/api/insurance/otp", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ action: "send", orderId, v2: true }),
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error);
+            // Новий основний код може мати іншу довжину; код ДЦВ лишається той самий.
+            const d = json.data as { otpLength?: number | null; otpDgoRequired?: boolean; otpDgoLength?: number | null } | undefined;
+            if (d) setOrder((o) => o ? { ...o, otpSent: true, otpLength: d.otpLength ?? o.otpLength, dgo: o.dgo ? { ...o.dgo, otpRequired: d.otpDgoRequired ?? o.dgo.otpRequired, otpLength: d.otpDgoLength ?? o.dgo.otpLength } : o.dgo } : o);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : t({ uk: "Не вдалося надіслати код", en: "Failed to resend the code" }));
+          }
         }}
         email={customer?.email ?? ""}
         loading={loading}
         error={error}
+        // Довжина коду з відповіді заявлення (окремі СК видають власний код, напр. 8
+        // символів); невідома → одне поле на 4–10 символів.
+        minLength={order?.otpLength ?? 4}
+        maxLength={order?.otpLength ?? 10}
+        dgoCode={order?.dgo?.otpRequired ? { length: order.dgo.otpLength ?? null } : null}
       />
 
       {orderId && (
@@ -590,15 +632,7 @@ export function CheckoutClient() {
           open={step === "payment"}
           onClose={() => setStep("vehicle")}
           orderId={orderId}
-          amount={
-            offer.price +
-            (selectedDgoId
-              ? Number(offer.listDgo?.find((d) => d.id === selectedDgoId)?.cost ?? 0)
-              : 0) +
-            (selectedAutolawyerId
-              ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId)?.price ?? 0
-              : 0)
-          }
+          amount={orderTotal}
           onPaid={handlePaid}
         />
       )}
@@ -621,26 +655,18 @@ export function CheckoutClient() {
 
 interface CityOption { id: number; name_ua: string; name_full_name_ua: string; zone: number; }
 
-// Типи пільгових документів — ID з ОФІЦІЙНОГО довідника документів Ukasko (Rest API
-// v1.7): 5 ЧАЕС, 6 інвалід, 7 пенсійне, 8 е-пенсійне, 9 УБД/ветеран.
-const PRIVILEGE_DOC_TYPES: { id: number; label: string }[] = [
-  { id: 5, label: "Посвідчення постраждалого від ЧАЕС" },
-  { id: 6, label: "Посвідчення інваліда" },
-  { id: 7, label: "Пенсійне посвідчення" },
-  { id: 8, label: "Е-посвідчення пенсіонера" },
-  { id: 9, label: "Посвідчення УБД / ветерана" },
-];
-// Категорія пільги (довідник пільговиків Ukasko, id 1–10) → канонічний тип документа.
-const PRIVILEGE_DEFAULT_DOC: Record<number, number> = {
-  2: 7,  // Пенсіонер → Пенсійне посвідчення
-  3: 9,  // Учасник війни → посвідчення УБД/ветерана
-  4: 6,  // Інвалід II групи → посвідчення інваліда
-  5: 5,  // Постраждалий від ЧАЕС → посвідчення ЧАЕС
-  6: 8,  // Пенсіонер (е-посвідчення) → е-посвідчення
-  7: 9,  // Учасник Революції Гідності → посвідчення УБД/ветерана
-  8: 6,  // Інвалід I групи → посвідчення інваліда
-  9: 6,  // Інвалід внаслідок війни → посвідчення інваліда
-  10: 9, // Учасник бойових дій (УБД) → посвідчення УБД/ветерана
+// Назва посвідчення для підказки у формі пільговика (v2: тип документа = категорія
+// пільги з калькулятора, окремо його не обирають).
+const PRIVILEGE_DOC_LABEL: Record<number, string> = {
+  2: "Пенсійне посвідчення",
+  3: "Посвідчення учасника війни",
+  4: "Посвідчення особи з інвалідністю II групи",
+  5: "Посвідчення постраждалого від ЧАЕС",
+  6: "Е-посвідчення пенсіонера",
+  7: "Посвідчення учасника Революції Гідності",
+  8: "Посвідчення особи з інвалідністю I групи",
+  9: "Посвідчення особи з інвалідністю внаслідок війни",
+  10: "Посвідчення учасника бойових дій (УБД)",
 };
 
 function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBirth = "", initialYoungestBirth = "" }: {
@@ -668,13 +694,10 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
     docIssuedBy: "",
     docDate: "",
     // Пільговий документ (лише коли hasPrivilege).
-    privType: PRIVILEGE_DEFAULT_DOC[privilegeId] ?? 7,
     privSerial: "",
     privNumber: "",
     privIssuedBy: "",
     privDate: "",
-    privEndDate: "",
-    privIndefinite: true, // більшість пільгових посвідчень безстрокові
   });
   const [privError, setPrivError] = useState(false);
   // ДН наймолодшого водія — окремо від профілю (у профіль не входить), підтягнута з калькулятора.
@@ -865,30 +888,19 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) { setEmailError(true); return; }
     setEmailError(false);
 
-    // Пільговий документ — обовʼязковий, коли обрано пільгу (Ukasko: customer.privilege).
+    // Пільговий документ — обовʼязковий, коли обрано пільгу (v2: insurer.privilegeDocument,
+    // type = категорія пільги з калькулятора).
     let privilege: Customer["privilege"];
     if (hasPrivilege) {
       const pIssue = parseUaDate(form.privDate);
       if (!form.privNumber.trim() || !pIssue) { setPrivError(true); return; }
-      const pIssueTs = Math.floor(pIssue.getTime() / 1000);
-      let pEndTs: number;
-      if (form.privIndefinite) {
-        // Безстрокове посвідчення — Ukasko вимагає непорожню дату закінчення: +100 років.
-        const d = new Date(pIssue); d.setFullYear(d.getFullYear() + 100);
-        pEndTs = Math.floor(d.getTime() / 1000);
-      } else {
-        const pEnd = parseUaDate(form.privEndDate);
-        if (!pEnd) { setPrivError(true); return; }
-        pEndTs = Math.floor(pEnd.getTime() / 1000);
-      }
       setPrivError(false);
       privilege = {
-        type: form.privType,
+        type: privilegeId,
         serial: form.privSerial.trim(),
         number: form.privNumber.trim(),
         issuedBy: form.privIssuedBy.trim(),
-        dateOfIssue: pIssueTs,
-        endDateOfIssue: pEndTs,
+        dateOfIssue: Math.floor(pIssue.getTime() / 1000),
       };
     }
 
@@ -1068,21 +1080,9 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
               {t({ uk: "Пільговий документ", en: "Benefit document" })}
             </p>
             <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-              {t({ uk: "Для поліса з пільгою вкажіть підтверджувальний документ (посвідчення).", en: "For a discounted policy, provide the supporting benefit document (certificate)." })}
+              {t({ uk: `Для поліса з пільгою вкажіть підтверджувальний документ: ${PRIVILEGE_DOC_LABEL[privilegeId] ?? "посвідчення"}.`, en: "For a discounted policy, provide the supporting benefit document (certificate)." })}
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">{t({ uk: "Тип документа", en: "Document type" })}</label>
-                <select
-                  value={form.privType}
-                  onChange={(e) => setForm((f) => ({ ...f, privType: Number(e.target.value) }))}
-                  className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                >
-                  {PRIVILEGE_DOC_TYPES.map((d) => (
-                    <option key={d.id} value={d.id}>{d.label}</option>
-                  ))}
-                </select>
-              </div>
               <Input
                 label={t({ uk: "Серія", en: "Series" })}
                 value={form.privSerial}
@@ -1105,24 +1105,7 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
                 onChange={(v) => { setForm((f) => ({ ...f, privDate: v })); if (privError) setPrivError(false); }}
                 required
               />
-              {!form.privIndefinite && (
-                <DateInput
-                  label={t({ uk: "Дійсний до", en: "Valid until" })}
-                  value={form.privEndDate}
-                  onChange={(v) => setForm((f) => ({ ...f, privEndDate: v }))}
-                  required
-                />
-              )}
             </div>
-            <label className="mt-3 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-              <input
-                type="checkbox"
-                checked={form.privIndefinite}
-                onChange={(e) => setForm((f) => ({ ...f, privIndefinite: e.target.checked }))}
-                className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              {t({ uk: "Безстроковий (без дати закінчення)", en: "Indefinite (no expiry date)" })}
-            </label>
             {privError && (
               <p className="mt-2 text-xs font-medium text-red-500">
                 {t({ uk: "Заповніть номер і дату видачі пільгового документа", en: "Fill in the benefit document number and date of issue" })}
@@ -1380,106 +1363,82 @@ function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> 
   );
 }
 
-function buildOrderPayload(
-  vehicle: VehicleData, 
-  offer: InsuranceOffer, 
-  periodId: number, 
-  selectedDgoId: string | null, 
-  selectedAutolawyerId: string | null, 
+// Unix-секунди → "DD.MM.YYYY" для полів v2 (dateBirth, dateOfIssue).
+const uaDate = (sec: number | null | undefined): string | undefined => (sec ? unixToUaDate(sec) : undefined);
+
+// Заявка ОСЦПВ v2: лише страхувальник + авто + обрані варіанти. Тариф, ціну, СК,
+// категорію, зону й пільгу Ukasko бере зі збереженого офера за offerId.
+function buildOrderPayloadV2(
+  vehicle: VehicleData,
+  offer: InsuranceOffer,
+  selectedDgoId: string | null,
+  selectedAutolawyerId: string | null,
   customer: Customer,
   details: VehicleDetails,
-  privilegeId: number
-) {
+  buyer: BuyerData,
+): OsagoV2OrderRequest {
   const v = vehicle;
-  const nowTs = Math.floor(Date.now() / 1000);
-  const startDate = nowTs + 86400;
-  // Кінець дії поліса залежить від period_id: 15/21 — це дні, 1–12 — місяці.
-  // Раніше тут було жорстко +365 днів, тож для нерічних періодів дата розходилась.
-  const finishAt = periodId === 15 || periodId === 21
-    ? startDate + periodId * 86400
-    : (() => {
-        const d = new Date(startDate * 1000);
-        d.setMonth(d.getMonth() + periodId);
-        return Math.floor(d.getTime() / 1000);
-      })();
-
-  const selectedDgo = selectedDgoId
-    ? offer.listDgo?.find((d) => d.id === selectedDgoId)
-    : null;
-
-  const selectedAutolawyer = selectedAutolawyerId
-    ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId)
-    : null;
-
   const isElectric = v.autoCategory === "B5";
+  const doc = customer.documentation;
+  const docType = (doc.type === 1 || doc.type === 2 || doc.type === 3 || doc.type === 4 ? doc.type : 3) as 1 | 2 | 3 | 4;
+  const capacity = Number(details.capacity) || v.capacity || undefined;
 
   return {
-    productType: "osago",
-    dateFromMax: offer.dateFromMax,
-    franchise: 0,
-    moduleId: false,
-    companyId: offer.companyId,
-    isTaxi: 0,
-    autoCategoryType: v.autoCategory,
-    registrationPlaceId: v.cityId,
-    customerPrivilege: privilegeId,
-    isEuroCar: 0,
-    otkDate: null,
-    endDate: null,
-    startDate,
-    finishAt,
-    period_id: periodId,
     offerId: offer.offerId,
-    price: offer.price,
-    registrationType: 1,
-    cityRegistration: {
-      id: v.cityId,
-      zone: v.zone,
-      name_ua: v.cityName?.replace(/,?\s*Україна$/i, "").trim() ?? "",
-      name_full_name_ua: v.cityName ?? "",
+    dgoId: selectedDgoId,
+    autolawyerId: selectedAutolawyerId,
+    insurer: {
+      name: customer.name,
+      surname: customer.surname ?? "",
+      patronymic: customer.patronymic || null,
+      dateBirth: uaDate(customer.dateBirth) ?? "",
+      identificationCode: customer.identificationCode || null,
+      // ID-картка: замість серії — «Запис №» (УНЗР), який форма тримає в полі serial.
+      ...(docType === 3 ? { unzr: doc.serial } : {}),
+      phone: customer.phone,
+      email: customer.email,
+      cityId: customer.address.cityId,
+      street: customer.address.street,
+      house: customer.address.house,
+      isVehicleOwner: true,
+      document: {
+        type: docType,
+        ...(docType !== 3 ? { serial: doc.serial } : {}),
+        number: doc.number,
+        dateOfIssue: uaDate(doc.dateOfIssue) ?? "",
+        endDateOfIssue: uaDate(doc.endDateOfIssue) ?? null,
+        issuedBy: doc.issuedBy || null,
+      },
+      ...(customer.privilege
+        ? {
+            privilegeDocument: {
+              type: customer.privilege.type,
+              serial: customer.privilege.serial || null,
+              number: customer.privilege.number,
+              dateOfIssue: uaDate(customer.privilege.dateOfIssue) ?? "",
+              issuedBy: customer.privilege.issuedBy || null,
+            },
+          }
+        : {}),
     },
-    // Телефон у форматі, який вимагають модулі СК Ukasko: "+380 XX-XXX-XX-XX".
-    // Суцільний "+380XXXXXXXXX" частина СК відхиляла (declare → порожня відповідь,
-    // PhoneNumber format). Решта полів customer — без змін.
-    customer: { ...customer, phone: toUkaskoPhone(customer.phone) },
-    car: {
-      vin: v.vin || "0",
-      year: v.year,
+    vehicle: {
       brand: v.mark,
       model: v.model,
       number: v.number,
-      withoutVin: v.vin ? 0 : 1,
-      kilometers: details.kilometers || "0",
-      odometr: details.odometr || "0",
-      birthdayAt: details.birthdayAt || "01.01.1990",
-      additional_parameters: {
-        capacity: isElectric ? null : (Number(details.capacity) || v.capacity || 1600),
-        kvt: isElectric ? (Number(details.capacity) || null) : null,
-        ownWeight: Number(details.ownWeight) || v.ownWeight || 1000,
-        totalWeight: Number(details.totalWeight) || v.totalWeight || 1500,
-        numberOfSeats: Number(details.numberOfSeats) || v.numberOfSeats || 5,
-      },
+      vin: v.vin || null,
+      withoutVin: !v.vin,
+      year: v.year,
+      cityId: v.cityId ?? null,
+      // Ті самі дати, що й у калькуляції — інакше СК нарахує іншу премію (priceChanged).
+      ownerBirthDate: buyer.birthDate || null,
+      driverBirthDate: details.birthdayAt || buyer.youngestBirthDate || null,
+      kilometers: Number(details.kilometers) || 0,
+      engineSize: isElectric ? null : (capacity ?? null),
+      kvt: isElectric ? (capacity ?? null) : null,
+      ownWeight: Number(details.ownWeight) || v.ownWeight || null,
+      totalWeight: Number(details.totalWeight) || v.totalWeight || null,
+      nSeating: Number(details.numberOfSeats) || v.numberOfSeats || null,
     },
-    ...(selectedDgo
-      ? {
-          dgo: {
-            id: selectedDgo.id,
-            compensation: String(selectedDgo.coverage),
-            company_id: selectedDgo.company_id,
-            price: selectedDgo.cost,
-          },
-        }
-      : {}),
-    ...(selectedAutolawyer
-      ? {
-          autolawyer: {
-            id: selectedAutolawyer.id,
-            program: selectedAutolawyer.program,
-            price: selectedAutolawyer.price,
-            zone: v.zone,
-            auto_category_type: v.autoCategory,
-          },
-        }
-      : {}),
+    isSendPhoneMessage: false,
   };
 }

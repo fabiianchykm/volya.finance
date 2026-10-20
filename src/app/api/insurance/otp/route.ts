@@ -5,6 +5,9 @@ import { rateLimit, maybeCleanup } from "@/lib/rate-limit";
 import { assertSameOrigin } from "@/lib/api-guard";
 import { notifyDevError } from "@/lib/telegram";
 
+// Спільний OTP-роут. Два бекенди Ukasko:
+//  • v2 (body.v2=true — ОСЦПВ v2): order/resend-otp + order/verify-otp (otp + otpDgo);
+//  • v1 (решта продуктів: ЗК, туризм, житло, тварини, НВ): orders/send-otp + check-otp.
 // Ліміти підібрані під реальний UX: на оформлення поліса вистачає
 // кількох SMS і кількох спроб введення коду.
 const SEND_LIMIT = 3;          // не більше 3 SMS з одного IP
@@ -32,10 +35,11 @@ async function handlePost(req: NextRequest) {
 
     maybeCleanup();
 
-    const { action, orderId, otp } = await req.json();
-    ctx = `${action ?? "?"} order=${orderId ?? "?"}`;
+    const { action, orderId, otp, otpDgo, v2 } = await req.json();
+    const isV2 = v2 === true;
+    ctx = `${action ?? "?"}${isV2 ? " v2" : ""} order=${orderId ?? "?"}`;
 
-    if (!orderId) {
+    if (!orderId || typeof orderId !== "string") {
       return NextResponse.json({ success: false, error: "Missing orderId" }, { status: 400 });
     }
 
@@ -52,6 +56,11 @@ async function handlePost(req: NextRequest) {
           { status: 429, headers: { "Retry-After": String(retryAfter) } }
         );
       }
+      if (isV2) {
+        const data = await ukaskoService.resendOsagoOtpV2(orderId);
+        console.error(`[otp v2 resend] order=${orderId} sent=${data.otpSent} len=${data.otpLength ?? "-"} dgo=${data.otpDgoRequired}`);
+        return NextResponse.json({ success: true, data });
+      }
       await ukaskoService.sendOtp(orderId, 1);
       return NextResponse.json({ success: true });
     }
@@ -63,6 +72,14 @@ async function handlePost(req: NextRequest) {
           { success: false, error: "Забагато спроб введення коду. Спробуйте пізніше." },
           { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
         );
+      }
+      if (typeof otp !== "string" || !otp.trim()) {
+        return NextResponse.json({ success: false, error: "Введіть код підтвердження." }, { status: 400 });
+      }
+      if (isV2) {
+        const r = await ukaskoService.verifyOsagoOtpV2(orderId, otp.trim(), typeof otpDgo === "string" && otpDgo.trim() ? otpDgo.trim() : null);
+        console.error(`[otp v2 check] order=${orderId} valid=${r.valid}${r.error ? ` reason=${r.error.slice(0, 160)}` : ""}`);
+        return NextResponse.json({ success: true, valid: r.valid, ...(r.error ? { reason: r.error } : {}) });
       }
       const ok = await ukaskoService.checkOtp(orderId, otp);
       // Результат перевірки — у лог: інакше зрив на кроці OTP не відрізнити від
@@ -78,16 +95,15 @@ async function handlePost(req: NextRequest) {
     console.error(`[otp] ${ctx} error:`, msg.slice(0, 600));
     await notifyDevError(`otp ${ctx}`, e);
     // НІКОЛИ не показуємо клієнту сирий дамп Ukasko (URL + PHP/JSON). Розрізняємо:
-    //  • «невірний код» при перевірці — актуально клієнту, кажемо перевірити SMS;
-    //  • будь-який збій НАДСИЛАННЯ коду (вкл. відомий баг телеметрії Ukasko й
-    //    500 «Сталася помилка перевірки коду ОТП», data:1000) — це збій СК, не клієнта,
-    //    тож просимо повторити за хвилину або зателефонувати нам.
+    //  • «невірний код» при перевірці — актуально клієнту, кажемо перевірити лист;
+    //  • будь-який збій НАДСИЛАННЯ коду (вкл. v2 422 «код вже підтверджено / лист не
+    //    надіслано») — це збій СК, не клієнта, тож просимо повторити або написати нам.
     const isSend = ctx.startsWith("send");
-    const wrongCode = !isSend && /не\s*коректн/i.test(msg);
+    const wrongCode = !isSend && /не\s*коректн|невірн|прострочен/i.test(msg);
     const clientMsg = wrongCode
-      ? "Невірний код підтвердження. Перевірте SMS і спробуйте ще раз."
+      ? "Невірний код підтвердження. Перевірте лист і спробуйте ще раз."
       : isSend
-        ? "Ця страхова зараз не може надіслати код підтвердження (збій на її боці). Оберіть, будь ласка, іншу пропозицію або зверніться в підтримку — допоможемо оформити."
+        ? "Не вдалося надіслати код підтвердження (збій на боці страхової). Спробуйте ще раз за хвилину або зверніться в підтримку — допоможемо оформити."
         : "Не вдалося підтвердити код. Спробуйте ще раз за хвилину.";
     return NextResponse.json({ success: false, error: clientMsg }, { status: 500 });
   }

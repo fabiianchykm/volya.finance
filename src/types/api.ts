@@ -43,106 +43,74 @@ export interface CarInfo {
   };
 }
 
+// Варіант ДЦВ (добровільна цивілка) до пропозиції ОСЦПВ. З API v2 — спрощений:
+// id варіанта (dgoId для заявлення), ліміт покриття та ціна (НЕ входить у price оферу).
 export interface DgoOffer {
-  data: Record<string, unknown>;
-  cost: string;
-  external_id: number;
-  zone: string;
-  periodId: number;
-  autoCategory: string;
-  externalIdCompany: number;
-  coverage: number;
-  company_id: string;
-  newCompany: Record<string, unknown>;
-  is_hidden: number;
   id: string;
-  earning: number;
-  earningParent: number | null;
+  cost: string;            // ціна, грн (рядок — історично так читає OfferCard)
+  coverage: number;        // ліміт покриття, грн
+  company_id: string;      // СК, що надає ДЦВ (може відрізнятись від СК ОСЦПВ)
+  companyName?: string | null;
+  sameCompany?: boolean;   // false → ДЦВ надає інша компанія (підказка клієнту)
 }
 
+// Варіант «Автоюрист» (окрема послуга Ukasko) до пропозиції ОСЦПВ.
 export interface AutolawyerOffer {
   id: string;
-  otherData: unknown;
   price: number;
-  auto_category_type: string;
-  zone: number;
-  program: number | null;
-  earning: number;
-  earningParent: number | null;
-}
-
-export interface MtsbuRating {
-  quarter: string | null;
-  paramAssessment: number | null;
-  paramQuality: number | null;
-  paramClaims: number | null;
+  program: number | null;  // 1 Стандарт, 2 Комфорт, 3 Комфорт плюс
+  programName?: string | null;
 }
 
 export interface InsuranceCompany {
   id: string;
-  logo: string | null;
-  picture: string | null;
-  exampleBlank: string | null;
   publicName: string;
-  website: string | null;
-  companyLink: string | null;
-  companyDgoLink: string | null;
+  logo: string | null;
   // Обов'язкові інформаційні документи страхового продукту (посилання на PDF).
   docProduct: string | null; // Інформація про страховий продукт
   docCompany: string | null; // Інформація про страхову компанію
   docAgent: string | null;   // Інформація про страхового посередника
   docZusp: string | null;    // Загальні умови страхового продукту (ЗУСП)
-  rating: number | null;
-  email: string;
-  ratingAdmins: string;
-  reviewsAmount: number;
-  compensationDays: number;
-  directSettlement: number;
-  supportEverytime: number;
-  medicineHelp: number;
-  marketLeader: number;
-  orderPosition: number;
-  isHidden: number;
-  innStatus: number;
-  mtsbuRating: MtsbuRating;
+  descriptionLink?: string | null;
+  // Legacy v1 (у v2 не віддаються) — лишаємо опційними для карток інших продуктів.
+  directSettlement?: number;
+  compensationDays?: number;
+  website?: string | null;
+  [extra: string]: unknown;
 }
 
+// Пропозиція ОСЦПВ у форматі, який споживає UI (OfferCard/OffersSection/Checkout).
+// Джерело — Ukasko API v2 (/v2/insurance/oscpv/calculate), адаптер у offers-роуті.
+// Інші продукти (ЗК, туризм…) мапляться в цю ж форму, щоб переюзати OfferCard.
 export interface InsuranceOffer {
-  registerType: number;
-  moduleId: number;
-  price: number;
-  startPrice: number;
-  isTaxi: number;
-  otkDate: string | null;
-  endDate: string | null;
-  periodId: number;
-  offerId: string;
-  companyNamePublic: string;
-  startDate: string;
-  franchise: number;
-  companyName: string;
-  listDgo: DgoOffer[] | null;
-  isEuroCar: number;
-  autoCategoryType: string;
-  externalIdTariff: string | number;
-  customerPrivilege: string;
-  registrationPlaceId: string;
-  customerType: number;
-  otherData: Record<string, unknown> | null;
-  tariffName: string;
-  usageMonths: number;
-  dateFromMax: number;
-  ex_id: string;
-  ex_tariff_id: string;
+  offerId: string;             // ULID пропозиції — дійсна до кінця поточної доби
   companyId: string;
+  companyName: string;
+  companyNamePublic: string;
   company: InsuranceCompany;
-  programmName: string;
-  allowed_documents: Record<string, unknown>;
+  price: number;
+  startDate: string;           // d.m.Y
+  endDate: string | null;      // d.m.Y (рахуємо з периоду)
+  periodId: number;            // 6 | 12 (місяці)
+  dateFromMax: number | null;  // макс. днів наперед для дати початку
+  autoCategoryType: string;
+  customerType: number;        // 1 фізособа, 2 юрособа, 3 пільговик
+  tariffName: string;
+  programmName?: string | null;
+  listDgo: DgoOffer[] | null;
   listAutolawyer: AutolawyerOffer[] | null;
-  earnings: number;
-  earningsParent: number | null;
-  hasCompanyBranch: boolean;
-  available_documents: string[];
+  // v2: чиїм віком СК рахує тариф + підказка словами для картки.
+  ageSemantic?: "owner" | "insurer" | "driver" | null;
+  driverAgeHint?: string | null;
+  // v2: СК оформлює цю пропозицію ЛИШЕ разом із ДЦВ (dgoId обов'язковий).
+  dgoRequired?: boolean;
+  discountPrice?: number;
+  discountPercent?: number | null;
+  // Legacy v1 поля (опційно, для адаптерів інших продуктів).
+  moduleId?: number;
+  isTaxi?: number;
+  franchise?: number;
+  [extra: string]: unknown;
 }
 
 export interface OffersResponse {
@@ -153,25 +121,188 @@ export interface OffersResponse {
   count?: number;
 }
 
-export interface CalculatorParams {
+// ─── ОСЦПВ v2 (Ukasko Connect API v2, /api/v2/insurance/oscpv/*) ─────────────────
+
+// Калькуляція: пласкі поля, без zone (виводиться з cityId) і без {mode}.
+export interface OsagoV2CalcParams {
   autoCategoryType: string;
-  isTaxi: 0 | 1;
-  franchise: 0;
-  isEuroCar: 0 | 1;
-  customerType: number;
-  registrationPlaceId?: number;
-  zone?: number;
-  withoutOtk: 1;
+  cityId?: number | null;         // обов'язковий, якщо не isEuroCar
+  isEuroCar?: boolean;
+  isTaxi?: boolean;
+  userType: 1 | 2;                // 1 фізособа, 2 юрособа
+  privilegeType?: number | null;  // 1 без пільг … 10 УБД (лише userType=1)
+  startDate: string;              // d.m.Y, не раніше завтра
+  periodId?: 6 | 12;
+  registrationType?: 1 | 2 | 3;
+  carNumber: string;              // обов'язковий
+  carBrand?: string | null;
+  carYear?: number | null;
+  driverBirthDate?: string | null;   // ДН наймолодшого водія
+  insurerBirthDate?: string | null;  // ДН страхувальника
+  ownerBirthDate?: string | null;    // ДН власника ТЗ
+  kilometers?: number | null;
+  identificationCode?: string | null; // РНОКПП — персональний тариф окремих СК
+  promoCode?: string | null;
+}
+
+export interface OsagoV2Company {
+  id: string;
+  name: string;
+  logo: string | null;
+  descriptionLink: string | null;
+  docAgent: string | null;
+  docCompany: string | null;
+  docProduct: string | null;
+  docZusp: string | null;
+}
+
+export interface OsagoV2Offer {
+  offerId: string;
+  company: OsagoV2Company;
+  price: number;
+  discountPrice: number;
+  discountPercent: number | null;
+  promoCodeApplied: boolean | null;
+  promoCodeMessage: string | null;
   startDate: string;
-  customerPrivilege: number;
-  registrationType: number;
-  period_id: number;
-  "car[year]": number;
-  "car[birthdayAt]"?: string;
-  "customer[dateBirth]"?: string;
-  customerBirthday?: string;
-  /** Обмежити розрахунок однією СК (модуль Ukasko) — для по-модульного паралельного запиту. */
-  moduleId?: number;
+  periodId: number;
+  dateFromMax: number | null;
+  autoCategoryType: string;
+  customerType: number;
+  tariffName: string | null;
+  programName: string | null;
+  ageSemantic: "owner" | "insurer" | "driver" | null;
+  driverAgeHint: string | null;
+  dgo: {
+    company: Partial<OsagoV2Company> | null;
+    sameCompany: boolean;
+    required: boolean;
+    options: { id: string; coverage: number; price: number }[];
+  } | null;
+  autolawyer: {
+    company: Partial<OsagoV2Company> | null;
+    options: { id: string; program: number; programName: string; price: number }[];
+  } | null;
+}
+
+// Заявлення (order/create): сервер бере тариф/ціну/СК зі збереженого офера.
+export interface OsagoV2Document {
+  type: 1 | 2 | 3 | 4;      // 1 паспорт, 2 закордонний, 3 ID-картка, 4 посвідчення водія
+  serial?: string | null;   // усі типи, крім ID-картки (для неї — insurer.unzr)
+  number: string;
+  dateOfIssue: string;      // d.m.Y
+  endDateOfIssue?: string | null;
+  issuedBy?: string | null;
+}
+
+export interface OsagoV2Insurer {
+  // фізособа / пільговик
+  name?: string;
+  surname?: string;
+  patronymic?: string | null;
+  dateBirth?: string;             // d.m.Y
+  identificationCode?: string | null;
+  withoutIdentificationCode?: boolean;
+  unzr?: string | null;           // обов'язковий для document.type=3
+  // юрособа
+  companyName?: string;
+  erdpyCode?: string;
+  signerFullName?: string;
+  // спільні
+  phone: string;
+  email: string;
+  cityId: number;
+  street: string;
+  house: string;
+  apartment?: string | null;
+  isVehicleOwner?: boolean;
+  document?: OsagoV2Document;
+  privilegeDocument?: {
+    type: number;                 // = privilegeType калькуляції (2…10)
+    serial?: string | null;
+    number: string;
+    dateOfIssue: string;          // d.m.Y
+    issuedBy?: string | null;
+  };
+}
+
+export interface OsagoV2Vehicle {
+  brand: string;
+  model: string;
+  number: string;
+  vin?: string | null;
+  withoutVin?: boolean;
+  year: number;
+  cityId?: number | null;         // місто реєстрації — має бути тієї ж зони, що в калькуляції
+  ownerBirthDate?: string | null;
+  driverBirthDate?: string | null;
+  kilometers?: number | null;
+  engineSize?: number | null;
+  kvt?: number | null;
+  ownWeight?: number | null;
+  totalWeight?: number | null;
+  nSeating?: number | null;
+}
+
+export interface OsagoV2OrderRequest {
+  offerId: string;
+  dgoId?: string | null;
+  autolawyerId?: string | null;
+  promoCode?: string | null;
+  insurer: OsagoV2Insurer;
+  vehicle: OsagoV2Vehicle;
+  isSendPhoneMessage?: boolean;
+}
+
+// Результат заявлення: заявку вже задекларовано в СК, OTP надіслано на email.
+export interface OsagoV2OrderResult {
+  id: string;                     // orderId
+  statusId: number;               // 5 declared
+  status: string;
+  mtsbuCode: string | null;
+  mtsbuLink: string | null;
+  offerDocument: string | null;   // PDF переддоговірної інформації
+  warningCancelMessage: string | null; // чинні поліси на це ТЗ буде розірвано
+  price: number;                  // ціна ОСЦПВ після декларування (без ДЦВ/автоюриста)
+  previousPrice: number | null;
+  priceChanged: boolean;
+  otpSent: boolean;
+  otpLength: number | null;
+  dgo: {
+    id: string;
+    coverage: number;
+    price: number;
+    contractNumber: string | null;
+    otpRequired: boolean;         // СК видала окремий код для підпису ДЦВ (otpDgo)
+    otpLength: number | null;
+  } | null;
+  autolawyer: {
+    id: string;
+    program: number;
+    programName: string;
+    price: number;
+    offerDocument: string | null;
+  } | null;
+  // Текст попередження СК (дублює warningCancelMessage) або "OK".
+  message?: string;
+}
+
+export interface V2PaymentSystem {
+  id: number;
+  code: string;                   // provider для checkout (напр. "liqpay")
+  title: string;
+  percentage_acquiring: number;
+  available_options: ("client" | "agent")[];
+  is_enabled: boolean;
+  partial_pay_periods: number[];
+}
+
+export interface V2PaymentStatus {
+  status: "none" | "pending" | "paid" | "failed";
+  invoiceId: string | null;
+  provider: string | null;
+  paidAt: string | null;
+  message: string | null;
 }
 
 export interface CustomerDocumentation {
@@ -208,16 +339,15 @@ export interface Customer {
   privilege?: CustomerPrivilege;
 }
 
-// Пільговий документ ОСЦПВ — «заповнюється для пільговиків додатково» (специфікація
-// Ukasko). Дати — unix timestamp. Для безстрокових посвідчень endDateOfIssue = дата
-// видачі + 100 років (Ukasko вимагає непорожню дату закінчення).
+// Пільговий документ ОСЦПВ (v2: insurer.privilegeDocument). type — категорія
+// пільги (privilegeType 2…10, та сама, що в калькуляції). Дата — unix timestamp.
 export interface CustomerPrivilege {
-  type: number;        // ID з довідника типів документів (7 Пенсійне, 8 Е-пенс., 9 УБД…)
+  type: number;        // категорія пільги (2 пенсіонер … 10 УБД)
   serial: string;
   number: string;
   issuedBy: string;
   dateOfIssue: number;
-  endDateOfIssue: number;
+  endDateOfIssue?: number | null;
 }
 
 export interface OrderDraft {

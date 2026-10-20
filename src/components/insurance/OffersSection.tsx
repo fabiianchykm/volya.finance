@@ -239,7 +239,13 @@ export function OffersSection({
           </div>
         ) : (
           <div className="space-y-3">
-            {sorted.map((offer, i) => (
+            {sorted.map((offer, i) => {
+              // v2: СК оформлює поліс ЛИШЕ з ДЦВ (dgoRequired) → за замовчуванням
+              // найдешевший варіант, «без покриття» недоступне.
+              const dgoId = dgoMap[offer.offerId] !== undefined
+                ? dgoMap[offer.offerId]
+                : offer.dgoRequired ? (offer.listDgo?.[0]?.id ?? null) : null;
+              return (
               <OfferCard
                 key={offer.offerId}
                 offer={offer}
@@ -248,7 +254,7 @@ export function OffersSection({
                 discountEligible
                 showAgeBasis
                 productDescription={<OsagoInfo />}
-                selectedDgoId={dgoMap[offer.offerId] ?? null}
+                selectedDgoId={dgoId}
                 selectedAutolawyerId={autolawyerMap[offer.offerId] ?? null}
                 onSelect={() => setSelectedOfferId(offer.offerId)}
                 onSelectDgo={(id) => setDgoMap((m) => ({ ...m, [offer.offerId]: id }))}
@@ -256,12 +262,13 @@ export function OffersSection({
                 onBuy={() =>
                   onSelectOffer(
                     offer,
-                    dgoMap[offer.offerId] ?? null,
+                    dgoId,
                     autolawyerMap[offer.offerId] ?? null
                   )
                 }
               />
-            ))}
+              );
+            })}
           </div>
         )}
 

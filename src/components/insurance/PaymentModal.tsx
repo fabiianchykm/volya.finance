@@ -37,6 +37,25 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
   const [paid, setPaid] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const confirmPolicy = async () => {
+    setConfirming(true);
+    try {
+      const res = await fetch(confirmEndpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: confirmAction, orderId, ...(confirmPayload ?? {}) }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setPaid(true);
+      onPaid(json.data.contractId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t({ uk: "Помилка підтвердження", en: "Confirmation error" }));
+    } finally {
+      setConfirming(false);
+    }
+  };
+
   useEffect(() => {
     const fetchInvoice = async () => {
       setLoading(true);
@@ -45,10 +64,15 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
         const res = await fetch("/api/insurance/payment", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "invoice", orderId }),
+          body: JSON.stringify({ action: "invoice", orderId, product }),
         });
         const json = await res.json();
         setTestMode(json.testMode === true);
+        if (json.success && json.data?.paid === true) {
+          // v2: заявка вже сплачена (повторне відкриття після оплати) → одразу укладаємо.
+          await confirmPolicy();
+          return;
+        }
         if (json.success && json.data?.invoiceLink) {
           setInvoice(json.data);
         } else {
@@ -73,6 +97,7 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
       fetchInvoice();
     }, 0);
     return () => clearTimeout(initTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, orderId]);
 
   const checkPayment = async () => {
@@ -97,25 +122,6 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
       setError(e instanceof Error ? e.message : t({ uk: "Помилка перевірки оплати", en: "Error checking payment" }));
     } finally {
       setChecking(false);
-    }
-  };
-
-  const confirmPolicy = async () => {
-    setConfirming(true);
-    try {
-      const res = await fetch(confirmEndpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: confirmAction, orderId, ...(confirmPayload ?? {}) }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error);
-      setPaid(true);
-      onPaid(json.data.contractId);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t({ uk: "Помилка підтвердження", en: "Confirmation error" }));
-    } finally {
-      setConfirming(false);
     }
   };
 
