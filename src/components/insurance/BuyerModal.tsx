@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BadgePercent, Info, X } from "lucide-react";
+import { BadgePercent, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { Tooltip } from "@/components/ui/Tooltip";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { PRIVILEGES } from "@/lib/constants";
@@ -152,15 +151,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
         </div>
 
         <div>
-          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            {t({ uk: "Ідентифікаційний код людини, на яку оформлюється страхування", en: "Tax ID of the person the insurance is issued for" })}
-            <Tooltip
-              className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
-              content={t({ uk: "Окремі страхові враховують історію страхування за ідентифікаційним кодом — ціна буде точною.", en: "Some insurers use your insurance history by tax ID — the price will be exact." })}
-            >
-              <Info className="h-3.5 w-3.5" />
-            </Tooltip>
-          </label>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Ідентифікаційний код людини, на яку оформлюється страхування", en: "Tax ID of the person the insurance is issued for" })}</label>
           <input
             type="text"
             inputMode="numeric"
