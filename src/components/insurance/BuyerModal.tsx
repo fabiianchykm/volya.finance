@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BadgePercent, X } from "lucide-react";
+import { BadgePercent, Info, X } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { PRIVILEGES } from "@/lib/constants";
@@ -145,7 +146,15 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "ІПН (РНОКПП) страхувальника", en: "Policyholder's tax ID (RNOKPP)" })}</label>
+          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            {t({ uk: "ІПН (РНОКПП) страхувальника", en: "Policyholder's tax ID (RNOKPP)" })}
+            <Tooltip
+              className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
+              content={t({ uk: "Окремі страхові враховують історію страхування за ІПН — ціна буде точною.", en: "Some insurers use your insurance history by tax ID — the price will be exact." })}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </Tooltip>
+          </label>
           <input
             type="text"
             inputMode="numeric"
@@ -157,11 +166,9 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
               ipnError ? "border-red-400" : ipnValid ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : "border-zinc-200 dark:border-zinc-700"
             }`}
           />
-          <p className={`mt-1 text-xs ${ipnError ? "font-medium text-red-500" : "text-zinc-400 dark:text-zinc-500"}`}>
-            {ipnError
-              ? t({ uk: "Вкажіть 10 цифр ІПН", en: "Enter the 10-digit tax ID" })
-              : t({ uk: "Окремі страхові враховують історію страхування за ІПН — ціна буде точною.", en: "Some insurers use your insurance history by tax ID — the price will be exact." })}
-          </p>
+          {ipnError && (
+            <p className="mt-1 text-xs font-medium text-red-500">{t({ uk: "Вкажіть 10 цифр ІПН", en: "Enter the 10-digit tax ID" })}</p>
+          )}
         </div>
 
         <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} disabled={required && !datesValid} className="w-full">
