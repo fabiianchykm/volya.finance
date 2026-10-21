@@ -152,29 +152,29 @@ export function OffersSection({
           >
             <span className="min-w-0">
               <span className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })}</span>
+                <span className="text-base font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Індивідуальна пропозиція", en: "Personalised offer" })}</span>
               </span>
 
               {/* Введені дані як чіпи (з реєстру приходить лише ВІК власника → рік). */}
-              <span className="mt-2.5 flex flex-wrap gap-1.5">
+              <span className="mt-3 flex flex-wrap gap-2">
               {buyer.policyholderBirthDate && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-white/80 px-2 py-1 text-[11px] text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Страхувальник (покупець)", en: "Policyholder (buyer)" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{buyer.policyholderBirthDate}</span></span>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Страхувальник (покупець)", en: "Policyholder (buyer)" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{buyer.policyholderBirthDate}</span></span>
               )}
               {buyer.youngestBirthDate && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-white/80 px-2 py-1 text-[11px] text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Наймолодший водій", en: "Youngest driver" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{buyer.youngestBirthDate}</span></span>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Наймолодший водій", en: "Youngest driver" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{buyer.youngestBirthDate}</span></span>
               )}
               {buyer.identificationCode && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-white/80 px-2 py-1 text-[11px] text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "ІПН", en: "Tax ID" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">••••••{buyer.identificationCode.slice(-4)}</span></span>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "ІПН", en: "Tax ID" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">••••••{buyer.identificationCode.slice(-4)}</span></span>
               )}
               {buyer.birthDate && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-white/80 px-2 py-1 text-[11px] text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Власник", en: "Owner" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: `${buyer.birthDate.split(".")[2]} р.н.`, en: `b. ${buyer.birthDate.split(".")[2]}` })}</span></span>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Власник", en: "Owner" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: `${buyer.birthDate.split(".")[2]} р.н.`, en: `b. ${buyer.birthDate.split(".")[2]}` })}</span></span>
               )}
               {buyerSet && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900">{privilegeLabel}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900">{privilegeLabel}</span>
               )}
             </span>
             </span>
-            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+            <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
               {buyerSet ? t({ uk: "Змінити", en: "Edit" }) : t({ uk: "Вказати", en: "Specify" })}
               <ChevronRight className="h-4 w-4" />
             </span>
