@@ -90,12 +90,12 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
               {required
                 ? t({
-                    uk: "Вкажіть дату народження наймолодшого водія та ІПН страхувальника — за ними страхові рахують персональну ціну. Дату страхувальника введете при оформленні.",
-                    en: "Enter the youngest driver's date of birth and the policyholder's tax ID — insurers price by them. The policyholder's date is entered at checkout.",
+                    uk: "Вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування — за ними страхові рахують персональну ціну.",
+                    en: "Enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for — insurers price by them.",
                   })
                 : t({
-                    uk: "Оберіть пільгу, вкажіть дату народження наймолодшого водія та ІПН страхувальника — за ними страхові рахують персональну ціну.",
-                    en: "Choose your benefit, enter the youngest driver's date of birth and the policyholder's tax ID — insurers price by them.",
+                    uk: "Оберіть пільгу, вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування — за ними страхові рахують персональну ціну.",
+                    en: "Choose your benefit, enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for — insurers price by them.",
                   })}
             </p>
           </div>
@@ -147,7 +147,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
 
         <div>
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            {t({ uk: "ІПН (РНОКПП) страхувальника", en: "Policyholder's tax ID (RNOKPP)" })}
+            {t({ uk: "Ідентифікаційний код людини, на яку оформлюється страхування", en: "Tax ID of the person the insurance is issued for" })}
             <Tooltip
               className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
               content={t({ uk: "Окремі страхові враховують історію страхування за ІПН — ціна буде точною.", en: "Some insurers use your insurance history by tax ID — the price will be exact." })}
@@ -167,7 +167,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             }`}
           />
           {ipnError && (
-            <p className="mt-1 text-xs font-medium text-red-500">{t({ uk: "Вкажіть 10 цифр ІПН", en: "Enter the 10-digit tax ID" })}</p>
+            <p className="mt-1 text-xs font-medium text-red-500">{t({ uk: "Вкажіть 10 цифр ідентифікаційного коду", en: "Enter the 10-digit tax ID" })}</p>
           )}
         </div>
 

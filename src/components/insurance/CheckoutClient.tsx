@@ -945,7 +945,10 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Дані страхувальника (покупця)", en: "Policyholder (buyer) details" })}</h2>
+      <div>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Дані страхувальника", en: "Policyholder details" })}</h2>
+        <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Людина, на яку оформлюється страховка", en: "The person the insurance is issued for" })}</p>
+      </div>
       <ProfilePicker profiles={savedProfiles} onPick={applyProfile} />
 
       <div className="space-y-5">
@@ -962,7 +965,7 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <DateInput
-            label={t({ uk: "Дата народження страхувальника (покупця)", en: "Policyholder's (buyer's) date of birth" })}
+            label={t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}
             value={form.dateBirth}
             onChange={(v) => { setForm((f) => ({ ...f, dateBirth: v })); if (dobError) setDobError(false); }}
             error={dobError ? t({ uk: "Вкажіть дату народження", en: "Enter the date of birth" }) : undefined}
