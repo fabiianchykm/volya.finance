@@ -107,10 +107,8 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       surnameLat: p.surnameLat || t.surnameLat,
       nameLat: p.nameLat || t.nameLat,
       identificationCode: p.identificationCode || t.identificationCode,
-      // Форма має ОДНЕ поле «серія / №»: показуємо збережені серію+номер разом,
-      // а на відправці splitDocSerialNumber знову розбиває їх для Ukasko.
-      passportSerial: "",
-      passportNumber: p.passportNumber ? `${p.passportSerial ?? ""}${p.passportNumber}` : t.passportNumber,
+      passportSerial: p.passportSerial || t.passportSerial,
+      passportNumber: p.passportNumber || t.passportNumber,
       passportDate: p.passportDate || t.passportDate,
       passportEndDate: p.passportEndDate || t.passportEndDate,
       passportIssuedBy: p.passportIssuedBy || t.passportIssuedBy,
@@ -149,8 +147,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     const main = tourists[0];
     // Ukasko-модуль вимагає, щоб паспортні ключі БУЛИ ПРИСУТНІ (навіть порожні) —
     // інакше 500 "Undefined index: passportSerial". Тому завжди рядки, не undefined.
-    // Серія і номер — ОКРЕМИМИ полями (serial="GH", number="636131"). Клієнт вводить
-    // їх одним рядком; якщо слати все в number, Ukasko не генерує OTP (500).
+    // Серія і номер — ОКРЕМИМИ полями (serial="GH", number="636131"); якщо слати все
+    // в number, Ukasko не генерує OTP (500). Форма вже має два поля, а
+    // splitDocSerialNumber — запобіжник, коли «GH636131» усе ж ввели в номер.
     const mainDoc = splitDocSerialNumber(main.passportSerial, main.passportNumber);
     const touristsListInfo = tourists.map((t) => ({
       name: t.nameLat.trim(), surname: t.surnameLat.trim(), dateBirth: t.dateBirth,
@@ -229,8 +228,8 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     // Порожня дата «дійсний до» ламала укладання (confirm/nextFinal падав 500
     // «separation symbol / Trailing data»): declare її ковтав, а nextFinal — ні,
     // і клієнт лишався «оплачено, поліса нема». Тепер не пускаємо порожні паспортні дати.
-    if (tourists.some((tr) => !splitDocSerialNumber(tr.passportSerial, tr.passportNumber).number || !parseUaDate(tr.passportDate) || !parseUaDate(tr.passportEndDate))) {
-      setError(t({ uk: "Для кожного туриста вкажіть закордонний паспорт: номер, дату видачі та дату «дійсний до».", en: "For each traveller, enter the international passport: number, issue date and valid-until date." })); return;
+    if (tourists.some((tr) => { const d = splitDocSerialNumber(tr.passportSerial, tr.passportNumber); return !d.serial || !d.number || !parseUaDate(tr.passportDate) || !parseUaDate(tr.passportEndDate); })) {
+      setError(t({ uk: "Для кожного туриста вкажіть закордонний паспорт: серію, номер, дату видачі та дату «дійсний до».", en: "For each traveller, enter the international passport: series, number, issue date and valid-until date." })); return;
     }
     setLoading(true);
     setError(null);
@@ -353,7 +352,10 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
               <Input label={t({ uk: "ІПН", en: "Tax ID (INN)" })} value={t2.identificationCode} onChange={(e) => setT(i, "identificationCode", e.target.value)} placeholder="1234567890" />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input label={t({ uk: "Закордонний паспорт — серія / №", en: "International passport — series / no." })} value={t2.passportNumber} onChange={(e) => setT(i, "passportNumber", e.target.value)} placeholder="FA123456" />
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3">
+                <Input label={t({ uk: "Закордонний паспорт — серія", en: "Passport series" })} value={t2.passportSerial} onChange={(e) => setT(i, "passportSerial", e.target.value)} placeholder="FA" required />
+                <Input label={t({ uk: "Номер", en: "Number" })} value={t2.passportNumber} onChange={(e) => setT(i, "passportNumber", e.target.value)} placeholder="123456" inputMode="numeric" required />
+              </div>
               <Input label={t({ uk: "Ким виданий", en: "Issued by" })} value={t2.passportIssuedBy} onChange={(e) => setT(i, "passportIssuedBy", e.target.value)} placeholder={t({ uk: "напр. 1234", en: "e.g. 1234" })} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
