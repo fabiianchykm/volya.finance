@@ -164,7 +164,7 @@ export function OffersSection({
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Наймолодший водій", en: "Youngest driver" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{buyer.youngestBirthDate}</span></span>
               )}
               {buyer.identificationCode && (
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "ІПН", en: "Tax ID" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">••••••{buyer.identificationCode.slice(-4)}</span></span>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "ІПН", en: "Tax ID" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{buyer.identificationCode}</span></span>
               )}
               {buyer.birthDate && (
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/80 px-3 py-1.5 text-sm text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-900/70 dark:text-zinc-400 dark:ring-zinc-700">{t({ uk: "Власник", en: "Owner" })} <span className="font-semibold text-zinc-800 dark:text-zinc-200">{t({ uk: `${buyer.birthDate.split(".")[2]} р.н.`, en: `b. ${buyer.birthDate.split(".")[2]}` })}</span></span>
