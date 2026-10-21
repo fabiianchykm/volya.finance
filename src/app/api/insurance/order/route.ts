@@ -5,6 +5,7 @@ import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
 import { normalizePlate } from "@/lib/plate";
+import { splitDocSerialNumber } from "@/lib/doc-number";
 import type { OsagoV2Insurer, OsagoV2OrderRequest, OsagoV2Vehicle } from "@/types/api";
 
 // Заявлення ОСЦПВ — Ukasko API v2 (/v2/insurance/oscpv/order/create): один виклик
@@ -35,11 +36,14 @@ function buildPayload(body: Record<string, unknown>): OsagoV2OrderRequest {
   const docRaw = isObj(i.document) ? i.document : null;
   const docTypeRaw = num(docRaw?.type);
   const docType: 1 | 2 | 3 | 4 | undefined = docTypeRaw === 1 || docTypeRaw === 2 || docTypeRaw === 3 || docTypeRaw === 4 ? docTypeRaw : undefined;
+  // Серія і номер — окремими полями (клієнт міг ввести «СН123456» в номер).
+  // Для ID-картки (type 3) серії нема: там number — 9 цифр, УНЗР іде в insurer.unzr.
+  const docSplit = docRaw && docType && docType !== 3 ? splitDocSerialNumber(docRaw.serial, docRaw.number) : null;
   const document = docRaw && docType
     ? {
         type: docType,
-        ...(docType !== 3 && optStr(docRaw.serial, 20) ? { serial: optStr(docRaw.serial, 20) } : {}),
-        number: str(docRaw.number, 30),
+        ...(docSplit && optStr(docSplit.serial, 20) ? { serial: optStr(docSplit.serial, 20) } : {}),
+        number: docSplit ? str(docSplit.number, 30) : str(docRaw.number, 30),
         dateOfIssue: date(docRaw.dateOfIssue) ?? "",
         ...(date(docRaw.endDateOfIssue) ? { endDateOfIssue: date(docRaw.endDateOfIssue) } : {}),
         ...(optStr(docRaw.issuedBy, 200) ? { issuedBy: optStr(docRaw.issuedBy, 200) } : {}),
@@ -49,11 +53,12 @@ function buildPayload(body: Record<string, unknown>): OsagoV2OrderRequest {
 
   const privRaw = isObj(i.privilegeDocument) ? i.privilegeDocument : null;
   const privType = num(privRaw?.type);
-  const privilegeDocument = privRaw && privType && privType >= 2 && privType <= 10
+  const privSplit = privRaw ? splitDocSerialNumber(privRaw.serial, privRaw.number) : null;
+  const privilegeDocument = privRaw && privSplit && privType && privType >= 2 && privType <= 10
     ? {
         type: privType,
-        ...(optStr(privRaw.serial, 20) ? { serial: optStr(privRaw.serial, 20) } : {}),
-        number: str(privRaw.number, 30),
+        ...(optStr(privSplit.serial, 20) ? { serial: optStr(privSplit.serial, 20) } : {}),
+        number: str(privSplit.number, 30),
         dateOfIssue: date(privRaw.dateOfIssue) ?? "",
         ...(optStr(privRaw.issuedBy, 200) ? { issuedBy: optStr(privRaw.issuedBy, 200) } : {}),
       }

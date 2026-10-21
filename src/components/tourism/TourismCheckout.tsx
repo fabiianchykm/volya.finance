@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { splitDocSerialNumber } from "@/lib/doc-number";
 import { ArrowLeft } from "lucide-react";
 import { registerPendingOrder } from "@/lib/pending-order-client";
 import { Button } from "@/components/ui/Button";
@@ -106,8 +107,10 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       surnameLat: p.surnameLat || t.surnameLat,
       nameLat: p.nameLat || t.nameLat,
       identificationCode: p.identificationCode || t.identificationCode,
-      passportSerial: p.passportSerial || t.passportSerial,
-      passportNumber: p.passportNumber || t.passportNumber,
+      // Форма має ОДНЕ поле «серія / №»: показуємо збережені серію+номер разом,
+      // а на відправці splitDocSerialNumber знову розбиває їх для Ukasko.
+      passportSerial: "",
+      passportNumber: p.passportNumber ? `${p.passportSerial ?? ""}${p.passportNumber}` : t.passportNumber,
       passportDate: p.passportDate || t.passportDate,
       passportEndDate: p.passportEndDate || t.passportEndDate,
       passportIssuedBy: p.passportIssuedBy || t.passportIssuedBy,
@@ -146,13 +149,16 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     const main = tourists[0];
     // Ukasko-модуль вимагає, щоб паспортні ключі БУЛИ ПРИСУТНІ (навіть порожні) —
     // інакше 500 "Undefined index: passportSerial". Тому завжди рядки, не undefined.
+    // Серія і номер — ОКРЕМИМИ полями (serial="GH", number="636131"). Клієнт вводить
+    // їх одним рядком; якщо слати все в number, Ukasko не генерує OTP (500).
+    const mainDoc = splitDocSerialNumber(main.passportSerial, main.passportNumber);
     const touristsListInfo = tourists.map((t) => ({
       name: t.nameLat.trim(), surname: t.surnameLat.trim(), dateBirth: t.dateBirth,
+      ...(() => { const d = splitDocSerialNumber(t.passportSerial, t.passportNumber); return { passportSerial: d.serial, passportNumber: d.number }; })(),
       identificationCode: t.identificationCode, withoutIdentificationCode: t.identificationCode ? false : true,
       // 2 = «Закордонний паспорт» (DOCUMENT_EXTERNAL_PASSPORT) — саме його вводять для
       // виїзду за кордон; є в available_documents оффера. Раніше слався 3 (ID-карта).
       documentType: 2,
-      passportSerial: t.passportSerial || "", passportNumber: t.passportNumber || "",
       // Ukasko вимагає паспортні дати у форматі d.m.Y (ДД.ММ.РРРР) — НЕ ISO. ISO
       // (YYYY-MM-DD) валив укладання (nextFinal 500 «separation symbol could not be
       // found»: парсер шукав крапку, бачив дефіси). Форма й так зберігає ДД.ММ.РРРР.
@@ -178,7 +184,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         // Документ страхувальника = його ж закордонний паспорт (турист №1), тип 2.
         // Окремого внутрішнього документа більше не збираємо.
         documentation: {
-          type: 2, serial: main.passportSerial, number: main.passportNumber, issuedBy: main.passportIssuedBy,
+          type: 2, serial: mainDoc.serial, number: mainDoc.number, issuedBy: main.passportIssuedBy,
           dateOfIssue: toUnix(main.passportDate), endDateOfIssue: toUnix(main.passportEndDate),
         },
       },
@@ -223,7 +229,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     // Порожня дата «дійсний до» ламала укладання (confirm/nextFinal падав 500
     // «separation symbol / Trailing data»): declare її ковтав, а nextFinal — ні,
     // і клієнт лишався «оплачено, поліса нема». Тепер не пускаємо порожні паспортні дати.
-    if (tourists.some((tr) => !tr.passportNumber?.trim() || !parseUaDate(tr.passportDate) || !parseUaDate(tr.passportEndDate))) {
+    if (tourists.some((tr) => !splitDocSerialNumber(tr.passportSerial, tr.passportNumber).number || !parseUaDate(tr.passportDate) || !parseUaDate(tr.passportEndDate))) {
       setError(t({ uk: "Для кожного туриста вкажіть закордонний паспорт: номер, дату видачі та дату «дійсний до».", en: "For each traveller, enter the international passport: number, issue date and valid-until date." })); return;
     }
     setLoading(true);
@@ -232,13 +238,14 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     // страхувальника). Внутрішній документ туризм більше НЕ збирає — тож не передаємо
     // doc-поля, щоб не затерти реальний документ з інших продуктів (ОСЦПВ/тварини).
     const main = tourists[0];
+    const mainPassport = splitDocSerialNumber(main.passportSerial, main.passportNumber);
     saveProfile({
       email: c.email, phone: c.phone,
       street: c.street, house: c.house,
       city: selectedCity, cityQuery,
       identificationCode: main.identificationCode || undefined,
       surnameLat: main.surnameLat, nameLat: main.nameLat,
-      passportSerial: main.passportSerial, passportNumber: main.passportNumber,
+      passportSerial: mainPassport.serial, passportNumber: mainPassport.number,
       passportDate: main.passportDate, passportEndDate: main.passportEndDate, passportIssuedBy: main.passportIssuedBy,
     });
     try {
