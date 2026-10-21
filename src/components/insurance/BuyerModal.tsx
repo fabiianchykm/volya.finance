@@ -90,12 +90,12 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
               {required
                 ? t({
-                    uk: "Вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування — за ними страхові рахують персональну ціну.",
-                    en: "Enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for — insurers price by them.",
+                    uk: "Вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування, щоб отримати персональну ціну від страхових компаній.",
+                    en: "Enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for to get a personalised price from the insurers.",
                   })
                 : t({
-                    uk: "Оберіть пільгу, вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування — за ними страхові рахують персональну ціну.",
-                    en: "Choose your benefit, enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for — insurers price by them.",
+                    uk: "Оберіть пільгу, вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування, щоб отримати персональну ціну від страхових компаній.",
+                    en: "Choose your benefit, enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for to get a personalised price from the insurers.",
                   })}
             </p>
           </div>
@@ -150,7 +150,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             {t({ uk: "Ідентифікаційний код людини, на яку оформлюється страхування", en: "Tax ID of the person the insurance is issued for" })}
             <Tooltip
               className="cursor-help text-zinc-400 transition-colors hover:text-indigo-500 dark:text-zinc-500 dark:hover:text-indigo-400"
-              content={t({ uk: "Окремі страхові враховують історію страхування за ІПН — ціна буде точною.", en: "Some insurers use your insurance history by tax ID — the price will be exact." })}
+              content={t({ uk: "Окремі страхові враховують історію страхування за ідентифікаційним кодом — ціна буде точною.", en: "Some insurers use your insurance history by tax ID — the price will be exact." })}
             >
               <Info className="h-3.5 w-3.5" />
             </Tooltip>
