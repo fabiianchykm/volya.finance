@@ -559,3 +559,60 @@ export interface AccidentOffer {
   company?: { id?: number; logo?: string | null; publicName?: string; rating?: number | null; docProduct?: string | null; [k: string]: unknown };
 }
 export interface AccidentSport { id: number; code: string; name: string; coefficient?: number }
+
+// ─── Туризм, API v2 (/v2/insurance/tourism/*) ─────────────────────────────────────
+export interface TourismV2Tourist {
+  name: string;                 // латиницею, як у закордонному паспорті
+  surname: string;
+  dateBirth: string;            // d.m.Y
+  identificationCode?: string;
+  withoutIdentificationCode: boolean;
+  documentType: number;         // 2 — закордонний паспорт
+  passportSerial: string;
+  passportNumber: string;
+  passportDate: string;         // d.m.Y
+  passportEndDate?: string;
+  passportIssuedBy?: string;
+  cityId: number;
+  street: string;
+  house: string;
+  apartment?: string;
+}
+
+export interface TourismV2OrderRequest {
+  offerId: string;
+  purposeOfTrip: string;        // travel | teaching | activeTravel | extrim | professionalSports | sport | work | business_travel
+  insurer: {
+    name: string;
+    surname: string;
+    dateBirth: string;
+    identificationCode?: string;
+    withoutIdentificationCode: boolean;
+    phone: string;
+    email: string;
+    cityId: number;
+    street: string;
+    house: string;
+    apartment?: string;
+    document: {
+      type: number;             // 2 закордонний паспорт
+      serial?: string;
+      number: string;
+      dateOfIssue: string;      // d.m.Y
+      endDateOfIssue?: string;
+      issuedBy?: string;
+    };
+  };
+  tourists: TourismV2Tourist[];
+  isSendPhoneMessage?: boolean; // true — OTP ще й у Viber/SMS
+}
+
+// order/create v2: чернетка + OTP уже надіслано (otpSent). Далі verify-otp → checkout → confirm.
+export interface TourismV2OrderResult {
+  id: string;
+  statusId: number;
+  status: string;
+  draftDocument: string | null;
+  otpSent: boolean;
+  otpLength: number | null;
+}

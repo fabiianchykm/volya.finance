@@ -206,6 +206,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
   // Відновлення після перезавантаження вкладки (клієнт ходив у пошту/SMS за кодом):
   // повертаємо форму, orderId і крок OTP/оплата, щоб не проходити все спочатку.
+  const [otpLength, setOtpLength] = useState(6); // довжина коду з відповіді v2 create
   const resumedRef = useRef(false);
   useEffect(() => {
     if (resumedRef.current) return;
@@ -260,6 +261,11 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Policy declaration error" }));
       const id = json.data?.id;
       setOrderId(id);
+      // v2 create уже надіслав код на email (otpSent); довжина — otpLength. Якщо СК не
+      // змогла надіслати — просимо повторну відправку (resend v2 генерує новий код).
+      const len = Number(json.data?.otpLength);
+      setOtpLength(Number.isInteger(len) && len >= 4 && len <= 10 ? len : 6);
+      const otpSent = json.data?.otpSent !== false;
       // Реєструємо контекст фіналізації (повний order + мета), щоб /payment-success
       // міг укласти туристичний договір після оплати навіть поза модалкою.
       registerPendingOrder({
@@ -274,10 +280,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
           productLabel: "Туристичне",
         },
       });
-      await fetch("/api/insurance/otp", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "send", orderId: id }),
-      });
+      if (!otpSent) await sendOtpV2(id);
       trackCheckoutStarted({
         product: "Туристичне",
         name: [tourists[0]?.surnameLat, tourists[0]?.nameLat].filter(Boolean).join(" "),
@@ -294,17 +297,29 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     }
   };
 
+  // OTP v2 (туризм): /v2/insurance/tourism/order/{resend,verify}-otp через спільний роут.
+  const sendOtpV2 = async (id: string) => {
+    const res = await fetch("/api/insurance/otp", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "send", orderId: id, v2: true, product: "tourism" }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) throw new Error(json.error ?? t({ uk: "Не вдалося надіслати код. Спробуйте ще раз.", en: "Could not send the code. Please try again." }));
+    const len = Number(json.data?.otpLength);
+    if (Number.isInteger(len) && len >= 4 && len <= 10) setOtpLength(len);
+  };
+
   const handleOtpConfirm = async (otp: string) => {
     if (!orderId) return;
     setLoading(true); setError(null);
     try {
       const res = await fetch("/api/insurance/otp", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "check", orderId, otp }),
+        body: JSON.stringify({ action: "check", orderId, otp, v2: true, product: "tourism" }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-      if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
+      if (!json.valid) throw new Error(typeof json.reason === "string" && json.reason ? json.reason : t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
       setStep("payment");
       trackEvent("begin_checkout", { product: "tourism", currency: "UAH", value: ctx.offer.price });
     } catch (err) {
@@ -417,10 +432,12 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         open={step === "otp"}
         onClose={() => setStep("form")}
         onConfirm={handleOtpConfirm}
-        onResend={async () => { if (orderId) await fetch("/api/insurance/otp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "send", orderId }) }); }}
+        onResend={async () => { if (!orderId) return; setError(null); try { await sendOtpV2(orderId); } catch (e) { setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" })); } }}
         email={c.email}
         loading={loading}
         error={error}
+        minLength={otpLength}
+        maxLength={otpLength}
       />
 
       {orderId && savedOrder && (

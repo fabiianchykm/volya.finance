@@ -7,7 +7,7 @@ import { notifyDevError } from "@/lib/telegram";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-// Спільний платіжний роут. Заявки ОСЦПВ v2 (product="osago") оплачуються через
+// Спільний платіжний роут. Заявки v2 (product="osago" | "tourism") оплачуються через
 // Payments v2 (payment-systems → checkout → payment-status); решта продуктів —
 // legacy get-invoice. Перевірка оплати (check) для всіх — checkInvoice, який спершу
 // питає payment-status v2, а для v1-заявок падає на isPaid у get-invoice.
@@ -31,8 +31,8 @@ async function handlePost(req: NextRequest) {
         `invoice:${orderId}`,
         async () => {
           const resultUrl = `${BASE_URL}/payment-success?orderId=${orderId}`;
-          if (productName === "osago") {
-            // ОСЦПВ v2: checkout у платіжній системі. 409 (уже сплачено) → paid:true —
+          if (productName === "osago" || productName === "tourism") {
+            // ОСЦПВ v2 / туризм v2: checkout у платіжній системі. 409 (уже сплачено) → paid:true —
             // модалка одразу переходить до укладення.
             try {
               const inv = await ukaskoService.getInvoiceV2(orderId, resultUrl);

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withJourney } from "@/lib/journey";
-import { ukaskoService } from "@/services/ukasko";
+import { ukaskoService, type V2OtpProduct } from "@/services/ukasko";
 import { rateLimit, maybeCleanup } from "@/lib/rate-limit";
 import { assertSameOrigin } from "@/lib/api-guard";
 import { notifyDevError } from "@/lib/telegram";
 
 // Спільний OTP-роут. Два бекенди Ukasko:
-//  • v2 (body.v2=true — ОСЦПВ v2): order/resend-otp + order/verify-otp (otp + otpDgo);
-//  • v1 (решта продуктів: ЗК, туризм, житло, тварини, НВ): orders/send-otp + check-otp.
+//  • v2 (body.v2=true — ОСЦПВ v2, туризм v2; body.product обирає шлях):
+//    /v2/insurance/{product}/order/resend-otp + verify-otp (otp + otpDgo);
+//  • v1 (решта продуктів: ЗК, житло, тварини, НВ): orders/send-otp + check-otp.
+//    УВАГА: з 21.10.2026 v1 send-otp падає 500 для туризму — тому туризм на v2.
 // Ліміти підібрані під реальний UX: на оформлення поліса вистачає
 // кількох SMS і кількох спроб введення коду.
 const SEND_LIMIT = 3;          // не більше 3 SMS з одного IP
@@ -35,8 +37,10 @@ async function handlePost(req: NextRequest) {
 
     maybeCleanup();
 
-    const { action, orderId, otp, otpDgo, v2 } = await req.json();
+    const { action, orderId, otp, otpDgo, v2, product } = await req.json();
     const isV2 = v2 === true;
+    // v2-продукт за назвою з клієнта: туризм → /tourism/, решта (ОСЦПВ) → /oscpv/.
+    const v2Product: V2OtpProduct = product === "tourism" ? "tourism" : product === "greencard" ? "greencard" : "oscpv";
     ctx = `${action ?? "?"}${isV2 ? " v2" : ""} order=${orderId ?? "?"}`;
 
     if (!orderId || typeof orderId !== "string") {
@@ -57,8 +61,8 @@ async function handlePost(req: NextRequest) {
         );
       }
       if (isV2) {
-        const data = await ukaskoService.resendOsagoOtpV2(orderId);
-        console.error(`[otp v2 resend] order=${orderId} sent=${data.otpSent} len=${data.otpLength ?? "-"} dgo=${data.otpDgoRequired}`);
+        const data = await ukaskoService.resendOsagoOtpV2(orderId, v2Product);
+        console.error(`[otp v2 resend] ${v2Product} order=${orderId} sent=${data.otpSent} len=${data.otpLength ?? "-"} dgo=${data.otpDgoRequired}`);
         return NextResponse.json({ success: true, data });
       }
       await ukaskoService.sendOtp(orderId, 1);
@@ -77,8 +81,8 @@ async function handlePost(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Введіть код підтвердження." }, { status: 400 });
       }
       if (isV2) {
-        const r = await ukaskoService.verifyOsagoOtpV2(orderId, otp.trim(), typeof otpDgo === "string" && otpDgo.trim() ? otpDgo.trim() : null);
-        console.error(`[otp v2 check] order=${orderId} valid=${r.valid}${r.error ? ` reason=${r.error.slice(0, 160)}` : ""}`);
+        const r = await ukaskoService.verifyOsagoOtpV2(orderId, otp.trim(), typeof otpDgo === "string" && otpDgo.trim() ? otpDgo.trim() : null, v2Product);
+        console.error(`[otp v2 check] ${v2Product} order=${orderId} valid=${r.valid}${r.error ? ` reason=${r.error.slice(0, 160)}` : ""}`);
         return NextResponse.json({ success: true, valid: r.valid, ...(r.error ? { reason: r.error } : {}) });
       }
       const ok = await ukaskoService.checkOtp(orderId, otp);

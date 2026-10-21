@@ -6,6 +6,7 @@ import { guardRequest } from "@/lib/api-guard";
 import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
 import { splitDocSerialNumber } from "@/lib/doc-number";
+import { buildTourismV2Payload } from "@/lib/tourism-v2";
 
 type Rec = Record<string, unknown>;
 const isRec = (v: unknown): v is Rec => !!v && typeof v === "object" && !Array.isArray(v);
@@ -29,10 +30,11 @@ function normalizeOrderDocs(order: Rec): Rec {
   return out;
 }
 
-// Флоу туристичного (аналог ОСЦПВ/ЗК): declare (order/create type=save) → orderId
-// → [спільні OTP та оплата по orderId] → confirm (order/create type=nextFinal з
-// повним payload) → contractId → download (tourism/contract/take).
-// OTP та оплату переюзуємо з /api/insurance/otp|payment.
+// Флоу туристичного на Ukasko v2 (з 21.10.2026): declare (v2 order/create — чернетка
+// в СК + OTP на email одразу) → orderId → [спільні OTP v2 та оплата v2 по orderId]
+// → confirm (v2 order/confirm лише з orderId; для старих v1-заявок — фолбек nextFinal
+// з повним payload) → contractId → download (v2 contract/take, фолбек v1).
+// Клієнт і далі шле повний order — він потрібен pending_orders/finalize і v1-фолбеку.
 
 async function handlePost(req: NextRequest) {
   try {
@@ -52,7 +54,9 @@ async function handlePost(req: NextRequest) {
       if (!order) return NextResponse.json({ success: false, error: "Немає даних заявки" }, { status: 400 });
       const key = idem ? `tour-declare:${idem}` : null;
       const { status, body: resBody } = await withIdempotency(key, async () => {
-        const result = await ukaskoService.declareTourismOrder(normalizeOrderDocs(order));
+        const payload = buildTourismV2Payload(normalizeOrderDocs(order));
+        const result = await ukaskoService.createTourismOrderV2(payload);
+        console.error(`[tourism v2 create] order=${result.id} status=${result.status} otpSent=${result.otpSent} len=${result.otpLength ?? "-"} draft=${result.draftDocument ? "yes" : "no"}`);
         return { status: 200, body: { success: true, data: result } };
       });
       return NextResponse.json(resBody, { status });

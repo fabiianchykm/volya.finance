@@ -21,6 +21,8 @@ import type {
   OsagoV2OrderResult,
   V2PaymentSystem,
   V2PaymentStatus,
+  TourismV2OrderRequest,
+  TourismV2OrderResult,
 } from "@/types/api";
 import { notifyDevError } from "@/lib/telegram";
 
@@ -260,6 +262,9 @@ async function getJson(url: string, token: string): Promise<unknown> {
 }
 
 // ─── Service class ────────────────────────────────────────────────────────────────
+
+// Продукти з OTP v2 (/v2/insurance/{product}/order/{resend,verify}-otp).
+export type V2OtpProduct = "oscpv" | "tourism" | "greencard";
 
 export class UkaskoService {
   private token: string | null = null;
@@ -637,28 +642,64 @@ export class UkaskoService {
     throw new Error(clean || `Страхова відхилила заявку: ${(msg ?? "").slice(0, 200)}`);
   }
 
-  async declareTourismOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
-    const payload = { ...orderData, params: { type: "save", statusId: 1 } };
-    const raw = await this.withAuth((token) => postJson(
-      `${BASE_URL}/insurance/tourism/order/create`, payload, token
-    )) as Record<string, unknown>;
-    this.tourismErr(raw, "declare");
-    const first = (raw as { data?: Array<{ id: string; status?: string }> }).data?.[0];
-    if (!first?.id) throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
-    return first;
+  // Заявлення туризму v2: чернетка в СК + OTP на email одразу (otpSent/otpLength).
+  // 422 — текст Ukasko вже людський (валідація, недозволений тип документа, застарілий
+  // офер); 500 — СК не згенерувала чернетку.
+  async createTourismOrderV2(payload: TourismV2OrderRequest): Promise<TourismV2OrderResult> {
+    let raw: { message?: string; data?: TourismV2OrderResult[] };
+    try {
+      raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/tourism/order/create`, payload, token)) as typeof raw;
+    } catch (e) {
+      const text = ukaskoErrorText(e);
+      console.error("[ukasko tourism v2 create] rejected:", e instanceof Error ? e.message.slice(0, 800) : String(e));
+      if (e instanceof HttpError && e.status === 422) throw new Error(text);
+      if (UPSTREAM_TIMEOUT_RE.test(text)) throw new Error(UPSTREAM_UNAVAILABLE_MSG);
+      if (e instanceof HttpError && e.status === 500) {
+        throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Оберіть, будь ласка, іншу пропозицію.");
+      }
+      throw e;
+    }
+    const d = raw?.data?.[0];
+    if (!d?.id) {
+      console.error("[ukasko tourism v2 create] empty data. raw:", JSON.stringify(raw).slice(0, 800));
+      throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
+    }
+    return { id: d.id, statusId: d.statusId, status: d.status, draftDocument: d.draftDocument ?? null, otpSent: d.otpSent === true, otpLength: d.otpLength ?? null };
   }
 
+  // Укладення туризму після оплати. Спершу v2 order/confirm (лише orderId; сам
+  // перевіряє OTP і оплату); якщо Ukasko каже, що заявка не v2 (створена до переходу,
+  // добирається sweep/payment-success) — v1 nextFinal з повним payload.
+  // ПЛАТІЖНИЙ ШЛАГБАУМ (assertPaid) лишається нашим.
   async confirmTourismOrder(orderData: Record<string, unknown>): Promise<{ contractId: string; status?: string }> {
-    await this.assertPaid(String(orderData.orderId ?? ""), "tourism");
-    const payload = { ...orderData, params: { type: "nextFinal", statusId: 2 } };
-    const raw = await this.withAuth((token) => postJson(
-      `${BASE_URL}/insurance/tourism/order/create`, payload, token
-    )) as Record<string, unknown>;
-    this.tourismErr(raw, "confirm");
-    const first = (raw as { data?: Array<{ contract?: { id: string; status?: string } }> }).data?.[0];
-    const contractId = first?.contract?.id;
-    if (!contractId) throw new Error("Договір не сформувався. Зверніться до підтримки.");
-    return { contractId, status: first?.contract?.status };
+    const orderId = String(orderData.orderId ?? "");
+    await this.assertPaid(orderId, "tourism");
+    try {
+      const raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/tourism/order/confirm`, { orderId }, token)) as {
+        data?: Array<{ order?: { id?: string; status?: string }; contract?: { id?: string; status?: string | null } }>;
+      };
+      const contractId = raw?.data?.[0]?.contract?.id;
+      if (!contractId) {
+        console.error("[ukasko tourism v2 confirm] empty contract. raw:", JSON.stringify(raw).slice(0, 800));
+        throw new Error("Договір не сформувався. Зверніться до підтримки.");
+      }
+      return { contractId, status: raw.data?.[0]?.contract?.status ?? undefined };
+    } catch (e) {
+      const text = ukaskoErrorText(e);
+      if (e instanceof HttpError && e.status === 422 && /v2|не є|is not/i.test(text)) {
+        console.error(`[ukasko tourism confirm] order=${orderId} не v2-заявка → v1 nextFinal`);
+        const payload = { ...orderData, orderId, params: { type: "nextFinal", statusId: 2 } };
+        const raw = await this.withAuth((token) => postJson(`${BASE_URL}/insurance/tourism/order/create`, payload, token)) as Record<string, unknown>;
+        this.tourismErr(raw, "confirm");
+        const first = (raw as { data?: Array<{ contract?: { id: string; status?: string } }> }).data?.[0];
+        const contractId = first?.contract?.id;
+        if (!contractId) throw new Error("Договір не сформувався. Зверніться до підтримки.");
+        return { contractId, status: first?.contract?.status };
+      }
+      console.error(`[ukasko tourism v2 confirm] order=${orderId} error:`, e instanceof Error ? e.message.slice(0, 600) : String(e));
+      if (e instanceof HttpError && (e.status === 422 || e.status === 500)) throw new Error(text);
+      throw e;
+    }
   }
 
   async takeTourismContract(contractId: string): Promise<{ contract?: string; mtsbuLink?: string; mtsbuCode?: string }> {
@@ -668,8 +709,16 @@ export class UkaskoService {
     // retry безпечний, retry500=true). Порожній contract теж трактуємо як «ще не
     // готово» й ретраїмо.
     try {
+      // v2 contract/take; для договорів старого флоу (404/422) — v1 contract/take.
       const data = await withRetry(() => this.withAuth(async (token) => {
-        const r = await postForm(`${BASE_URL}/insurance/tourism/contract/take`, { contractId }, token) as { data?: { contract?: string; mtsbuCode?: string } };
+        type Take = { data?: { contract?: string; mtsbuCode?: string } };
+        let r: Take;
+        try {
+          r = await postJson(`${V2_BASE}/insurance/tourism/contract/take`, { contractId }, token) as Take;
+        } catch (e) {
+          if (!(e instanceof HttpError && (e.status === 404 || e.status === 422))) throw e;
+          r = await postForm(`${BASE_URL}/insurance/tourism/contract/take`, { contractId }, token) as Take;
+        }
         if (!r.data?.contract) throw new HttpError(500, "Договір ще не готовий (порожній contract)");
         return r;
       }), 4, 1500, true) as { data: { contract?: string; mtsbuCode?: string } };
@@ -991,10 +1040,10 @@ export class UkaskoService {
 
   // OTP v2: перевірка коду з листа (+ код ДЦВ, якщо СК видала окремий). 422 = невірний /
   // прострочений код або не передано otpDgo — повертаємо valid:false з текстом Ukasko.
-  async verifyOsagoOtpV2(orderId: string, otp: string, otpDgo?: string | null): Promise<{ valid: boolean; error?: string }> {
+  async verifyOsagoOtpV2(orderId: string, otp: string, otpDgo?: string | null, product: V2OtpProduct = "oscpv"): Promise<{ valid: boolean; error?: string }> {
     try {
       const raw = await this.withAuth((token) => postJson(
-        `${V2_BASE}/insurance/oscpv/order/verify-otp`,
+        `${V2_BASE}/insurance/${product}/order/verify-otp`,
         { orderId, otp, ...(otpDgo ? { otpDgo } : {}) },
         token,
       )) as { status?: string; data?: { verified?: boolean } };
@@ -1006,8 +1055,8 @@ export class UkaskoService {
   }
 
   // Повторна відправка OTP v2: генерує НОВИЙ основний код (код ДЦВ лишається той самий).
-  async resendOsagoOtpV2(orderId: string): Promise<{ otpSent: boolean; otpLength: number | null; otpDgoRequired: boolean; otpDgoLength: number | null }> {
-    const raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/oscpv/order/resend-otp`, { orderId }, token)) as {
+  async resendOsagoOtpV2(orderId: string, product: V2OtpProduct = "oscpv"): Promise<{ otpSent: boolean; otpLength: number | null; otpDgoRequired: boolean; otpDgoLength: number | null }> {
+    const raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/${product}/order/resend-otp`, { orderId }, token)) as {
       data?: { otpSent?: boolean; otpLength?: number | null; otpDgoRequired?: boolean; otpDgoLength?: number | null };
     };
     const d = raw?.data ?? {};
