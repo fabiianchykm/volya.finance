@@ -227,7 +227,7 @@ export function CheckoutClient() {
       ownerBirthday: buyer.birthDate,
       policyholderBirthday: realPolicyholder,
       youngestBirthday: buyer.youngestBirthDate || realPolicyholder,
-      identificationCode: customer?.identificationCode ?? "",
+      identificationCode: customer?.identificationCode || buyer.identificationCode || "",
       nocache: "1",
     };
 
@@ -577,6 +577,7 @@ export function CheckoutClient() {
             privilegeId={buyer.privilegeId}
             initialPolicyholderBirth={buyer.policyholderBirthDate || ""}
             initialYoungestBirth={buyer.youngestBirthDate || ""}
+            initialIdentificationCode={buyer.identificationCode || ""}
           />
         )}
 
@@ -669,13 +670,14 @@ const PRIVILEGE_DOC_LABEL: Record<number, string> = {
   10: "Посвідчення учасника бойових дій (УБД)",
 };
 
-function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBirth = "", initialYoungestBirth = "" }: {
+function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBirth = "", initialYoungestBirth = "", initialIdentificationCode = "" }: {
   onSubmit: (c: Customer, youngestBirth: string) => void;
   // Обрана пільга (з BuyerModal). ≠ 1 → показуємо секцію пільгового документа.
   privilegeId?: number;
-  // ДН, введені ще в калькуляторі — підтягуємо, щоб не вводити повторно.
+  // ДН та ІПН, введені ще в калькуляторі — підтягуємо, щоб не вводити повторно.
   initialPolicyholderBirth?: string;
   initialYoungestBirth?: string;
+  initialIdentificationCode?: string;
 }) {
   const { t } = useI18n();
   const hasPrivilege = privilegeId !== 1;
@@ -685,7 +687,7 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
     patronymic: "",
     phone: "",
     email: "",
-    identificationCode: "",
+    identificationCode: initialIdentificationCode,
     dateBirth: initialPolicyholderBirth,
     street: "",
     house: "",

@@ -22,6 +22,14 @@ const OFFERS_TTL_MS = 10 * 60 * 1000;
 
 type FlowStep = "hero" | "offers";
 
+// ІПН тримаємо поза URL (персональні дані) — у sessionStorage, щоб перезавантаження
+// екрана пропозицій не просило його знову.
+const IPN_KEY = "osago_ipn";
+const readIpn = (): string => { try { return sessionStorage.getItem(IPN_KEY) ?? ""; } catch { return ""; } };
+const storeIpn = (v: string) => { try { if (v) sessionStorage.setItem(IPN_KEY, v); } catch { /* приватний режим */ } };
+// Готовність до розрахунку: ДН наймолодшого водія + ІПН страхувальника (обовʼязкові).
+const buyerReady = (b: BuyerData) => !!b.youngestBirthDate && /^\d{10}$/.test(b.identificationCode ?? "");
+
 interface FlowState {
   step: FlowStep;
   plate: string;
@@ -182,8 +190,8 @@ export function InsuranceFlow() {
     // пропозиції двічі: завантажимо один раз після «Застосувати» (handleBuyerConfirm).
     // Тоді offersLoading=false, щоб за модалкою НЕ крутився фейковий «пошук».
     // Якщо ДН уже є (редагування авто / відновлення з URL) — вантажимо одразу.
-    // Список рахуємо по наймолодшому водію → просимо лише його ДН (страхувальника — на checkout).
-    const askDobs = !buyer.youngestBirthDate;
+    // Перед пропозиціями ОБОВʼЯЗКОВО: ДН наймолодшого водія + ІПН (персональний тариф).
+    const askDobs = !buyerReady(buyer);
     setState((s) => ({ ...s, step: "offers", vehicle, buyer, periodId: period, offers: [], offersLoading: !askDobs }));
     // Номер авто (напівпублічний) — у URL через РОУТЕР (не replaceState), щоб клік по
     // меню на /osago розпізнавався як навігація й повертав на головний екран.
@@ -203,6 +211,7 @@ export function InsuranceFlow() {
     // BuyerModal («Індивідуальна пропозиція») повертає пільгу + ДН страхувальника
     // та наймолодшого водія. Мержимо поверх поточного (ДН власника з реєстру лишається).
     const merged: BuyerData = { ...state.buyer, ...buyer };
+    storeIpn(merged.identificationCode ?? "");
     setState((s) => ({ ...s, buyer: merged, offers: [], offersLoading: true }));
     router.replace(buildOffersUrl(state.vehicle, merged, state.plate), { scroll: false });
     void fetchOffers(state.vehicle, merged, state.periodId);
@@ -231,6 +240,7 @@ export function InsuranceFlow() {
         ownerBirthday: buyer.birthDate,
         policyholderBirthday: buyer.policyholderBirthDate ?? "",
         youngestBirthday: buyer.youngestBirthDate ?? "",
+        identificationCode: buyer.identificationCode ?? "",
       };
 
       const res = await fetch(`/api/insurance/offers?${new URLSearchParams(paramsObj)}`);
@@ -297,6 +307,7 @@ export function InsuranceFlow() {
           birthDate: sp.get("ob") || ownerDob,
           policyholderBirthDate: sp.get("ph") || "",
           youngestBirthDate: sp.get("yd") || "",
+          identificationCode: readIpn(),
         };
         // Реєстр не повернув місто реєстрації → не шлемо офери з порожньою зоною,
         // а відкриваємо модалку, щоб користувач обрав місто (інакше ціна невірна).
@@ -306,8 +317,11 @@ export function InsuranceFlow() {
           setShowVehicleModal(true);
           return;
         }
-        setState((s) => ({ ...s, plate, vehicle, buyer: restoredBuyer, step: "offers", offers: [], offersLoading: true }));
-        void fetchOffers(vehicle, restoredBuyer, 12);
+        // Без ДН/ІПН (напр. відкрили посилання на іншому пристрої) — спершу діалог.
+        const ready = buyerReady(restoredBuyer);
+        setState((s) => ({ ...s, plate, vehicle, buyer: restoredBuyer, step: "offers", offers: [], offersLoading: ready }));
+        if (ready) void fetchOffers(vehicle, restoredBuyer, 12);
+        else setShowBuyerModal(true);
       } catch {
         // мережевий збій — лишаємось на головному екрані
       }
@@ -399,7 +413,7 @@ export function InsuranceFlow() {
           onConfirm={handleBuyerConfirm}
           loading={state.offersLoading}
           // Обовʼязково заповнити, поки ДН наймолодшого ще нема (не можна пропустити крок).
-          required={!state.buyer.youngestBirthDate}
+          required={!buyerReady(state.buyer)}
         />
         {error && <ErrorToast message={error} onClose={() => setError(null)} />}
       </>

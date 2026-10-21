@@ -28,6 +28,10 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
   // Список пропозицій рахуємо по наймолодшому водію → тут просимо ЛИШЕ його ДН.
   // ДН страхувальника вводиться на checkout (у формі покупця).
   const [youngestBirth, setYoungestBirth] = useState(buyer.youngestBirthDate ?? "");
+  // ІПН страхувальника — потрібен для персонального тарифу окремих СК; без нього
+  // ціна у видачі може відрізнятись від ціни при оформленні.
+  const [ipn, setIpn] = useState(buyer.identificationCode ?? "");
+  const [ipnError, setIpnError] = useState(false);
   const [ageError, setAgeError] = useState(false);
   const [wasOpen, setWasOpen] = useState(false);
 
@@ -36,6 +40,8 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
     setWasOpen(true);
     setPrivilegeId(buyer.privilegeId);
     setYoungestBirth(buyer.youngestBirthDate ?? "");
+    setIpn(buyer.identificationCode ?? "");
+    setIpnError(false);
     setAgeError(false);
   } else if (!open && wasOpen) {
     setWasOpen(false);
@@ -48,10 +54,12 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
     const age = (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
     return age >= 18 && age <= 99;
   };
-  const datesValid = dobOk(youngestBirth);
+  const ipnValid = /^\d{10}$/.test(ipn);
+  const datesValid = dobOk(youngestBirth) && ipnValid;
 
   const handleConfirm = () => {
-    if (required && !datesValid) { setAgeError(true); return; }
+    if (!dobOk(youngestBirth)) { setAgeError(true); return; }
+    if (!ipnValid) { setIpnError(true); return; }
     onConfirm({
       ...buyer,
       privilegeId,
@@ -59,6 +67,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
       // ДН страхувальника тут не збираємо — вводиться на checkout. Зберігаємо наявне.
       policyholderBirthDate: buyer.policyholderBirthDate ?? "",
       youngestBirthDate: parseUaDate(youngestBirth) ? youngestBirth : "",
+      identificationCode: ipn,
     });
   };
 
@@ -80,12 +89,12 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
               {required
                 ? t({
-                    uk: "Вкажіть дату народження наймолодшого водія — за нею рахуємо ціну. Дату страхувальника введете при оформленні.",
-                    en: "Enter the youngest driver's date of birth — we price by it. The policyholder's date is entered at checkout.",
+                    uk: "Вкажіть дату народження наймолодшого водія та ІПН страхувальника — за ними страхові рахують персональну ціну. Дату страхувальника введете при оформленні.",
+                    en: "Enter the youngest driver's date of birth and the policyholder's tax ID — insurers price by them. The policyholder's date is entered at checkout.",
                   })
                 : t({
-                    uk: "Оберіть пільгу та вкажіть дату народження наймолодшого водія — за нею рахуємо ціну. Дату страхувальника введете при оформленні.",
-                    en: "Choose your benefit and enter the youngest driver's date of birth — we price by it. The policyholder's date is entered at checkout.",
+                    uk: "Оберіть пільгу, вкажіть дату народження наймолодшого водія та ІПН страхувальника — за ними страхові рахують персональну ціну.",
+                    en: "Choose your benefit, enter the youngest driver's date of birth and the policyholder's tax ID — insurers price by them.",
                   })}
             </p>
           </div>
@@ -133,6 +142,26 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             required={required}
             error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
           />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "ІПН (РНОКПП) страхувальника", en: "Policyholder's tax ID (RNOKPP)" })}</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="1234567890"
+            value={ipn}
+            onChange={(e) => { setIpn(e.target.value.replace(/\D/g, "").slice(0, 10)); if (ipnError) setIpnError(false); }}
+            className={`h-11 w-full rounded-xl border bg-white px-3 text-sm tracking-wider text-zinc-900 outline-none transition-colors focus:border-indigo-400 dark:bg-zinc-900 dark:text-zinc-100 ${
+              ipnError ? "border-red-400" : ipnValid ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/40" : "border-zinc-200 dark:border-zinc-700"
+            }`}
+          />
+          <p className={`mt-1 text-xs ${ipnError ? "font-medium text-red-500" : "text-zinc-400 dark:text-zinc-500"}`}>
+            {ipnError
+              ? t({ uk: "Вкажіть 10 цифр ІПН", en: "Enter the 10-digit tax ID" })
+              : t({ uk: "Окремі страхові враховують історію страхування за ІПН — ціна буде точною.", en: "Some insurers use your insurance history by tax ID — the price will be exact." })}
+          </p>
         </div>
 
         <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} disabled={required && !datesValid} className="w-full">

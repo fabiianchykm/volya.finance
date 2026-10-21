@@ -26,6 +26,10 @@ export interface BuyerData {
   // (див. osago-age-basis). "DD.MM.YYYY".
   policyholderBirthDate?: string; // ДН страхувальника
   youngestBirthDate?: string;     // ДН наймолодшого водія (за нею ж рахуємо «водія»)
+  // РНОКПП (ІПН) страхувальника — збираємо ДО пропозицій: окремі СК (ARX, Інтер-Поліс)
+  // рахують персональний тариф за історією страхування, і ціна у видачі має збігатись
+  // з ціною при оформленні. 10 цифр. У URL НЕ кладемо (персональні дані) — sessionStorage.
+  identificationCode?: string;
 }
 
 export const DEFAULT_BUYER: BuyerData = {
@@ -36,6 +40,7 @@ export const DEFAULT_BUYER: BuyerData = {
   birthDate: "",
   policyholderBirthDate: "",
   youngestBirthDate: "",
+  identificationCode: "",
 };
 
 export interface VehicleDetails {
