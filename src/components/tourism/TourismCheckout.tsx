@@ -351,11 +351,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
               <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={t2.dateBirth} onChange={(v) => setT(i, "dateBirth", v)} defaultYear={1990} required />
               <Input label={t({ uk: "ІПН", en: "Tax ID (INN)" })} value={t2.identificationCode} onChange={(e) => setT(i, "identificationCode", e.target.value)} placeholder="1234567890" />
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3">
-                <Input label={t({ uk: "Закордонний паспорт — серія", en: "Passport series" })} value={t2.passportSerial} onChange={(e) => setT(i, "passportSerial", e.target.value)} placeholder="FA" required />
-                <Input label={t({ uk: "Номер", en: "Number" })} value={t2.passportNumber} onChange={(e) => setT(i, "passportNumber", e.target.value)} placeholder="123456" inputMode="numeric" required />
-              </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Input label={t({ uk: "Серія паспорта", en: "Passport series" })} value={t2.passportSerial} onChange={(e) => setT(i, "passportSerial", e.target.value)} placeholder="FA" required />
+              <Input label={t({ uk: "Номер паспорта", en: "Passport number" })} value={t2.passportNumber} onChange={(e) => setT(i, "passportNumber", e.target.value)} placeholder="123456" inputMode="numeric" required />
               <Input label={t({ uk: "Ким виданий", en: "Issued by" })} value={t2.passportIssuedBy} onChange={(e) => setT(i, "passportIssuedBy", e.target.value)} placeholder={t({ uk: "напр. 1234", en: "e.g. 1234" })} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
