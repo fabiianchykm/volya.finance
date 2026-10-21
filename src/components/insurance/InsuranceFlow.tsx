@@ -27,8 +27,8 @@ type FlowStep = "hero" | "offers";
 const IPN_KEY = "osago_ipn";
 const readIpn = (): string => { try { return sessionStorage.getItem(IPN_KEY) ?? ""; } catch { return ""; } };
 const storeIpn = (v: string) => { try { if (v) sessionStorage.setItem(IPN_KEY, v); } catch { /* приватний режим */ } };
-// Готовність до розрахунку: ДН наймолодшого водія + ІПН страхувальника (обовʼязкові).
-const buyerReady = (b: BuyerData) => !!b.youngestBirthDate && /^\d{10}$/.test(b.identificationCode ?? "");
+// Готовність до розрахунку: ДН страхувальника + ідентифікаційний код + ДН наймолодшого водія.
+const buyerReady = (b: BuyerData) => !!b.policyholderBirthDate && !!b.youngestBirthDate && /^\d{10}$/.test(b.identificationCode ?? "");
 
 interface FlowState {
   step: FlowStep;

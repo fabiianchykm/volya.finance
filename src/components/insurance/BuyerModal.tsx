@@ -29,6 +29,10 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
   // Список пропозицій рахуємо по наймолодшому водію → тут просимо ЛИШЕ його ДН.
   // ДН страхувальника вводиться на checkout (у формі покупця).
   const [youngestBirth, setYoungestBirth] = useState(buyer.youngestBirthDate ?? "");
+  // ДН людини, на яку оформлюється страхування (страхувальника) — за нею рахують
+  // Княжа, Інтер-Поліс, PZU, Арсенал; далі підставляється в анкету оформлення.
+  const [policyholderBirth, setPolicyholderBirth] = useState(buyer.policyholderBirthDate ?? "");
+  const [phError, setPhError] = useState(false);
   // ІПН страхувальника — потрібен для персонального тарифу окремих СК; без нього
   // ціна у видачі може відрізнятись від ціни при оформленні.
   const [ipn, setIpn] = useState(buyer.identificationCode ?? "");
@@ -41,6 +45,8 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
     setWasOpen(true);
     setPrivilegeId(buyer.privilegeId);
     setYoungestBirth(buyer.youngestBirthDate ?? "");
+    setPolicyholderBirth(buyer.policyholderBirthDate ?? "");
+    setPhError(false);
     setIpn(buyer.identificationCode ?? "");
     setIpnError(false);
     setAgeError(false);
@@ -56,17 +62,17 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
     return age >= 18 && age <= 99;
   };
   const ipnValid = /^\d{10}$/.test(ipn);
-  const datesValid = dobOk(youngestBirth) && ipnValid;
+  const datesValid = dobOk(youngestBirth) && dobOk(policyholderBirth) && ipnValid;
 
   const handleConfirm = () => {
-    if (!dobOk(youngestBirth)) { setAgeError(true); return; }
+    if (!dobOk(policyholderBirth)) { setPhError(true); return; }
     if (!ipnValid) { setIpnError(true); return; }
+    if (!dobOk(youngestBirth)) { setAgeError(true); return; }
     onConfirm({
       ...buyer,
       privilegeId,
       customerType: privilegeId === 1 ? 1 : 3,
-      // ДН страхувальника тут не збираємо — вводиться на checkout. Зберігаємо наявне.
-      policyholderBirthDate: buyer.policyholderBirthDate ?? "",
+      policyholderBirthDate: parseUaDate(policyholderBirth) ? policyholderBirth : "",
       youngestBirthDate: parseUaDate(youngestBirth) ? youngestBirth : "",
       identificationCode: ipn,
     });
@@ -90,12 +96,12 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
             <p className="text-xs leading-relaxed text-indigo-700/90 dark:text-indigo-200/80">
               {required
                 ? t({
-                    uk: "Вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування, щоб отримати персональну ціну від страхових компаній.",
-                    en: "Enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for to get a personalised price from the insurers.",
+                    uk: "Вкажіть дату народження та ідентифікаційний код людини, на яку оформлюється страхування, і дату народження наймолодшого водія, щоб отримати персональну ціну від страхових компаній.",
+                    en: "Enter the date of birth and tax ID of the person the insurance is issued for, and the youngest driver's date of birth, to get a personalised price from the insurers.",
                   })
                 : t({
-                    uk: "Оберіть пільгу, вкажіть дату народження наймолодшого водія та ідентифікаційний код людини, на яку оформлюється страхування, щоб отримати персональну ціну від страхових компаній.",
-                    en: "Choose your benefit, enter the youngest driver's date of birth and the tax ID of the person the insurance is issued for to get a personalised price from the insurers.",
+                    uk: "Оберіть пільгу, вкажіть дату народження та ідентифікаційний код людини, на яку оформлюється страхування, і дату народження наймолодшого водія, щоб отримати персональну ціну від страхових компаній.",
+                    en: "Choose your benefit, enter the date of birth and tax ID of the person the insurance is issued for, and the youngest driver's date of birth, to get a personalised price from the insurers.",
                   })}
             </p>
           </div>
@@ -135,13 +141,13 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження людини, на яку оформлюється страхування", en: "Date of birth of the person the insurance is issued for" })}</label>
           <DateInput
-            value={youngestBirth}
-            onChange={(v) => { setYoungestBirth(v); if (ageError) setAgeError(false); }}
+            value={policyholderBirth}
+            onChange={(v) => { setPolicyholderBirth(v); if (phError) setPhError(false); }}
             defaultYear={1990}
-            required={required}
-            error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+            required
+            error={phError && !dobOk(policyholderBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
           />
         </div>
 
@@ -169,6 +175,17 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
           {ipnError && (
             <p className="mt-1 text-xs font-medium text-red-500">{t({ uk: "Вкажіть 10 цифр ідентифікаційного коду", en: "Enter the 10-digit tax ID" })}</p>
           )}
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
+          <DateInput
+            value={youngestBirth}
+            onChange={(v) => { setYoungestBirth(v); if (ageError) setAgeError(false); }}
+            defaultYear={1990}
+            required={required}
+            error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+          />
         </div>
 
         <Button variant="primary" size="md" onClick={handleConfirm} loading={loading} disabled={required && !datesValid} className="w-full">
