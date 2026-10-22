@@ -12,10 +12,11 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import { formatPrice, cityShort } from "@/lib/utils";
 import type { AccidentOffer, AccidentParams } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
+import { saveProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
 import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
+import { CalendarDays } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { SupportCTA } from "@/components/ui/SupportCTA";
 import type { AccidentForm } from "./AccidentFlow";
@@ -88,6 +89,46 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Дату початку можна змінити вже на оформленні: пропозиція перераховується тією ж
+  // СК/програмою через калькулятор (ціна може залежати від віку на дату старту),
+  // а в заявку йде offerId/price/searchInfo саме з перерахунку.
+  const [startDate, setStartDate] = useState(ctx.form.startDate);
+  const [offer, setOffer] = useState<AccidentOffer>(ctx.offer);
+  const [recalc, setRecalc] = useState<"idle" | "loading" | "error">("idle");
+  const [recalcError, setRecalcError] = useState<string | null>(null);
+  const recalcSeq = useRef(0);
+  const params: AccidentParams = { ...ctx.params, startDate };
+  useEffect(() => {
+    if (startDate === ctx.form.startDate) {
+      // Повернулись до дати з калькулятора — початкова пропозиція без запиту.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOffer(ctx.offer); setRecalc("idle"); setRecalcError(null);
+      return;
+    }
+    if (!parseUaDate(startDate)) return;
+    const seq = ++recalcSeq.current;
+    setRecalc("loading"); setRecalcError(null);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/accident", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...ctx.params, startDate }) });
+        const data = await res.json().catch(() => ({}));
+        if (seq !== recalcSeq.current) return;
+        if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося перерахувати", en: "Could not recalculate" }));
+        const list: AccidentOffer[] = (data.offers ?? []).filter((o: AccidentOffer) => o && o.price > 0);
+        const same = list.find((o) => o.companyId === ctx.offer.companyId && (o.program ?? "") === (ctx.offer.program ?? ""))
+          ?? list.find((o) => o.companyId === ctx.offer.companyId)
+          ?? list.find((o) => (o.companyName ?? "") === (ctx.offer.companyName ?? ""));
+        if (!same) throw new Error(t({ uk: "На цю дату ця страхова не має пропозиції. Оберіть іншу дату або поверніться до списку.", en: "This insurer has no offer for that date. Choose another date or go back to the list." }));
+        setOffer(same); setRecalc("idle");
+      } catch (err) {
+        if (seq !== recalcSeq.current) return;
+        setRecalc("error"); setRecalcError(err instanceof Error ? err.message : t({ uk: "Помилка перерахунку", en: "Recalculation error" }));
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate]);
+
   // Платник; дата народження з калькулятора — це дата ЗАСТРАХОВАНОГО.
   const [payer, setPayer] = useState<Person>(() => ({ ...emptyPerson(), dateBirth: ctx.form.birthDate }));
   const [other, setOther] = useState(false);   // страхується інша особа
@@ -134,21 +175,19 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
     void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
+  // Email/телефон НЕ підтягують профіль автоматично — збережені дані підставляються
+  // лише свідомим вибором у ProfilePicker (інакше введення чужого email перетирало форму).
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setPayer((s) => ({ ...s, email }));
-    if (authStatus === "authenticated") {
-      const saved = loadProfile(email);
-      if (saved) applyProfile(saved);
-    }
   };
 
   const buildOrder = (): Record<string, unknown> => ({
-    offerId: ctx.offer.offerId,
-    price: ctx.offer.price,
+    offerId: offer.offerId,
+    price: offer.price,
     discountPrice: null,
     bonusSystemValue: 0,
-    searchInfo: ctx.params,
+    searchInfo: params,
     payer: toApiPerson(payer),
     insured: other ? toApiPerson(insured) : null,
   });
@@ -158,14 +197,16 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
   useEffect(() => {
     if (resumedRef.current) return;
     resumedRef.current = true;
-    const r = readResume<{ step: "otp" | "payment"; payer: Person; other: boolean; insured: Person; orderId: string }>("checkout_resume_accident");
+    const r = readResume<{ step: "otp" | "payment"; payer: Person; other: boolean; insured: Person; orderId: string; startDate?: string; offer?: AccidentOffer }>("checkout_resume_accident");
     if (r && r.orderId && (r.step === "otp" || r.step === "payment")) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPayer(r.payer); setOther(r.other); setInsured(r.insured);
+      if (r.startDate) setStartDate(r.startDate);
+      if (r.offer) setOffer(r.offer);
       setOrderId(r.orderId); setStep(r.step);
     }
   }, []);
-  useResumeSnapshot("checkout_resume_accident", (step === "otp" || step === "payment") && orderId ? { ctx, step, payer, other, insured, orderId } : null);
+  useResumeSnapshot("checkout_resume_accident", (step === "otp" || step === "payment") && orderId ? { ctx, step, payer, other, insured, orderId, startDate, offer } : null);
 
   const validatePerson = (p: Person, who: string): string | null => {
     if (!p.surname.trim() || !p.name.trim()) return t({ uk: `Вкажіть прізвище та імʼя (${who})`, en: `Enter surname and name (${who})` });
@@ -184,6 +225,9 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
     if (err) { setError(err); return; }
     if (!payer.email.trim()) { setError(t({ uk: "Вкажіть email — на нього прийде поліс", en: "Enter email — the policy will be sent there" })); return; }
     if (!payer.identificationCode.trim()) { setError(t({ uk: "Вкажіть ІПН платника", en: "Enter the payer's tax ID" })); return; }
+    if (!parseUaDate(startDate)) { setError(t({ uk: "Вкажіть дату початку дії", en: "Enter the start date" })); return; }
+    if (recalc === "loading") { setError(t({ uk: "Зачекайте, перераховуємо ціну на нову дату…", en: "Please wait, recalculating the price for the new date…" })); return; }
+    if (recalc === "error") { setError(recalcError ?? t({ uk: "Оберіть іншу дату початку", en: "Choose another start date" })); return; }
     setLoading(true);
     setError(null);
     saveProfile({
@@ -208,7 +252,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
       if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Policy declaration error" }));
       const id = json.data?.id;
       setOrderId(id);
-      const company = ctx.offer.companyNamePublic || ctx.offer.company?.publicName || ctx.offer.companyName || "";
+      const company = offer.companyNamePublic || offer.company?.publicName || offer.companyName || "";
       const per = ACC_PERIODS.find((p) => p.value === ctx.form.period);
       registerPendingOrder({
         orderId: id, product: "accident",
@@ -216,8 +260,8 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
           email: payer.email, phone: `+380${payer.phone.replace(/\D/g, "")}`,
           customerName: fullName(payer),
           customer: { payer: toApiPerson(payer), insured: other ? toApiPerson(insured) : null, insuredName: other ? fullName(insured) : null },
-          company, price: ctx.offer.price, productLabel: "Нещасний випадок",
-          startDate: ctx.form.startDate,
+          company, price: offer.price, productLabel: "Нещасний випадок",
+          startDate,
           endDate: null,
           vehicle: { mark: t({ uk: "Нещасний випадок", en: "Accident" }), model: `${ctx.form.sum.toLocaleString("uk-UA")} грн · ${per ? per.label : ""} · ${ctx.params.selectedPackage === "child" ? "дитяча" : ACC_PACKAGES.find((x) => x.value === ctx.params.selectedPackage)?.label ?? ""}` },
         },
@@ -230,7 +274,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
         product: "Нещасний випадок",
         name: fullName(payer),
         company,
-        price: ctx.offer.price,
+        price: offer.price,
         phone: `+380${payer.phone.replace(/\D/g, "")}`,
         email: payer.email,
       });
@@ -254,7 +298,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
       if (!json.success) throw new Error(json.error);
       if (!json.valid) throw new Error(t({ uk: "Невірний код. Спробуйте ще раз.", en: "Invalid code. Please try again." }));
       setStep("payment");
-      trackEvent("begin_checkout", { product: "accident", currency: "UAH", value: ctx.offer.price });
+      trackEvent("begin_checkout", { product: "accident", currency: "UAH", value: offer.price });
     } catch (err) {
       setError(err instanceof Error ? err.message : t({ uk: "Помилка", en: "Error" }));
     } finally {
@@ -328,7 +372,9 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
     );
   };
 
-  const company = ctx.offer.companyNamePublic || ctx.offer.company?.publicName || ctx.offer.companyName || "";
+  const company = offer.companyNamePublic || offer.company?.publicName || offer.companyName || "";
+  const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); return d; })();
+  const maxStart = (() => { const d = new Date(); d.setDate(d.getDate() + 180); return d; })();
 
   return (
     <div className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
@@ -338,7 +384,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
         </button>
         <div>
           <h2 className="text-lg font-bold leading-tight text-zinc-900 dark:text-zinc-100">{t({ uk: "Оформлення страхування від нещасних випадків", en: "Accident insurance checkout" })}</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{company && <>{company} · </>}<span className="font-semibold text-zinc-900 dark:text-zinc-100">{formatPrice(ctx.offer.price)}</span></p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{company && <>{company} · </>}<span className="font-semibold text-zinc-900 dark:text-zinc-100">{recalc === "loading" ? t({ uk: "перераховуємо…", en: "recalculating…" }) : formatPrice(offer.price)}</span></p>
         </div>
       </div>
 
@@ -346,6 +392,15 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <ProfilePicker profiles={savedProfiles} onPick={applyProfile} />
+
+        {/* Дата початку — можна змінити тут, ціна перераховується */}
+        <div>
+          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500"><CalendarDays className="h-3.5 w-3.5" /> {t({ uk: "Початок дії поліса", en: "Policy start date" })}</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DateInput label={t({ uk: "Дата початку", en: "Start date" })} value={startDate} onChange={setStartDate} minDate={tomorrow} maxDate={maxStart} required
+              error={recalc === "error" ? (recalcError ?? undefined) : undefined} />
+          </div>
+        </div>
 
         {/* Кого страхуємо */}
         <div>
@@ -391,10 +446,10 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
           open={step === "payment"}
           onClose={() => setStep("form")}
           orderId={orderId}
-          amount={ctx.offer.price}
+          amount={offer.price}
           confirmEndpoint="/api/accident/order"
           onPaid={(cId) => {
-            trackEvent("purchase", { product: "accident", currency: "UAH", value: ctx.offer.price, transaction_id: cId });
+            trackEvent("purchase", { product: "accident", currency: "UAH", value: offer.price, transaction_id: cId });
             setContractId(cId);
             setStep("success"); clearResume("checkout_resume_accident");
           }}
