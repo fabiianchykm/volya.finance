@@ -1,3 +1,4 @@
+import { bareCityName, pickGeneralCity, type GeneralCityEntry, type HomeCityEntry } from "@/lib/home-city";
 import type {
   AuthResponse,
   CarInfo,
@@ -975,9 +976,36 @@ export class UkaskoService {
   // Далі спільні OTP/оплата, потім confirm.
   async createHomeOrder(orderData: Record<string, unknown>): Promise<{ id: string; status?: string }> {
     const params = (orderData.params as Record<string, unknown> | undefined) ?? {};
-    const draft = await this.postHomeOrder({ ...orderData, params: { ...params, statusId: -1 }, orderId: null });
-    const full = await this.postHomeOrder({ ...orderData, params: { ...params, statusId: null }, orderId: draft.id });
+    const prepared = await this.withInsurantCity(orderData);
+    const draft = await this.postHomeOrder({ ...prepared, params: { ...params, statusId: -1 }, orderId: null });
+    const full = await this.postHomeOrder({ ...prepared, params: { ...params, statusId: null }, orderId: draft.id });
     return full;
+  }
+
+  // info.city (адреса страхувальника) Ukasko резолвить із ЗАГАЛЬНОГО довідника, а
+  // houseInfo.city — із житлового; id у них різні. Чекаут знає лише житлове місто,
+  // тому тут підбираємо відповідник у загальному довіднику (див. src/lib/home-city.ts).
+  // Без впевненого збігу лишаємо як є (краще, ніж підставити випадкове місто).
+  private async withInsurantCity(orderData: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const info = (orderData.info as Record<string, unknown> | undefined) ?? {};
+    const houseInfo = (orderData.houseInfo as Record<string, unknown> | undefined) ?? {};
+    const homeCity = (houseInfo.city ?? info.city) as { id?: number; name?: string } | undefined;
+    if (!homeCity?.id || !homeCity.name) return orderData;
+    try {
+      const bare = bareCityName(homeCity.name);
+      const [homeList, generalList] = await Promise.all([this.findHomeCities(bare), this.findGeneralCities(bare)]);
+      const home = homeList.find((c) => c.id === homeCity.id) ?? { id: homeCity.id, name: homeCity.name };
+      const general = pickGeneralCity(home, generalList);
+      if (!general) {
+        console.warn(`[home city] no general match for home#${homeCity.id} ${homeCity.name} (${home.region ?? "-"}) — keeping as is`);
+        return orderData;
+      }
+      console.log(`[home city] home#${homeCity.id} ${homeCity.name} → general#${general.id} ${general.name_full_name_ua ?? general.name_ua ?? ""}`);
+      return { ...orderData, info: { ...info, city: { id: general.id, name: general.name_ua ?? bare } } };
+    } catch (e) {
+      console.warn("[home city] resolve failed, keeping as is:", e instanceof Error ? e.message : e);
+      return orderData;
+    }
   }
 
   async confirmHome(orderId: string): Promise<{ contractId: string; status?: string }> {
@@ -1002,8 +1030,14 @@ export class UkaskoService {
   }
 
   // Довідник міст ЖИТЛА (окремий від загального).
-  async findHomeCities(q: string): Promise<Array<{ id: number; name: string; name_full_name_ua?: string }>> {
-    const raw = await this.withAuth((t) => getJson(`${AUTH_URL}/directories/home/cities/find?city=${encodeURIComponent(q)}`, t)) as { data?: Array<{ id: number; name: string; name_full_name_ua?: string }> };
+  async findHomeCities(q: string): Promise<HomeCityEntry[]> {
+    const raw = await this.withAuth((t) => getJson(`${AUTH_URL}/directories/home/cities/find?city=${encodeURIComponent(q)}`, t)) as { data?: HomeCityEntry[] };
+    return Array.isArray(raw?.data) ? raw.data : [];
+  }
+
+  // Загальний довідник міст (пошук за назвою) — для info.city у житлі.
+  async findGeneralCities(q: string): Promise<GeneralCityEntry[]> {
+    const raw = await this.withAuth((t) => getJson(`${AUTH_URL}/directories/cities/find?city=${encodeURIComponent(q)}`, t)) as { data?: GeneralCityEntry[] };
     return Array.isArray(raw?.data) ? raw.data : [];
   }
 
