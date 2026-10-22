@@ -34,6 +34,8 @@ export interface CustomerProfile {
   youngestBirthDate?: string;
   street: string;
   house: string;
+  /** Квартира окремо від будинку (житло: для приватного будинку порожній рядок). */
+  apartment?: string;
   docType: 1 | 2 | 3 | 4;  // локальний числовий код продукту, що зберігав (для сумісності)
   docSerial: string;
   docNumber: string;

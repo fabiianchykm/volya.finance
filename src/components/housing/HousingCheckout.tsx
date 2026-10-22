@@ -27,6 +27,14 @@ import { SupportCTA } from "@/components/ui/SupportCTA";
 // Довідник міст ЖИТЛА (окремий) повертає {id, name, name_full_name_ua}.
 interface HomeCity { id: number; name: string; name_full_name_ua?: string }
 
+// Старі профілі зберігали «будинок / кв.» одним полем («12, кв. 5», «12/5»). Розкладаємо
+// на окремі будинок і квартиру, якщо квартира ще не збережена окремо.
+function splitHouse(house: string, apartment?: string): { house: string; apartment: string } {
+  if (apartment !== undefined) return { house, apartment };
+  const m = house.match(/^\s*(.+?)\s*(?:,?\s*кв\.?\s*|\s*\/\s*)(\d+[а-яa-z]?)\s*$/i);
+  return m ? { house: m[1], apartment: m[2] } : { house, apartment: "" };
+}
+
 export interface HousingContext {
   offer: HomeOffer;
   homeType: "flat" | "house";
@@ -116,6 +124,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
   const [cityResults, setCityResults] = useState<HomeCity[]>([]);
   const [cityLoading, setCityLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState<HomeCity | null>(null);
+  const isFlat = ctx.homeType === "flat";
   const cityRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!cityQuery || cityQuery.length < 2 || selectedCity) return;
@@ -163,7 +172,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       docNumber: active?.number ?? "",
       docIssuedBy: active?.issuedBy ?? "",
       docDate: active?.date ?? "",
-      street: p.street, house: p.house,
+      street: p.street, ...splitHouse(p.house, p.apartment),
     }));
     // Місто: підставляємо текст і одразу шукаємо збіг у довіднику ЖИТЛА, щоб проставити
     // selectedCity (інакше валідація «Оберіть місто зі списку» падає при заповненому полі).
@@ -229,6 +238,8 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     // earnings у замовленні МАЄ збігатися з тим, що використав калькулятор (offer.earnings_param),
     // інакше страховик відхиляє заявку. Хардкод 15 ламав ІНГО (на dev доступний лише тариф 30).
     const earnings = ctx.offer.earnings_param ?? 15;
+    // Квартира — обовʼязковий номер; приватний будинок — порожній рядок (так вимагає API).
+    const apartment = isFlat ? f.apartment.trim() : "";
     return {
       params: { statusId: null, type: null },
       orderId: null,
@@ -245,7 +256,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
         phone: toUkaskoPhone(f.phone),                 // Ukasko-формат "+380 XX-XXX-XX-XX"
         mail: f.email,
         city: cityObj,
-        street: f.street, house: f.house, apartment: f.apartment,
+        street: f.street, house: f.house, apartment,
         identificationCode: f.identificationCode,
         withoutIdentificationCode: !f.identificationCode,
         documentation: {
@@ -253,7 +264,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
           dateOfIssue: toUnix(f.docDate), endDateOfIssue: null, issuedBy: f.docIssuedBy,
         },
       },
-      houseInfo: { city: cityObj, street: f.street, house: f.house, apartment: f.apartment },
+      houseInfo: { city: cityObj, street: f.street, house: f.house, apartment },
       offerInfo: {
         offerId: ctx.offer.offerId, moduleId: ctx.offer.moduleId, companyId: ctx.offer.companyId,
         price: ctx.offer.price, ex_id: exId, ex_tariff_id: tariffId, externalIdTariff: tariffId,
@@ -288,6 +299,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
     if (!f.docSerial || !f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError(t({ uk: "Заповніть дані документа", en: "Fill in the document details" })); return; }
     if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
     if (!f.street || !f.house) { setError(t({ uk: "Вкажіть адресу обʼєкта", en: "Enter the object's address" })); return; }
+    if (isFlat && !f.apartment.trim()) { setError(t({ uk: "Вкажіть номер квартири", en: "Enter the apartment number" })); return; }
     // ІНГО: дата старту має бути з комфортним запасом (~2 тижні) — ранні дати страховик
     // відхиляє, а в зоні +9…+11 його модуль нестабільний. Backstop до мін. дати в календарі.
     if (isIngo(ctx.offer.companyNamePublic || ctx.offer.companyName)) {
@@ -304,7 +316,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       surname: f.surnameUa, name: f.nameUa, patronymic: f.patronymicUa,
       phone: f.phone, email: f.email,
       identificationCode: f.identificationCode, dateBirth: f.dateBirth,
-      street: f.street, house: f.house,
+      street: f.street, house: f.house, apartment: isFlat ? f.apartment : "",
       docType: f.docType, docKind: kindOfDoc(f.docType), docSerial: f.docSerial, docNumber: f.docNumber, docIssuedBy: f.docIssuedBy, docDate: f.docDate,
     });
     try {
@@ -459,8 +471,8 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
         {/* Адреса обʼєкта */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Адреса обʼєкта", en: "Object address" })}</p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <div className="relative sm:col-span-2" ref={cityRef}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
+            <div className="relative sm:col-span-3" ref={cityRef}>
               <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Місто", en: "City" })}</label>
               <input type="text" aria-label={t({ uk: "Пошук міста", en: "City search" })} value={cityQuery} placeholder={t({ uk: "Почніть вводити місто…", en: "Start typing a city…" })} required spellCheck={false}
                 onChange={(e) => { setCityQuery(e.target.value); setSelectedCity(null); }}
@@ -477,8 +489,11 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
                 </div>
               )}
             </div>
-            <Input label={t({ uk: "Вулиця", en: "Street" })} value={f.street} onChange={set("street")} required />
-            <Input label={t({ uk: "Будинок / кв.", en: "Building / apt." })} value={f.house} onChange={set("house")} required />
+            <div className="sm:col-span-3"><Input label={t({ uk: "Вулиця", en: "Street" })} value={f.street} onChange={set("street")} required /></div>
+            <div className={isFlat ? "sm:col-span-3" : "sm:col-span-6"}><Input label={t({ uk: "Будинок", en: "Building" })} value={f.house} onChange={set("house")} required /></div>
+            {isFlat && (
+              <div className="sm:col-span-3"><Input label={t({ uk: "Квартира", en: "Apartment" })} value={f.apartment} onChange={set("apartment")} required /></div>
+            )}
           </div>
         </div>
 
