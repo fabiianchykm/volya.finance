@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { uaNameProblem } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { OtpModal } from "./OtpModal";
@@ -713,6 +714,15 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const [cityError, setCityError] = useState(false);
   const [dobError, setDobError] = useState(false);
+  const [nameErrors, setNameErrors] = useState<{ surname?: string; name?: string; patronymic?: string }>({});
+  const nameErrorText = (k: "surname" | "name" | "patronymic") => {
+    const v = form[k];
+    if ((k === "surname" || k === "name") && !v.trim()) return t({ uk: "Обовʼязкове поле", en: "Required" });
+    const p = uaNameProblem(v);
+    if (p === "latin") return t({ uk: "Введіть українською (кирилицею)", en: "Use Ukrainian (Cyrillic) letters" });
+    if (p === "chars") return t({ uk: "Лише літери, апостроф і дефіс", en: "Letters, apostrophe and hyphen only" });
+    return undefined;
+  };
   const [docDateError, setDocDateError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [docType, setDocType] = useState<1 | 3 | 4>(3); // 3 = ID-карта, 1 = паспорт, 4 = водійське посвідчення
@@ -876,6 +886,10 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // ПІБ — лише кирилиця: Ukasko відхиляє латиницю/цифри/крапку («має хибний формат»).
+    const ne = { surname: nameErrorText("surname"), name: nameErrorText("name"), patronymic: nameErrorText("patronymic") };
+    setNameErrors(ne);
+    if (ne.surname || ne.name || ne.patronymic) return;
     const dob = parseUaDate(form.dateBirth);
     if (!dob) { setDobError(true); return; }
     setDobError(false);
@@ -957,9 +971,9 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
             {t({ uk: "Особисті дані", en: "Personal details" })}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Input label={t({ uk: "Прізвище", en: "Surname" })} value={form.surname} onChange={handleSurname} required />
-            <Input label={t({ uk: "Ім'я", en: "First name" })} value={form.name} onChange={set("name")} required />
-            <Input label={t({ uk: "По-батькові", en: "Patronymic" })} value={form.patronymic} onChange={set("patronymic")} />
+            <Input label={t({ uk: "Прізвище", en: "Surname" })} value={form.surname} onChange={(e) => { handleSurname(e); if (nameErrors.surname) setNameErrors((n) => ({ ...n, surname: undefined })); }} required error={nameErrors.surname} />
+            <Input label={t({ uk: "Ім'я", en: "First name" })} value={form.name} onChange={(e) => { set("name")(e); if (nameErrors.name) setNameErrors((n) => ({ ...n, name: undefined })); }} required error={nameErrors.name} />
+            <Input label={t({ uk: "По-батькові", en: "Patronymic" })} value={form.patronymic} onChange={(e) => { set("patronymic")(e); if (nameErrors.patronymic) setNameErrors((n) => ({ ...n, patronymic: undefined })); }} error={nameErrors.patronymic} placeholder={t({ uk: "кирилицею", en: "in Cyrillic" })} />
           </div>
         </div>
 
@@ -1356,14 +1370,16 @@ function CheckoutVehicleForm({
 }
 
 // Re-using same input component since it's missing from local scope
-function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+function Input({ label, error, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{label}</label>
       <input
         {...props}
-        className={`h-11 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${props.className || ""}`}
+        aria-invalid={error ? true : undefined}
+        className={`h-11 rounded-xl border bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 transition-colors dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 ${error ? "border-red-400 focus:border-red-500 focus:ring-red-500" : "border-zinc-200 focus:border-indigo-500 focus:ring-indigo-500 dark:border-zinc-700"} ${props.className || ""}`}
       />
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }

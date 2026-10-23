@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeUaName, isUaName } from "@/lib/ua-name";
+import { humanizeV2FieldErrors } from "@/lib/ukasko-field-labels";
 import { withJourney } from "@/lib/journey";
 import { ukaskoService } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
@@ -67,10 +69,19 @@ function buildPayload(body: Record<string, unknown>): OsagoV2OrderRequest {
   const ipn = str(i.identificationCode, 10).replace(/\D/g, "");
   const cityId = num(i.cityId);
   if (!cityId) throw new Error("Оберіть місто проживання страхувальника.");
+  // ПІБ лише кирилицею (Ukasko: «має хибний формат» на латиницю/цифри/крапку);
+  // «-» замість по батькові → поле не передаємо.
+  const nameUa = normalizeUaName(str(i.name, 100));
+  const surnameUa = normalizeUaName(str(i.surname, 100));
+  const patronymicUa = normalizeUaName(str(i.patronymic, 100));
+  if (!nameUa || !surnameUa) throw new Error("Вкажіть прізвище та імʼя страхувальника.");
+  for (const [label, v] of [["Прізвище", surnameUa], ["Імʼя", nameUa], ["По батькові", patronymicUa]] as const) {
+    if (!isUaName(v)) throw new Error(`${label}: введіть українською (кирилицею), без латинських літер, цифр і крапок.`);
+  }
   const insurer: OsagoV2Insurer = {
-    name: str(i.name, 100),
-    surname: str(i.surname, 100),
-    ...(optStr(i.patronymic, 100) ? { patronymic: optStr(i.patronymic, 100) } : {}),
+    name: nameUa,
+    surname: surnameUa,
+    ...(patronymicUa ? { patronymic: patronymicUa } : {}),
     dateBirth: date(i.dateBirth) ?? "",
     ...(ipn.length === 10 ? { identificationCode: ipn } : { withoutIdentificationCode: true }),
     ...(docType === 3 && optStr(i.unzr, 20) ? { unzr: optStr(i.unzr, 20) } : {}),
@@ -151,7 +162,7 @@ async function handlePost(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message = humanizeV2FieldErrors(error instanceof Error ? error.message : "Unknown error");
     // Очікувані, САМОВІДНОВЛЮВАНІ транзієнти (див. CheckoutClient.isRetryable):
     // протухла пропозиція (клієнт сам перераховує і повторює), порожня відповідь
     // модуля СК. Лишаємо їх у Cloud Logging, але НЕ пінгуємо оператора.
