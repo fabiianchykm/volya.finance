@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { splitDocSerialNumber } from "@/lib/doc-number";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Compass } from "lucide-react";
 import { registerPendingOrder } from "@/lib/pending-order-client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -21,6 +21,25 @@ import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resum
 
 import { useI18n } from "@/lib/i18n";
 import { SupportCTA } from "@/components/ui/SupportCTA";
+
+// Мета поїздки — поле заявки Ukasko v2 (необовʼязкове, дефолт travel). На ціну не
+// впливає (калькулятори його не приймають), але йде в договір як заявлена мета:
+// робота/спорт під «туризмом» — привід для відмови у виплаті.
+const TRIP_PURPOSES = [
+  { v: "travel", uk: "Туризм, відпочинок", en: "Tourism, leisure" },
+  { v: "business_travel", uk: "Відрядження", en: "Business trip" },
+  { v: "work", uk: "Робота за кордоном", en: "Work abroad" },
+  { v: "teaching", uk: "Навчання", en: "Studies" },
+  { v: "activeTravel", uk: "Активний відпочинок", en: "Active leisure" },
+  { v: "sport", uk: "Аматорський спорт", en: "Amateur sport" },
+  { v: "professionalSports", uk: "Професійний спорт", en: "Professional sport" },
+  { v: "extrim", uk: "Екстремальний відпочинок", en: "Extreme activities" },
+] as const;
+type TripPurpose = (typeof TRIP_PURPOSES)[number]["v"];
+// Мета з активностями при програмі «econom» (без активностей) — попереджаємо, не блокуємо.
+const ACTIVE_PURPOSES: ReadonlySet<string> = new Set(["activeTravel", "sport", "professionalSports", "extrim"]);
+const selectClass =
+  "h-11 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-indigo-400";
 
 // Анкета оформлення туристичного (аналог ЗК): дані страхувальника + туристів →
 // declare (order/create save) → OTP → оплата → confirm (nextFinal) → поліс.
@@ -62,6 +81,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
   const [contractId, setContractId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [purpose, setPurpose] = useState<TripPurpose>("travel");
 
   // Страхувальник (він же турист №1).
   const [c, setC] = useState({
@@ -190,11 +210,9 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       touristsListInfo,
       offerInfo: {
         ...o,
-        // Мета поїздки. Дозволені значення Ukasko: travel, teaching, activeTravel,
-        // extrim, professionalSports, sport, work, business_travel (дефолт travel).
-        // Раніше слали невалідне "tourism". Поки що фіксуємо коректний дефолт;
-        // вибір мети клієнтом (спорт/екстрим/робота — впливає на покриття) — окремо.
-        offerId: o.offerId, purposeOfTrip: "travel",
+        // Мета поїздки з селекта (TRIP_PURPOSES); сервер (tourism-v2.ts) валідує
+        // проти дозволених значень Ukasko і за потреби повертає дефолт travel.
+        offerId: o.offerId, purposeOfTrip: purpose,
         startDate: ctx.startDate, endDate: ctx.endDate,
         price: o.price, fullPrice: (o as { fullPrice?: number }).fullPrice ?? o.price,
         company: { ...(o.company ?? {}), Id: o.company?.ex_id ?? o.company?.id },
@@ -352,6 +370,24 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <ProfilePicker profiles={savedProfiles} onPick={applyProfile} />
+
+        {/* Мета поїздки */}
+        <div>
+          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500"><Compass className="h-3.5 w-3.5" /> {t({ uk: "Мета поїздки", en: "Purpose of trip" })}</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <select aria-label={t({ uk: "Мета поїздки", en: "Purpose of trip" })} value={purpose} onChange={(e) => setPurpose(e.target.value as TripPurpose)} className={selectClass}>
+                {TRIP_PURPOSES.map((pp) => <option key={pp.v} value={pp.v}>{t({ uk: pp.uk, en: pp.en })}</option>)}
+              </select>
+              {ACTIVE_PURPOSES.has(purpose) && (o.tripProgram ?? "").toLowerCase() === "econom" && (
+                <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                  {t({ uk: "Обрана програма без активностей. Для спорту чи активного відпочинку поверніться до списку й оберіть програму з активностями.", en: "The selected programme excludes activities. For sport or active leisure go back and pick a programme that covers activities." })}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Туристи */}
         {tourists.map((t2, i) => (
           <div key={i} className={i > 0 ? "border-t border-zinc-100 dark:border-zinc-800 pt-5" : ""}>
