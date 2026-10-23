@@ -69,6 +69,7 @@ export function HousingFlow() {
   }, []);
   const [offersLoading, setOffersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);   // пояснення з сервера, чому 0 пропозицій
 
   // Мінімальна дата старту — +14 днів (див. коментар вище): забороняємо ранні дати
   // у самому календарі, щоб не впертись у відмову/нестабільність модуля ІНГО.
@@ -100,6 +101,7 @@ export function HousingFlow() {
       if (!res.ok || !data?.success) throw new Error(data?.error ?? t({ uk: "Не вдалося отримати пропозиції", en: "Failed to fetch offers" }));
       const list = ((data.offers ?? []) as HomeOffer[]).sort((a, b) => a.price - b.price);
       setOffers(list);
+      setHint(list.length === 0 && typeof data.hint === "string" ? data.hint : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t({ uk: "Не вдалося отримати пропозиції.", en: "Failed to fetch offers." }));
     } finally {
@@ -152,6 +154,7 @@ export function HousingFlow() {
                 offers={offers}
                 loading={offersLoading}
                 error={error}
+                hint={hint}
                 summary={summary}
                 onBack={() => { setError(null); setStep("params"); window.history.replaceState(null, "", window.location.pathname); }}
                 onSelect={(o) => { setSelectedOffer(o); setStep("checkout"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
@@ -232,11 +235,12 @@ export function HousingFlow() {
 }
 
 function HousingOffers({
-  offers, loading, error, summary, onBack, onSelect,
+  offers, loading, error, hint, summary, onBack, onSelect,
 }: {
   offers: HomeOffer[];
   loading: boolean;
   error: string | null;
+  hint: string | null;
   summary: string;
   onBack: () => void;
   onSelect: (o: HomeOffer) => void;
@@ -264,8 +268,8 @@ function HousingOffers({
             </>
           ) : error || offers.length === 0 ? (
             <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
-              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? t({ uk: "Не вдалося отримати пропозиції", en: "Failed to fetch offers" }) : t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
-              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? t({ uk: "Спробуйте ще раз або змініть параметри.", en: "Try again or change the parameters." }) : t({ uk: "Спробуйте інші параметри.", en: "Try other parameters." })}</p>
+              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{error ? t({ uk: "Не вдалося отримати пропозиції", en: "Failed to fetch offers" }) : hint ? t({ uk: "Страхова тимчасово недоступна", en: "Insurer temporarily unavailable" }) : t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{error ? t({ uk: "Спробуйте ще раз або змініть параметри.", en: "Try again or change the parameters." }) : hint ? t({ uk: hint, en: "The insurer is not responding to the calculation right now. This is a temporary issue on their side — please try again later." }) : t({ uk: "Спробуйте інші параметри.", en: "Try other parameters." })}</p>
               <Button variant="secondary" size="md" onClick={onBack} className="mt-5">{t({ uk: "Змінити параметри", en: "Change parameters" })}</Button>
             </div>
           ) : (

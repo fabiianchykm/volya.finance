@@ -26,11 +26,15 @@ export async function POST(req: NextRequest) {
     const tariffs = await ukaskoService.getHomeTariffs();
     const earnings = tariffs.includes(HOME_EARNINGS) ? HOME_EARNINGS : (tariffs[0] ?? HOME_EARNINGS);
 
-    const offers = await ukaskoService.getHomeOffers({ homeType, insuranceAmount, insurancePeriod, earnings, startFrom });
+    const { offers, errorInfo } = await ukaskoService.getHomeOffers({ homeType, insuranceAmount, insurancePeriod, earnings, startFrom });
+    let hint: string | undefined;
     if (offers.length === 0) {
-      console.error("[home] 0 offers.", { homeType, insuranceAmount, insurancePeriod, startFrom, earnings, tariffsCount: tariffs.length });
+      const failed = errorInfo.map((e) => `${e.moduleName ?? "?"}@${e.step ?? "?"}: ${String(e.errorText ?? "").replace(/<[^>]+>|\s+/g, " ").trim().slice(0, 120)}`);
+      console.error("[home] 0 offers.", { homeType, insuranceAmount, insurancePeriod, startFrom, earnings, tariffsCount: tariffs.length, failed });
+      // Єдиний страховик житла (ІНГО) не відповів — це збій, а не «немає пропозицій».
+      if (errorInfo.length > 0) hint = "Страхова компанія зараз не відповідає на розрахунок. Це тимчасовий збій на її боці — спробуйте, будь ласка, пізніше.";
     }
-    return NextResponse.json({ success: true, offers });
+    return NextResponse.json({ success: true, offers, ...(hint ? { hint } : {}) });
   } catch (e) {
     console.error("[home] error →", e instanceof Error ? e.message : e);
     await notifyDevError("home calculator", e);

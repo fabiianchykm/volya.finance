@@ -909,13 +909,15 @@ export class UkaskoService {
     }
   }
 
-  async getHomeOffers(params: HomeParams): Promise<HomeOffer[]> {
+  // errorInfo — помилки модулів СК (напр. ІНГО відповів 403/500): калькулятор тоді
+  // віддає 200 з порожнім data, і без errorInfo це виглядає як «пропозицій немає».
+  async getHomeOffers(params: HomeParams): Promise<{ offers: HomeOffer[]; errorInfo: Array<{ errorText?: string; step?: string; moduleName?: string }> }> {
     const raw = await withRetry(
       () => this.withAuth((t) => postJson(`${HOME_BASE}/calculator`, params, t)),
       3, 700, true
-    ) as { data?: HomeOffer[] };
+    ) as { data?: HomeOffer[]; errorInfo?: Array<{ errorText?: string; step?: string; moduleName?: string }> };
     const list = Array.isArray(raw?.data) ? raw.data : [];
-    return list.filter((o) => o?.offerId && o.price > 0);
+    return { offers: list.filter((o) => o?.offerId && o.price > 0), errorInfo: Array.isArray(raw?.errorInfo) ? raw.errorInfo : [] };
   }
 
   // Внутрішні баги модуля страховика (ІНГО для житла: getCommission / 'module' of
