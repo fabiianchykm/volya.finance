@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { normalizeVin, isValidVin } from "@/lib/vin";
 import { uaNameProblem } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -1233,9 +1234,17 @@ function CheckoutVehicleForm({
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  const [vinError, setVinError] = useState<string | null>(null);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    // VIN лише A–Z/0–9 (МТСБУ відхиляє інше) — двійники кирилиці вже замінені при вводі.
+    const vin = normalizeVin(form.vin ?? "");
+    if ((form.vin ?? "").trim() && !isValidVin(vin)) {
+      setVinError(t({ uk: "Лише латинські літери A–Z і цифри, 5–17 символів", en: "Latin letters A–Z and digits only, 5–17 characters" }));
+      return;
+    }
+    setVinError(null);
+    onSubmit({ ...form, vin });
   };
 
   const isElectric = vehicle.autoCategory === "B5";
@@ -1292,7 +1301,11 @@ function CheckoutVehicleForm({
               label={t({ uk: "VIN-код (якщо є)", en: "VIN code (if any)" })}
               placeholder="KNEDE221266086429"
               value={form.vin ?? ""}
-              onChange={set("vin")}
+              onChange={(e) => { const vin = normalizeVin(e.target.value); setForm((f) => ({ ...f, vin })); if (vinError) setVinError(null); }}
+              error={vinError ?? undefined}
+              maxLength={17}
+              autoCapitalize="characters"
+              spellCheck={false}
             />
           </div>
         </div>

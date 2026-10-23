@@ -93,7 +93,15 @@ function ukaskoErrorBody(e: unknown): { status?: string; message?: string; data?
   const i = e.message.indexOf("{");
   if (i < 0) return null;
   try { return JSON.parse(e.message.slice(i)) as { status?: string; message?: string; data?: unknown }; }
-  catch { return null; }
+  catch {
+    // Тіло обрізане (довгі тексти СК/МТСБУ) → JSON не парситься. Витягуємо хоча б
+    // "message":"…" (з \u-екрануванням) — інакше клієнт бачить сирий «[POST …] 422: {…».
+    const m = e.message.slice(i).match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)/);
+    if (!m) return null;
+    let text = m[1];
+    try { text = JSON.parse(`"${m[1].replace(/\\u[0-9a-fA-F]{0,3}$/, "")}"`); } catch { /* лишаємо як є */ }
+    return { status: "error", message: text };
+  }
 }
 
 // Людський текст помилки Ukasko: для validation — усі повідомлення полів, інакше message.
@@ -104,7 +112,9 @@ function ukaskoErrorText(e: unknown): string {
     const msgs = Object.values(b.data as Record<string, unknown>).flat().map(String).filter(Boolean);
     if (msgs.length) return msgs.join(" ");
   }
-  return b.message || (e instanceof Error ? e.message : String(e));
+  // МТСБУ/СК додають технічний префікс «0- » до тексту відмови — прибираємо.
+  const msg = (b.message || "").replace(/^\s*\d+-\s*/, "").trim();
+  return msg || (e instanceof Error ? e.message : String(e));
 }
 
 // Протухлий/невалідний токен. Dev віддає 401, а ПРОД (uconnect.com.ua) — 403 з

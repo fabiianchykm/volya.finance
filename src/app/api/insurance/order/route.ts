@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeVin, isValidVin } from "@/lib/vin";
 import { normalizeUaName, isUaName } from "@/lib/ua-name";
 import { humanizeV2FieldErrors } from "@/lib/ukasko-field-labels";
 import { withJourney } from "@/lib/journey";
@@ -101,7 +102,10 @@ function buildPayload(body: Record<string, unknown>): OsagoV2OrderRequest {
 
   const number = normalizePlate(str(v.number, 20));
   const year = num(v.year);
-  const vin = str(v.vin, 17).toUpperCase();
+  // VIN: кирилиця-двійники → латиниця, без пробілів/дефісів; МТСБУ приймає лише A–Z/0–9.
+  const vinRaw = str(v.vin, 40);
+  const vin = normalizeVin(vinRaw);
+  if (vinRaw && !isValidVin(vin)) throw new Error("VIN-код: лише латинські літери A–Z і цифри (до 17 символів), без пробілів і дефісів.");
   const vehicle: OsagoV2Vehicle = {
     brand: str(v.brand, 100),
     model: str(v.model, 100),
