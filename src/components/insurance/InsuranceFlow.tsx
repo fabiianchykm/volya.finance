@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { insurerFailuresText, type InsurerFailure } from "@/lib/insurer-errors";
 import { useFlowReset } from "@/lib/nav-reset";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -38,6 +39,8 @@ interface FlowState {
   offers: InsuranceOffer[];
   offersLoading: boolean;
   periodId: number;
+  /** СК, що не порахували (збій/формат номера) — з калькулятора разом із пропозиціями. */
+  failures: InsurerFailure[];
 }
 
 export function InsuranceFlow() {
@@ -54,6 +57,7 @@ export function InsuranceFlow() {
     offers: [],
     offersLoading: false,
     periodId: 12,
+    failures: [],
   });
 
   // Клік по «Автоцивілка» в меню, коли вже показані пропозиції → на перший екран.
@@ -252,12 +256,17 @@ export function InsuranceFlow() {
 
       const offersResp = json.data;
       const offers: InsuranceOffer[] = Array.isArray(offersResp?.data) ? offersResp.data : [];
+      const failures: InsurerFailure[] = Array.isArray(offersResp?.failures) ? offersResp.failures : [];
 
       if (offers.length === 0) {
-        throw new Error(t({ uk: "Не знайдено пропозицій для вашого авто. Спробуйте змінити параметри.", en: "No offers found for your vehicle. Try changing the parameters." }));
+        setState((s) => ({ ...s, offers: [], failures, offersLoading: false }));
+        const why = insurerFailuresText(failures);
+        throw new Error(why
+          ? t({ uk: `Страхові не порахували: ${why}. Спробуйте ще раз за кілька хвилин.`, en: `Insurers could not calculate: ${why}. Please try again in a few minutes.` })
+          : t({ uk: "Не знайдено пропозицій для вашого авто. Спробуйте змінити параметри.", en: "No offers found for your vehicle. Try changing the parameters." }));
       }
 
-      setState((s) => ({ ...s, offers, offersLoading: false }));
+      setState((s) => ({ ...s, offers, failures, offersLoading: false }));
     } catch (e) {
       console.error("[offers] error →", e);
       setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" }));
@@ -395,6 +404,7 @@ export function InsuranceFlow() {
         <Navbar solid />
         <OffersSection
           offers={state.offers}
+          failures={state.failures}
           loading={state.offersLoading}
           awaitingBuyer={showBuyerModal && state.offers.length === 0}
           vehicle={state.vehicle}

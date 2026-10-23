@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { insurerFailuresText, type InsurerFailure } from "@/lib/insurer-errors";
+import { AlertTriangle } from "lucide-react";
 import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Info, Car, MapPin, CalendarDays } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
@@ -13,6 +15,8 @@ import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insuran
 
 interface OffersSectionProps {
   offers: InsuranceOffer[];
+  /** СК, що не порахували (тимчасовий збій / не приймає формат номера). */
+  failures?: InsurerFailure[];
   loading?: boolean;
   /** Відкрито обовʼязковий діалог ДН і ще не рахували — показуємо спокійний плейсхолдер, не «пошук». */
   awaitingBuyer?: boolean;
@@ -69,6 +73,7 @@ function cityLabel(city: string): string {
 
 export function OffersSection({
   offers,
+  failures = [],
   loading = false,
   awaitingBuyer = false,
   vehicle,
@@ -86,6 +91,8 @@ export function OffersSection({
   const privilege = PRIVILEGES.find((p) => p.id === buyer.privilegeId);
   const privilegeLabel = privilege ? t({ uk: privilege.label, en: privilege.labelEn }) : t({ uk: "Без пільг", en: "No benefits" });
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
+  const failuresText = insurerFailuresText(failures);
+  const unavailableNames = failures.filter((f) => f.reason === "unavailable").map((f) => f.name);
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
   const [sortBy, setSortBy] = useState<SortKey>("price_asc");
@@ -237,14 +244,24 @@ export function OffersSection({
           </div>
         ) : offers.length === 0 ? (
           <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Спробуйте змінити параметри авто.", en: "Try changing the vehicle parameters." })}</p>
+            <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{failuresText ? t({ uk: "Страхові не змогли порахувати", en: "Insurers could not calculate" }) : t({ uk: "Пропозицій не знайдено", en: "No offers found" })}</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-zinc-500 dark:text-zinc-400">{failuresText ? t({ uk: `${failuresText}. Спробуйте ще раз за кілька хвилин.`, en: `${failuresText}. Please try again in a few minutes.` }) : t({ uk: "Спробуйте змінити параметри авто.", en: "Try changing the vehicle parameters." })}</p>
             <Button variant="secondary" size="md" onClick={onBack} className="mt-5">
               {t({ uk: "Назад", en: "Back" })}
             </Button>
           </div>
         ) : (
           <div className="space-y-3">
+            {failuresText && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {unavailableNames.length === failures.length
+                    ? t({ uk: `Не відповіли: ${unavailableNames.join(", ")}. Їхні ціни зʼявляться після повторного розрахунку.`, en: `No response from: ${unavailableNames.join(", ")}. Their prices will appear after a recalculation.` })
+                    : t({ uk: `Не всі страхові порахували: ${failuresText}.`, en: `Some insurers did not calculate: ${failuresText}.` })}
+                </span>
+              </div>
+            )}
             {sorted.map((offer, i) => {
               // v2: СК оформлює поліс ЛИШЕ з ДЦВ (dgoRequired) → за замовчуванням
               // найдешевший варіант, «без покриття» недоступне.

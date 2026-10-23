@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { summarizeInsurerErrors } from "@/lib/insurer-errors";
 import { ukaskoService, UkaskoValidationError } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { normalizePlate } from "@/lib/plate";
@@ -100,7 +101,8 @@ export async function GET(req: NextRequest) {
       console.error(`[offers v2] errorInfo (${errorInfo.length} СК не порахували):`, JSON.stringify(errorInfo).slice(0, 600));
     }
 
-    const data = { status: "success", message: "", data: offers.map(toInsuranceOffer), errorInfo: [] };
+    // failures — які СК не порахували і чому (для плашки над списком / пояснення «0 пропозицій»).
+    const data = { status: "success", message: "", data: offers.map(toInsuranceOffer), errorInfo: [], failures: summarizeInsurerErrors(errorInfo) };
 
     // Кешуємо ЛИШЕ непорожній результат — щоб порожня видача під час збою не
     // «застрягала» в кеші на 3 хв і не блокувала повторні спроби.
