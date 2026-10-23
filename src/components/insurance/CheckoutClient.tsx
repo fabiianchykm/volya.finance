@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { normalizeVin, isValidVin } from "@/lib/vin";
-import { uaNameProblem } from "@/lib/ua-name";
+import { uaNameProblem, normalizeUaName } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { OtpModal } from "./OtpModal";
@@ -864,9 +864,9 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
   const persistProfile = () => {
     if (!form.email) return;
     saveProfile({
-      surname: form.surname,
-      name: form.name,
-      patronymic: form.patronymic,
+      surname: normalizeUaName(form.surname),
+      name: normalizeUaName(form.name),
+      patronymic: normalizeUaName(form.patronymic),
       phone: form.phone,
       email: form.email,
       identificationCode: form.identificationCode,
@@ -932,9 +932,9 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
     onSubmit({
       // Пільговик → customerType 3 (як у калькуляторі/BuyerModal), інакше 1.
       customerType: hasPrivilege ? 3 : 1,
-      name: form.name,
-      surname: form.surname,
-      patronymic: form.patronymic,
+      name: normalizeUaName(form.name),
+      surname: normalizeUaName(form.surname),
+      patronymic: normalizeUaName(form.patronymic),
       identificationCode: form.identificationCode,
       dateBirth,
       phone: `+380${form.phone}`,
