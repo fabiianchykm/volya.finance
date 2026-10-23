@@ -373,12 +373,26 @@ export class UkaskoService {
       .split("")
       .map(char => cyrillicToLatin[char] || char)
       .join("");
-    const data = await withRetry(() => this.withAuth((token) => getJson(
-      `${BASE_URL}/directories/car/${encodeURIComponent(normalized)}`,
-      token
-    ))) as { data: CarInfo[] | CarInfo };
-
-    const carData = Array.isArray(data.data) ? data.data[0] : data.data;
+    const fetchOnce = async () => {
+      const data = await withRetry(() => this.withAuth((token) => getJson(
+        `${BASE_URL}/directories/car/${encodeURIComponent(normalized)}`,
+        token
+      ))) as { data: CarInfo[] | CarInfo };
+      return Array.isArray(data.data) ? data.data[0] : data.data;
+    };
+    // Реєстр інколи віддає 200 з ПОРОЖНІМ записом (усі поля "" / city null) для авто,
+    // яке за мить знаходиться (23.10.2026, 54652TB: 15:09 — порожньо, 16:43 — ВАЗ 2107).
+    // Порожній запис = «не знайдено», але спершу одна повторна спроба.
+    const isEmpty = (c: CarInfo | undefined) => !c || (!c.mark && !c.model && !c.year && !c.vin);
+    let carData = await fetchOnce();
+    if (isEmpty(carData)) {
+      await new Promise((r) => setTimeout(r, 700));
+      carData = await fetchOnce();
+      if (isEmpty(carData)) {
+        console.warn(`[car lookup] empty record twice for ${normalized}`);
+        throw new Error(`Авто з номером ${normalized} не знайдено в реєстрі`);
+      }
+    }
     if (!carData) {
       throw new Error(`Авто з номером ${normalized} не знайдено`);
     }

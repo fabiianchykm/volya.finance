@@ -154,7 +154,8 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
   // Автозапуск, щойно введено повний номер (≥8 символів) — дебаунс 600мс.
   useEffect(() => {
     const raw = f.number.replace(/\s/g, "");
-    if (raw.length < 8 || raw === lastPlate.current || plateLoading) return;
+    // 7 символів — старі номери формату «12345 ТВ»; 8 — сучасні AA1234BB.
+    if (raw.length < 7 || raw === lastPlate.current || plateLoading) return;
     const t = setTimeout(() => { void lookupPlate(); }, 600);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
