@@ -72,6 +72,11 @@ env:
     secret: auth-google-id
   - variable: AUTH_GOOGLE_SECRET
     secret: auth-google-secret
+  # iOS OAuth client ID мобільного застосунку (не секрет) — вхід через Google з застосунку.
+  # Задати після створення клієнта типу «iOS» у Google Cloud Console:
+  #   firebase apphosting:secrets:set auth-google-ios-id
+  - variable: AUTH_GOOGLE_IOS_ID
+    secret: auth-google-ios-id
   # Postgres (Neon, POOLED) — вмикає «Мої поліси». Таблиця створюється автоматично.
   - variable: DATABASE_URL
     secret: database-url
