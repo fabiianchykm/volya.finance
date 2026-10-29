@@ -168,10 +168,10 @@ export function Footer() {
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
               © {new Date().getFullYear()} VOLYA.FINANCE. {t({ uk: "Усі права захищені.", en: "All rights reserved." })}
             </p>
-            {/* Публічна оферта / Політика конфіденційності — заморожені (документів ще нема). */}
+            {/* Публічна оферта — заморожена (документа ще нема); політика конфіденційності — /privacy. */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-400 dark:text-zinc-500">
               <span className="cursor-default">{t({ uk: "Публічна оферта", en: "Public offer" })}</span>
-              <span className="cursor-default">{t({ uk: "Політика конфіденційності", en: "Privacy policy" })}</span>
+              <Link href="/privacy" className="hover:text-zinc-600 dark:hover:text-zinc-300">{t({ uk: "Політика конфіденційності", en: "Privacy policy" })}</Link>
             </div>
           </div>
         </div>
