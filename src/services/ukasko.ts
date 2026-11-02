@@ -679,6 +679,11 @@ export class UkaskoService {
       console.error("[ukasko tourism v2 create] rejected:", e instanceof Error ? e.message.slice(0, 800) : String(e));
       if (e instanceof HttpError && e.status === 422) throw new Error(text);
       if (UPSTREAM_TIMEOUT_RE.test(text)) throw new Error(UPSTREAM_UNAVAILABLE_MSG);
+      // 02.11.2026: СК відмовляє 500 «Нельзя создавать контрагента с признаком
+      // "Отсутствует ИНН"» — це НЕ недоступність, а відсутній/невалідний ІПН у анкеті.
+      if (/ИНН|ІПН|идентификац|ідентифікац|identification/i.test(text)) {
+        throw new Error("Ця страхова компанія оформлює туристичний поліс лише за наявності ідентифікаційного коду. Поверніться до анкети й вкажіть ідентифікаційний код страхувальника (10 цифр).");
+      }
       if (e instanceof HttpError && e.status === 500) {
         throw new Error("Ця страхова компанія тимчасово недоступна для оформлення. Оберіть, будь ласка, іншу пропозицію.");
       }

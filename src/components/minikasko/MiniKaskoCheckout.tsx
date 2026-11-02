@@ -203,7 +203,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
   const goToVehicle = () => {
     if (!f.surnameUa || !f.nameUa || !f.patronymicUa) { setError(t({ uk: "Заповніть ПІБ", en: "Fill in your full name" })); return; }
     if (!parseUaDate(f.dateBirth)) { setError(t({ uk: "Вкажіть коректну дату народження", en: "Enter a valid date of birth" })); return; }
-    if (f.identificationCode.replace(/\D/g, "").length !== 10) { setError(t({ uk: "Вкажіть коректний ІПН (10 цифр)", en: "Enter a valid Tax ID (10 digits)" })); return; }
+    if (f.identificationCode.replace(/\D/g, "").length !== 10) { setError(t({ uk: "Вкажіть коректний ідентифікаційний код (10 цифр)", en: "Enter a valid Tax ID (10 digits)" })); return; }
     if (f.phone.replace(/\D/g, "").length < 9) { setError(t({ uk: "Вкажіть номер телефону", en: "Enter your phone number" })); return; }
     if (!f.email) { setError(t({ uk: "Вкажіть email", en: "Enter your email" })); return; }
     if (!f.docNumber || !f.docIssuedBy || !parseUaDate(f.docDate)) { setError(t({ uk: "Заповніть дані паспорта", en: "Fill in the passport details" })); return; }
@@ -365,7 +365,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={f.dateBirth} onChange={(v) => setF((s) => ({ ...s, dateBirth: v }))} defaultYear={1990} required />
-            <Input label={t({ uk: "ІПН", en: "Tax ID" })} value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" required />
+            <Input label={t({ uk: "Ідентифікаційний код", en: "Tax ID" })} value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" required />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

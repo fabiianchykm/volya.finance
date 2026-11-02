@@ -243,6 +243,12 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     if (loading) return;
     if (!selectedCity) { setError(t({ uk: "Оберіть місто зі списку", en: "Select a city from the list" })); return; }
     if (tourists.some((tr) => !parseUaDate(tr.dateBirth))) { setError(t({ uk: "Вкажіть коректні дати народження туристів", en: "Enter valid dates of birth for the travellers" })); return; }
+    // ІПН: страхувальнику (турист 1) — обовʼязково, інакше СК відмовляє на create
+    // («Нельзя создавать контрагента с признаком "Отсутствует ИНН"», інцидент 02.11.2026);
+    // іншим туристам — за наявності, але якщо введено, то рівно 10 цифр.
+    const ipnDigits = (v: string) => v.replace(/\D/g, "");
+    if (ipnDigits(tourists[0].identificationCode).length !== 10) { setError(t({ uk: "Вкажіть ідентифікаційний код страхувальника (10 цифр) — без нього страхова не оформить поліс.", en: "Enter the policyholder's tax ID (10 digits) — the insurer cannot issue the policy without it." })); return; }
+    if (tourists.some((tr, i) => i > 0 && tr.identificationCode.trim() && ipnDigits(tr.identificationCode).length !== 10)) { setError(t({ uk: "Ідентифікаційний код туриста має містити рівно 10 цифр (або залиште поле порожнім).", en: "A traveller's tax ID must be exactly 10 digits (or leave it empty)." })); return; }
     // Паспорт (номер + дата видачі + «дійсний до») — ОБОВʼЯЗКОВО для КОЖНОГО туриста.
     // Порожня дата «дійсний до» ламала укладання (confirm/nextFinal падав 500
     // «separation symbol / Trailing data»): declare її ковтав, а nextFinal — ні,
@@ -400,7 +406,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={t2.dateBirth} onChange={(v) => setT(i, "dateBirth", v)} defaultYear={1990} required />
-              <Input label={t({ uk: "ІПН", en: "Tax ID (INN)" })} value={t2.identificationCode} onChange={(e) => setT(i, "identificationCode", e.target.value)} placeholder="1234567890" />
+              <Input label={i === 0 ? t({ uk: "Ідентифікаційний код", en: "Tax ID (INN)" }) : t({ uk: "Ідентифікаційний код (за наявності)", en: "Tax ID (if any)" })} value={t2.identificationCode} onChange={(e) => setT(i, "identificationCode", e.target.value)} placeholder="1234567890" inputMode="numeric" required={i === 0} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Input label={t({ uk: "Серія паспорта", en: "Passport series" })} value={t2.passportSerial} onChange={(e) => setT(i, "passportSerial", e.target.value)} placeholder="FA" required />
