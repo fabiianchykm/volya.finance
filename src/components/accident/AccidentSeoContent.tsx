@@ -37,7 +37,7 @@ const PRICES = [
 
 const STEPS = [
   { uk: "Вкажіть дату народження застрахованого, строк, страхову суму, територію та фактор ризику — побачите ціну одразу.", en: "Enter the insured person's date of birth, term, insured sum, territory and risk factor — you see the price immediately." },
-  { uk: "Заповніть дані платника і, якщо страхуєте дитину чи родича, — застрахованої особи. Потрібні паспорт або ID-картка та ІПН.", en: "Fill in the payer's details and, if insuring a child or relative, the insured person's. A passport or ID card and tax number are required." },
+  { uk: "Заповніть дані платника і, якщо страхуєте дитину чи родича, — застрахованої особи. Потрібні паспорт або ID-картка та ідентифікаційний код.", en: "Fill in the payer's details and, if insuring a child or relative, the insured person's. A passport or ID card and tax number are required." },
   { uk: "Підтвердіть номер телефону кодом із SMS і оплатіть карткою через LiqPay.", en: "Confirm your phone number with an SMS code and pay by card via LiqPay." },
   { uk: "Електронний поліс приходить на email і зберігається в кабінеті «Мої поліси».", en: "The electronic policy arrives by email and is stored in your “My policies” account." },
 ];

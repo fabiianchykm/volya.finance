@@ -999,7 +999,7 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
-            label={t({ uk: "ІПН / ЄДРПО", en: "Tax ID / USREOU" })}
+            label={t({ uk: "Ідентифікаційний код / ЄДРПОУ", en: "Tax ID / USREOU" })}
             value={form.identificationCode}
             onChange={set("identificationCode")}
             placeholder="1234567890"

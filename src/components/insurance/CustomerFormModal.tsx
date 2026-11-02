@@ -93,7 +93,7 @@ export function CustomerFormModal({ open, onClose, onSubmit, loading }: Customer
             required
           />
           <Input
-            label={t({ uk: "ІПН / ЄДРПО", en: "Tax ID / USREOU" })}
+            label={t({ uk: "Ідентифікаційний код / ЄДРПОУ", en: "Tax ID / USREOU" })}
             value={form.identificationCode}
             onChange={set("identificationCode")}
             placeholder="1234567890"

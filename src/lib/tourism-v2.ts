@@ -15,6 +15,18 @@ const isRec = (v: unknown): v is Rec => !!v && typeof v === "object" && !Array.i
 const str = (v: unknown, max = 200): string => (typeof v === "string" ? v.trim().slice(0, max) : typeof v === "number" ? String(v) : "");
 const DATE_RE = /^\d{2}\.\d{2}\.\d{4}$/;
 
+// ІПН (РНОКПП): спершу прибираємо все, крім цифр (клієнт міг ввести з пробілами
+// «1234 567 890»), і лише тоді перевіряємо довжину. Раніше рядок обрізався до 10
+// символів ДО очищення — «1234 567 890» → «12345678» → поліс мовчки йшов як
+// withoutIdentificationCode:true, а СК відмовляла «Отсутствует ИНН».
+// Порожньо → {without:true}; 10 цифр → код; інакше — зрозуміла помилка клієнту.
+function ipnFields(v: unknown, who: string): { identificationCode: string; withoutIdentificationCode: false } | { withoutIdentificationCode: true } {
+  const digits = str(v, 40).replace(/\D/g, "");
+  if (!digits) return { withoutIdentificationCode: true };
+  if (digits.length !== 10) throw new Error(`${who}: ідентифікаційний код має містити рівно 10 цифр.`);
+  return { identificationCode: digits, withoutIdentificationCode: false };
+}
+
 const PURPOSES = new Set(["travel", "teaching", "activeTravel", "extrim", "professionalSports", "sport", "work", "business_travel"]);
 
 // Unix-секунди (так v1-payload зберігає дати документа) → d.m.Y за Києвом.
@@ -46,12 +58,11 @@ export function buildTourismV2Payload(order: Rec): TourismV2OrderRequest {
     const passportDate = dmy(t.passportDate);
     const passportEndDate = dmy(t.passportEndDate);
     if (!serial || !number || !passportDate) throw new Error(`Турист №${i + 1}: вкажіть серію, номер і дату видачі закордонного паспорта.`);
-    const ipn = str(t.identificationCode, 10).replace(/\D/g, "");
     return {
       name: str(t.name, 100),
       surname: str(t.surname, 100),
       dateBirth: dmy(t.dateBirth),
-      ...(ipn.length === 10 ? { identificationCode: ipn, withoutIdentificationCode: false } : { withoutIdentificationCode: true }),
+      ...ipnFields(t.identificationCode, `Турист №${i + 1}`),
       documentType: Number(t.documentType) || 2,
       passportSerial: serial,
       passportNumber: number,
@@ -79,7 +90,12 @@ export function buildTourismV2Payload(order: Rec): TourismV2OrderRequest {
   };
   if (!document.number || !document.dateOfIssue) throw new Error("Заповніть документ страхувальника (номер і дату видачі).");
 
-  const ipn = str(info.identificationCode, 10).replace(/\D/g, "");
+  // Страхувальник: СК (напр. «Респект») не створюють контрагента без ІПН — v2 create
+  // падає 500 «Нельзя создавать контрагента с признаком "Отсутствует ИНН"». Тому для
+  // страхувальника ІПН обовʼязковий уже тут (форма теж вимагає; мобільний застосунок
+  // отримує зрозумілу помилку замість «страхова тимчасово недоступна»).
+  const insurerIpn = ipnFields(info.identificationCode, "Страхувальник");
+  if (insurerIpn.withoutIdentificationCode) throw new Error("Вкажіть ідентифікаційний код страхувальника (10 цифр) — страхові компанії не оформлюють туристичний поліс без нього.");
   const email = str(info.mail ?? info.email, 200);
   const phone = str(info.phone, 20);
   if (!email || !phone) throw new Error("Вкажіть email і телефон страхувальника.");
@@ -94,7 +110,7 @@ export function buildTourismV2Payload(order: Rec): TourismV2OrderRequest {
       name: str(info.name, 100),
       surname: str(info.surname, 100),
       dateBirth: dmy(info.dateBirth),
-      ...(ipn.length === 10 ? { identificationCode: ipn, withoutIdentificationCode: false } : { withoutIdentificationCode: true }),
+      ...insurerIpn,
       phone, email, cityId, street, house, ...(apartment ? { apartment } : {}),
       document,
     },

@@ -48,7 +48,7 @@ function missingFields(p: CustomerProfile, t: (x: { uk: string; en: string }) =>
   const out: string[] = [];
   if (!p.surname || !p.name) out.push(t({ uk: "ПІБ", en: "full name" }));
   if (!p.dateBirth) out.push(t({ uk: "дата народження", en: "date of birth" }));
-  if (!p.identificationCode) out.push(t({ uk: "ІПН", en: "tax ID" }));
+  if (!p.identificationCode) out.push(t({ uk: "Ідентифікаційний код", en: "tax ID" }));
   if (!p.phone) out.push(t({ uk: "телефон", en: "phone" }));
   if (!p.street || !p.house) out.push(t({ uk: "адреса", en: "address" }));
   const hasDoc = Object.values(p.docByKind ?? {}).some((d) => d && (d.number || d.serial)) || !!(p.passportNumber || p.passportSerial);
@@ -152,7 +152,7 @@ function ProfileRow({ p, onEdit, onDeleted }: { p: CustomerProfile; onEdit: () =
         <div className="min-w-0">
           <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">{fullName(p) || t({ uk: "Без імені", en: "No name" })}</p>
           <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-            {[p.email, p.phone ? `+380 ${formatUaPhone(p.phone)}` : "", p.identificationCode ? `ІПН ${p.identificationCode}` : ""].filter(Boolean).join(" · ")}
+            {[p.email, p.phone ? `+380 ${formatUaPhone(p.phone)}` : "", p.identificationCode ? `Ідент. код ${p.identificationCode}` : ""].filter(Boolean).join(" · ")}
           </p>
           {missing.length > 0 && (
             <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t({ uk: "Не заповнено: ", en: "Missing: " })}{missing.join(", ")}</p>
@@ -242,7 +242,7 @@ function ProfileForm({ initial, isNew, onCancel, onSaved }: { initial: CustomerP
         <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={f.dateBirth} onChange={setDate("dateBirth")} defaultYear={1990} />
         <Input label={t({ uk: "Прізвище латиницею", en: "Surname (Latin)" })} value={f.surnameLat ?? ""} onChange={set("surnameLat")} placeholder={t({ uk: "як у закордонному паспорті", en: "as in the passport" })} />
         <Input label={t({ uk: "Ім'я латиницею", en: "First name (Latin)" })} value={f.nameLat ?? ""} onChange={set("nameLat")} />
-        <Input label={t({ uk: "ІПН", en: "Tax ID" })} inputMode="numeric" value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" />
+        <Input label={t({ uk: "Ідентифікаційний код", en: "Tax ID" })} inputMode="numeric" value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" />
         <Input label={t({ uk: "Телефон", en: "Phone" })} type="tel" inputMode="numeric" prefix="+380" value={formatUaPhone(f.phone)} onChange={(e) => setF((s) => ({ ...s, phone: e.target.value.replace(/\D/g, "").slice(0, 9) }))} placeholder="67 123 45 67" />
         <Input label="Email" type="email" value={f.email} onChange={set("email")} placeholder="email@example.com" required />
       </Section>

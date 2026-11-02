@@ -3,7 +3,7 @@
 export const V2_FIELD_LABELS: Record<string, string> = {
   "insurer.surname": "Прізвище", "insurer.name": "Імʼя", "insurer.patronymic": "По батькові",
   "insurer.phone": "Телефон", "insurer.email": "Email", "insurer.dateBirth": "Дата народження",
-  "insurer.identificationCode": "ІПН", "insurer.street": "Вулиця", "insurer.house": "Будинок",
+  "insurer.identificationCode": "Ідентифікаційний код", "insurer.street": "Вулиця", "insurer.house": "Будинок",
   "insurer.cityId": "Місто", "insurer.document.serial": "Серія документа", "insurer.document.number": "Номер документа",
   "insurer.document.dateOfIssue": "Дата видачі документа", "insurer.document.issuedBy": "Ким виданий документ",
   "vehicle.vin": "VIN", "vehicle.number": "Держномер", "vehicle.brand": "Марка авто", "vehicle.model": "Модель авто",

@@ -325,7 +325,7 @@ const FAQ_ACCIDENT: FaqItem[] = [
   {
     question: "Які документи потрібні для оформлення?",
     answer:
-      "Паспорт або ID-картка та ІПН платника; якщо страхуєте іншу особу — її паспорт або ID-картка та ІПН. Поліс електронний: приходить на email і доступний у кабінеті.",
+      "Паспорт або ID-картка та ідентифікаційний код платника; якщо страхуєте іншу особу — її паспорт або ID-картка та ідентифікаційний код. Поліс електронний: приходить на email і доступний у кабінеті.",
     questionEn: "What documents are needed?",
     answerEn:
       "The payer's passport or ID card and tax number; if you insure another person — their passport or ID card and tax number. The policy is electronic: it arrives by email and is available in your account.",

@@ -224,7 +224,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
     const err = validatePerson(payer, t({ uk: "платник", en: "payer" })) ?? (other ? validatePerson(insured, t({ uk: "застрахований", en: "insured" })) : null);
     if (err) { setError(err); return; }
     if (!payer.email.trim()) { setError(t({ uk: "Вкажіть email — на нього прийде поліс", en: "Enter email — the policy will be sent there" })); return; }
-    if (!payer.identificationCode.trim()) { setError(t({ uk: "Вкажіть ІПН платника", en: "Enter the payer's tax ID" })); return; }
+    if (!payer.identificationCode.trim()) { setError(t({ uk: "Вкажіть ідентифікаційний код платника", en: "Enter the payer's tax ID" })); return; }
     if (!parseUaDate(startDate)) { setError(t({ uk: "Вкажіть дату початку дії", en: "Enter the start date" })); return; }
     if (recalc === "loading") { setError(t({ uk: "Зачекайте, перераховуємо ціну на нову дату…", en: "Please wait, recalculating the price for the new date…" })); return; }
     if (recalc === "error") { setError(recalcError ?? t({ uk: "Оберіть іншу дату початку", en: "Choose another start date" })); return; }
@@ -328,7 +328,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
           ) : (
             <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={p.dateBirth} onChange={(v) => patch({ dateBirth: v })} defaultYear={1990} required />
           )}
-          <Input label={isPayer ? t({ uk: "ІПН", en: "Tax ID (INN)" }) : t({ uk: "ІПН (за наявності)", en: "Tax ID (if any)" })} value={p.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" required={isPayer} />
+          <Input label={isPayer ? t({ uk: "Ідентифікаційний код", en: "Tax ID (INN)" }) : t({ uk: "Ідентифікаційний код (за наявності)", en: "Tax ID (if any)" })} value={p.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" required={isPayer} />
         </div>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">

@@ -340,7 +340,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DateInput label={t({ uk: "Дата народження", en: "Date of birth" })} value={f.dateBirth} onChange={(v) => setF((s) => ({ ...s, dateBirth: v }))} defaultYear={1990} required />
-            <Input label={t({ uk: "ІПН", en: "Tax ID (INN)" })} value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" />
+            <Input label={t({ uk: "Ідентифікаційний код", en: "Tax ID (INN)" })} value={f.identificationCode} onChange={set("identificationCode")} placeholder="1234567890" />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

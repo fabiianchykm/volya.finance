@@ -42,7 +42,7 @@ export function ProfilePicker({ profiles, onPick }: { profiles: CustomerProfile[
                 className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
               >
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{label(p)}</span>
-                {p.identificationCode ? <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">ІПН {p.identificationCode}</span> : null}
+                {p.identificationCode ? <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">Ідент. код {p.identificationCode}</span> : null}
               </button>
             ))}
           </div>
