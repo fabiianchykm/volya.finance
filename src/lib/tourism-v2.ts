@@ -115,6 +115,8 @@ export function buildTourismV2Payload(order: Rec): TourismV2OrderRequest {
       document,
     },
     tourists,
-    isSendPhoneMessage: false,
+    // 02.11.2026: клієнти не доходили до вводу коду — лист від СК з OTP не знаходили
+    // (спам/затримка). true — Ukasko дублює код у Viber/SMS на телефон страхувальника.
+    isSendPhoneMessage: true,
   };
 }

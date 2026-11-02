@@ -33,6 +33,8 @@ interface OtpModalProps {
   onConfirm: (otp: string, otpDgo?: string) => void;
   onResend: () => void;
   email: string;
+  /** Якщо СК дублює код у SMS/Viber (туризм v2: isSendPhoneMessage) — показуємо й телефон. */
+  phone?: string | null;
   loading?: boolean;
   error?: string | null;
   /** Довжина коду. Зелена карта шле 6 АБО 8 символів → передає minLength=6, maxLength=8.
@@ -44,7 +46,7 @@ interface OtpModalProps {
   dgoCode?: { length: number | null } | null;
 }
 
-export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, error, minLength = 6, maxLength = 6, dgoCode }: OtpModalProps) {
+export function OtpModal({ open, onClose, onConfirm, onResend, email, phone, loading, error, minLength = 6, maxLength = 6, dgoCode }: OtpModalProps) {
   const { t } = useI18n();
   const variable = maxLength !== minLength;
   const boxes = minLength; // к-сть комірок у фіксованому режимі
@@ -110,6 +112,16 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, loading, e
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {t({ uk: "Ми надіслали код підтвердження на", en: "We have sent a confirmation code to" })}{" "}
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">{email}</span>
+            {phone ? (
+              <>
+                {" "}{t({ uk: "та SMS/Viber на", en: "and by SMS/Viber to" })}{" "}
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{phone}</span>
+              </>
+            ) : null}
+          </p>
+          {/* 02.11.2026: клієнти застрягали на цьому кроці — лист від страхової потрапляв у спам. */}
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            {t({ uk: "Лист іде від страхової компанії — якщо його немає, перевірте папку «Спам» або «Промоакції».", en: "The email comes from the insurer — if you can't see it, check your Spam or Promotions folder." })}
           </p>
         </div>
 

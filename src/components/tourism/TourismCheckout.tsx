@@ -476,6 +476,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
         onConfirm={handleOtpConfirm}
         onResend={async () => { if (!orderId) return; setError(null); try { await sendOtpV2(orderId); } catch (e) { setError(e instanceof Error ? e.message : t({ uk: "Помилка", en: "Error" })); } }}
         email={c.email}
+        phone={c.phone ? `+380 ${formatUaPhone(c.phone)}` : null}
         loading={loading}
         error={error}
         minLength={otpLength}
