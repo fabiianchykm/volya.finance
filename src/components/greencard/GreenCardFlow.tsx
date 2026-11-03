@@ -112,6 +112,14 @@ export function GreenCardFlow() {
     const eD = parseUaDate(eUa);
     const per = sD && eD ? periodFromDays(daysBetween(sD, eD)) : null;
     if (!sD || !per || num.length < 6) return;
+    // Дата початку вже не «завтра» (збережене/вчорашнє посилання) — Ukasko відхилить
+    // 422. Лишаємо форму з підказкою, хай оберуть дату наново.
+    if (sD < new Date(minStart.getFullYear(), minStart.getMonth(), minStart.getDate())) {
+      setStep("params");
+      setError(t({ uk: "Дата початку поліса — не раніше завтра. Оберіть дати поїздки ще раз.", en: "The policy start date must be tomorrow or later. Please pick the trip dates again." }));
+      window.history.replaceState(null, "", window.location.pathname);
+      return;
+    }
     setError(null);
     setOffers([]);
     setOffersLoading(true);

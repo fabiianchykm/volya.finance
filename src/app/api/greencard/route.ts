@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest } from "@/lib/api-guard";
-import { ukaskoService } from "@/services/ukasko";
+import { ukaskoService, UkaskoValidationError } from "@/services/ukasko";
 import { notifyDevError } from "@/lib/telegram";
 import type { GreenCardParams } from "@/types/api";
 
@@ -34,11 +34,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Вкажіть державний номер авто" }, { status: 400 });
   }
   params.carNumber = params.carNumber.toUpperCase().replace(/\s/g, "");
+  // Початок дії — не раніше завтра за Києвом: Ukasko відхиляє 422 «Дата початку дії
+  // полісу має бути не раніше завтра». Форма це обмежує, але збережене посилання
+  // (?step=offers&start=…) з учорашнім «завтра» обходило перевірку (03.11.2026).
+  {
+    const todayKyiv = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Kyiv", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); // YYYY-MM-DD
+    if (params.startDate <= todayKyiv) {
+      return NextResponse.json({ success: false, error: "Дата початку поліса — не раніше завтра. Оберіть іншу дату." }, { status: 400 });
+    }
+  }
 
   try {
     const offers = await ukaskoService.getGreenCardOffers(params);
     return NextResponse.json({ success: true, offers });
   } catch (e) {
+    if (e instanceof UkaskoValidationError) {
+      return NextResponse.json({ success: false, error: e.message }, { status: 400 });
+    }
     console.error("[greencard] calc error:", e instanceof Error ? e.message : e);
     await notifyDevError("greencard calculator", e);
     return NextResponse.json(

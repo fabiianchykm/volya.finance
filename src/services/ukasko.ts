@@ -475,6 +475,10 @@ export class UkaskoService {
       // 200, але порожньо — теж пробуємо по-модульно.
       return await perModule("empty");
     } catch (e) {
+      // 422 = невалідні параметри (напр. «Дата початку дії полісу має бути не раніше
+      // завтра» зі старого посилання) — per-module фолбек дасть той самий 422 ×N,
+      // тож одразу віддаємо людський текст (роут показує як 400, без dev-алерту).
+      if (e instanceof HttpError && e.status === 422) throw new UkaskoValidationError(ukaskoErrorText(e));
       const offers = await perModule("failed");
       if (offers.length === 0) throw e; // геть усе впало — віддаємо оригінальну помилку
       return offers;
