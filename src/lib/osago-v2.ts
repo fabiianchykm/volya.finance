@@ -34,6 +34,7 @@ export function toInsuranceOffer(o: OsagoV2Offer): InsuranceOffer {
     price: Number(o.price) || 0,
     discountPrice: Number(o.discountPrice) || 0,
     discountPercent: o.discountPercent ?? null,
+    maxDiscount: typeof o.maxDiscount === "number" ? o.maxDiscount : null,
     startDate: o.startDate,
     endDate: endDateFor(o.startDate, Number(o.periodId) || 12),
     periodId: Number(o.periodId) || 12,

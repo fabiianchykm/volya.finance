@@ -9,6 +9,9 @@ import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
 import { normalizePlate } from "@/lib/plate";
 import { splitDocSerialNumber } from "@/lib/doc-number";
+import { auth } from "@/auth";
+import { getBonusAvailability, holdBonusRedemption } from "@/lib/bonus-redemption";
+import { lookupOfferPrice } from "@/lib/offer-price-cache";
 import type { OsagoV2Insurer, OsagoV2OrderRequest, OsagoV2Vehicle } from "@/types/api";
 
 // Заявлення ОСЦПВ — Ukasko API v2 (/v2/insurance/oscpv/order/create): один виклик
@@ -134,6 +137,30 @@ function buildPayload(body: Record<string, unknown>): OsagoV2OrderRequest {
   };
 }
 
+// Списання бонусів: клієнт просить bonusAmount грн → переводимо у discountPercent від
+// ціни пропозиції (Ukasko v2, знижка коштом нашої комісії зі стелею maxDiscount).
+// Межі: доступний залишок людини (з урахуванням резервів), стеля пропозиції, сама
+// ціна. Ціну беремо з серверного кешу пропозицій; при промаху — з тіла запиту, але
+// фактичну знижку з відповіді Ukasko потім звіряємо з доступним залишком.
+async function resolveBonusDiscount(body: Record<string, unknown>, offerId: string): Promise<
+  | { percent: number; email: string; requested: number; available: number; price: number }
+  | { percent: 0; requested: number; reason: string }
+> {
+  const requested = Math.floor(num(body.bonusAmount) ?? 0);
+  if (!(requested > 0)) return { percent: 0, requested: 0, reason: "none" };
+  const email = (await auth().catch(() => null))?.user?.email ?? null;
+  if (!email) return { percent: 0, requested, reason: "not-logged-in" };
+  const avail = await getBonusAvailability(email);
+  const cached = lookupOfferPrice(offerId);
+  const price = cached?.price ?? num(body.offerPrice) ?? 0;
+  if (!(price > 0)) return { percent: 0, requested, reason: "no-price" };
+  const cap = Math.floor(Math.min(requested, avail.available, cached?.maxDiscount ?? Infinity, price));
+  if (cap < 1) return { percent: 0, requested, reason: avail.available < 1 ? "no-balance" : "capped-to-zero" };
+  // Округлюємо ВНИЗ до 0.01 %, щоб знижка ніколи не перевищила списувану суму.
+  const percent = Math.max(0.01, Math.min(100, Math.floor((cap / price) * 10000) / 100));
+  return { percent, email, requested, available: avail.available, price };
+}
+
 async function handlePost(req: NextRequest) {
   try {
     // Заявлення декларує поліс у СК і запускає email/SMS — обмежуємо жорсткіше.
@@ -153,11 +180,38 @@ async function handlePost(req: NextRequest) {
       }
       // Дедуплікуємо за клієнтським ключем спроби (Idempotency-Key): повторний submit /
       // мережевий ретрай не створює другу декларацію в СК.
+      const bonus = await resolveBonusDiscount(body, payload.offerId);
+      if (bonus.percent > 0) payload.discountPercent = bonus.percent;
       const { status, body: resBody } = await withIdempotency(
         idemHeader ? `create:${idemHeader}` : null,
         async () => {
-          const result = await ukaskoService.createOsagoOrderV2(payload);
-          console.error(`[order v2] created id=${result.id} mtsbu=${result.mtsbuCode ?? "-"} price=${result.price} changed=${result.priceChanged} otpSent=${result.otpSent} otpLen=${result.otpLength ?? "-"} dgoOtp=${result.dgo?.otpRequired ?? "-"}`);
+          let result: Awaited<ReturnType<typeof ukaskoService.createOsagoOrderV2>>;
+          let discountRejected: string | null = null;
+          try {
+            result = await ukaskoService.createOsagoOrderV2(payload);
+          } catch (e) {
+            // Акаунту не дозволено discountPercent (422 від Ukasko) — не валимо покупку:
+            // повторюємо БЕЗ знижки (422 не створює заявку, дубля декларації не буде).
+            const msg = e instanceof Error ? e.message : String(e);
+            if (!(payload.discountPercent && /discount|знижк/i.test(msg))) throw e;
+            discountRejected = msg;
+            console.error("[order v2] discountPercent rejected, retrying without bonus:", msg.slice(0, 300));
+            await notifyDevError("bonus discount rejected by Ukasko", e);
+            delete payload.discountPercent;
+            bonus.percent = 0;
+            result = await ukaskoService.createOsagoOrderV2(payload);
+          }
+          // Фактичне списання — з відповіді Ukasko (стеля могла урізати запит).
+          const discountFromPrice = result.discountPrice && result.discountPrice > 0 ? Math.max(0, result.price - result.discountPrice) : 0;
+          const applied = bonus.percent > 0 ? Math.max(0, Math.round(Number(result.discountAmount) || discountFromPrice)) : 0;
+          if (bonus.percent > 0 && "email" in bonus) {
+            if (applied > 0) await holdBonusRedemption({ orderId: result.id, email: bonus.email, product: "osago", amount: applied }).catch((e) => notifyDevError("bonus hold", e));
+            if (applied > bonus.available + 1) await notifyDevError("bonus over-applied", new Error(`order ${result.id}: applied=${applied} available=${bonus.available} percent=${bonus.percent} price=${bonus.price}`));
+            result.bonus = { requested: bonus.requested, applied };
+          } else if (bonus.requested > 0) {
+            result.bonus = { requested: bonus.requested, applied: 0, reason: discountRejected ? "rejected" : "reason" in bonus ? bonus.reason : undefined };
+          }
+          console.error(`[order v2] created id=${result.id} mtsbu=${result.mtsbuCode ?? "-"} price=${result.price} changed=${result.priceChanged} otpSent=${result.otpSent} otpLen=${result.otpLength ?? "-"} dgoOtp=${result.dgo?.otpRequired ?? "-"} bonus=${bonus.requested}/${applied} pct=${bonus.percent} discountPrice=${result.discountPrice ?? "-"} capped=${result.discountCapped ?? "-"}`);
           return { status: 200, body: { success: true, data: result } };
         }
       );

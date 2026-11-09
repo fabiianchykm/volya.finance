@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { finalizeOrder, notifyPaidNotIssued } from "@/lib/finalize-order";
 import { listUnfinalizedOrders, markPendingAlerted } from "@/lib/pending-orders";
 import { notifyDevError } from "@/lib/telegram";
+import { releaseStaleBonusHolds } from "@/lib/bonus-redemption";
 
 // Safety-net: періодично (зовнішній cron) добираємо ОПЛАЧЕНІ, але НЕ УКЛАДЕНІ
 // замовлення й доукладаємо їх. Закриває дві діри, яких не ловить /payment-success:
@@ -22,9 +23,12 @@ async function runSweep(req: NextRequest) {
   const provided = req.headers.get("x-sweep-secret") || new URL(req.url).searchParams.get("secret");
   if (provided !== secret) return NextResponse.json({ success: false, error: "unauthorized" }, { status: 401 });
 
+  // Резерви бонусів за заявками, які так і не оплатили, знову стають доступними.
+  const releasedHolds = await releaseStaleBonusHolds().catch((e) => { void notifyDevError("bonus release", e); return 0; });
+
   const orders = await listUnfinalizedOrders({ minAgeMinutes: 2, maxAgeHours: 72, limit: 100 });
   const now = Date.now();
-  const summary = { checked: orders.length, issued: 0, unpaid: 0, stillFailing: 0, alerted: 0, errors: 0 };
+  const summary = { checked: orders.length, issued: 0, unpaid: 0, stillFailing: 0, alerted: 0, errors: 0, releasedHolds };
 
   for (const o of orders) {
     try {

@@ -4,6 +4,7 @@ import { ukaskoService, UkaskoValidationError } from "@/services/ukasko";
 import { guardRequest } from "@/lib/api-guard";
 import { normalizePlate } from "@/lib/plate";
 import { toInsuranceOffer } from "@/lib/osago-v2";
+import { rememberOfferPrices } from "@/lib/offer-price-cache";
 import type { OsagoV2CalcParams } from "@/types/api";
 
 // Калькулятор ОСЦПВ — Ukasko API v2 (/v2/insurance/oscpv/calculate). Зона виводиться
@@ -102,7 +103,10 @@ export async function GET(req: NextRequest) {
     }
 
     // failures — які СК не порахували і чому (для плашки над списком / пояснення «0 пропозицій»).
-    const data = { status: "success", message: "", data: offers.map(toInsuranceOffer), errorInfo: [], failures: summarizeInsurerErrors(errorInfo) };
+    const mapped = offers.map(toInsuranceOffer);
+    // Ціна/стеля знижки за offerId — для переведення бонусів у discountPercent у /order.
+    rememberOfferPrices(mapped);
+    const data = { status: "success", message: "", data: mapped, errorInfo: [], failures: summarizeInsurerErrors(errorInfo) };
 
     // Кешуємо ЛИШЕ непорожній результат — щоб порожня видача під час збою не
     // «застрягала» в кеші на 3 хв і не блокувала повторні спроби.

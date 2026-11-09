@@ -2,11 +2,13 @@ import { sql } from "./db";
 
 // Єдиний бонусний рахунок користувача. Сюди зводяться ВСІ нарахування:
 // - 'purchase' — 1% від власної покупки полісу;
-// - 'referral' — 5% від покупки запрошеного друга.
+// - 'referral' — 5% від покупки запрошеного друга;
+// - 'redeem'   — списання бонусів у рахунок знижки на поліс (відʼємна сума, див.
+//                bonus-redemption.ts).
 // Баланс = сума всіх записів. Дедуплікація за id = `${kind}:${policyId}` —
 // один поліс дає максимум один запис кожного типу.
 
-export type BonusKind = "purchase" | "referral";
+export type BonusKind = "purchase" | "referral" | "redeem";
 
 let schemaPromise: Promise<void> | null = null;
 function ensureBonusSchema(): Promise<void> {
@@ -54,14 +56,15 @@ export async function creditBonus(input: {
 }
 
 export interface BonusBreakdown {
-  total: number;
+  total: number;      // доступний залишок = нараховано − списано
   purchase: number;
   referral: number;
+  redeemed: number;   // скільки вже списано на знижки (додатне число)
 }
 
 /** Баланс бонусного рахунку з розбивкою за типом. */
 export async function getBonusBreakdown(email: string): Promise<BonusBreakdown> {
-  const empty = { total: 0, purchase: 0, referral: 0 };
+  const empty = { total: 0, purchase: 0, referral: 0, redeemed: 0 };
   if (!sql) return empty;
   await ensureBonusSchema();
   const rows = await sql<{ kind: string; sum: string }[]>`
@@ -74,14 +77,15 @@ export async function getBonusBreakdown(email: string): Promise<BonusBreakdown> 
     const v = Number(r.sum) || 0;
     if (r.kind === "purchase") out.purchase = v;
     else if (r.kind === "referral") out.referral = v;
+    else if (r.kind === "redeem") out.redeemed = Math.abs(v);
   }
-  out.total = out.purchase + out.referral;
+  out.total = Math.max(0, out.purchase + out.referral - out.redeemed);
   return out;
 }
 
 /** Баланс за НАБОРОМ email-ів (рівноправна звʼязка акаунтів). */
 export async function getBonusBreakdownMulti(emails: string[]): Promise<BonusBreakdown> {
-  const empty = { total: 0, purchase: 0, referral: 0 };
+  const empty = { total: 0, purchase: 0, referral: 0, redeemed: 0 };
   const list = [...new Set(emails.map((e) => norm(e)).filter(Boolean))];
   if (!sql || !list.length) return empty;
   await ensureBonusSchema();
@@ -95,7 +99,8 @@ export async function getBonusBreakdownMulti(emails: string[]): Promise<BonusBre
     const v = Number(r.sum) || 0;
     if (r.kind === "purchase") out.purchase = v;
     else if (r.kind === "referral") out.referral = v;
+    else if (r.kind === "redeem") out.redeemed = Math.abs(v);
   }
-  out.total = out.purchase + out.referral;
+  out.total = Math.max(0, out.purchase + out.referral - out.redeemed);
   return out;
 }

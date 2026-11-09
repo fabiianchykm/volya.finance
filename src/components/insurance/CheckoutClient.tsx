@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { normalizeVin, isValidVin } from "@/lib/vin";
 import { uaNameProblem, normalizeUaName } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Gift } from "lucide-react";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
@@ -80,6 +80,24 @@ export function CheckoutClient() {
   const [priceNotice, setPriceNotice] = useState<string | null>(null);
   // Попередження СК при декларуванні: на це авто вже є чинні поліси, які буде розірвано.
   const [warning, setWarning] = useState<string | null>(null);
+  // Бонусний рахунок залогіненого клієнта (/api/bonus): скільки можна списати зараз.
+  // Списання йде як discountPercent у заявку Ukasko (знижка коштом нашої комісії,
+  // стеля — offer.maxDiscount), тож сума до оплати в LiqPay уже зменшена.
+  const [bonusAvailable, setBonusAvailable] = useState(0);
+  const [useBonus, setUseBonus] = useState(false);
+  const [bonusAmount, setBonusAmount] = useState(0);
+  const [bonusNotice, setBonusNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/bonus")
+      .then((r) => r.json())
+      .then((d: { loggedIn?: boolean; available?: number }) => {
+        if (alive && d?.loggedIn && typeof d.available === "number") setBonusAvailable(Math.floor(d.available));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -202,9 +220,14 @@ export function CheckoutClient() {
     o.price +
     (dgoId ? Number(o.listDgo?.find((d) => d.id === dgoId)?.cost ?? 0) : 0) +
     (lawId ? (o.listAutolawyer?.find((a) => a.id === lawId)?.price ?? 0) : 0);
+  // Після заявлення ОСЦПВ-частина — discountPrice (ціна зі списаними бонусами), якщо є.
+  const orderOsagoPrice = order ? (order.discountPrice && order.discountPrice > 0 ? order.discountPrice : order.price) : 0;
   const orderTotal = order
-    ? order.price + (order.dgo?.price ?? 0) + (order.autolawyer?.price ?? 0)
+    ? orderOsagoPrice + (order.dgo?.price ?? 0) + (order.autolawyer?.price ?? 0)
     : offerTotal(offer, selectedDgoId, selectedAutolawyerId);
+  // Скільки бонусів можна списати по ЦІЙ пропозиції: залишок, стеля СК, сама ціна.
+  const bonusMax = Math.max(0, Math.floor(Math.min(bonusAvailable, offer.maxDiscount ?? Infinity, offer.price)));
+  const bonusToApply = useBonus ? Math.min(Math.max(0, Math.floor(bonusAmount)), bonusMax) : 0;
 
   // Перераховуємо обрану пропозицію перед оформленням під РЕАЛЬНІ дані страхувальника:
   // v2-калькулятор приймає всі три дати народження разом (кожна СК бере свою) і РНОКПП
@@ -330,7 +353,9 @@ export function CheckoutClient() {
         const res = await fetch("/api/insurance/order", {
           method: "POST",
           headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
-          body: JSON.stringify({ action: "create", ...payload }),
+          // bonusAmount/offerPrice — списання бонусів (сервер звіряє з балансом і
+          // серверною ціною пропозиції, переводить у discountPercent).
+          body: JSON.stringify({ action: "create", ...payload, bonusAmount: bonusToApply, offerPrice: ord.price }),
         });
         const json = await res.json();
         if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
@@ -381,6 +406,19 @@ export function CheckoutClient() {
         );
       }
       if (created.warningCancelMessage) setWarning(created.warningCancelMessage);
+
+      // Списання бонусів: фактична сума — з відповіді (стеля СК могла її урізати).
+      const osagoPay = created.discountPrice && created.discountPrice > 0 ? created.discountPrice : created.price;
+      const totalPay = osagoPay + (created.dgo?.price ?? 0) + (created.autolawyer?.price ?? 0);
+      if (created.bonus && created.bonus.applied > 0) {
+        setBonusNotice(
+          created.bonus.applied < created.bonus.requested
+            ? t({ uk: `Списано ${formatPrice(created.bonus.applied)} бонусів (максимум для цієї страхової). До оплати — ${formatPrice(totalPay)}.`, en: `${formatPrice(created.bonus.applied)} of bonuses applied (the maximum for this insurer). Amount due — ${formatPrice(totalPay)}.` })
+            : t({ uk: `Списано ${formatPrice(created.bonus.applied)} бонусів. До оплати — ${formatPrice(totalPay)}.`, en: `${formatPrice(created.bonus.applied)} of bonuses applied. Amount due — ${formatPrice(totalPay)}.` })
+        );
+      } else if (bonusToApply > 0) {
+        setBonusNotice(t({ uk: `Бонуси не вдалося списати на цю заявку — до оплати повна сума ${formatPrice(totalPay)}. Бонуси лишаються на рахунку.`, en: `Bonuses could not be applied to this order — the full amount of ${formatPrice(totalPay)} is due. Your bonuses stay on the account.` }));
+      }
 
       // Контекст фіналізації — щоб /payment-success уклав поліс і зберіг його в
       // кабінет навіть якщо клієнта редіректнуло з модалки оплати.
@@ -559,6 +597,63 @@ export function CheckoutClient() {
       {warning && (
         <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">
           <span className="font-semibold">{t({ uk: "Попередження страхової: ", en: "Insurer warning: " })}</span>{warning}
+        </div>
+      )}
+      {bonusNotice && step !== "otp" && (
+        <div className="flex items-start gap-2 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">
+          <Gift className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{bonusNotice}</span>
+        </div>
+      )}
+
+      {/* Списання бонусів — до заявлення (знижка фіксується в заявці Ukasko). */}
+      {(step === "customer" || step === "vehicle") && !order && bonusMax >= 1 && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <label className="flex cursor-pointer items-start justify-between gap-3">
+            <span className="flex items-start gap-2">
+              <Gift className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span className="flex flex-col">
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  {t({ uk: `Списати бонуси: на рахунку ${formatPrice(bonusAvailable)}`, en: `Use bonuses: ${formatPrice(bonusAvailable)} on your account` })}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {bonusMax < bonusAvailable
+                    ? t({ uk: `По цій пропозиції можна списати до ${formatPrice(bonusMax)}. Сума до оплати зменшиться одразу.`, en: `Up to ${formatPrice(bonusMax)} can be applied to this offer. The amount due drops right away.` })
+                    : t({ uk: "Сума до оплати зменшиться на списані бонуси.", en: "The amount due drops by the applied bonuses." })}
+                </span>
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={useBonus}
+              onChange={(e) => { setUseBonus(e.target.checked); if (e.target.checked && !(bonusAmount > 0)) setBonusAmount(bonusMax); }}
+              className="mt-1 h-5 w-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-600"
+            />
+          </label>
+          {useBonus && (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="text-sm text-zinc-600 dark:text-zinc-300" htmlFor="bonus-amount">{t({ uk: "Сума списання, грн", en: "Amount to apply, UAH" })}</label>
+              <input
+                id="bonus-amount"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={bonusMax}
+                step={1}
+                value={bonusAmount || ""}
+                onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value) || 0))))}
+                className="h-10 w-32 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              />
+              <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                {t({ uk: `Списати максимум (${formatPrice(bonusMax)})`, en: `Apply the maximum (${formatPrice(bonusMax)})` })}
+              </button>
+              {bonusToApply > 0 && (
+                <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {t({ uk: `До оплати ≈ ${formatPrice(Math.max(0, orderTotal - bonusToApply))}`, en: `Amount due ≈ ${formatPrice(Math.max(0, orderTotal - bonusToApply))}` })}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
       {error && step !== "otp" && (

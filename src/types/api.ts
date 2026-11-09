@@ -106,6 +106,7 @@ export interface InsuranceOffer {
   dgoRequired?: boolean;
   discountPrice?: number;
   discountPercent?: number | null;
+  maxDiscount?: number | null;      // скільки бонусів можна списати по цій пропозиції, грн
   // Legacy v1 поля (опційно, для адаптерів інших продуктів).
   moduleId?: number;
   isTaxi?: number;
@@ -164,6 +165,8 @@ export interface OsagoV2Offer {
   discountPercent: number | null;
   promoCodeApplied: boolean | null;
   promoCodeMessage: string | null;
+  discountAmount?: number | null;   // фактична знижка, грн (будь-якого джерела)
+  maxDiscount?: number | null;      // стеля знижки коштом нашої комісії, грн (бонуси клієнта)
   startDate: string;
   periodId: number;
   dateFromMax: number | null;
@@ -249,6 +252,9 @@ export interface OsagoV2OrderRequest {
   dgoId?: string | null;
   autolawyerId?: string | null;
   promoCode?: string | null;
+  // Знижка інтегратора у % від ціни пропозиції (списання бонусів клієнта); Ukasko
+  // сам уріже її до стелі maxDiscount і поверне фактичні discountPrice/discountAmount.
+  discountPercent?: number | null;
   insurer: OsagoV2Insurer;
   vehicle: OsagoV2Vehicle;
   isSendPhoneMessage?: boolean;
@@ -266,6 +272,15 @@ export interface OsagoV2OrderResult {
   price: number;                  // ціна ОСЦПВ після декларування (без ДЦВ/автоюриста)
   previousPrice: number | null;
   priceChanged: boolean;
+  // Знижка (списання бонусів), зафіксована в заявці: discountPrice — що клієнт платить
+  // за ОСЦПВ, discountAmount = price − discountPrice, discountCapped — урізано до стелі.
+  discountPrice?: number | null;
+  discountAmount?: number | null;
+  discountPercent?: number | null;
+  maxDiscount?: number | null;
+  discountCapped?: boolean;
+  // Наше: скільки бонусів просив клієнт і скільки реально списано (резерв до оплати).
+  bonus?: { requested: number; applied: number; reason?: string } | null;
   otpSent: boolean;
   otpLength: number | null;
   dgo: {

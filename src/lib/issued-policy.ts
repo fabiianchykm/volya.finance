@@ -2,6 +2,7 @@ import { savePolicy } from "@/lib/policies";
 import { creditPolicyRewards } from "@/lib/referral";
 import { getPendingOrder, markPendingFinalized, type PendingMeta } from "@/lib/pending-orders";
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
+import { applyBonusRedemption } from "@/lib/bonus-redemption";
 
 // Один «поліс оформлено» для всіх шляхів видачі: sales-сповіщення в Telegram
 // (клієнтський POST /api/policies, /api/finalize після LiqPay, confirm у модалці
@@ -88,6 +89,12 @@ export async function recordIssuedPolicy(args: {
     } catch (e) {
       await notifyDevError("issued rewards", e);
     }
+  }
+  // Списання бонусів (резерв з /api/insurance/order) — незалежно від meta.email.
+  try {
+    await applyBonusRedemption(orderId);
+  } catch (e) {
+    await notifyDevError("issued bonus apply", e);
   }
 
   // Сповіщаємо навіть без email у meta — продаж був, бот має про нього знати.
