@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, CalendarCheck, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { MapPin, CalendarDays, CalendarCheck, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Compass } from "lucide-react";
+import { TRIP_PURPOSES, DEFAULT_TRIP_PURPOSE, isTripPurpose, isActivePurpose, isEconomProgram, type TripPurpose } from "@/lib/tourism-purpose";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { DateRangeInput, daysBetween } from "@/components/ui/DateRangeInput";
@@ -262,6 +263,9 @@ export function TourismFlow() {
   const [endDate, setEndDate] = useState("");
   const [birthDates, setBirthDates] = useState<string[]>([""]); // по туристу
   const [multiVisa, setMultiVisa] = useState(false);
+  // Мета поїздки — не впливає на ціну, але йде в договір; обирається тут, щоб до списку
+  // пропозицій клієнт знав, що для спорту/активного відпочинку «econom» не підходить.
+  const [purpose, setPurpose] = useState<TripPurpose>(DEFAULT_TRIP_PURPOSE);
   // Ліміт днів на поїздку для річного поліса (мультивіза) — річний поліс не має дати
   // завершення, натомість страховику передається макс. кількість днів на одну поїздку.
   const [tripDays, setTripDays] = useState(30);
@@ -292,7 +296,7 @@ export function TourismFlow() {
     ? !!startD && days > 0 && birthOk
     : !!startD && !!endD && days > 0 && birthOk);
 
-  const runCalc = async (zid: string, sUa: string, eUa: string, births: string[], multi: boolean, tDays: number) => {
+  const runCalc = async (zid: string, sUa: string, eUa: string, births: string[], multi: boolean, tDays: number, purp: TripPurpose = DEFAULT_TRIP_PURPOSE) => {
     const sD = parseUaDate(sUa);
     const eD = parseUaDate(eUa);
     const d = multi ? tDays : (sD && eD ? daysBetween(sD, eD) : 0);
@@ -305,10 +309,10 @@ export function TourismFlow() {
     setOffers([]);
     setStep("offers");
     // Параметри в URL (у т.ч. дати народження туристів — на прохання).
-    const qs = `?step=offers&zone=${zid}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}&multi=${multi ? 1 : 0}&tripDays=${tDays}&births=${encodeURIComponent(births.join(","))}`;
+    const qs = `?step=offers&zone=${zid}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}&multi=${multi ? 1 : 0}&tripDays=${tDays}&births=${encodeURIComponent(births.join(","))}&purpose=${purp}`;
     window.history.replaceState(null, "", qs);
     trackEvent("calculate_cost", { product: "tourism" });
-    trackCalc("tourism", { zone: ZONES.find((z) => String(z.id) === zid)?.label ?? zid, start: sUa, end: eUa, days: d, tourists: births.length, multiVisa: multi });
+    trackCalc("tourism", { zone: ZONES.find((z) => String(z.id) === zid)?.label ?? zid, start: sUa, end: eUa, days: d, tourists: births.length, multiVisa: multi, purpose: purp });
     try {
       const zone = ZONES.find((z) => String(z.id) === zid)!;
       const body = JSON.stringify({
@@ -355,7 +359,7 @@ export function TourismFlow() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!valid || loading) return;
-    void runCalc(zoneId, startDate, endDate, birthDates, multiVisa, tripDays);
+    void runCalc(zoneId, startDate, endDate, birthDates, multiVisa, tripDays, purpose);
   };
 
   // Відновлення з URL при перезавантаженні (крок оформлення не відновлюємо).
@@ -371,13 +375,15 @@ export function TourismFlow() {
     const multi = sp.get("multi") === "1";
     const tDays = Number(sp.get("tripDays")) || 30;
     const births = (sp.get("births") || "").split(",").filter(Boolean);
+    const purpParam = sp.get("purpose");
+    const purp: TripPurpose = isTripPurpose(purpParam) ? purpParam : DEFAULT_TRIP_PURPOSE;
     if (!s || births.length === 0) return;
     const sD = parseUaDate(s);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setZoneId(zid); setStartDate(s); setEndDate(en); setMultiVisa(multi); setTripDays(tDays); setBirthDates(births);
+    setZoneId(zid); setStartDate(s); setEndDate(en); setMultiVisa(multi); setTripDays(tDays); setBirthDates(births); setPurpose(purp);
     // Застаріла дата початку (посилання відкрили пізніше) — лишаємо форму, хай оберуть нову.
     if (!sD || sD < tomorrow) { window.history.replaceState(null, "", window.location.pathname); return; }
-    void runCalc(zid, s, en, births, multi, tDays);
+    void runCalc(zid, s, en, births, multi, tDays, purp);
      
   }, []);
 
@@ -400,6 +406,7 @@ export function TourismFlow() {
                   <TourismOffers
                     offers={offers}
                     multiVisa={multiVisa}
+                    purpose={purpose}
                     zoneLabel={(() => { const z = ZONES.find((z) => String(z.id) === zoneId); return z ? t({ uk: z.label, en: z.en }) : ""; })()}
                     dates={startDate && endDate ? `${startDate} – ${endDate}` : ""}
                     days={days}
@@ -420,6 +427,7 @@ export function TourismFlow() {
                   days,
                   multiVisa,
                   birthDates,
+                  purpose,
                 } satisfies TourismCheckoutCtx)}
                 onBack={() => { if (resumeCtx) { clearResume("checkout_resume_tourism"); setResumeCtx(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }}
               />
@@ -481,6 +489,16 @@ export function TourismFlow() {
                     </div>
                   </div>
                 )}
+                <div>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Compass className="h-3.5 w-3.5" /> {t({ uk: "Мета поїздки", en: "Purpose of trip" })}</label>
+                  <div className="relative">
+                    <select aria-label={t({ uk: "Мета поїздки", en: "Purpose of trip" })} value={purpose} onChange={(e) => { if (isTripPurpose(e.target.value)) setPurpose(e.target.value); }} className={`${selectClass} cursor-pointer appearance-none pr-10`}>
+                      {TRIP_PURPOSES.map((pp) => <option key={pp.v} value={pp.v}>{t({ uk: pp.uk, en: pp.en })}</option>)}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
+                  </div>
+                  {isActivePurpose(purpose) && <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "У списку пропозицій обирайте програму з активностями.", en: "Pick a programme with activities in the offers list." })}</p>}
+                </div>
               </div>
 
               <div className="mt-5">
@@ -578,9 +596,10 @@ function toTourismInsuranceOffer(o: TourismOffer): InsuranceOffer {
   } as unknown as InsuranceOffer;
 }
 
-function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, onBack, onSelect }: {
+function TourismOffers({ offers, multiVisa, purpose, zoneLabel, dates, days, tourists, onBack, onSelect }: {
   offers: TourismOffer[];
   multiVisa: boolean;
+  purpose: TripPurpose;
   zoneLabel: string;
   dates: string;
   days: number;
@@ -615,7 +634,10 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
   const cards = only365 && has365 ? allCards.filter((o) => isAnnual365(o, true)) : allCards;
 
   const touristsLabel = `${tourists} ${t({ uk: tourists === 1 ? "турист" : tourists < 5 ? "туристи" : "туристів", en: tourists === 1 ? "traveller" : "travellers" })}`;
-  const summary = [touristsLabel, zoneLabel, dates, days ? `${days} ${t({ uk: "дн.", en: "days" })}` : ""].filter(Boolean).join(" · ");
+  const purposeLabel = TRIP_PURPOSES.find((pp) => pp.v === purpose) ?? TRIP_PURPOSES[0];
+  const summary = [touristsLabel, zoneLabel, dates, days ? `${days} ${t({ uk: "дн.", en: "days" })}` : "", t({ uk: purposeLabel.uk, en: purposeLabel.en })].filter(Boolean).join(" · ");
+  // Активна мета + у видачі є програми без активностей — підказуємо, які картки не підходять.
+  const activeHint = isActivePurpose(purpose) && cards.some((o) => isEconomProgram(o.tripProgram));
 
   return (
     <div>
@@ -630,6 +652,12 @@ function TourismOffers({ offers, multiVisa, zoneLabel, dates, days, tourists, on
             <span className="font-medium text-zinc-600 dark:text-zinc-300">{t({ uk: "Туристичне страхування", en: "Travel insurance" })}</span>
           </div>
           <p className="font-bold text-zinc-900 dark:text-zinc-100" style={{ fontSize: 19 }}>{summary}</p>
+          {activeHint && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+              <Compass className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {t({ uk: "Для спорту чи активного відпочинку обирайте програму з активностями: програма «Економ» їх не покриває.", en: "For sport or active leisure choose a programme with activities: the “Econom” programme does not cover them." })}
+            </p>
+          )}
         </div>
 
         {/* Сума покриття (сегменти) + фільтр «Договір діє 365 днів» (у мультивізі) — один рядок */}
