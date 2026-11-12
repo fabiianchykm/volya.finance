@@ -64,7 +64,7 @@ export function PromoBanner() {
                 {t({ uk: "Знижки до 42% на ОСЦПВ", en: "Up to 42% off OSAGO" })}
               </p>
               <p className="mt-1 text-sm text-indigo-100">
-                {t({ uk: "Порівняйте ціни 18+ страхових і оформіть онлайн за 3 хвилини.", en: "Compare 18+ insurers and buy online in 3 minutes." })}
+                {t({ uk: "Порівняйте ціни 21+ страхових і оформіть онлайн за 3 хвилини.", en: "Compare 21+ insurers and buy online in 3 minutes." })}
               </p>
 
               <Link

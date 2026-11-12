@@ -15,7 +15,7 @@ const features = [
   },
   {
     icon: Scale,
-    title: { uk: "Порівняння від 18+ страхових", en: "Compare 18+ insurers" },
+    title: { uk: "Порівняння від 21+ страхових", en: "Compare 21+ insurers" },
     description: { uk: "Ціни всіх компаній в одному місці — обираєте найвигіднішу пропозицію за секунди.", en: "Prices from every company in one place — choose the best offer in seconds." },
     iconBg: "bg-indigo-100",
     iconColor: "text-indigo-600",

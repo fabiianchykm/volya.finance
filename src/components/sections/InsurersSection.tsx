@@ -83,7 +83,7 @@ export function InsurersSection() {
             {t({ uk: "Провідні страхові компанії України", en: "Leading insurance companies of Ukraine" })}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-zinc-500 dark:text-zinc-400">
-            {t({ uk: "Порівнюйте пропозиції 18+ акредитованих страховиків в одному місці — і обирайте найкраще.", en: "Compare offers from 18+ accredited insurers in one place — and choose the best." })}
+            {t({ uk: "Порівнюйте пропозиції 21+ акредитованих страховиків в одному місці — і обирайте найкраще.", en: "Compare offers from 21+ accredited insurers in one place — and choose the best." })}
           </p>
         </motion.div>
 
