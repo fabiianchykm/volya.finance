@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { normalizeVin, isValidVin } from "@/lib/vin";
 import { uaNameProblem, normalizeUaName } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Gift } from "lucide-react";
+import { ArrowLeft, Gift, TicketPercent } from "lucide-react";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
@@ -87,6 +87,12 @@ export function CheckoutClient() {
   const [useBonus, setUseBonus] = useState(false);
   const [bonusAmount, setBonusAmount] = useState(0);
   const [bonusNotice, setBonusNotice] = useState<string | null>(null);
+  // Промокод volya.finance (наша знижка, той самий discountPercent). Перевіряється на
+  // /api/promo, остаточна сума — у відповіді заявлення (стеля СК може урізати).
+  const [promoInput, setPromoInput] = useState("");
+  const [promoApplied, setPromoApplied] = useState<{ code: string; discount: number; message: string } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -228,6 +234,28 @@ export function CheckoutClient() {
   // Скільки бонусів можна списати по ЦІЙ пропозиції: залишок, стеля СК, сама ціна.
   const bonusMax = Math.max(0, Math.floor(Math.min(bonusAvailable, offer.maxDiscount ?? Infinity, offer.price)));
   const bonusToApply = useBonus ? Math.min(Math.max(0, Math.floor(bonusAmount)), bonusMax) : 0;
+  // Орієнтовна сумарна знижка (промокод + бонуси) в межах стелі СК і ціни.
+  const discountCeiling = Math.max(0, Math.floor(Math.min(offer.maxDiscount ?? Infinity, offer.price)));
+  const estDiscount = Math.min(discountCeiling, (promoApplied?.discount ?? 0) + bonusToApply);
+
+  const applyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoChecking(true);
+    setPromoError(null);
+    try {
+      const res = await fetch("/api/promo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code, product: "osago", price: offer.price }) });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      if (!json.valid) { setPromoApplied(null); setPromoError(json.message || t({ uk: "Промокод не підійшов.", en: "The promo code did not apply." })); return; }
+      setPromoApplied({ code: json.code, discount: Number(json.discount) || 0, message: json.message });
+    } catch (e) {
+      setPromoApplied(null);
+      setPromoError(e instanceof Error ? e.message : t({ uk: "Не вдалося перевірити промокод.", en: "Could not check the promo code." }));
+    } finally {
+      setPromoChecking(false);
+    }
+  };
 
   // Перераховуємо обрану пропозицію перед оформленням під РЕАЛЬНІ дані страхувальника:
   // v2-калькулятор приймає всі три дати народження разом (кожна СК бере свою) і РНОКПП
@@ -355,7 +383,7 @@ export function CheckoutClient() {
           headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
           // bonusAmount/offerPrice — списання бонусів (сервер звіряє з балансом і
           // серверною ціною пропозиції, переводить у discountPercent).
-          body: JSON.stringify({ action: "create", ...payload, bonusAmount: bonusToApply, offerPrice: ord.price }),
+          body: JSON.stringify({ action: "create", ...payload, bonusAmount: bonusToApply, promoCode: promoApplied?.code ?? undefined, offerPrice: ord.price }),
         });
         const json = await res.json();
         if (!json.success) throw new Error(json.error ?? t({ uk: "Помилка заявлення поліса", en: "Error declaring the policy" }));
@@ -407,17 +435,24 @@ export function CheckoutClient() {
       }
       if (created.warningCancelMessage) setWarning(created.warningCancelMessage);
 
-      // Списання бонусів: фактична сума — з відповіді (стеля СК могла її урізати).
+      // Знижка (промокод + бонуси): фактичні суми — з відповіді (стеля СК могла урізати).
       const osagoPay = created.discountPrice && created.discountPrice > 0 ? created.discountPrice : created.price;
       const totalPay = osagoPay + (created.dgo?.price ?? 0) + (created.autolawyer?.price ?? 0);
-      if (created.bonus && created.bonus.applied > 0) {
+      const parts: string[] = [];
+      if (created.promo?.applied) parts.push(t({ uk: `промокод ${created.promo.code} −${formatPrice(created.promo.applied)}`, en: `promo code ${created.promo.code} −${formatPrice(created.promo.applied)}` }));
+      if (created.bonus?.applied) parts.push(t({ uk: `бонуси −${formatPrice(created.bonus.applied)}`, en: `bonuses −${formatPrice(created.bonus.applied)}` }));
+      const failed: string[] = [];
+      if (created.promo && !created.promo.applied) failed.push(created.promo.error ?? t({ uk: `промокод ${created.promo.code} не застосовано`, en: `promo code ${created.promo.code} was not applied` }));
+      if (created.bonus && created.bonus.requested > 0 && !created.bonus.applied) failed.push(t({ uk: "бонуси не списано, вони лишаються на рахунку", en: "bonuses were not applied and stay on your account" }));
+      if (parts.length || failed.length) {
+        const capped = (created.bonus && created.bonus.applied > 0 && created.bonus.applied < created.bonus.requested) || (created.promo && created.promo.applied > 0 && created.promo.applied < created.promo.requested);
         setBonusNotice(
-          created.bonus.applied < created.bonus.requested
-            ? t({ uk: `Списано ${formatPrice(created.bonus.applied)} бонусів (максимум для цієї страхової). До оплати — ${formatPrice(totalPay)}.`, en: `${formatPrice(created.bonus.applied)} of bonuses applied (the maximum for this insurer). Amount due — ${formatPrice(totalPay)}.` })
-            : t({ uk: `Списано ${formatPrice(created.bonus.applied)} бонусів. До оплати — ${formatPrice(totalPay)}.`, en: `${formatPrice(created.bonus.applied)} of bonuses applied. Amount due — ${formatPrice(totalPay)}.` })
+          [
+            parts.length ? t({ uk: `Знижка: ${parts.join(", ")}${capped ? " (максимум для цієї страхової)" : ""}.`, en: `Discount: ${parts.join(", ")}${capped ? " (the maximum for this insurer)" : ""}.` }) : "",
+            failed.length ? t({ uk: `Не вдалося: ${failed.join("; ")}.`, en: `Not applied: ${failed.join("; ")}.` }) : "",
+            t({ uk: `До оплати — ${formatPrice(totalPay)}.`, en: `Amount due — ${formatPrice(totalPay)}.` }),
+          ].filter(Boolean).join(" ")
         );
-      } else if (bonusToApply > 0) {
-        setBonusNotice(t({ uk: `Бонуси не вдалося списати на цю заявку — до оплати повна сума ${formatPrice(totalPay)}. Бонуси лишаються на рахунку.`, en: `Bonuses could not be applied to this order — the full amount of ${formatPrice(totalPay)} is due. Your bonuses stay on the account.` }));
       }
 
       // Контекст фіналізації — щоб /payment-success уклав поліс і зберіг його в
@@ -647,12 +682,49 @@ export function CheckoutClient() {
               <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
                 {t({ uk: `Списати максимум (${formatPrice(bonusMax)})`, en: `Apply the maximum (${formatPrice(bonusMax)})` })}
               </button>
-              {bonusToApply > 0 && (
-                <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                  {t({ uk: `До оплати ≈ ${formatPrice(Math.max(0, orderTotal - bonusToApply))}`, en: `Amount due ≈ ${formatPrice(Math.max(0, orderTotal - bonusToApply))}` })}
-                </span>
-              )}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Промокод — теж до заявлення (знижка фіксується в заявці Ukasko). */}
+      {(step === "customer" || step === "vehicle") && !order && (
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="flex items-start gap-2">
+            <TicketPercent className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Промокод", en: "Promo code" })}</p>
+              {promoApplied ? (
+                <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-emerald-700 dark:text-emerald-400">
+                  <span>{promoApplied.message} · {t({ uk: `−${formatPrice(promoApplied.discount)}`, en: `−${formatPrice(promoApplied.discount)}` })}</span>
+                  <button type="button" onClick={() => { setPromoApplied(null); setPromoInput(""); }} className="text-xs font-medium text-zinc-500 hover:underline dark:text-zinc-400">{t({ uk: "Прибрати", en: "Remove" })}</button>
+                </p>
+              ) : (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="text"
+                    autoCapitalize="characters"
+                    aria-label={t({ uk: "Промокод", en: "Promo code" })}
+                    placeholder={t({ uk: "Введіть код", en: "Enter code" })}
+                    value={promoInput}
+                    onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void applyPromo(); } }}
+                    className="h-10 w-44 rounded-xl border border-zinc-200 bg-white px-3 text-sm uppercase tracking-wider text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                  />
+                  <button type="button" onClick={() => void applyPromo()} disabled={promoChecking || !promoInput.trim()} className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50">
+                    {promoChecking ? t({ uk: "Перевіряю…", en: "Checking…" }) : t({ uk: "Застосувати", en: "Apply" })}
+                  </button>
+                </div>
+              )}
+              {promoError && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{promoError}</p>}
+            </div>
+          </div>
+          {estDiscount > 0 && (
+            <p className="mt-3 border-t border-zinc-100 pt-3 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
+              {t({ uk: `Разом знижка ≈ ${formatPrice(estDiscount)}. До оплати ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}`, en: `Total discount ≈ ${formatPrice(estDiscount)}. Amount due ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}` })}
+              {discountCeiling < (promoApplied?.discount ?? 0) + bonusToApply && <span className="text-zinc-500 dark:text-zinc-400"> {t({ uk: `(стеля для цієї страхової — ${formatPrice(discountCeiling)})`, en: `(cap for this insurer — ${formatPrice(discountCeiling)})` })}</span>}
+            </p>
           )}
         </div>
       )}

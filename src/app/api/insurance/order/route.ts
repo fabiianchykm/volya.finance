@@ -12,6 +12,7 @@ import { splitDocSerialNumber } from "@/lib/doc-number";
 import { auth } from "@/auth";
 import { getBonusAvailability, holdBonusRedemption } from "@/lib/bonus-redemption";
 import { lookupOfferPrice } from "@/lib/offer-price-cache";
+import { checkPromoCode, holdPromoUse, normalizePromoCode } from "@/lib/promo";
 import type { OsagoV2Insurer, OsagoV2OrderRequest, OsagoV2Vehicle } from "@/types/api";
 
 // Заявлення ОСЦПВ — Ukasko API v2 (/v2/insurance/oscpv/order/create): один виклик
@@ -137,28 +138,60 @@ function buildPayload(body: Record<string, unknown>): OsagoV2OrderRequest {
   };
 }
 
-// Списання бонусів: клієнт просить bonusAmount грн → переводимо у discountPercent від
-// ціни пропозиції (Ukasko v2, знижка коштом нашої комісії зі стелею maxDiscount).
-// Межі: доступний залишок людини (з урахуванням резервів), стеля пропозиції, сама
-// ціна. Ціну беремо з серверного кешу пропозицій; при промаху — з тіла запиту, але
-// фактичну знижку з відповіді Ukasko потім звіряємо з доступним залишком.
-async function resolveBonusDiscount(body: Record<string, unknown>, offerId: string): Promise<
-  | { percent: number; email: string; requested: number; available: number; price: number }
-  | { percent: 0; requested: number; reason: string }
-> {
-  const requested = Math.floor(num(body.bonusAmount) ?? 0);
-  if (!(requested > 0)) return { percent: 0, requested: 0, reason: "none" };
-  const email = (await auth().catch(() => null))?.user?.email ?? null;
-  if (!email) return { percent: 0, requested, reason: "not-logged-in" };
-  const avail = await getBonusAvailability(email);
+// Знижка на заявку = промокод + списані бонуси → один discountPercent від ціни
+// пропозиції (Ukasko v2, знижка коштом нашої комісії зі стелею maxDiscount).
+// Бонуси обмежені доступним залишком людини (з урахуванням резервів), усе разом —
+// стелею пропозиції й самою ціною. Ціну беремо з серверного кешу пропозицій; при
+// промаху — з тіла запиту, але фактичну знижку з відповіді Ukasko потім звіряємо.
+interface DiscountPlan {
+  percent: number;            // 0 — без знижки
+  price: number;
+  email: string | null;
+  bonusRequested: number;
+  bonusCap: number;           // скільки бонусів закладено у відсоток
+  bonusAvailable: number;
+  bonusReason?: string;
+  promoCode: string | null;
+  promoDiscount: number;      // скільки грн дає промокод (до стелі СК)
+  promoError?: string;
+}
+async function resolveDiscount(body: Record<string, unknown>, offerId: string): Promise<DiscountPlan> {
+  const bonusRequested = Math.floor(num(body.bonusAmount) ?? 0);
+  const promoCode = normalizePromoCode(str(body.promoCode, 40)) || null;
+  const plan: DiscountPlan = { percent: 0, price: 0, email: null, bonusRequested, bonusCap: 0, bonusAvailable: 0, promoCode, promoDiscount: 0 };
+  if (!(bonusRequested > 0) && !promoCode) return plan;
+
   const cached = lookupOfferPrice(offerId);
   const price = cached?.price ?? num(body.offerPrice) ?? 0;
-  if (!(price > 0)) return { percent: 0, requested, reason: "no-price" };
-  const cap = Math.floor(Math.min(requested, avail.available, cached?.maxDiscount ?? Infinity, price));
-  if (cap < 1) return { percent: 0, requested, reason: avail.available < 1 ? "no-balance" : "capped-to-zero" };
-  // Округлюємо ВНИЗ до 0.01 %, щоб знижка ніколи не перевищила списувану суму.
-  const percent = Math.max(0.01, Math.min(100, Math.floor((cap / price) * 10000) / 100));
-  return { percent, email, requested, available: avail.available, price };
+  plan.price = price;
+  if (!(price > 0)) { plan.bonusReason = "no-price"; plan.promoError = "Не вдалося визначити ціну пропозиції."; return plan; }
+  const ceiling = Math.min(price, cached?.maxDiscount ?? Infinity);
+
+  if (promoCode) {
+    const r = await checkPromoCode(promoCode, "osago", price).catch(() => null);
+    if (r?.ok) plan.promoDiscount = Math.min(r.discount, ceiling);
+    else plan.promoError = r ? r.message : "Не вдалося перевірити промокод.";
+  }
+
+  if (bonusRequested > 0) {
+    const email = (await auth().catch(() => null))?.user?.email ?? null;
+    if (!email) plan.bonusReason = "not-logged-in";
+    else {
+      plan.email = email;
+      const avail = await getBonusAvailability(email);
+      plan.bonusAvailable = avail.available;
+      const room = Math.max(0, ceiling - plan.promoDiscount);
+      plan.bonusCap = Math.floor(Math.min(bonusRequested, avail.available, room));
+      if (plan.bonusCap < 1) { plan.bonusCap = 0; plan.bonusReason = avail.available < 1 ? "no-balance" : "capped-to-zero"; }
+    }
+  }
+
+  const total = Math.floor(Math.min(price, plan.promoDiscount + plan.bonusCap));
+  if (total >= 1) {
+    // Округлюємо ВНИЗ до 0.01 %, щоб знижка ніколи не перевищила заплановану суму.
+    plan.percent = Math.max(0.01, Math.min(100, Math.floor((total / price) * 10000) / 100));
+  }
+  return plan;
 }
 
 async function handlePost(req: NextRequest) {
@@ -180,8 +213,8 @@ async function handlePost(req: NextRequest) {
       }
       // Дедуплікуємо за клієнтським ключем спроби (Idempotency-Key): повторний submit /
       // мережевий ретрай не створює другу декларацію в СК.
-      const bonus = await resolveBonusDiscount(body, payload.offerId);
-      if (bonus.percent > 0) payload.discountPercent = bonus.percent;
+      const plan = await resolveDiscount(body, payload.offerId);
+      if (plan.percent > 0) payload.discountPercent = plan.percent;
       const { status, body: resBody } = await withIdempotency(
         idemHeader ? `create:${idemHeader}` : null,
         async () => {
@@ -195,23 +228,28 @@ async function handlePost(req: NextRequest) {
             const msg = e instanceof Error ? e.message : String(e);
             if (!(payload.discountPercent && /discount|знижк/i.test(msg))) throw e;
             discountRejected = msg;
-            console.error("[order v2] discountPercent rejected, retrying without bonus:", msg.slice(0, 300));
-            await notifyDevError("bonus discount rejected by Ukasko", e);
+            console.error("[order v2] discountPercent rejected, retrying without discount:", msg.slice(0, 300));
+            await notifyDevError("discountPercent rejected by Ukasko", e);
             delete payload.discountPercent;
-            bonus.percent = 0;
+            plan.percent = 0;
             result = await ukaskoService.createOsagoOrderV2(payload);
           }
-          // Фактичне списання — з відповіді Ukasko (стеля могла урізати запит).
+          // Фактична знижка — з відповіді Ukasko (стеля могла урізати запит). Спершу
+          // «закриваємо» промокод, решта — бонуси (їх резервуємо на рахунку).
           const discountFromPrice = result.discountPrice && result.discountPrice > 0 ? Math.max(0, result.price - result.discountPrice) : 0;
-          const applied = bonus.percent > 0 ? Math.max(0, Math.round(Number(result.discountAmount) || discountFromPrice)) : 0;
-          if (bonus.percent > 0 && "email" in bonus) {
-            if (applied > 0) await holdBonusRedemption({ orderId: result.id, email: bonus.email, product: "osago", amount: applied }).catch((e) => notifyDevError("bonus hold", e));
-            if (applied > bonus.available + 1) await notifyDevError("bonus over-applied", new Error(`order ${result.id}: applied=${applied} available=${bonus.available} percent=${bonus.percent} price=${bonus.price}`));
-            result.bonus = { requested: bonus.requested, applied };
-          } else if (bonus.requested > 0) {
-            result.bonus = { requested: bonus.requested, applied: 0, reason: discountRejected ? "rejected" : "reason" in bonus ? bonus.reason : undefined };
+          const applied = plan.percent > 0 ? Math.max(0, Math.round(Number(result.discountAmount) || discountFromPrice)) : 0;
+          const promoApplied = Math.min(plan.promoDiscount, applied);
+          const bonusApplied = Math.max(0, applied - promoApplied);
+          if (promoApplied > 0 && plan.promoCode) {
+            await holdPromoUse({ orderId: result.id, code: plan.promoCode, email: plan.email ?? payload.insurer.email, product: "osago", amount: promoApplied }).catch((e) => notifyDevError("promo hold", e));
           }
-          console.error(`[order v2] created id=${result.id} mtsbu=${result.mtsbuCode ?? "-"} price=${result.price} changed=${result.priceChanged} otpSent=${result.otpSent} otpLen=${result.otpLength ?? "-"} dgoOtp=${result.dgo?.otpRequired ?? "-"} bonus=${bonus.requested}/${applied} pct=${bonus.percent} discountPrice=${result.discountPrice ?? "-"} capped=${result.discountCapped ?? "-"}`);
+          if (bonusApplied > 0 && plan.email) {
+            await holdBonusRedemption({ orderId: result.id, email: plan.email, product: "osago", amount: bonusApplied }).catch((e) => notifyDevError("bonus hold", e));
+            if (bonusApplied > plan.bonusAvailable + 1) await notifyDevError("bonus over-applied", new Error(`order ${result.id}: bonusApplied=${bonusApplied} available=${plan.bonusAvailable} percent=${plan.percent} price=${plan.price}`));
+          }
+          if (plan.bonusRequested > 0) result.bonus = { requested: plan.bonusRequested, applied: bonusApplied, reason: discountRejected ? "rejected" : plan.bonusReason };
+          if (plan.promoCode) result.promo = { code: plan.promoCode, requested: plan.promoDiscount, applied: promoApplied, error: discountRejected ? "Страхова не прийняла знижку на цю заявку." : plan.promoError };
+          console.error(`[order v2] created id=${result.id} mtsbu=${result.mtsbuCode ?? "-"} price=${result.price} changed=${result.priceChanged} otpSent=${result.otpSent} otpLen=${result.otpLength ?? "-"} dgoOtp=${result.dgo?.otpRequired ?? "-"} promo=${plan.promoCode ?? "-"}/${promoApplied} bonus=${plan.bonusRequested}/${bonusApplied} pct=${plan.percent} discountPrice=${result.discountPrice ?? "-"} capped=${result.discountCapped ?? "-"}`);
           return { status: 200, body: { success: true, data: result } };
         }
       );

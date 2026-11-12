@@ -8,6 +8,7 @@ import { notifyPolicyIssued } from "@/lib/issued-policy";
 import { sourceLine } from "@/lib/attribution";
 import { creditPolicyRewards } from "@/lib/referral";
 import { applyBonusRedemption } from "@/lib/bonus-redemption";
+import { applyPromoUse } from "@/lib/promo";
 
 // POST — зберегти оформлений поліс під email клієнта (логін не обовʼязковий:
 // купити можна гостем, у кабінеті поліс зʼявиться після входу з тим же email).
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
 
     // Списання бонусів, зарезервоване при заявленні (знижка вже в ціні поліса).
     if (orderId) await applyBonusRedemption(String(orderId)).catch((e) => notifyDevError("bonus apply", e));
+    if (orderId) await applyPromoUse(String(orderId)).catch((e) => notifyDevError("promo apply", e));
 
     return NextResponse.json({ success: true });
   } catch (e) {

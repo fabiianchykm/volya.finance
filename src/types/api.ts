@@ -281,6 +281,7 @@ export interface OsagoV2OrderResult {
   discountCapped?: boolean;
   // Наше: скільки бонусів просив клієнт і скільки реально списано (резерв до оплати).
   bonus?: { requested: number; applied: number; reason?: string } | null;
+  promo?: { code: string; requested: number; applied: number; error?: string } | null;
   otpSent: boolean;
   otpLength: number | null;
   dgo: {
