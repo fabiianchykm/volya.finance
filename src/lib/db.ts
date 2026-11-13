@@ -130,6 +130,9 @@ export function ensureSchema(): Promise<void> {
       // Коли sweep уже алертив про «оплачено, не видано» — щоб не слати той самий
       // алерт щоразу (раз на кілька годин достатньо).
       await sql`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS alerted_at timestamptz`;
+      // Коли sweep уперше побачив ОПЛАТУ за замовленням: оплачені-але-невидані не
+      // випадають із вибірки через 72 год (інакше поліс губився мовчки).
+      await sql`ALTER TABLE pending_orders ADD COLUMN IF NOT EXISTS paid_seen_at timestamptz`;
       // Швидкий вибір неукладених для sweep.
       await sql`CREATE INDEX IF NOT EXISTS pending_orders_unfinalized_idx ON pending_orders (created_at) WHERE finalized = false`;
       // Прорахунки на калькуляторі (до оформлення). Дає бачити попит навіть коли

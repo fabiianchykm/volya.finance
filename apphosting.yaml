@@ -117,3 +117,12 @@ env:
   #   firebase apphosting:secrets:set sweep-secret   (вставити згенероване)
   - variable: SWEEP_SECRET
     secret: sweep-secret
+  # Авто-укладання у sweep: оплачені (isPaid=true), але не видані замовлення
+  # укладаються без участі людини. Увімкнено 13.11.2026 після того, як оплата
+  # 09.11.2026 (Княжа, ОСЦПВ) підтвердила надійність ознаки isPaid/payment-status
+  # «paid»; до того sweep лише алертив, і поліс 3 дні лишався без укладання.
+  # Вимкнути — прибрати змінну або поставити "0".
+  - variable: SWEEP_AUTO_CONFIRM
+    value: "1"
+    availability:
+      - RUNTIME

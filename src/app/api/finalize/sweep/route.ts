@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { finalizeOrder, notifyPaidNotIssued } from "@/lib/finalize-order";
-import { listUnfinalizedOrders, markPendingAlerted } from "@/lib/pending-orders";
+import { listUnfinalizedOrders, markPendingAlerted, markPendingPaidSeen } from "@/lib/pending-orders";
 import { notifyDevError } from "@/lib/telegram";
 import { releaseStaleBonusHolds } from "@/lib/bonus-redemption";
 
@@ -32,8 +32,9 @@ async function runSweep(req: NextRequest) {
 
   for (const o of orders) {
     try {
-      // БЕЗПЕКА: sweep сам НЕ укладає договори, доки це явно не ввімкнено
-      // (SWEEP_AUTO_CONFIRM=1) — після інциденту з укладанням неоплачених полісів.
+      // БЕЗПЕКА: sweep укладає сам лише з SWEEP_AUTO_CONFIRM=1 (apphosting.yaml;
+      // увімкнено 13.11.2026). finalizeOrder усередині перевіряє isPaid — після
+      // інциденту з укладанням неоплачених полісів (09.2026) інших ознак не вистачає.
       const r = await finalizeOrder(o.orderId, { confirm: process.env.SWEEP_AUTO_CONFIRM === "1" });
       if (!r.paid) {
         summary.unpaid++;
@@ -54,7 +55,9 @@ async function runSweep(req: NextRequest) {
         continue;
       }
       if (r.issued) { summary.issued++; continue; }
-      // Оплачено, але й тут не укладається.
+      // Оплачено, але й тут не укладається. Позначаємо «оплату бачили» — таке
+      // замовлення лишається у вибірці й алертах, поки не укладуть (не 72 год).
+      await markPendingPaidSeen(o.orderId);
       summary.stillFailing++;
       const alertedRecently = o.alertedAt && (now - new Date(o.alertedAt).getTime() < RE_ALERT_AFTER_MS);
       if (!alertedRecently) {
