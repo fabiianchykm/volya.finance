@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { normalizePhone, verifyPhoneCode } from "@/lib/phone-login";
-import { getPoliciesByPhone, getPoliciesByEmail } from "@/lib/policies";
+import { getPoliciesByPhone } from "@/lib/policies";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Довіряємо хосту з заголовків запиту (потрібно для self-hosted деплою
@@ -54,22 +54,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     authorized({ auth }) {
       return !!auth?.user;
     },
-    // Канонічні дані профілю беремо з ОФОРМЛЕНОГО ПОЛІСУ (те, що клієнт сам ввів) —
-    // і для Google (за email), і для входу за номером. Так на сайті завжди коректне
-    // ім'я (напр. «Михайло»), а не значення з Google/email. Запит лише при вході.
+    // Ім'я в шапці = ВЛАСНИК акаунта, а не страхувальник останнього поліса: на один
+    // акаунт (брокер, сім'я) оформлюють поліси на десятки різних людей, і раніше в
+    // кутку щоразу з'являлося чуже ім'я. Google → ім'я з Google-акаунта. Вхід за
+    // номером не має імені, тож беремо страхувальника НАЙСТАРШОГО поліса на цей
+    // номер (перша покупка найімовірніше своя). Запит лише при вході.
     async jwt({ token, user }) {
       if (user) {
-        const email = user.email ?? null;
         const uid = user.id ?? "";
         const phone = uid.startsWith("phone:") ? uid.slice("phone:".length) : null;
-        try {
-          const pols = phone
-            ? await getPoliciesByPhone(phone)
-            : email
-              ? await getPoliciesByEmail(email)
-              : [];
-          if (pols[0]?.customerName) token.name = pols[0].customerName;
-        } catch { /* ігноруємо — лишиться дефолтне ім'я */ }
+        if (phone) {
+          try {
+            const pols = await getPoliciesByPhone(phone); // найновіші першими
+            const first = [...pols].reverse().find((p) => p.customerName);
+            if (first?.customerName) token.name = first.customerName;
+          } catch { /* ігноруємо — лишиться номер телефону */ }
+        }
       }
       return token;
     },
