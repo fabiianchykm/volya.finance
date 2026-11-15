@@ -1104,7 +1104,12 @@ export class UkaskoService {
       console.error("[ukasko oscpv v2 create] empty data. raw:", JSON.stringify(raw).slice(0, 800));
       throw new Error("Порожня відповідь від сервера. Спробуйте іншу пропозицію.");
     }
-    return { ...d, message: raw.message };
+    // Попередження СК адресоване брокеру («…Попередьте про це клієнта») — клієнт
+    // бачить його напряму (сайт і мобільний застосунок), тож службовий хвіст прибираємо.
+    const warningCancelMessage = d.warningCancelMessage
+      ? d.warningCancelMessage.replace(/\s*Попередьте\s+про\s+це\s+кліє\S*\s*[.!]?\s*$/iu, "").trim() || null
+      : d.warningCancelMessage;
+    return { ...d, warningCancelMessage, message: raw.message };
   }
 
   // OTP v2: перевірка коду з листа (+ код ДЦВ, якщо СК видала окремий). 422 = невірний /
