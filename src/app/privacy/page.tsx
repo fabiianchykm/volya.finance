@@ -11,12 +11,11 @@ export const metadata: Metadata = {
 
 // Політика конфіденційності — сайт volya.finance і мобільний застосунок VOLYA.finance.
 // Текст спільний для обох: застосунок — тонкий клієнт до того самого бекенду, тож
-// склад даних і одержувачі однакові. Місця, позначені TODO, заповнити реквізитами.
+// склад даних і одержувачі однакові. Реквізити оператора — ті самі, що на /subagent.
 
-const UPDATED = "29 жовтня 2026";
-// TODO: реквізити оператора персональних даних (ФОП / ТОВ, ЄДРПОУ або РНОКПП, адреса).
-const OPERATOR = "ФОП / ТОВ «…» (TODO: повна назва), код …, адреса: …";
-const EMAIL = "support@volya.finance"; // TODO: підтвердити адресу
+const UPDATED = "15 листопада 2026";
+const OPERATOR = "Фізична особа — підприємець Александров Володимир Петрович (ФОП Александров Володимир Петрович), ідентифікаційний код 3397909111, адреса: м. Бережани, вул. Хмельницького, буд. 18";
+const EMAIL = "volya.finance.team@gmail.com";
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-8 mb-2 text-lg font-bold text-zinc-900 dark:text-zinc-100">{children}</h2>;
