@@ -1,7 +1,7 @@
 import { ulid } from "ulid";
 import { sql } from "./db";
 import { SITE_URL } from "./seo";
-import { creditBonus, getBonusBreakdown, getBonusBreakdownMulti } from "./bonus";
+import { creditBonus, getBonusBreakdown, getBonusBreakdownMulti, getBonusHistory, type BonusHistoryItem } from "./bonus";
 import { resolveIdentities } from "./identity";
 import { BONUS_RATE as PURCHASE_RATE } from "./constants";
 
@@ -155,8 +155,10 @@ export interface ReferralSummary {
   invitedCount: number;
   bonusTotal: number;      // сума саме реферальних бонусів (історія запрошень)
   items: ReferralItem[];
-  /** Єдиний бонусний рахунок: покупки (1%) + реферальні (5%). */
-  balance: { total: number; purchase: number; referral: number };
+  /** Єдиний бонусний рахунок: покупки (1%) + реферальні (5%) − списання. */
+  balance: { total: number; purchase: number; referral: number; redeemed: number };
+  /** Рух по рахунку (нарахування, списання, резерви), найновіше першим. */
+  history: BonusHistoryItem[];
 }
 
 /** Зведення для кабінету: код, посилання, к-сть запрошених, сумарний бонус, історія. */
@@ -178,7 +180,11 @@ export async function getReferralSummary(email: string): Promise<ReferralSummary
 
   // Рівноправна звʼязка: бонусний баланс — сума по всіх повʼязаних email-ах людини.
   const ids = await resolveIdentities({ email: e });
-  const balance = ids.emails.length > 1 ? await getBonusBreakdownMulti(ids.emails) : await getBonusBreakdown(e);
+  const emails = ids.emails.length ? ids.emails : [e];
+  const [balance, history] = await Promise.all([
+    emails.length > 1 ? getBonusBreakdownMulti(emails) : getBonusBreakdown(e),
+    getBonusHistory(emails).catch((err) => { console.error("[bonus] history error:", err instanceof Error ? err.message : err); return [] as BonusHistoryItem[]; }),
+  ]);
 
   return {
     code,
@@ -191,5 +197,6 @@ export async function getReferralSummary(email: string): Promise<ReferralSummary
       createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
     })),
     balance,
+    history,
   };
 }
