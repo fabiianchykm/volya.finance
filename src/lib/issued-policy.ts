@@ -86,7 +86,7 @@ export async function recordIssuedPolicy(args: {
       await notifyDevError("issued savePolicy", e);
     }
     try {
-      await creditPolicyRewards({ email: String(meta.email), policyId: contractId || orderId, price, refCode: args.refCode ?? null });
+      await creditPolicyRewards({ email: String(meta.email), policyId: contractId || orderId, price, refCode: args.refCode ?? meta.refCode ?? null });
     } catch (e) {
       await notifyDevError("issued rewards", e);
     }

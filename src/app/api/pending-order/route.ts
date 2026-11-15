@@ -19,11 +19,16 @@ async function handlePost(req: NextRequest) {
     if (!orderId || !PRODUCTS.includes(product)) {
       return NextResponse.json({ success: false, error: "orderId/product required" }, { status: 400 });
     }
+    // Реферальний код фіксуємо ТУТ (із cookie клієнта): якщо поліс потім укладе
+    // sweep або ручний finalize, cookie вже не буде, а 5% реферу мають нарахуватись.
+    const refCookie = req.cookies.get("ref")?.value ?? null;
+    const refCode = refCookie && /^[a-z0-9]{4,16}$/i.test(refCookie) ? refCookie.toLowerCase() : null;
+    const meta = (body?.meta as PendingMeta | undefined) ?? null;
     await savePendingOrder({
       orderId,
       product,
       orderPayload: (body?.order as Record<string, unknown> | undefined) ?? null,
-      meta: (body?.meta as PendingMeta | undefined) ?? null,
+      meta: meta || refCode ? { ...(meta ?? {}), ...(refCode ? { refCode } : {}) } : null,
     });
     return NextResponse.json({ success: true });
   } catch {

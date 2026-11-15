@@ -29,7 +29,7 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
         </div>
         <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Увійдіть, щоб побачити свої поліси", en: "Sign in to see your policies" })}</h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-          {t({ uk: "Поліси привʼязані до email. Увійдіть через Google з тим самим email, на який оформляли страховку.", en: "Policies are linked to your email. Sign in with Google using the same email you used to buy the insurance." })}
+          {t({ uk: "Поліси привʼязані до контакту з оформлення. Увійдіть за тим самим номером телефону або через Google з тим самим email.", en: "Policies are linked to the contact you gave at checkout. Sign in with the same phone number or with Google using the same email." })}
         </p>
         <Button variant="primary" size="lg" className="mx-auto mt-6 flex items-center gap-2" onClick={() => signIn("google")}>
           <LogIn className="h-4 w-4" />

@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Транзакційні/приватні сторінки та API — не індексуємо.
-      disallow: ["/api/", "/checkout", "/policies", "/payment-success"],
+      disallow: ["/api/", "/checkout", "/policies", "/bonus", "/profile", "/payment-success"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

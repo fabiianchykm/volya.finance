@@ -16,6 +16,9 @@ export interface PendingMeta {
   startDate?: string | null;
   endDate?: string | null;
   productLabel?: string | null; // людська назва для карток/бота
+  /** ref-код з cookie на момент заявки: щоб 5% реферу нарахувались і тоді, коли
+   *  поліс укладає sweep/ручний finalize (без cookie клієнта). */
+  refCode?: string | null;
 }
 
 export interface PendingOrder {

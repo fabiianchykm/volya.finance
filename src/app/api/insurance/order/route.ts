@@ -9,8 +9,8 @@ import { withIdempotency } from "@/lib/idempotency";
 import { notifyDevError } from "@/lib/telegram";
 import { normalizePlate } from "@/lib/plate";
 import { splitDocSerialNumber } from "@/lib/doc-number";
-import { auth } from "@/auth";
 import { getBonusAvailability, holdBonusRedemption } from "@/lib/bonus-redemption";
+import { getSessionIdentity } from "@/lib/session-identity";
 import { lookupOfferPrice } from "@/lib/offer-price-cache";
 import { checkPromoCode, holdPromoUse, normalizePromoCode } from "@/lib/promo";
 import type { OsagoV2Insurer, OsagoV2OrderRequest, OsagoV2Vehicle } from "@/types/api";
@@ -174,11 +174,13 @@ async function resolveDiscount(body: Record<string, unknown>, offerId: string): 
   }
 
   if (bonusRequested > 0) {
-    const email = (await auth().catch(() => null))?.user?.email ?? null;
-    if (!email) plan.bonusReason = "not-logged-in";
+    // Ключ рахунку для резерву: email Google-входу або phone:+380… для входу за номером.
+    const who = await getSessionIdentity();
+    const bonusKey = who.email ?? (who.phone ? `phone:${who.phone}` : null);
+    if (!bonusKey) plan.bonusReason = "not-logged-in";
     else {
-      plan.email = email;
-      const avail = await getBonusAvailability(email);
+      plan.email = bonusKey;
+      const avail = await getBonusAvailability(who);
       plan.bonusAvailable = avail.available;
       const room = Math.max(0, ceiling - plan.promoDiscount);
       plan.bonusCap = Math.floor(Math.min(bonusRequested, avail.available, room));

@@ -1,6 +1,6 @@
 import { sql } from "./db";
 import { getBonusBreakdownMulti } from "./bonus";
-import { resolveIdentities } from "./identity";
+import { resolveBonusIdentities, identityKeys, type IdentitySeed } from "./identity";
 
 // Списання бонусів у рахунок знижки на поліс (Ukasko v2 discountPercent — знижка
 // коштом нашої комісії, стеля maxDiscount у кожній пропозиції).
@@ -17,7 +17,7 @@ import { resolveIdentities } from "./identity";
 export const HOLD_TTL_HOURS = 24;
 
 export interface BonusAvailability {
-  emails: string[];   // усі повʼязані email-и людини (рівноправна звʼязка акаунтів)
+  emails: string[];   // усі ключі рахунку людини: email-и та phone:+380… (рівноправна звʼязка)
   total: number;      // залишок на рахунку (нараховано − списано)
   held: number;       // активні резерви за неоплаченими заявками
   available: number;  // можна списати зараз = total − held
@@ -50,14 +50,18 @@ function ensureRedemptionSchema(): Promise<void> {
 
 const norm = (email: string) => email.trim().toLowerCase();
 
-/** Скільки бонусів людина може списати прямо зараз (з урахуванням резервів). */
-export async function getBonusAvailability(email: string): Promise<BonusAvailability> {
-  const e = norm(email);
-  const empty = { emails: e ? [e] : [], total: 0, held: 0, available: 0 };
-  if (!sql || !e) return empty;
+/**
+ * Скільки бонусів людина може списати прямо зараз (з урахуванням резервів).
+ * Приймає «чим увійшли» (email і/або телефон) — усі повʼязані ключі рахунку.
+ */
+export async function getBonusAvailability(seed: IdentitySeed | string): Promise<BonusAvailability> {
+  const s: IdentitySeed = typeof seed === "string" ? { email: seed } : seed;
+  const seedKeys = [s.email ? norm(s.email) : "", s.phone ? `phone:${s.phone}` : ""].filter(Boolean);
+  const empty = { emails: seedKeys, total: 0, held: 0, available: 0 };
+  if (!sql || !seedKeys.length) return empty;
   await ensureRedemptionSchema();
-  const ids = await resolveIdentities({ email: e }).catch(() => ({ emails: [e], phones: [] as string[] }));
-  const emails = [...new Set([e, ...ids.emails.map(norm)].filter(Boolean))];
+  const ids = await resolveBonusIdentities(s).catch(() => null);
+  const emails = [...new Set([...seedKeys, ...(ids ? identityKeys(ids) : [])])];
   const breakdown = await getBonusBreakdownMulti(emails);
   const [row] = await sql<{ held: string }[]>`
     SELECT COALESCE(SUM(amount), 0) AS held
@@ -70,7 +74,6 @@ export async function getBonusAvailability(email: string): Promise<BonusAvailabi
   return { emails, total: breakdown.total, held, available: Math.max(0, Math.floor(breakdown.total - held)) };
 }
 
-/** Резервує списання під створену заявку (ідемпотентно за orderId). */
 export async function holdBonusRedemption(input: { orderId: string; email: string; product: string; amount: number }): Promise<void> {
   if (!sql) return;
   const amount = Math.round(input.amount);

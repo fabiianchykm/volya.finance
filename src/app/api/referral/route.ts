@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertSameOrigin } from "@/lib/api-guard";
-import { auth } from "@/auth";
+import { getSessionIdentity } from "@/lib/session-identity";
 import { getReferralSummary } from "@/lib/referral";
 
 // Реферальні дані залогіненого користувача — для кнопки «Отримати посилання».
@@ -9,16 +9,11 @@ export async function GET(req: NextRequest) {
   const blocked = assertSameOrigin(req);
   if (blocked) return blocked;
 
-  let email: string | null = null;
-  try {
-    email = (await auth())?.user?.email ?? null;
-  } catch {
-    // NextAuth не сконфігуровано — вважаємо гостем
-  }
-  if (!email) return NextResponse.json({ loggedIn: false });
+  const { email, phone } = await getSessionIdentity();
+  if (!email && !phone) return NextResponse.json({ loggedIn: false });
 
   try {
-    const s = await getReferralSummary(email);
+    const s = await getReferralSummary({ email, phone });
     if (!s) return NextResponse.json({ loggedIn: true, available: false });
     return NextResponse.json({
       loggedIn: true,

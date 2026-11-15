@@ -1,8 +1,8 @@
 import { ulid } from "ulid";
 import { sql } from "./db";
 import { SITE_URL } from "./seo";
-import { creditBonus, getBonusBreakdown, getBonusBreakdownMulti, getBonusHistory, type BonusHistoryItem } from "./bonus";
-import { resolveIdentities } from "./identity";
+import { creditBonus, getBonusBreakdownMulti, getBonusHistory, type BonusHistoryItem } from "./bonus";
+import { resolveBonusIdentities, identityKeys, primaryKey, type IdentitySeed } from "./identity";
 import { BONUS_RATE as PURCHASE_RATE } from "./constants";
 
 // Реферальна програма. Кожен залогінений користувач (email) має унікальний код
@@ -161,29 +161,42 @@ export interface ReferralSummary {
   history: BonusHistoryItem[];
 }
 
-/** Зведення для кабінету: код, посилання, к-сть запрошених, сумарний бонус, історія. */
-export async function getReferralSummary(email: string): Promise<ReferralSummary | null> {
+/**
+ * Зведення для кабінету: код, посилання, к-сть запрошених, сумарний бонус, історія.
+ * Приймає «чим увійшли» (email і/або телефон): усі повʼязані ключі людини (email-и
+ * та phone:+380…) дають ОДИН код і ОДИН баланс — вхід за номером бачить те саме,
+ * що й вхід через Google, а той, хто без email, отримує код на ключ телефону.
+ */
+export async function getReferralSummary(seed: IdentitySeed | string): Promise<ReferralSummary | null> {
   if (!sql) return null;
-  const code = await getOrCreateReferralCode(email);
+  const s: IdentitySeed = typeof seed === "string" ? { email: seed } : seed;
+  const ids = await resolveBonusIdentities(s);
+  const keys = identityKeys(ids);
+  const main = primaryKey(ids, s);
+  if (!main) return null;
+  await ensureReferralSchema();
+
+  // Код: найстарший серед усіх ключів людини (щоб посилання, яким уже ділилися,
+  // не змінилося після привʼязки другого входу); якщо немає — створюємо на головний.
+  const existing = await sql<{ code: string }[]>`
+    SELECT code FROM referral_codes WHERE email = ANY(${keys}) ORDER BY created_at ASC LIMIT 1
+  `;
+  const code = existing[0]?.code ?? (await getOrCreateReferralCode(main));
   if (!code) return null;
-  const e = norm(email);
 
   const [agg] = await sql<{ invited: string; total: string | null }[]>`
     SELECT COUNT(*)::int AS invited, COALESCE(SUM(bonus_amount), 0) AS total
-    FROM referrals WHERE lower(referrer_email) = ${e}
+    FROM referrals WHERE lower(referrer_email) = ANY(${keys})
   `;
   const items = await sql<{ bonus_amount: string; policy_price: string | null; created_at: Date }[]>`
     SELECT bonus_amount, policy_price, created_at
-    FROM referrals WHERE lower(referrer_email) = ${e}
+    FROM referrals WHERE lower(referrer_email) = ANY(${keys})
     ORDER BY created_at DESC LIMIT 20
   `;
 
-  // Рівноправна звʼязка: бонусний баланс — сума по всіх повʼязаних email-ах людини.
-  const ids = await resolveIdentities({ email: e });
-  const emails = ids.emails.length ? ids.emails : [e];
   const [balance, history] = await Promise.all([
-    emails.length > 1 ? getBonusBreakdownMulti(emails) : getBonusBreakdown(e),
-    getBonusHistory(emails).catch((err) => { console.error("[bonus] history error:", err instanceof Error ? err.message : err); return [] as BonusHistoryItem[]; }),
+    getBonusBreakdownMulti(keys),
+    getBonusHistory(keys).catch((err) => { console.error("[bonus] history error:", err instanceof Error ? err.message : err); return [] as BonusHistoryItem[]; }),
   ]);
 
   return {

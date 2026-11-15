@@ -18,7 +18,10 @@ function formatUaPhone(digits: string): string {
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(" ");
 }
 
-export function PhoneLogin() {
+// mode="login" (типово) — вхід у кабінет через NextAuth. mode="link" — той самий
+// екран, але підтверджений номер ПРИВʼЯЗУЄТЬСЯ до поточного Google-входу
+// (POST /api/account/link), сесія не змінюється; після успіху — onLinked(phone).
+export function PhoneLogin({ mode = "login", onLinked }: { mode?: "login" | "link"; onLinked?: (phone: string) => void } = {}) {
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -78,6 +81,22 @@ export function PhoneLogin() {
     setLoading(true);
     setError(null);
     try {
+      if (mode === "link") {
+        // Привʼязка номера до Google-акаунта: код перевіряє /api/account/link.
+        let body: Record<string, string>;
+        if (channel === "sms") {
+          if (!confirmationRef.current) throw new Error("no-confirmation");
+          const cred = await confirmationRef.current.confirm(code);
+          body = { idToken: await cred.user.getIdToken() };
+        } else {
+          body = { phone: `380${phoneDigits}`, code };
+        }
+        const r = await fetch("/api/account/link", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+        const json = await r.json().catch(() => ({}));
+        if (json?.success) onLinked?.(`+380${phoneDigits}`);
+        else setError(json?.error ?? t({ uk: "Невірний або протермінований код.", en: "Invalid or expired code." }));
+        return;
+      }
       let res;
       if (channel === "sms") {
         if (!confirmationRef.current) throw new Error("no-confirmation");
