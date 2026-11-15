@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import {
   listProfiles, fetchServerProfiles, putProfile, removeProfile, docFieldsByKind,
   type CustomerProfile, type DocKind, type DocFields,
+  profileKey,
 } from "@/lib/customer-profile";
 
 // Кабінет «Мої дані»: усі збережені особи акаунта (сам, дружина, діти…) — можна
@@ -62,7 +63,7 @@ export function ProfilesManager() {
   const { status } = useSession();
   const [profiles, setProfiles] = useState<CustomerProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<string | null>(null); // email особи або "new"
+  const [editing, setEditing] = useState<string | null>(null); // ключ особи (profileKey) або "new"
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -104,8 +105,8 @@ export function ProfilesManager() {
       )}
 
       {profiles.map((p) => (
-        <div key={p.email} className="rounded-2xl border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          {editing === p.email ? (
+        <div key={profileKey(p) || p.email} className="rounded-2xl border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          {editing === (profileKey(p) || p.email) ? (
             <ProfileForm
               initial={p}
               onCancel={() => setEditing(null)}
@@ -114,7 +115,7 @@ export function ProfilesManager() {
           ) : (
             <ProfileRow
               p={p}
-              onEdit={() => setEditing(p.email)}
+              onEdit={() => setEditing(profileKey(p) || p.email)}
               onDeleted={() => onSaved(t({ uk: "Особу видалено", en: "Person removed" }))}
             />
           )}
@@ -141,7 +142,7 @@ function ProfileRow({ p, onEdit, onDeleted }: { p: CustomerProfile; onEdit: () =
   const missing = missingFields(p, t);
   const del = async () => {
     setBusy(true);
-    await removeProfile(p.email);
+    await removeProfile(p);
     setBusy(false);
     onDeleted();
   };
@@ -206,7 +207,7 @@ function ProfileForm({ initial, isNew, onCancel, onSaved }: { initial: CustomerP
   const save = async () => {
     setErr(null);
     const email = f.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr(t({ uk: "Вкажіть коректний email — за ним зберігається особа.", en: "Enter a valid email — the person is stored under it." })); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr(t({ uk: "Вкажіть коректний email.", en: "Enter a valid email." })); return; }
     setBusy(true);
     // Закордонний паспорт: тримаємо і в docByKind.foreign, і в passport*-полях (туристичне).
     const foreign = doc("foreign");
@@ -223,8 +224,8 @@ function ProfileForm({ initial, isNew, onCancel, onSaved }: { initial: CustomerP
       docSerial: active.serial, docNumber: active.number, docIssuedBy: active.issuedBy, docDate: active.date,
       passportSerial: foreign.serial, passportNumber: foreign.number, passportDate: foreign.date, passportIssuedBy: foreign.issuedBy,
     };
-    // Зміна email = інший ключ: старий запис прибираємо, щоб не було дубля.
-    if (!isNew && initial.email && initial.email.toLowerCase() !== email) await removeProfile(initial.email);
+    // Зміна ІПН/ПІБ/ДН = інший ключ особи: старий запис прибираємо, щоб не було дубля.
+    if (!isNew && profileKey(initial) !== profileKey(next)) await removeProfile(initial);
     const ok = await putProfile(next);
     setBusy(false);
     if (!ok) { setErr(t({ uk: "Не вдалося зберегти на сервері. Перевірте з'єднання й спробуйте ще раз.", en: "Could not save to the server. Check your connection and try again." })); return; }

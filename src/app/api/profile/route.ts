@@ -53,15 +53,18 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Видалити профіль конкретної особи з акаунта (за її email у тілі запиту).
+// Видалити профіль конкретної особи з акаунта: `keys` — ключі особи (profileKey +
+// легасі email); `email` приймаємо для сумісності зі старими клієнтами.
 export async function DELETE(req: NextRequest) {
   const account = await profileKey();
   if (!account) return NextResponse.json({ success: false }, { status: 401 });
   const body = await req.json().catch(() => null);
-  const personEmail = typeof body?.email === "string" ? body.email : "";
-  if (!personEmail) return NextResponse.json({ success: false }, { status: 400 });
+  const keys: string[] = Array.isArray(body?.keys)
+    ? body.keys.filter((k: unknown): k is string => typeof k === "string").slice(0, 5)
+    : typeof body?.email === "string" ? [body.email] : [];
+  if (!keys.length) return NextResponse.json({ success: false }, { status: 400 });
   try {
-    await deleteServerProfile(account, personEmail);
+    await deleteServerProfile(account, keys);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false }, { status: 500 });

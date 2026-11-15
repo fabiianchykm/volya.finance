@@ -15,7 +15,7 @@ import { formatPrice, formatCompanyName, cityShort, cityLong } from "@/lib/utils
 import { toUkaskoPhone } from "@/lib/phone";
 import type { TourismOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, type CustomerProfile } from "@/lib/customer-profile";
+import { saveProfile, listProfiles, fetchServerProfiles, type CustomerProfile } from "@/lib/customer-profile";
 import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
 import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
@@ -133,13 +133,11 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
     void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
+  // Email НЕ підтягує профіль автоматично: на один email оформлюють поліси на різних
+  // осіб, і автозаповнення перетирало б форму. Збережені дані — лише через ProfilePicker.
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setC((s) => ({ ...s, email }));
-    if (authStatus === "authenticated") {
-      const saved = loadProfile(email);
-      if (saved) applyProfile(saved);
-    }
   };
 
   const o = ctx.offer;

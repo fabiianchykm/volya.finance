@@ -1,6 +1,7 @@
 import { sql, ensureSchema } from "@/lib/db";
 import { encryptJson, decryptJson } from "@/lib/crypto";
 import type { CustomerProfile } from "@/lib/customer-profile";
+import { profileKey, profileKeyCandidates } from "@/lib/profile-key";
 
 // Профіль страхувальника в БД, привʼязаний до АКАУНТА (email сесії, не з клієнта).
 // Один запис на акаунт; читається/пишеться лише для власного акаунта. Тіло профілю
@@ -35,23 +36,33 @@ export async function listServerProfiles(accountEmail: string): Promise<Customer
   const people = rows
     .map((r) => decryptJson<CustomerProfile>(r.data))
     .filter((p): p is CustomerProfile => !!p);
-  // Легасі один-на-акаунт — додаємо як ще одну особу, якщо її email ще не в списку.
+  // Легасі один-на-акаунт — додаємо як ще одну особу, якщо її ще немає в списку.
   const legacy = await sql`SELECT data FROM customer_profiles WHERE email = ${acc} LIMIT 1`;
   if (legacy[0]) {
     const p = decryptJson<CustomerProfile>(legacy[0].data);
-    if (p && !people.some((x) => keyOf(x.email || "") === keyOf(p.email || ""))) people.push(p);
+    if (p) people.push(p);
   }
-  return people;
+  // Одна особа могла лежати і під старим ключем (email), і під новим (ІПН/ПІБ) —
+  // показуємо найсвіжіший запис кожної (rows уже відсортовані за updated_at DESC).
+  const seen = new Set<string>();
+  return people.filter((p) => {
+    const k = profileKey(p) || keyOf(p.email || "") || acc;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
-/** Зберегти/оновити профіль ОДНІЄЇ особи на акаунті. person_key — нормалізований
- *  email особи (унікальний у межах акаунта); якщо email нема — фолбек на сам акаунт. */
+/** Зберегти/оновити профіль ОДНІЄЇ особи на акаунті. person_key — ключ особи
+ *  (ІПН → ПІБ+ДН → email, profileKey); якщо нічого нема — фолбек на сам акаунт.
+ *  Старий запис цієї ж особи під легасі-ключем (email) прибираємо, щоб не було дубля. */
 export async function upsertServerProfile(accountEmail: string, data: unknown): Promise<void> {
   if (!sql || !accountEmail) return;
   await ensureSchema();
   const acc = keyOf(accountEmail);
-  const personEmail = keyOf((data as Partial<CustomerProfile> | null)?.email || "");
-  const personKey = personEmail || acc;
+  const profile = data as Partial<CustomerProfile> | null;
+  const personKey = profileKey(profile) || acc;
+  const stale = profileKeyCandidates(profile).filter((k) => k !== personKey);
   // Шифруємо ПЕРЕД записом; round-trip через JSON → чистий JSON-value (як у policies.ts).
   const encrypted = encryptJson(data);
   const json = sql.json(JSON.parse(JSON.stringify(encrypted)));
@@ -60,11 +71,23 @@ export async function upsertServerProfile(accountEmail: string, data: unknown): 
     VALUES (${acc}, ${personKey}, ${json}, now())
     ON CONFLICT (account, person_key) DO UPDATE SET data = EXCLUDED.data, updated_at = now()
   `;
+  if (stale.length) {
+    // Прибираємо легасі-запис за email лише якщо це ТА САМА особа (ІПН/ПІБ збігаються),
+    // бо під тим email могла бути збережена інша людина.
+    const rows = await sql`SELECT person_key, data FROM account_people WHERE account = ${acc} AND person_key = ANY(${stale})`;
+    for (const r of rows) {
+      const old = decryptJson<CustomerProfile>(r.data);
+      if (old && profileKey(old) === personKey) {
+        await sql`DELETE FROM account_people WHERE account = ${acc} AND person_key = ${r.person_key as string}`;
+      }
+    }
+  }
 }
 
-/** Видалити профіль особи з акаунта (за її email). */
-export async function deleteServerProfile(accountEmail: string, personEmail: string): Promise<void> {
-  if (!sql || !accountEmail || !personEmail) return;
+/** Видалити профіль особи з акаунта за її ключами (новий ключ + легасі email). */
+export async function deleteServerProfile(accountEmail: string, keys: string[]): Promise<void> {
+  const ks = keys.map((k) => k.trim().toLowerCase()).filter(Boolean);
+  if (!sql || !accountEmail || !ks.length) return;
   await ensureSchema();
-  await sql`DELETE FROM account_people WHERE account = ${keyOf(accountEmail)} AND person_key = ${keyOf(personEmail)}`;
+  await sql`DELETE FROM account_people WHERE account = ${keyOf(accountEmail)} AND person_key = ANY(${ks})`;
 }

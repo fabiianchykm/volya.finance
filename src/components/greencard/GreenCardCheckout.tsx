@@ -12,7 +12,7 @@ import { SuccessModal } from "@/components/insurance/SuccessModal";
 import type { GreenCardOffer } from "@/types/api";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+import { saveProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
 import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
@@ -231,14 +231,11 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
     void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
-  // Якщо введений email збігається зі збереженим профілем — автозаповнюємо решту.
+  // Email НЕ підтягує профіль автоматично: на один email оформлюють поліси на різних
+  // осіб, і автозаповнення перетирало б форму. Збережені дані — лише через ProfilePicker.
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setF((s) => ({ ...s, email }));
-    if (authStatus === "authenticated") {
-      const saved = loadProfile(email);
-      if (saved) applyProfile(saved);
-    }
   };
 
   const buildPayload = () => {

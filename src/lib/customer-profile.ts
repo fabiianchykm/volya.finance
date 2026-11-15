@@ -1,6 +1,9 @@
-// Збереження профілю страхувальника НА ПРИСТРОЇ (localStorage), прив'язане до email.
-// Мета: не вводити ті самі дані (ПІБ, ІПН, документ, адреса) щоразу. Коли користувач
-// вводить свій email — форма підставляє раніше збережені дані.
+// Збереження профілів страхувальників НА ПРИСТРОЇ (localStorage). Ключ запису —
+// ОСОБА (ІПН → ПІБ+ДН → email, див. profile-key.ts), бо на один email оформлюють
+// поліси на різних людей. Форми НЕ автозаповнюються: збережені дані підставляються
+// лише свідомим вибором у пікері «Заповнити збереженими даними».
+import { profileKey, profileKeyCandidates } from "@/lib/profile-key";
+export { profileKey } from "@/lib/profile-key";
 //
 // Приватність: дані лежать ЛИШЕ в браузері користувача (його пристрій), тому паспорт/
 // ІПН не витікають іншим. Крос-девайс синхронізацію (з сервера) робимо окремо й лише
@@ -74,10 +77,16 @@ export function docFieldsByKind(p: CustomerProfile | null | undefined, kind: Doc
   return d;
 }
 
-const KEY = "volya_profiles";        // map: email(lower) → CustomerProfile
-const LAST_KEY = "volya_last_email"; // останній використаний email
+const KEY = "volya_profiles";        // map: ключ особи (profileKey; легасі — email) → CustomerProfile
+const LAST_KEY = "volya_last_email"; // ключ останньої збереженої особи
 const OWNER_KEY = "volya_profile_owner"; // чий це локальний кеш: email акаунта або порожньо (гість)
-const MAX = 10;                      // не даємо мапі рости безмежно
+const MAX = 100;                     // не даємо мапі рости безмежно (брокер: десятки осіб)
+
+/** Знайти наявний запис цієї особи під будь-яким із можливих ключів (новий / легасі email). */
+function findExisting(map: ProfileMap, p: Parameters<typeof profileKeyCandidates>[0]): string | null {
+  for (const k of profileKeyCandidates(p)) if (map[k]) return k;
+  return null;
+}
 
 type ProfileMap = Record<string, CustomerProfile>;
 
@@ -96,7 +105,7 @@ function normEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/** Зберегти профіль під email (частковий — кожен продукт пише лише свої поля).
+/** Зберегти профіль особи (частковий — кожен продукт пише лише свої поля).
  *  Мерджимо з наявним записом, щоб продукт без якогось поля (напр. ОСЦПВ не має
  *  латиниці/паспорта, туристичне — укр. ПІБ/ІПН) не затирав раніше збережене. */
 export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { email: string; docKind?: DocKind }): void {
@@ -104,7 +113,8 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
   if (!email) return;
   try {
     const map = readMap();
-    const prev = map[email] ?? ({} as CustomerProfile);
+    const prevKey = findExisting(map, p);
+    const prev = (prevKey ? map[prevKey] : null) ?? ({} as CustomerProfile);
     // Оновлюємо памʼять документа для АКТИВНОГО типу-сутності, зберігаючи інші типи.
     const activeType = p.docType ?? prev.docType ?? 3;
     const docKind: DocKind = p.docKind ?? prev.lastDocKind ?? "idcard";
@@ -131,7 +141,7 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
     }
     // Явна нормалізація: обовʼязкові рядкові поля не мають бути undefined,
     // інакше інпути стають uncontrolled. Опційні (латиниця/паспорт) лишаємо як є.
-    map[email] = {
+    const merged: CustomerProfile = {
       surname: p.surname ?? prev.surname ?? "",
       name: p.name ?? prev.name ?? "",
       patronymic: p.patronymic ?? prev.patronymic ?? "",
@@ -160,6 +170,9 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
       passportIssuedBy: p.passportIssuedBy ?? prev.passportIssuedBy,
       savedAt: Date.now(),
     };
+    const key = profileKey(merged) || email;
+    if (prevKey && prevKey !== key) delete map[prevKey]; // міграція з легасі-ключа за email
+    map[key] = merged;
 
     // Тримаємо не більше MAX найсвіжіших профілів.
     const entries = Object.entries(map).sort((a, b) => b[1].savedAt - a[1].savedAt);
@@ -167,9 +180,9 @@ export function saveProfile(p: Partial<Omit<CustomerProfile, "savedAt">> & { ema
     for (const [k, v] of entries.slice(0, MAX)) trimmed[k] = v;
 
     localStorage.setItem(KEY, JSON.stringify(trimmed));
-    localStorage.setItem(LAST_KEY, email);
+    localStorage.setItem(LAST_KEY, key);
 
-    void pushToServer(map[email]);
+    void pushToServer(merged);
   } catch {
     // localStorage може бути недоступний (приватний режим, квота) — просто пропускаємо.
   }
@@ -216,7 +229,10 @@ export async function putProfile(p: CustomerProfile): Promise<boolean> {
   const full: CustomerProfile = { ...p, email, savedAt: Date.now() };
   try {
     const map = readMap();
-    map[email] = full;
+    const prevKey = findExisting(map, full);
+    const key = profileKey(full) || email;
+    if (prevKey && prevKey !== key) delete map[prevKey];
+    map[key] = full;
     localStorage.setItem(KEY, JSON.stringify(map));
   } catch {
     // localStorage недоступний — все одно пробуємо сервер
@@ -224,15 +240,17 @@ export async function putProfile(p: CustomerProfile): Promise<boolean> {
   return pushToServer(full);
 }
 
-/** Видалити особу (за email) з локального кешу й з БД акаунта. */
-export async function removeProfile(email: string): Promise<boolean> {
-  const e = normEmail(email);
+/** Видалити особу з локального кешу й з БД акаунта. Приймає профіль (ключ рахуємо
+ *  самі, прибираємо і легасі-запис за email) або готовий ключ/email. */
+export async function removeProfile(target: CustomerProfile | string): Promise<boolean> {
+  const keys = typeof target === "string" ? [target.trim().toLowerCase()] : profileKeyCandidates(target);
+  const e = keys[0];
   if (!e) return false;
   try {
     const map = readMap();
-    delete map[e];
+    for (const k of keys) delete map[k];
     localStorage.setItem(KEY, JSON.stringify(map));
-    if (localStorage.getItem(LAST_KEY) === e) localStorage.removeItem(LAST_KEY);
+    if (keys.includes(localStorage.getItem(LAST_KEY) ?? "")) localStorage.removeItem(LAST_KEY);
   } catch {
     // ignore
   }
@@ -240,7 +258,7 @@ export async function removeProfile(email: string): Promise<boolean> {
     const r = await fetch("/api/profile", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: e }),
+      body: JSON.stringify({ keys }),
     });
     return r.ok;
   } catch {
@@ -248,12 +266,15 @@ export async function removeProfile(email: string): Promise<boolean> {
   }
 }
 
-/** Профіль за конкретним email (або null). */
+/** Найсвіжіший профіль із таким email (або null). Під одним email може бути кілька
+ *  осіб — для вибору конкретної є listProfiles() + пікер. */
 export function loadProfile(email: string): CustomerProfile | null {
   const e = normEmail(email);
   if (!e) return null;
   const map = readMap();
-  return map[e] ?? null;
+  return Object.values(map)
+    .filter((p) => normEmail(p.email || "") === e)
+    .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))[0] ?? null;
 }
 
 /** Усі збережені профілі (найсвіжіші першими) — для пікера «Заповнити збереженими».
@@ -333,9 +354,12 @@ function mergeProfileIntoCache(p: CustomerProfile): void {
     const email = normEmail(p?.email || "");
     if (!email) return;
     const map = readMap();
-    const prev = map[email];
+    const key = profileKey(p) || email;
+    const prevKey = findExisting(map, p);
+    const prev = prevKey ? map[prevKey] : undefined;
     if (prev && (prev.savedAt || 0) >= (p.savedAt || 0)) return; // локальний свіжіший
-    map[email] = { ...p, email, savedAt: p.savedAt || Date.now() };
+    if (prevKey && prevKey !== key) delete map[prevKey];
+    map[key] = { ...p, email, savedAt: p.savedAt || Date.now() };
     localStorage.setItem(KEY, JSON.stringify(map));
   } catch {
     // ignore
@@ -348,9 +372,12 @@ export function importServerProfile(p: CustomerProfile): void {
     const email = normEmail(p.email);
     if (!email) return;
     const map = readMap();
-    map[email] = { ...p, email, savedAt: Date.now() };
+    const key = profileKey(p) || email;
+    const prevKey = findExisting(map, p);
+    if (prevKey && prevKey !== key) delete map[prevKey];
+    map[key] = { ...p, email, savedAt: Date.now() };
     localStorage.setItem(KEY, JSON.stringify(map));
-    localStorage.setItem(LAST_KEY, email);
+    localStorage.setItem(LAST_KEY, key);
   } catch {
     // ignore
   }

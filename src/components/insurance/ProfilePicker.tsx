@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { UserRound, ChevronDown } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import type { CustomerProfile } from "@/lib/customer-profile";
+import { profileKey, type CustomerProfile } from "@/lib/customer-profile";
 
 // Кнопка «Заповнити збереженими даними» + випадний список профілів. На одному
 // акаунті можуть бути дані кількох осіб (сам, дружина…) — тож пропонуємо вибір,
@@ -36,13 +36,15 @@ export function ProfilePicker({ profiles, onPick }: { profiles: CustomerProfile[
           <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
             {profiles.map((p, i) => (
               <button
-                key={p.email || i}
+                key={profileKey(p) || p.email || i}
                 type="button"
                 onClick={() => { onPick(p); setOpen(false); }}
                 className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
               >
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{label(p)}</span>
-                {p.identificationCode ? <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">Ідент. код {p.identificationCode}</span> : null}
+                <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
+                  {p.identificationCode ? `Ідент. код ${p.identificationCode}` : p.dateBirth ? p.dateBirth : ""}
+                </span>
               </button>
             ))}
           </div>

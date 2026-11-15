@@ -14,7 +14,7 @@ import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resum
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { searchMarks, searchModels } from "@/lib/car-catalog";
-import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
+import { saveProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields, type DocKind } from "@/lib/customer-profile";
 import { ProfilePicker } from "./ProfilePicker";
 
 // Локальні числові коди документів ОСЦПВ → канонічний тип-сутність.
@@ -972,15 +972,11 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
     void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
-  // Email — окремий обробник: якщо введений email збігається зі збереженим профілем,
-  // автозаповнюємо решту полів. Так «прив'язка під email» працює й при зміні пошти.
+  // Email НЕ підтягує профіль автоматично: на один email оформлюють поліси на різних
+  // осіб, і автозаповнення перетирало б форму. Збережені дані — лише через ProfilePicker.
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setForm((f) => ({ ...f, email }));
-    if (authStatus === "authenticated") {
-      const saved = loadProfile(email);
-      if (saved) applyProfile(saved);
-    }
   };
 
   // Тестове автозаповнення: ввести "007" у поле «Прізвище» → форма заповнюється

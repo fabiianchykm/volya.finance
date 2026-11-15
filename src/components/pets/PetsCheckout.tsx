@@ -13,7 +13,7 @@ import { formatPrice, cityShort, cityLong } from "@/lib/utils";
 import { toUkaskoPhone } from "@/lib/phone";
 import type { PetsOffer } from "@/types/api";
 import { trackEvent, trackCheckoutStarted } from "@/lib/analytics";
-import { saveProfile, loadProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
+import { saveProfile, listProfiles, fetchServerProfiles, docFieldsByKind, type CustomerProfile, type DocFields } from "@/lib/customer-profile";
 import { ProfilePicker } from "@/components/insurance/ProfilePicker";
 import { useSession } from "next-auth/react";
 import { readResume, clearResume, useResumeSnapshot } from "@/lib/checkout-resume";
@@ -127,13 +127,11 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
     void fetchServerProfiles().then((all) => setSavedProfiles(all));
   }, [authStatus]);
 
+  // Email НЕ підтягує профіль автоматично: на один email оформлюють поліси на різних
+  // осіб, і автозаповнення перетирало б форму. Збережені дані — лише через ProfilePicker.
   const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     setF((s) => ({ ...s, email }));
-    if (authStatus === "authenticated") {
-      const saved = loadProfile(email);
-      if (saved) applyProfile(saved);
-    }
   };
 
   const buildOrder = (): Record<string, unknown> => {
