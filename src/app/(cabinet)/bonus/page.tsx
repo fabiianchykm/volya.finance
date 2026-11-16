@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getReferralSummary, type ReferralSummary } from "@/lib/referral";
 import { getSessionIdentity } from "@/lib/session-identity";
-import { resolveBonusIdentities } from "@/lib/identity";
+import { resolveLoginIdentities } from "@/lib/identity";
 import Link from "next/link";
 import { ReferralCard } from "@/components/referral/ReferralCard";
 import { T } from "@/components/i18n/T";
@@ -23,7 +23,7 @@ export default async function BonusPage() {
   let singleLogin = false;
   if (who.email || who.phone) {
     try {
-      const [summary, ids] = await Promise.all([getReferralSummary(who), resolveBonusIdentities(who)]);
+      const [summary, ids] = await Promise.all([getReferralSummary(who), resolveLoginIdentities(who)]);
       referral = summary;
       singleLogin = ids.emails.length === 0 || ids.phones.length === 0;
     } catch (e) {

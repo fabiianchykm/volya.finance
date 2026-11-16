@@ -117,6 +117,35 @@ export function resolveIdentities(seed: IdentitySeed): Promise<IdentitySet> {
 }
 
 /**
+ * ЛИШЕ способи входу: те, чим увійшли, + явні привʼязки з кабінету (identity_links).
+ * Поліси тут не беруться: під одним акаунтом оформлюють поліси на багатьох людей, і їхні
+ * телефони/пошти — не входи власника (16.11.2026: у «Способах входу» показувались
+ * контакти застрахованих, які ніколи не входили).
+ */
+export async function resolveLoginIdentities(seed: IdentitySeed): Promise<IdentitySet> {
+  const emails = new Set<string>();
+  const phones = new Set<string>();
+  if (seed.email) emails.add(normEmail(seed.email));
+  const p0 = normPhone(seed.phone ?? null);
+  if (p0) phones.add(p0);
+  if (!sql || (emails.size === 0 && phones.size === 0)) return { emails: [...emails], phones: [...phones] };
+  await ensureLinksSchema().catch(() => undefined);
+  for (let round = 0; round < 3; round++) {
+    const before = emails.size + phones.size;
+    const links = await sql<{ email: string; phone: string }[]>`
+      SELECT email, phone FROM identity_links WHERE email = ANY(${[...emails]}) OR phone = ANY(${[...phones]})
+    `.catch(() => [] as { email: string; phone: string }[]);
+    for (const l of links) {
+      emails.add(normEmail(l.email));
+      const ph = normPhone(l.phone);
+      if (ph) phones.add(ph);
+    }
+    if (emails.size + phones.size === before) break;
+  }
+  return { emails: [...emails], phones: [...phones] };
+}
+
+/**
  * Ідентичності для БОНУСНОГО рахунку (баланс, списання, реферальний код). Суворіше
  * за resolveIdentities: клієнт, якому поліс оформив брокер зі свого email, за своїм
  * номером брокерський рахунок не бачить і не списує.

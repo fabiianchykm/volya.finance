@@ -4,7 +4,7 @@ import { assertSameOrigin, guardRequest } from "@/lib/api-guard";
 import { getSessionIdentity } from "@/lib/session-identity";
 import { normalizePhone, verifyPhoneCode } from "@/lib/phone-login";
 import {
-  resolveIdentities, listIdentityLinks, addIdentityLink, removeIdentityLink,
+  resolveLoginIdentities, listIdentityLinks, addIdentityLink, removeIdentityLink,
   createLinkIntent, consumeLinkIntent,
 } from "@/lib/identity";
 
@@ -27,7 +27,8 @@ export async function GET(req: NextRequest) {
   if (blocked) return blocked;
   const who = await getSessionIdentity();
   if (!who.email && !who.phone) return NextResponse.json({ loggedIn: false });
-  const ids = await resolveIdentities(who).catch(() => ({ emails: who.email ? [who.email] : [], phones: who.phone ? [who.phone] : [] }));
+  // Лише реальні входи (сесія + явні привʼязки), без контактів із полісів.
+  const ids = await resolveLoginIdentities(who).catch(() => ({ emails: who.email ? [who.email] : [], phones: who.phone ? [who.phone] : [] }));
   const links = await listIdentityLinks(ids).catch(() => []);
   return NextResponse.json({ loggedIn: true, email: who.email, phone: who.phone, emails: ids.emails, phones: ids.phones, links });
 }

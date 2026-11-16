@@ -105,7 +105,7 @@ export function LinkedLogins() {
         <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Способи входу", en: "Ways to sign in" })}</h2>
       </div>
       <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
-        {t({ uk: "Усі ці контакти ведуть в один кабінет: ті самі поліси, бонуси й реферальне посилання — хоч за номером заходите, хоч через Google.", en: "All these contacts open the same account: the same policies, bonuses and referral link, whether you sign in by phone or with Google." })}
+        {t({ uk: "Те, чим ви входите в кабінет: Google-акаунт і/або номер телефону. Привʼяжіть обидва — і за номером, і через Google відкриватиметься один кабінет: ті самі поліси, бонуси й реферальне посилання. Контакти людей з ваших полісів сюди не входять.", en: "What you sign in with: a Google account and/or a phone number. Link both and either sign-in opens the same account: the same policies, bonuses and referral link. Contacts of people on your policies are not listed here." })}
       </p>
 
       {notice && (
