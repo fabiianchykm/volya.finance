@@ -337,8 +337,8 @@ export function OfferCard({
   // Бонус 1% від вартості полісу — нараховується на бонусний рахунок клієнта.
   const bonus = Math.round(totalPrice * BONUS_RATE);
   const bonusHint = t({
-    uk: `Після оформлення цього полісу нарахуємо +${formatPrice(bonus)} (1% вартості) на ваш бонусний рахунок у кабінеті. Бонусами можна оплатити частину наступних полісів — за підтримки менеджера. За кожного запрошеного друга, який купить поліс, — ще +5%.`,
-    en: `After you buy this policy we'll credit +${formatPrice(bonus)} (1% of the price) to your bonus account. You can put bonuses toward your next policies — with a manager's help. For every friend you invite who buys a policy — an extra 5%.`,
+    uk: `Після оформлення цього полісу нарахуємо +${formatPrice(bonus)} (1% вартості) на ваш бонусний рахунок у кабінеті. Бонусами можна оплатити частину наступної автоцивілки — просто на кроці «Оплата». За кожного запрошеного друга, який купить поліс, — ще +5%.`,
+    en: `After you buy this policy we'll credit +${formatPrice(bonus)} (1% of the price) to your bonus account. You can put bonuses toward your next MTPL policy right at the payment step. For every friend you invite who buys a policy — an extra 5%.`,
   });
 
   // «Стара» ціна (до знижки) + відсоток — лише для ОСЦПВ (discountEligible).

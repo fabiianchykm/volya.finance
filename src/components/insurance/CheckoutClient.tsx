@@ -61,7 +61,11 @@ export function CheckoutClient() {
   
   // UI state
   const [loaded, setLoaded] = useState(false);
-  const [step, setStep] = useState<"customer" | "vehicle" | "otp" | "payment" | "success">("customer");
+  // Кроки: 1 клієнт → 2 авто → 3 «Оплата» (підсумок + бонуси/промокод; звідси йде
+  // заявлення в СК) → OTP-модалка → модалка оплати → успіх.
+  const [step, setStep] = useState<"customer" | "vehicle" | "pay" | "otp" | "payment" | "success">("customer");
+  // Дані авто з кроку 2 (марка/модель/VIN, обʼєм…) — заявлення робимо вже з кроку «Оплата».
+  const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails | null>(null);
   
   // Data state
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -128,15 +132,16 @@ export function CheckoutClient() {
         setSelectedAutolawyerId(parsed.selectedAutolawyerId || null);
         // Повернення після перезавантаження (пошта/SMS за кодом): відновлюємо крок,
         // дані клієнта й orderId — щоб не проходити все спочатку.
-        const r = readResume<{ step: "vehicle" | "otp" | "payment"; customer: Customer | null; buyer?: BuyerData; vehicle?: VehicleData; orderId: string | null; order?: OsagoV2OrderResult | null }>("checkout_resume_osago");
-        if (r && (r.step === "vehicle" || r.orderId)) {
+        const r = readResume<{ step: "vehicle" | "pay" | "otp" | "payment"; customer: Customer | null; buyer?: BuyerData; vehicle?: VehicleData; vehicleDetails?: VehicleDetails | null; orderId: string | null; order?: OsagoV2OrderResult | null }>("checkout_resume_osago");
+        if (r && (r.step === "vehicle" || r.step === "pay" || r.orderId)) {
           if (r.customer) setCustomer(r.customer);
           if (r.buyer) setBuyer(r.buyer);
           if (r.vehicle) setVehicle(r.vehicle);
+          if (r.vehicleDetails) setVehicleDetails(r.vehicleDetails);
           if (r.orderId) setOrderId(r.orderId);
           if (r.order) setOrder(r.order);
           leadPingedRef.current = true;
-          setStep(r.step);
+          setStep(r.step === "pay" && !r.vehicleDetails ? "vehicle" : r.step);
         }
         setLoaded(true);
       }
@@ -150,8 +155,8 @@ export function CheckoutClient() {
   // Знімок прогресу для відновлення після перезавантаження вкладки.
   useResumeSnapshot(
     "checkout_resume_osago",
-    loaded && (step === "vehicle" || ((step === "otp" || step === "payment") && orderId))
-      ? { step, customer, buyer, vehicle, orderId, order }
+    loaded && (step === "vehicle" || step === "pay" || ((step === "otp" || step === "payment") && orderId))
+      ? { step, customer, buyer, vehicle, vehicleDetails, orderId, order }
       : null
   );
 
@@ -320,7 +325,7 @@ export function CheckoutClient() {
     return { dgoId: dgo?.id ?? null, lawId: law?.id ?? null };
   };
 
-  const handleVehicleSubmit = async (details: VehicleDetails) => {
+  const handleVehicleSubmit = (details: VehicleDetails) => {
     if (!customer || !vehicle) return;
     // Марку/модель/VIN користувач заповнює саме тут (на розрахунок не впливають) —
     // вливаємо їх у vehicle для замовлення й подальших екранів.
@@ -331,6 +336,18 @@ export function CheckoutClient() {
       vin: details.vin?.trim() || vehicle.vin || "",
     };
     setVehicle(mergedVehicle);
+    setVehicleDetails(details);
+    setError(null);
+    setStep("pay");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Крок «Оплата»: клієнт побачив підсумок, обрав бонуси/промокод → заявлення v2
+  // (декларація в СК зі знижкою + OTP на email) → код підтвердження → LiqPay.
+  const handleProceedToPayment = async () => {
+    if (!customer || !vehicle || !vehicleDetails) return;
+    const details = vehicleDetails;
+    const mergedVehicle = vehicle;
     setLoading(true);
     setError(null);
     setPriceNotice(null);
@@ -340,8 +357,8 @@ export function CheckoutClient() {
       const fresh = await revalidateOffer();
       if (!fresh) {
         setError(t({
-          uk: "Пропозиція застаріла або страхова тимчасово недоступна. Натисніть «Продовжити» ще раз, а якщо не спрацює — поверніться до пропозицій і перерахуйте вартість.",
-          en: "The offer has expired or the insurer is temporarily unavailable. Click \"Continue\" again; if it doesn't work, go back to the offers and recalculate.",
+          uk: "Пропозиція застаріла або страхова тимчасово недоступна. Натисніть «Перейти до оплати» ще раз, а якщо не спрацює — поверніться до пропозицій і перерахуйте вартість.",
+          en: "The offer has expired or the insurer is temporarily unavailable. Click \"Go to payment\" again; if it doesn't work, go back to the offers and recalculate.",
         }));
         setLoading(false);
         return;
@@ -358,11 +375,11 @@ export function CheckoutClient() {
             uk:
               `Страхова компанія перерахувала вартість за вказаними даними страхувальника. ` +
               `Актуальна сума: ${formatPrice(nowTotal)} (у пропозиції — ${formatPrice(wasTotal)}). ` +
-              `Перевірте суму й натисніть «Продовжити», щоб перейти до підтвердження.`,
+              `Перевірте суму й натисніть «Перейти до оплати», щоб перейти до підтвердження.`,
             en:
               `The insurer recalculated the price based on the policyholder details. ` +
               `Current total: ${formatPrice(nowTotal)} (in the offer — ${formatPrice(wasTotal)}). ` +
-              `Check the amount and click "Continue" to proceed.`,
+              `Check the amount and click "Go to payment" to proceed.`,
           })
         );
         return;
@@ -411,8 +428,8 @@ export function CheckoutClient() {
           setSelectedAutolawyerId(extras2.lawId);
           setPriceNotice(
             t({
-              uk: `Страхова компанія перерахувала вартість поліса. Актуальна сума: ${formatPrice(total2)} (у пропозиції — ${formatPrice(wasTotal)}). Перевірте суму й натисніть «Продовжити».`,
-              en: `The insurer recalculated the policy price. Current total: ${formatPrice(total2)} (in the offer — ${formatPrice(wasTotal)}). Check the amount and click "Continue".`,
+              uk: `Страхова компанія перерахувала вартість поліса. Актуальна сума: ${formatPrice(total2)} (у пропозиції — ${formatPrice(wasTotal)}). Перевірте суму й натисніть «Перейти до оплати».`,
+              en: `The insurer recalculated the policy price. Current total: ${formatPrice(total2)} (in the offer — ${formatPrice(wasTotal)}). Check the amount and click "Go to payment".`,
             })
           );
           setLoading(false);
@@ -609,6 +626,7 @@ export function CheckoutClient() {
         <button 
           onClick={() => {
             if (step === "vehicle") setStep("customer");
+            else if (step === "pay") setStep("vehicle");
             else router.push("/osago");
           }}
           aria-label={t({ uk: "Назад", en: "Back" })}
@@ -641,93 +659,6 @@ export function CheckoutClient() {
         </div>
       )}
 
-      {/* Списання бонусів — до заявлення (знижка фіксується в заявці Ukasko). */}
-      {(step === "customer" || step === "vehicle") && !order && bonusMax >= 1 && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
-          <label className="flex cursor-pointer items-start justify-between gap-3">
-            <span className="flex items-start gap-2">
-              <Gift className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span className="flex flex-col">
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  {t({ uk: `Списати бонуси: на рахунку ${formatPrice(bonusAvailable)}`, en: `Use bonuses: ${formatPrice(bonusAvailable)} on your account` })}
-                </span>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {bonusMax < bonusAvailable
-                    ? t({ uk: `По цій пропозиції можна списати до ${formatPrice(bonusMax)}. Сума до оплати зменшиться одразу.`, en: `Up to ${formatPrice(bonusMax)} can be applied to this offer. The amount due drops right away.` })
-                    : t({ uk: "Сума до оплати зменшиться на списані бонуси.", en: "The amount due drops by the applied bonuses." })}
-                </span>
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={useBonus}
-              onChange={(e) => { setUseBonus(e.target.checked); if (e.target.checked && !(bonusAmount > 0)) setBonusAmount(bonusMax); }}
-              className="mt-1 h-5 w-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-600"
-            />
-          </label>
-          {useBonus && (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <label className="text-sm text-zinc-600 dark:text-zinc-300" htmlFor="bonus-amount">{t({ uk: "Сума списання, грн", en: "Amount to apply, UAH" })}</label>
-              <input
-                id="bonus-amount"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={bonusMax}
-                step={1}
-                value={bonusAmount || ""}
-                onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value) || 0))))}
-                className="h-10 w-32 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-              />
-              <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
-                {t({ uk: `Списати максимум (${formatPrice(bonusMax)})`, en: `Apply the maximum (${formatPrice(bonusMax)})` })}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Промокод — теж до заявлення (знижка фіксується в заявці Ukasko). */}
-      {(step === "customer" || step === "vehicle") && !order && (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-          <div className="flex items-start gap-2">
-            <TicketPercent className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Промокод", en: "Promo code" })}</p>
-              {promoApplied ? (
-                <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-emerald-700 dark:text-emerald-400">
-                  <span>{promoApplied.message} · {t({ uk: `−${formatPrice(promoApplied.discount)}`, en: `−${formatPrice(promoApplied.discount)}` })}</span>
-                  <button type="button" onClick={() => { setPromoApplied(null); setPromoInput(""); }} className="text-xs font-medium text-zinc-500 hover:underline dark:text-zinc-400">{t({ uk: "Прибрати", en: "Remove" })}</button>
-                </p>
-              ) : (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <input
-                    type="text"
-                    inputMode="text"
-                    autoCapitalize="characters"
-                    aria-label={t({ uk: "Промокод", en: "Promo code" })}
-                    placeholder={t({ uk: "Введіть код", en: "Enter code" })}
-                    value={promoInput}
-                    onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null); }}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void applyPromo(); } }}
-                    className="h-10 w-44 rounded-xl border border-zinc-200 bg-white px-3 text-sm uppercase tracking-wider text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                  />
-                  <button type="button" onClick={() => void applyPromo()} disabled={promoChecking || !promoInput.trim()} className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50">
-                    {promoChecking ? t({ uk: "Перевіряю…", en: "Checking…" }) : t({ uk: "Застосувати", en: "Apply" })}
-                  </button>
-                </div>
-              )}
-              {promoError && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{promoError}</p>}
-            </div>
-          </div>
-          {estDiscount > 0 && (
-            <p className="mt-3 border-t border-zinc-100 pt-3 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
-              {t({ uk: `Разом знижка ≈ ${formatPrice(estDiscount)}. До оплати ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}`, en: `Total discount ≈ ${formatPrice(estDiscount)}. Amount due ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}` })}
-              {discountCeiling < (promoApplied?.discount ?? 0) + bonusToApply && <span className="text-zinc-500 dark:text-zinc-400"> {t({ uk: `(стеля для цієї страхової — ${formatPrice(discountCeiling)})`, en: `(cap for this insurer — ${formatPrice(discountCeiling)})` })}</span>}
-            </p>
-          )}
-        </div>
-      )}
       {error && step !== "otp" && (
         <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900">
           <span className="font-semibold">{t({ uk: "Помилка: ", en: "Error: " })}</span>{error}
@@ -762,11 +693,197 @@ export function CheckoutClient() {
             loading={loading}
           />
         )}
+
+        {step === "pay" && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Перевірте замовлення", en: "Review your order" })}</h2>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                {t({ uk: "Бонуси й промокод застосовуються саме тут — до реєстрації поліса у страховій. Після цього кроку суму змінити не можна.", en: "Bonuses and a promo code are applied here, before the insurer registers the policy. The amount can't be changed after this step." })}
+              </p>
+            </div>
+
+            <dl className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-700">
+              <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Страхова", en: "Insurer" })}</dt>
+                <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{offer.companyNamePublic || offer.companyName}</dd>
+              </div>
+              <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Авто", en: "Vehicle" })}</dt>
+                <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">
+                  {[vehicle.mark, vehicle.model, vehicle.year].filter(Boolean).join(" ")}
+                  {vehicle.number && <span className="ml-2 rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-xs uppercase tracking-wider dark:bg-zinc-800">{vehicle.number}</span>}
+                </dd>
+              </div>
+              {customer && (
+                <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                  <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Страхувальник", en: "Policyholder" })}</dt>
+                  <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{[customer.surname, customer.name, customer.patronymic].filter(Boolean).join(" ")}</dd>
+                </div>
+              )}
+              {offer.startDate && (
+                <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                  <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Період дії", en: "Coverage period" })}</dt>
+                  <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{offer.startDate}{offer.endDate ? ` — ${offer.endDate}` : ""}</dd>
+                </div>
+              )}
+              <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Автоцивілка (ОСЦПВ)", en: "MTPL policy" })}</dt>
+                <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(offer.price)}</dd>
+              </div>
+              {(() => {
+                const dgo = selectedDgoId ? offer.listDgo?.find((d) => d.id === selectedDgoId) : null;
+                const law = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
+                return (
+                  <>
+                    {dgo && (
+                      <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                        <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: `ДЦВ (ліміт ${formatPrice(Number(dgo.coverage))})`, en: `Extra liability (limit ${formatPrice(Number(dgo.coverage))})` })}</dt>
+                        <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(Number(dgo.cost))}</dd>
+                      </div>
+                    )}
+                    {law && (
+                      <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                        <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Автоюрист", en: "Legal assistance" })}</dt>
+                        <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(law.price)}</dd>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+              <div className="flex items-center justify-between gap-4 bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60">
+                <dt className="font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "До оплати", en: "Amount due" })}</dt>
+                <dd className="text-right">
+                  {!order && estDiscount > 0 && <span className="mr-2 text-sm text-zinc-400 line-through">{formatPrice(orderTotal)}</span>}
+                  <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(order ? orderTotal : Math.max(0, orderTotal - estDiscount))}</span>
+                  {!order && estDiscount > 0 && <span className="ml-1 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "(орієнтовно)", en: "(approx.)" })}</span>}
+                </dd>
+              </div>
+            </dl>
+
+            {/* Списання бонусів — до заявлення (знижка фіксується в заявці Ukasko). */}
+            {!order && bonusMax >= 1 && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
+                <label className="flex cursor-pointer items-start justify-between gap-3">
+                  <span className="flex items-start gap-2">
+                    <Gift className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span className="flex flex-col">
+                      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {t({ uk: `Списати бонуси: на рахунку ${formatPrice(bonusAvailable)}`, en: `Use bonuses: ${formatPrice(bonusAvailable)} on your account` })}
+                      </span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {bonusMax < bonusAvailable
+                          ? t({ uk: `По цій пропозиції можна списати до ${formatPrice(bonusMax)}. Сума до оплати зменшиться одразу.`, en: `Up to ${formatPrice(bonusMax)} can be applied to this offer. The amount due drops right away.` })
+                          : t({ uk: "Сума до оплати зменшиться на списані бонуси.", en: "The amount due drops by the applied bonuses." })}
+                      </span>
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={useBonus}
+                    onChange={(e) => { setUseBonus(e.target.checked); if (e.target.checked && !(bonusAmount > 0)) setBonusAmount(bonusMax); }}
+                    className="mt-1 h-5 w-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-600"
+                  />
+                </label>
+                {useBonus && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <label className="text-sm text-zinc-600 dark:text-zinc-300" htmlFor="bonus-amount">{t({ uk: "Сума списання, грн", en: "Amount to apply, UAH" })}</label>
+                    <input
+                      id="bonus-amount"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={bonusMax}
+                      step={1}
+                      value={bonusAmount || ""}
+                      onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value) || 0))))}
+                      className="h-10 w-32 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                      {t({ uk: `Списати максимум (${formatPrice(bonusMax)})`, en: `Apply the maximum (${formatPrice(bonusMax)})` })}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Промокод — теж до заявлення (знижка фіксується в заявці Ukasko). */}
+            {!order && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                <div className="flex items-start gap-2">
+                  <TicketPercent className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Промокод", en: "Promo code" })}</p>
+                    {promoApplied ? (
+                      <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-emerald-700 dark:text-emerald-400">
+                        <span>{promoApplied.message} · {t({ uk: `−${formatPrice(promoApplied.discount)}`, en: `−${formatPrice(promoApplied.discount)}` })}</span>
+                        <button type="button" onClick={() => { setPromoApplied(null); setPromoInput(""); }} className="text-xs font-medium text-zinc-500 hover:underline dark:text-zinc-400">{t({ uk: "Прибрати", en: "Remove" })}</button>
+                      </p>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <input
+                          type="text"
+                          inputMode="text"
+                          autoCapitalize="characters"
+                          aria-label={t({ uk: "Промокод", en: "Promo code" })}
+                          placeholder={t({ uk: "Введіть код", en: "Enter code" })}
+                          value={promoInput}
+                          onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void applyPromo(); } }}
+                          className="h-10 w-44 rounded-xl border border-zinc-200 bg-white px-3 text-sm uppercase tracking-wider text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        />
+                        <button type="button" onClick={() => void applyPromo()} disabled={promoChecking || !promoInput.trim()} className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50">
+                          {promoChecking ? t({ uk: "Перевіряю…", en: "Checking…" }) : t({ uk: "Застосувати", en: "Apply" })}
+                        </button>
+                      </div>
+                    )}
+                    {promoError && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{promoError}</p>}
+                  </div>
+                </div>
+                {estDiscount > 0 && (
+                  <p className="mt-3 border-t border-zinc-100 pt-3 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
+                    {t({ uk: `Разом знижка ≈ ${formatPrice(estDiscount)}. До оплати ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}`, en: `Total discount ≈ ${formatPrice(estDiscount)}. Amount due ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}` })}
+                    {discountCeiling < (promoApplied?.discount ?? 0) + bonusToApply && <span className="text-zinc-500 dark:text-zinc-400"> {t({ uk: `(стеля для цієї страхової — ${formatPrice(discountCeiling)})`, en: `(cap for this insurer — ${formatPrice(discountCeiling)})` })}</span>}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {order ? (
+              <div className="space-y-3">
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {t({ uk: "Поліс уже зареєстровано у страховій, знижку зафіксовано. Введіть код підтвердження з листа й переходьте до оплати.", en: "The policy is already registered with the insurer and the discount is locked in. Enter the confirmation code from the email and proceed to payment." })}
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button type="button" variant="primary" size="lg" onClick={() => { setError(null); setStep("otp"); }} className="w-full sm:w-auto px-8">
+                    {t({ uk: "Ввести код підтвердження", en: "Enter the confirmation code" })}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => { setOrder(null); setOrderId(null); setBonusNotice(null); setPriceNotice(null); setWarning(null); setError(null); }}
+                    className="text-sm font-medium text-zinc-500 hover:underline dark:text-zinc-400"
+                  >
+                    {t({ uk: "Змінити знижку й оформити заново", en: "Change the discount and register again" })}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Button type="button" variant="primary" size="lg" loading={loading} onClick={() => void handleProceedToPayment()} className="w-full sm:w-auto px-8">
+                  {t({ uk: "Перейти до оплати", en: "Go to payment" })}
+                </Button>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {t({ uk: "Далі: страхова зареєструє поліс і надішле код підтвердження на email, після коду — оплата карткою.", en: "Next: the insurer registers the policy and emails a confirmation code; after the code, pay by card." })}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <OtpModal
         open={step === "otp"}
-        onClose={() => setStep("vehicle")}
+        onClose={() => setStep("pay")}
         onConfirm={handleOtpConfirm}
         onResend={async () => {
           if (!orderId) return;
@@ -800,7 +917,7 @@ export function CheckoutClient() {
         <PaymentModal
           product="osago"
           open={step === "payment"}
-          onClose={() => setStep("vehicle")}
+          onClose={() => setStep("pay")}
           orderId={orderId}
           amount={orderTotal}
           onPaid={handlePaid}

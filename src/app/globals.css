@@ -45,10 +45,18 @@ body {
    після цього вона лишається «зазумленою» (її можна тягати вліво-вправо, масштаб
    переживає перезавантаження). На сенсорних екранах поля не менші за 16px. */
 @media (hover: none) and (pointer: coarse) {
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-  select,
-  textarea {
-    font-size: max(16px, 1em);
+  /* База — у шарі base, щоб утиліти розміру (text-2xl на полі держномера тощо)
+     й далі мали пріоритет: піднімаємо лише те, що інакше було б < 16px. */
+  @layer base {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: 1rem;
+    }
+  }
+  /* Поля з утилітами text-xs / text-sm — теж до 16px (більші розміри не чіпаємо). */
+  :is(input, select, textarea):is(.text-xs, .text-sm) {
+    font-size: 1rem;
   }
 }
 
