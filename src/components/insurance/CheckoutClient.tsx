@@ -784,11 +784,6 @@ export function CheckoutClient() {
                       <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
                         {t({ uk: `Максимум (${formatPrice(bonusMax)})`, en: `Maximum (${formatPrice(bonusMax)})` })}
                       </button>
-                      {bonusToApply > 0 && (
-                        <button type="button" onClick={() => setBonusAmount(0)} className="text-xs font-medium text-zinc-500 hover:underline dark:text-zinc-400">
-                          {t({ uk: "Не списувати", en: "Don't apply" })}
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
