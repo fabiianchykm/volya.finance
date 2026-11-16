@@ -247,7 +247,9 @@ export function AccidentFlow() {
     if (sp.get("step") !== "offers" || !sp.get("birthDate")) return;
     const g = (k: string) => sp.get(k) ?? "";
     const restored: AccidentForm = {
-      birthDate: g("birthDate"), startDate: g("startDate") || uaDate(tomorrow()),
+      birthDate: g("birthDate"),
+      // Збережена дата початку могла лишитись у минулому (повернення через кілька днів) → завтра.
+      startDate: (() => { const d = parseUaDate(g("startDate")); return d && d.getTime() >= tomorrow().getTime() ? g("startDate") : uaDate(tomorrow()); })(),
       period: (ACC_PERIODS.some((p) => p.value === g("period")) ? g("period") : "12_month") as AccidentPeriod,
       sum: ACC_SUMS.includes(Number(g("sum"))) ? Number(g("sum")) : 100000,
       countryId: g("countryId") === "2" ? 2 : 1,
@@ -331,16 +333,13 @@ export function AccidentFlow() {
             </div>
 
             <form onSubmit={submit} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Початок дії в калькуляторі не питаємо: за замовчуванням — із завтра
+                  (раніше не можна), змінити дату можна на кроці оформлення. */}
+              <div className="grid grid-cols-1 gap-4">
                 <DateInput
                   label={t({ uk: "Дата народження застрахованого", en: "Insured person's date of birth" })}
                   value={f.birthDate} onChange={(v) => patch({ birthDate: v })} defaultYear={1990} required
                   error={f.birthDate && parseUaDate(f.birthDate) && !ageOk ? t({ uk: "Вік має бути від 1 до 75 років", en: "Age must be between 1 and 75" }) : undefined}
-                />
-                <DateInput
-                  label={t({ uk: "Початок дії", en: "Start date" })}
-                  value={f.startDate} onChange={(v) => patch({ startDate: v })}
-                  minDate={tomorrow()} maxDate={(() => { const d = new Date(); d.setDate(d.getDate() + 180); return d; })()} required
                 />
               </div>
 
