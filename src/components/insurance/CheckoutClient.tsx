@@ -88,7 +88,7 @@ export function CheckoutClient() {
   // Списання йде як discountPercent у заявку Ukasko (знижка коштом нашої комісії,
   // стеля — offer.maxDiscount), тож сума до оплати в LiqPay уже зменшена.
   const [bonusAvailable, setBonusAvailable] = useState(0);
-  const [useBonus, setUseBonus] = useState(false);
+  // Скільки бонусів списати: поле з 0 за замовчуванням, клієнт вписує суму сам.
   const [bonusAmount, setBonusAmount] = useState(0);
   const [bonusNotice, setBonusNotice] = useState<string | null>(null);
   // Промокод volya.finance (наша знижка, той самий discountPercent). Перевіряється на
@@ -238,7 +238,7 @@ export function CheckoutClient() {
     : offerTotal(offer, selectedDgoId, selectedAutolawyerId);
   // Скільки бонусів можна списати по ЦІЙ пропозиції: залишок, стеля СК, сама ціна.
   const bonusMax = Math.max(0, Math.floor(Math.min(bonusAvailable, offer.maxDiscount ?? Infinity, offer.price)));
-  const bonusToApply = useBonus ? Math.min(Math.max(0, Math.floor(bonusAmount)), bonusMax) : 0;
+  const bonusToApply = Math.min(Math.max(0, Math.floor(bonusAmount)), bonusMax);
   // Орієнтовна сумарна знижка (промокод + бонуси) в межах стелі СК і ціни.
   const discountCeiling = Math.max(0, Math.floor(Math.min(offer.maxDiscount ?? Infinity, offer.price)));
   const estDiscount = Math.min(discountCeiling, (promoApplied?.discount ?? 0) + bonusToApply);
@@ -764,46 +764,42 @@ export function CheckoutClient() {
             {/* Списання бонусів — до заявлення (знижка фіксується в заявці Ukasko). */}
             {!order && bonusMax >= 1 && (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
-                <label className="flex cursor-pointer items-start justify-between gap-3">
-                  <span className="flex items-start gap-2">
-                    <Gift className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span className="flex flex-col">
-                      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                        {t({ uk: `Списати бонуси: на рахунку ${formatPrice(bonusAvailable)}`, en: `Use bonuses: ${formatPrice(bonusAvailable)} on your account` })}
-                      </span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {bonusMax < bonusAvailable
-                          ? t({ uk: `По цій пропозиції можна списати до ${formatPrice(bonusMax)}. Сума до оплати зменшиться одразу.`, en: `Up to ${formatPrice(bonusMax)} can be applied to this offer. The amount due drops right away.` })
-                          : t({ uk: "Сума до оплати зменшиться на списані бонуси.", en: "The amount due drops by the applied bonuses." })}
-                      </span>
-                    </span>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={useBonus}
-                    onChange={(e) => { setUseBonus(e.target.checked); if (e.target.checked && !(bonusAmount > 0)) setBonusAmount(bonusMax); }}
-                    className="mt-1 h-5 w-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-600"
-                  />
-                </label>
-                {useBonus && (
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <label className="text-sm text-zinc-600 dark:text-zinc-300" htmlFor="bonus-amount">{t({ uk: "Сума списання, грн", en: "Amount to apply, UAH" })}</label>
-                    <input
-                      id="bonus-amount"
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={bonusMax}
-                      step={1}
-                      value={bonusAmount || ""}
-                      onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value) || 0))))}
-                      className="h-10 w-32 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                    />
-                    <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
-                      {t({ uk: `Списати максимум (${formatPrice(bonusMax)})`, en: `Apply the maximum (${formatPrice(bonusMax)})` })}
-                    </button>
+                <div className="flex items-start gap-2">
+                  <Gift className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      {t({ uk: `Бонуси: на рахунку ${formatPrice(bonusAvailable)}`, en: `Bonuses: ${formatPrice(bonusAvailable)} on your account` })}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {bonusMax < bonusAvailable
+                        ? t({ uk: `По цій пропозиції можна списати до ${formatPrice(bonusMax)}. Впишіть суму — вона одразу зменшить платіж.`, en: `Up to ${formatPrice(bonusMax)} can be applied to this offer. Enter an amount — it reduces the payment right away.` })
+                        : t({ uk: "Впишіть, скільки списати, — сума одразу зменшить платіж.", en: "Enter how much to apply — it reduces the payment right away." })}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <label className="text-sm text-zinc-600 dark:text-zinc-300" htmlFor="bonus-amount">{t({ uk: "Списати, грн", en: "Apply, UAH" })}</label>
+                      <input
+                        id="bonus-amount"
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        max={bonusMax}
+                        step={1}
+                        value={bonusAmount}
+                        onFocus={(e) => e.currentTarget.select()}
+                        onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value) || 0))))}
+                        className="h-10 w-28 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                      />
+                      <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+                        {t({ uk: `Максимум (${formatPrice(bonusMax)})`, en: `Maximum (${formatPrice(bonusMax)})` })}
+                      </button>
+                      {bonusToApply > 0 && (
+                        <button type="button" onClick={() => setBonusAmount(0)} className="text-xs font-medium text-zinc-500 hover:underline dark:text-zinc-400">
+                          {t({ uk: "Не списувати", en: "Don't apply" })}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
 
