@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, Users, Star, Filter, ShieldCheck, TicketPercent } from "lucide-react";
+import { Calculator, Users, Star, Filter, ShieldCheck, TicketPercent, Gift } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin/funnel", label: "Воронка", Icon: Filter },
@@ -11,6 +11,7 @@ const ITEMS = [
   { href: "/admin/policies", label: "Поліси", Icon: ShieldCheck },
   { href: "/admin/reviews", label: "Відгуки", Icon: Star },
   { href: "/admin/promo", label: "Промокоди", Icon: TicketPercent },
+  { href: "/admin/gifts", label: "Сертифікати", Icon: Gift },
 ];
 
 // Бічне меню адмінки. На десктопі — вертикальна колонка ліворуч; на мобільному —

@@ -53,6 +53,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
     { label: "КАСКО", labelEn: "CASCO", href: "/kasko" },
     { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko" },
     { label: "Нещасні випадки", labelEn: "Accident", href: "/accident" },
+    { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift" },
     { label: "Тварини", labelEn: "Pets", href: "/pets" },
     { label: "Туристичне", labelEn: "Travel", href: "/tourism" },
   ],
