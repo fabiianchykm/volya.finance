@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Clock, Wallet, MessageCircle, ShieldCheck, Car, Plane, HeartPulse, PawPrint, Home } from "lucide-react";
+import { ShieldCheck, Car, Plane, HeartPulse, PawPrint, Home } from "lucide-react";
 import { T } from "@/components/i18n/T";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -38,8 +38,8 @@ export default function GiftPage() {
         style={{ backgroundImage: "linear-gradient(135deg, #06040f, #0f0c29, #1e1060, #4f46e5, #7c3aed, #1e1060, #06040f)" }}
       >
         <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 48%, transparent 0%, rgba(0,0,0,0.1) 100%)" }} />
-        <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
-          <div className="mb-8 space-y-4 text-center">
+        <div className="relative mx-auto w-full max-w-5xl px-4 sm:px-6">
+          <div className="mx-auto mb-10 max-w-3xl space-y-4 text-center">
             <GiftLaunchBadge />
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
               <T uk="Подарунковий сертифікат" en="Gift certificate" />
@@ -51,17 +51,6 @@ export default function GiftPage() {
           </div>
 
           <GiftOrderForm />
-
-          <ul className="mt-6 grid grid-cols-2 gap-3 text-xs text-zinc-300 sm:grid-cols-4">
-            {[
-              { Icon: Clock, uk: `Діє ${GIFT_VALID_MONTHS} місяців`, en: `Valid ${GIFT_VALID_MONTHS} months` },
-              { Icon: ShieldCheck, uk: "Будь-який поліс", en: "Any policy" },
-              { Icon: Wallet, uk: "Оплата на рахунок", en: "Bank transfer" },
-              { Icon: MessageCircle, uk: "Менеджер допоможе", en: "Manager assists" },
-            ].map(({ Icon, uk, en }) => (
-              <li key={uk} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 ring-1 ring-white/10"><Icon className="h-4 w-4 shrink-0 text-indigo-300" /><T uk={uk} en={en} /></li>
-            ))}
-          </ul>
         </div>
       </section>
 
