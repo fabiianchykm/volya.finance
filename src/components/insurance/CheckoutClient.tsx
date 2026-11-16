@@ -779,14 +779,14 @@ export function CheckoutClient() {
                       <label className="text-sm text-zinc-600 dark:text-zinc-300" htmlFor="bonus-amount">{t({ uk: "Списати, грн", en: "Apply, UAH" })}</label>
                       <input
                         id="bonus-amount"
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min={0}
-                        max={bonusMax}
-                        step={1}
+                        pattern="[0-9]*"
+                        autoComplete="off"
                         value={bonusAmount}
                         onFocus={(e) => e.currentTarget.select()}
-                        onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value) || 0))))}
+                        // Текстове поле з цифровою клавіатурою — без браузерних стрілок «вгору/вниз».
+                        onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 0))))}
                         className="h-10 w-28 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                       />
                       <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
