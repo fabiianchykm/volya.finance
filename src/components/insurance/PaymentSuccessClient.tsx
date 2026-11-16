@@ -7,6 +7,7 @@ import { CheckCircle, Loader2, Download, ExternalLink, AlertCircle, FileText } f
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 import { downloadEndpointFor } from "@/lib/policy-download";
+import { NextPolicyOffers } from "./NextPolicyOffers";
 
 // Сторінка, куди LiqPay повертає клієнта після оплати (result_url). Перевіряє
 // статус оплати, підтверджує поліс і показує результат. Без неї редирект LiqPay
@@ -130,6 +131,7 @@ export function PaymentSuccessClient() {
                 </Button>
               </Link>
             </div>
+            <NextPolicyOffers product={product} className="mt-4" />
           </div>
         )}
 

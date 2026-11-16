@@ -483,7 +483,7 @@ export function MiniKaskoCheckout({ ctx, onBack }: { ctx: MiniKaskoContext; onBa
       )}
 
       {contractId && (
-        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} downloadEndpoint="/api/mini-kasko/order" />
+        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} product="mini-kasko" downloadEndpoint="/api/mini-kasko/order" />
       )}
     </div>
   );

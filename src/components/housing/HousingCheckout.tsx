@@ -530,7 +530,7 @@ export function HousingCheckout({ ctx, onBack }: { ctx: HousingContext; onBack: 
       )}
 
       {contractId && (
-        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} downloadEndpoint="/api/home/order" />
+        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} product="housing" downloadEndpoint="/api/home/order" />
       )}
     </div>
   );

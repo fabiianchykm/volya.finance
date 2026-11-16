@@ -31,6 +31,9 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
   // ДН людини, на яку оформлюється страхування (страхувальника) — за нею рахують
   // Княжа, Інтер-Поліс, PZU, Арсенал; далі підставляється в анкету оформлення.
   const [policyholderBirth, setPolicyholderBirth] = useState(buyer.policyholderBirthDate ?? "");
+  // «Наймолодший водій — та сама людина»: ДН водія копіюється зі страхувальника й
+  // тримається синхронною; поле водія ховаємо (часто вводили одну дату двічі).
+  const [sameAsPh, setSameAsPh] = useState(!!buyer.policyholderBirthDate && buyer.policyholderBirthDate === buyer.youngestBirthDate);
   const [phError, setPhError] = useState(false);
   // ІПН страхувальника — потрібен для персонального тарифу окремих СК; без нього
   // ціна у видачі може відрізнятись від ціни при оформленні.
@@ -45,6 +48,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
     setPrivilegeId(buyer.privilegeId);
     setYoungestBirth(buyer.youngestBirthDate ?? "");
     setPolicyholderBirth(buyer.policyholderBirthDate ?? "");
+    setSameAsPh(!!buyer.policyholderBirthDate && buyer.policyholderBirthDate === buyer.youngestBirthDate);
     setPhError(false);
     setIpn(buyer.identificationCode ?? "");
     setIpnError(false);
@@ -143,22 +147,35 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
           <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження людини, на яку оформлюється страхування", en: "Date of birth of the person the insurance is issued for" })}</label>
           <DateInput
             value={policyholderBirth}
-            onChange={(v) => { setPolicyholderBirth(v); if (phError) setPhError(false); }}
+            onChange={(v) => { setPolicyholderBirth(v); if (sameAsPh) setYoungestBirth(v); if (phError) setPhError(false); }}
             defaultYear={1990}
             required
             error={phError && !dobOk(policyholderBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
           />
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
-          <DateInput
-            value={youngestBirth}
-            onChange={(v) => { setYoungestBirth(v); if (ageError) setAgeError(false); }}
-            defaultYear={1990}
-            required={required}
-            error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
-          />
+        <div className="space-y-2">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+            <input
+              type="checkbox"
+              checked={sameAsPh}
+              onChange={(e) => { setSameAsPh(e.target.checked); if (e.target.checked) { setYoungestBirth(policyholderBirth); setAgeError(false); } }}
+              className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600"
+            />
+            {t({ uk: "Наймолодший водій — та сама людина (дата народження збігається)", en: "The youngest driver is the same person (same date of birth)" })}
+          </label>
+          {!sameAsPh && (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}</label>
+              <DateInput
+                value={youngestBirth}
+                onChange={(v) => { setYoungestBirth(v); if (ageError) setAgeError(false); }}
+                defaultYear={1990}
+                required={required}
+                error={ageError && !dobOk(youngestBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
+              />
+            </div>
+          )}
         </div>
 
         <div>

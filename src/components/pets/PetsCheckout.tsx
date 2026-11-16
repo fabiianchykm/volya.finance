@@ -430,7 +430,7 @@ export function PetsCheckout({ ctx, onBack }: { ctx: PetsCheckoutCtx; onBack: ()
       )}
 
       {contractId && (
-        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} downloadEndpoint="/api/pets/order" />
+        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} product="pets" downloadEndpoint="/api/pets/order" />
       )}
     </div>
   );

@@ -662,7 +662,7 @@ export function GreenCardCheckout({ ctx, onBack }: { ctx: GreenCardContext; onBa
       )}
 
       {contractId && (
-        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} downloadEndpoint="/api/greencard/order" />
+        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} product="greencard" downloadEndpoint="/api/greencard/order" />
       )}
     </div>
   );

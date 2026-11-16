@@ -929,6 +929,7 @@ export function CheckoutClient() {
           open={step === "success"}
           onClose={() => router.push("/")}
           contractId={contractId}
+          product="osago"
         />
       )}
 
@@ -991,6 +992,8 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
   // ДН наймолодшого водія — окремо від профілю (у профіль не входить), підтягнута з калькулятора.
   const [youngestBirth, setYoungestBirth] = useState(initialYoungestBirth);
   const [youngestErr, setYoungestErr] = useState(false);
+  // «Наймолодший водій — та сама людина»: ДН водія = ДН страхувальника, поле сховане.
+  const [sameDob, setSameDob] = useState(!!initialPolicyholderBirth && initialPolicyholderBirth === initialYoungestBirth);
 
   // Місто страхувальника обираємо з довідника, щоб надіслати коректний cityId
   // (а не хардкод Києва). full_name/zone беремо з обраного запису.
@@ -1065,7 +1068,8 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
     setDocType(dt);
     // ДН наймолодшого водія — окремо від form (у профілі зберігається). Не затираємо
     // значення з калькулятора порожнім: підставляємо лише якщо в профілі щось є.
-    if (p.youngestBirthDate) setYoungestBirth(p.youngestBirthDate);
+    if (sameDob) setYoungestBirth(p.dateBirth ?? "");
+    else if (p.youngestBirthDate) setYoungestBirth(p.youngestBirthDate);
     if (p.city) {
       setSelectedCity(p.city);
       setCityQuery(cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua));
@@ -1262,19 +1266,32 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
           <DateInput
             label={t({ uk: "Дата народження страхувальника", en: "Policyholder's date of birth" })}
             value={form.dateBirth}
-            onChange={(v) => { setForm((f) => ({ ...f, dateBirth: v })); if (dobError) setDobError(false); }}
+            onChange={(v) => { setForm((f) => ({ ...f, dateBirth: v })); if (sameDob) setYoungestBirth(v); if (dobError) setDobError(false); }}
             error={dobError ? t({ uk: "Вкажіть дату народження", en: "Enter the date of birth" }) : undefined}
             defaultYear={1990}
             required
           />
-          <DateInput
-            label={t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}
-            value={youngestBirth}
-            onChange={(v) => { setYoungestBirth(v); if (youngestErr) setYoungestErr(false); }}
-            error={youngestErr ? t({ uk: "Вкажіть дату народження", en: "Enter the date of birth" }) : undefined}
-            defaultYear={1990}
-            required
-          />
+          <div className="space-y-2">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+            <input
+              type="checkbox"
+              checked={sameDob}
+              onChange={(e) => { setSameDob(e.target.checked); if (e.target.checked) { setYoungestBirth(form.dateBirth); setYoungestErr(false); } }}
+              className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600"
+            />
+            {t({ uk: "Наймолодший водій — та сама людина (дата народження збігається)", en: "The youngest driver is the same person (same date of birth)" })}
+          </label>
+            {!sameDob && (
+              <DateInput
+                label={t({ uk: "Дата народження наймолодшого водія", en: "Youngest driver's date of birth" })}
+                value={youngestBirth}
+                onChange={(v) => { setYoungestBirth(v); if (youngestErr) setYoungestErr(false); }}
+                error={youngestErr ? t({ uk: "Вкажіть дату народження", en: "Enter the date of birth" }) : undefined}
+                defaultYear={1990}
+                required
+              />
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

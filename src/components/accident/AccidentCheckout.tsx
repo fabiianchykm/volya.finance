@@ -457,7 +457,7 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
       )}
 
       {contractId && (
-        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} downloadEndpoint="/api/accident/order" />
+        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} product="accident" downloadEndpoint="/api/accident/order" />
       )}
     </div>
   );

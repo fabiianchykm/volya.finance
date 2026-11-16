@@ -478,7 +478,7 @@ export function TourismCheckout({ ctx, onBack }: { ctx: TourismCheckoutCtx; onBa
       )}
 
       {contractId && (
-        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} downloadEndpoint="/api/tourism/order" />
+        <SuccessModal open={step === "success"} onClose={onBack} contractId={contractId} product="tourism" downloadEndpoint="/api/tourism/order" />
       )}
     </div>
   );

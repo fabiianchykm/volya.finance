@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle, Download, ExternalLink } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { NextPolicyOffers } from "./NextPolicyOffers";
 
 interface SuccessModalProps {
   open: boolean;
@@ -12,9 +13,11 @@ interface SuccessModalProps {
   contractId: string;
   /** Ендпоінт завантаження договору. ОСЦПВ/ЗК — дефолт; туристичне передає свій. */
   downloadEndpoint?: string;
+  /** Щойно куплений продукт — для блоку «Що ще варто оформити». */
+  product?: string;
 }
 
-export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/api/insurance/contract" }: SuccessModalProps) {
+export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/api/insurance/contract", product = "osago" }: SuccessModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [contract, setContract] = useState<{ mtsbuLink: string; contract: string } | null>(null);
@@ -43,7 +46,7 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
   };
 
   return (
-    <Modal open={open} onClose={onClose} size="sm">
+    <Modal open={open} onClose={onClose} size="md">
       <div className="flex flex-col items-center gap-5 text-center py-2">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/40">
           <CheckCircle className="h-9 w-9 text-emerald-500" />
@@ -79,6 +82,8 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
 
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
+
+        <NextPolicyOffers product={product} />
 
         <button
           onClick={onClose}
