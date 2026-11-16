@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Gift, Clock, Wallet, MessageCircle, ShieldCheck, Car, Plane, HeartPulse, PawPrint, Home } from "lucide-react";
+import { Clock, Wallet, MessageCircle, ShieldCheck, Car, Plane, HeartPulse, PawPrint, Home } from "lucide-react";
 import { T } from "@/components/i18n/T";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, breadcrumbLd, faqLd } from "@/lib/seo";
 import { GiftOrderForm } from "@/components/gift/GiftOrderForm";
+import { GiftLaunchBadge } from "@/components/gift/GiftLaunchBadge";
 import { GIFT_VALID_MONTHS } from "@/lib/gift-constants";
 
 export const metadata: Metadata = buildMetadata({
@@ -21,7 +22,7 @@ const FAQ = [
   { q: "Як одержувач використовує сертифікат?", a: "Одержувач обирає поліс на сайті або пише менеджеру в Telegram чи телефонує, називає код сертифіката — і менеджер оформлює поліс, зарахувавши суму сертифіката в оплату. Якщо поліс дорожчий, різницю одержувач доплачує; якщо дешевший, залишок можна використати на наступний поліс протягом строку дії." },
   { q: "Скільки діє сертифікат?", a: `${GIFT_VALID_MONTHS} місяців з дня оплати.` },
   { q: "Як оплатити?", a: "Після заявки менеджер звʼяжеться з вами і надішле реквізити для переказу на рахунок. Щойно кошти надійдуть, сертифікат стане активним, а сторінка сертифіката оновить статус." },
-  { q: "Як передати подарунок?", a: "У вас буде посилання на іменну сторінку сертифіката з привітанням і кодом — надішліть його в месенджері або роздрукуйте." },
+  { q: "Як передати подарунок?", a: "Після оплати у вас буде посилання на сторінку сертифіката з кодом — надішліть його в месенджері або роздрукуйте." },
 ];
 
 export default function GiftPage() {
@@ -39,9 +40,7 @@ export default function GiftPage() {
         <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 48%, transparent 0%, rgba(0,0,0,0.1) 100%)" }} />
         <div className="relative mx-auto w-full max-w-3xl px-4 sm:px-6">
           <div className="mb-8 space-y-4 text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-indigo-100 ring-1 ring-white/15">
-              <Gift className="h-3.5 w-3.5" /> <T uk="Подарунок, який захищає" en="A gift that protects" />
-            </span>
+            <GiftLaunchBadge />
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
               <T uk="Подарунковий сертифікат" en="Gift certificate" />
               <span className="mt-1 block bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent"><T uk="на будь-яке страхування" en="for any insurance" /></span>
@@ -71,8 +70,8 @@ export default function GiftPage() {
           <h2 className="text-center text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-3xl"><T uk="Як це працює" en="How it works" /></h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-3">
             {[
-              { n: 1, uk: "Ви обираєте суму й залишаєте заявку", en: "You choose the amount and leave a request", d: "Менеджер звʼяжеться, надішле реквізити для переказу й підтвердить оплату.", de: "A manager contacts you, sends transfer details and confirms the payment." },
-              { n: 2, uk: "Даруєте сторінку сертифіката", en: "You give the certificate page", d: "Іменна сторінка з привітанням і кодом — надішліть посилання або роздрукуйте.", de: "A personal page with a greeting and a code: send the link or print it." },
+              { n: 1, uk: "Обираєте номінал і лишаєте телефон", en: "Pick the value and leave your phone", d: "Менеджер зателефонує, надішле реквізити для переказу й підтвердить оплату.", de: "A manager calls you, sends transfer details and confirms the payment." },
+              { n: 2, uk: "Даруєте сертифікат", en: "Give the certificate", d: "Сторінка сертифіката з кодом — надішліть посилання в месенджері або роздрукуйте.", de: "A certificate page with a code: send the link or print it." },
               { n: 3, uk: "Одержувач обирає поліс", en: "The recipient picks a policy", d: "Називає код менеджеру — і сума сертифіката йде в оплату будь-якого полісу.", de: "They tell the manager the code and the amount goes towards any policy." },
             ].map((s) => (
               <li key={s.n} className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">

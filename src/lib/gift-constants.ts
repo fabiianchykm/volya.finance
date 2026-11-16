@@ -11,3 +11,11 @@ export const GIFT_PAYEE = {
   ipn: "3397909111",
   iban: process.env.NEXT_PUBLIC_GIFT_IBAN ?? "",
 };
+
+// Старт продажів — 1 січня 2027 (за Києвом). До того форма показує картки й
+// пропонує лишити телефон для нагадування; /api/gift заявки не приймає.
+export const GIFT_LAUNCH_AT = new Date("2027-01-01T00:00:00+02:00");
+export const GIFT_LAUNCH_LABEL = { uk: "1 січня 2027", en: "1 January 2027" };
+export function isGiftLaunched(now = new Date()): boolean {
+  return now.getTime() >= GIFT_LAUNCH_AT.getTime();
+}

@@ -40,7 +40,7 @@ function ensureGiftSchema(): Promise<void> {
           code            text PRIMARY KEY,
           amount          numeric NOT NULL,
           status          text NOT NULL DEFAULT 'requested',   -- requested | paid | redeemed | cancelled
-          buyer_name      text NOT NULL,
+          buyer_name      text,
           buyer_phone     text NOT NULL,
           buyer_email     text,
           recipient_name  text,
@@ -52,6 +52,8 @@ function ensureGiftSchema(): Promise<void> {
           redeemed_at     timestamptz
         )
       `;
+      // Таблицю на проді створено з NOT NULL — знімаємо (форма більше не питає імʼя).
+      await sql`ALTER TABLE gift_certificates ALTER COLUMN buyer_name DROP NOT NULL`;
       await sql`CREATE INDEX IF NOT EXISTS gift_certificates_status_idx ON gift_certificates (status, created_at DESC)`;
     })().catch((e) => { schemaPromise = null; throw e; });
   }
@@ -102,7 +104,7 @@ export async function createGiftRequest(input: {
     try {
       const [row] = await sql<Record<string, unknown>[]>`
         INSERT INTO gift_certificates (code, amount, buyer_name, buyer_phone, buyer_email, recipient_name, message)
-        VALUES (${code}, ${input.amount}, ${input.buyerName}, ${input.buyerPhone}, ${input.buyerEmail ?? null},
+        VALUES (${code}, ${input.amount}, ${input.buyerName || null}, ${input.buyerPhone}, ${input.buyerEmail ?? null},
                 ${input.recipientName ?? null}, ${input.message ?? null})
         RETURNING *
       `;

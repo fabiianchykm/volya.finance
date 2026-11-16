@@ -65,7 +65,7 @@ export default async function GiftCertificatePage({ params, searchParams }: { pa
               {(gift.recipientName || gift.buyerName) && (
                 <div className="mt-8 grid gap-4 text-sm sm:grid-cols-2">
                   {gift.recipientName && <div><p className="text-indigo-200"><T uk="Кому" en="To" /></p><p className="text-lg font-semibold">{gift.recipientName}</p></div>}
-                  <div><p className="text-indigo-200"><T uk="Від" en="From" /></p><p className="text-lg font-semibold">{gift.buyerName}</p></div>
+                  {gift.buyerName && <div><p className="text-indigo-200"><T uk="Від" en="From" /></p><p className="text-lg font-semibold">{gift.buyerName}</p></div>}
                 </div>
               )}
               {gift.message && <p className="mt-6 max-w-xl text-base italic leading-relaxed text-indigo-50">«{gift.message}»</p>}

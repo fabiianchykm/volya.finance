@@ -71,7 +71,7 @@ export function AdminGifts() {
                     <span className="text-base font-bold text-zinc-900 dark:text-zinc-100">{r.amount.toLocaleString("uk-UA")} ₴</span>
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS[r.status].cls}`}>{STATUS[r.status].label}</span>
                   </div>
-                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{r.buyerName} · <a href={`tel:${r.buyerPhone}`} className="hover:underline">{r.buyerPhone}</a>{r.buyerEmail && <> · {r.buyerEmail}</>}</p>
+                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{r.buyerName && <>{r.buyerName} · </>}<a href={`tel:${r.buyerPhone}`} className="hover:underline">{r.buyerPhone}</a>{r.buyerEmail && <> · {r.buyerEmail}</>}</p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {r.recipientName && <>Кому: {r.recipientName} · </>}Заявка {d(r.createdAt)}{r.paidAt && <> · оплачено {d(r.paidAt)} · до {d(r.validUntil)}</>}{r.redeemedAt && <> · використано {d(r.redeemedAt)}</>}
                   </p>

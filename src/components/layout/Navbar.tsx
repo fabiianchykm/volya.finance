@@ -32,7 +32,7 @@ const PERSONAL_LINKS: NavItem[] = [
   { label: "Туристичне", labelEn: "Travel", href: "/tourism", icon: Plane, desc: "Медичне для подорожей за кордон", descEn: "Medical cover for trips abroad" },
   { label: "Тварини", labelEn: "Pets", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак", descEn: "Insurance for cats and dogs" },
   { label: "Нещасні випадки", labelEn: "Accident", href: "/accident", icon: HeartPulse, desc: "Виплата при травмі чи нещасному випадку", descEn: "Payout for injury or accident" },
-  { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift" },
+  { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift", badge: "з 1 січня" },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];

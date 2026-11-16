@@ -4,6 +4,7 @@ import { sendTelegram, trySendTelegram, escapeHtml } from "@/lib/telegram";
 import { sourceLine } from "@/lib/attribution";
 import { saveLead } from "@/lib/leads";
 import { createGiftRequest, GIFT_MAX, GIFT_MIN } from "@/lib/gift";
+import { GIFT_LAUNCH_LABEL, isGiftLaunched } from "@/lib/gift-constants";
 import { absoluteUrl } from "@/lib/seo";
 
 // Заявка на подарунковий сертифікат: зберігаємо в БД, шлемо менеджеру в Telegram,
@@ -13,6 +14,10 @@ export async function POST(req: NextRequest) {
   const blocked = guardRequest(req, { name: "gift", limit: 6, windowMs: 10 * 60 * 1000 });
   if (blocked) return blocked;
 
+  if (!isGiftLaunched()) {
+    return NextResponse.json({ success: false, error: `Подарункові сертифікати будуть доступні з ${GIFT_LAUNCH_LABEL.uk}` }, { status: 403 });
+  }
+
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return NextResponse.json({ success: false, error: "Bad request" }, { status: 400 }); }
 
@@ -20,8 +25,8 @@ export async function POST(req: NextRequest) {
   if (!Number.isFinite(amount) || amount < GIFT_MIN || amount > GIFT_MAX) {
     return NextResponse.json({ success: false, error: `Сума має бути від ${GIFT_MIN} до ${GIFT_MAX} грн` }, { status: 400 });
   }
+  // Імʼя, одержувач і привітання — опційні (форма питає лише суму й телефон; менеджер уточнює при дзвінку).
   const buyerName = String(b.buyerName ?? "").trim().slice(0, 80);
-  if (buyerName.length < 2) return NextResponse.json({ success: false, error: "Вкажіть ваше імʼя" }, { status: 400 });
 
   let local = String(b.buyerPhone ?? "").replace(/\D/g, "");
   if (local.length === 12 && local.startsWith("380")) local = local.slice(3);
@@ -49,7 +54,7 @@ export async function POST(req: NextRequest) {
   const lines = [
     "🎁 <b>Заявка на подарунковий сертифікат</b>",
     `💰 <b>${amount} грн</b> · код <code>${gift.code}</code>`,
-    `👤 ${escapeHtml(buyerName)} · <code>${escapeHtml(buyerPhone)}</code> (${escapeHtml(pretty)})`,
+    `☎️ <code>${escapeHtml(buyerPhone)}</code> (${escapeHtml(pretty)})${buyerName ? ` · ${escapeHtml(buyerName)}` : ""}`,
     buyerEmail ? `✉️ ${escapeHtml(buyerEmail)}` : null,
     recipientName ? `🎀 Кому: ${escapeHtml(recipientName)}` : null,
     message ? `💬 ${escapeHtml(message)}` : null,
@@ -64,7 +69,7 @@ export async function POST(req: NextRequest) {
     await trySendTelegram("dev", `⚠️ <b>Заявку на сертифікат не доставлено в sales</b>\n${lines.join("\n")}\n<code>${escapeHtml(e instanceof Error ? e.message : String(e)).slice(0, 200)}</code>`);
   }
   try {
-    await saveLead({ product: "gift", customerName: buyerName, phone: buyerPhone, email: buyerEmail, price: amount, stage: `сертифікат ${gift.code}` });
+    await saveLead({ product: "gift", customerName: buyerName || null, phone: buyerPhone, email: buyerEmail, price: amount, stage: `сертифікат ${gift.code}` });
   } catch (e) {
     console.error("[gift] lead error:", e instanceof Error ? e.message : e);
   }
