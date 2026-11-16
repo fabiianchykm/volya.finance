@@ -751,19 +751,6 @@ export function CheckoutClient() {
                   </>
                 );
               })()}
-              {!order && estDiscount > 0 && (
-                <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                  <dt className="text-emerald-700 dark:text-emerald-400">
-                    {t({ uk: "Знижка", en: "Discount" })}
-                    {promoApplied?.discount && bonusToApply > 0 ? t({ uk: " (промокод + бонуси)", en: " (promo + bonuses)" }) : promoApplied?.discount ? t({ uk: " (промокод)", en: " (promo code)" }) : t({ uk: " (бонуси)", en: " (bonuses)" })}
-                  </dt>
-                  <dd className="text-right font-medium text-emerald-700 dark:text-emerald-400">−{formatPrice(estDiscount)}</dd>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-4 bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60">
-                <dt className="font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "До оплати", en: "Amount due" })}</dt>
-                <dd className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(order ? orderTotal : Math.max(0, orderTotal - estDiscount))}</dd>
-              </div>
             </dl>
 
             {/* Списання бонусів — до заявлення (знижка фіксується в заявці Ukasko). */}
@@ -849,6 +836,29 @@ export function CheckoutClient() {
                 )}
               </div>
             )}
+
+            {/* Разом — після бонусів і промокоду, щоб сума до оплати була під тим, що на неї впливає. */}
+            <dl className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-700">
+              {!order && estDiscount > 0 && (
+                <>
+                  <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                    <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Вартість", en: "Price" })}</dt>
+                    <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(orderTotal)}</dd>
+                  </div>
+                  <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                    <dt className="text-emerald-700 dark:text-emerald-400">
+                      {t({ uk: "Знижка", en: "Discount" })}
+                      {promoApplied?.discount && bonusToApply > 0 ? t({ uk: " (промокод + бонуси)", en: " (promo + bonuses)" }) : promoApplied?.discount ? t({ uk: " (промокод)", en: " (promo code)" }) : t({ uk: " (бонуси)", en: " (bonuses)" })}
+                    </dt>
+                    <dd className="text-right font-medium text-emerald-700 dark:text-emerald-400">−{formatPrice(estDiscount)}</dd>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center justify-between gap-4 bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60">
+                <dt className="font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "До оплати", en: "Amount due" })}</dt>
+                <dd className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(order ? orderTotal : Math.max(0, orderTotal - estDiscount))}</dd>
+              </div>
+            </dl>
 
             {order ? (
               <div className="space-y-3">
