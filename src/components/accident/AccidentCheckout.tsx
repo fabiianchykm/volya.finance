@@ -30,6 +30,8 @@ export interface AccidentCheckoutCtx {
   offer: AccidentOffer;
   form: AccidentForm;
   params: AccidentParams;   // searchInfo заявки — рівно те, що рахував калькулятор
+  /** Особа, обрана в калькуляторі («Обрати збережену особу») — підставляється в анкету. */
+  profile?: CustomerProfile;
 }
 
 const DOC_TYPES = [
@@ -165,6 +167,15 @@ export function AccidentCheckout({ ctx, onBack }: { ctx: AccidentCheckoutCtx; on
       city: p.city ? cityShort(p.cityQuery || p.city.name_full_name_ua || p.city.name_ua) : s.city,
     }));
   };
+
+  // Особа, обрана ще в калькуляторі — одразу заповнюємо нею анкету (один раз).
+  const prefilledRef = useRef(false);
+  useEffect(() => {
+    if (prefilledRef.current || !ctx.profile) return;
+    prefilledRef.current = true;
+    applyProfile(ctx.profile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { status: authStatus } = useSession();
   const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);

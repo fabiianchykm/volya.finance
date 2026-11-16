@@ -1,33 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { UserRound, ChevronDown } from "lucide-react";
+import { UserRound, ChevronDown, Check } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { profileKey, type CustomerProfile } from "@/lib/customer-profile";
 
 // Кнопка «Заповнити збереженими даними» + випадний список профілів. На одному
 // акаунті можуть бути дані кількох осіб (сам, дружина…) — тож пропонуємо вибір,
 // а не автозаповнення. За замовчуванням поля лишаються порожніми.
-export function ProfilePicker({ profiles, onPick }: { profiles: CustomerProfile[]; onPick: (p: CustomerProfile) => void }) {
+export function ProfilePicker({ profiles, onPick, label, selected, meta = "ipn", className = "mb-5" }: {
+  profiles: CustomerProfile[];
+  onPick: (p: CustomerProfile) => void;
+  /** Текст кнопки (за замовчуванням «Заповнити збереженими даними»). */
+  label?: string;
+  /** Уже обрана особа — кнопка показує її імʼя з галочкою замість підпису. */
+  selected?: CustomerProfile | null;
+  /** Що показувати праворуч у списку: ІПН (за замовчуванням) або дату народження. */
+  meta?: "ipn" | "dob";
+  className?: string;
+}) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   if (!profiles.length) return null;
 
-  const label = (p: CustomerProfile) =>
+  const label_ = (p: CustomerProfile) =>
     [p.surname, p.name, p.patronymic].filter(Boolean).join(" ") ||
     [p.surnameLat, p.nameLat].filter(Boolean).join(" ") ||
     p.email ||
     t({ uk: "Збережений профіль", en: "Saved profile" });
 
   return (
-    <div className="relative mb-5">
+    <div className={`relative ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-2 rounded-xl border border-indigo-200 bg-indigo-50/60 px-4 py-2.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300"
       >
-        <span className="flex items-center gap-2"><UserRound className="h-4 w-4" /> {t({ uk: "Заповнити збереженими даними", en: "Fill from saved data" })}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          {selected ? <Check className="h-4 w-4 shrink-0" /> : <UserRound className="h-4 w-4 shrink-0" />}
+          <span className="truncate">{selected ? label_(selected) : (label ?? t({ uk: "Заповнити збереженими даними", en: "Fill from saved data" }))}</span>
+        </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
@@ -41,9 +54,9 @@ export function ProfilePicker({ profiles, onPick }: { profiles: CustomerProfile[
                 onClick={() => { onPick(p); setOpen(false); }}
                 className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
               >
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{label(p)}</span>
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{label_(p)}</span>
                 <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
-                  {p.identificationCode ? `Ідент. код ${p.identificationCode}` : p.dateBirth ? p.dateBirth : ""}
+                  {meta === "dob" ? (p.dateBirth ?? "") : p.identificationCode ? `Ідент. код ${p.identificationCode}` : p.dateBirth ? p.dateBirth : ""}
                 </span>
               </button>
             ))}
