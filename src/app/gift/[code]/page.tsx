@@ -90,14 +90,15 @@ export default async function GiftCertificatePage({ params, searchParams }: { pa
                 <dl className="mt-3 grid gap-2 text-zinc-600 dark:text-zinc-300 sm:grid-cols-[auto_1fr] sm:gap-x-6">
                   <dt className="text-zinc-400"><T uk="Одержувач" en="Payee" /></dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{GIFT_PAYEE.name}</dd>
                   <dt className="text-zinc-400">IBAN</dt><dd className="font-mono font-medium text-zinc-900 dark:text-zinc-100">{GIFT_PAYEE.iban}</dd>
-                  <dt className="text-zinc-400"><T uk="Код (РНОКПП)" en="Tax ID" /></dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{GIFT_PAYEE.ipn}</dd>
+                  <dt className="text-zinc-400"><T uk="ЄДРПОУ" en="EDRPOU" /></dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{GIFT_PAYEE.edrpou}</dd>
+                  <dt className="text-zinc-400"><T uk="Банк" en="Bank" /></dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{GIFT_PAYEE.bank}</dd>
                   <dt className="text-zinc-400"><T uk="Сума" en="Amount" /></dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{fmt(gift.amount)} ₴</dd>
                   <dt className="text-zinc-400"><T uk="Призначення" en="Purpose" /></dt><dd className="font-medium text-zinc-900 dark:text-zinc-100"><T uk={`Подарунковий сертифікат ${gift.code}`} en={`Gift certificate ${gift.code}`} /></dd>
                 </dl>
               ) : (
                 <p className="mt-2 text-zinc-600 dark:text-zinc-300"><T uk="Реквізити для переказу надішле менеджер у Telegram або повідомить телефоном. У призначенні платежу вкажіть код сертифіката." en="The manager will send the transfer details on Telegram or by phone. Put the certificate code in the payment purpose." /></p>
               )}
-              <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400"><T uk={`Після надходження коштів сертифікат стає активним на ${GIFT_VALID_MONTHS} місяців. Статус на цій сторінці оновиться автоматично.`} en={`Once the funds arrive the certificate becomes active for ${GIFT_VALID_MONTHS} months. The status on this page updates automatically.`} /></p>
+              <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400"><T uk="Переказ можна зробити з будь-якого банківського застосунку за IBAN. " en="You can transfer from any banking app using the IBAN. " /><T uk={`Після надходження коштів сертифікат стає активним на ${GIFT_VALID_MONTHS} місяців. Статус на цій сторінці оновиться автоматично.`} en={`Once the funds arrive the certificate becomes active for ${GIFT_VALID_MONTHS} months. The status on this page updates automatically.`} /></p>
             </section>
           )}
 
