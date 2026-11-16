@@ -751,13 +751,18 @@ export function CheckoutClient() {
                   </>
                 );
               })()}
+              {!order && estDiscount > 0 && (
+                <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                  <dt className="text-emerald-700 dark:text-emerald-400">
+                    {t({ uk: "Знижка", en: "Discount" })}
+                    {promoApplied?.discount && bonusToApply > 0 ? t({ uk: " (промокод + бонуси)", en: " (promo + bonuses)" }) : promoApplied?.discount ? t({ uk: " (промокод)", en: " (promo code)" }) : t({ uk: " (бонуси)", en: " (bonuses)" })}
+                  </dt>
+                  <dd className="text-right font-medium text-emerald-700 dark:text-emerald-400">−{formatPrice(estDiscount)}</dd>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-4 bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60">
                 <dt className="font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "До оплати", en: "Amount due" })}</dt>
-                <dd className="text-right">
-                  {!order && estDiscount > 0 && <span className="mr-2 text-sm text-zinc-400 line-through">{formatPrice(orderTotal)}</span>}
-                  <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(order ? orderTotal : Math.max(0, orderTotal - estDiscount))}</span>
-                  {!order && estDiscount > 0 && <span className="ml-1 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "(орієнтовно)", en: "(approx.)" })}</span>}
-                </dd>
+                <dd className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(order ? orderTotal : Math.max(0, orderTotal - estDiscount))}</dd>
               </div>
             </dl>
 
