@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
-import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Shield, Globe, Search, Check, Lock } from "lucide-react";
+import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Shield, Globe, Search, Check, UserRound, Coins, Activity, HeartPulse } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
@@ -67,6 +67,20 @@ export const ACC_SPORT_LEVELS: { value: SportLevel; label: string; en: string }[
   { value: "amateur", label: "Аматор", en: "Amateur" },
   { value: "professional", label: "Професіонал", en: "Professional" },
 ];
+
+// Короткі підписи режиму захисту для вузької випадайки (повні — в ACC_PROTECTION).
+const PROTECTION_SHORT: Record<AccidentProtection, { uk: string; en: string }> = {
+  "24_7": { uk: "Цілодобово", en: "Around the clock" },
+  study_work_hours: { uk: "Навчання / робота", en: "Study / work" },
+  sport_hours: { uk: "Тренування і змагання", en: "Training and events" },
+};
+
+// Короткі підписи діяльності для сегментів у калькуляторі (повні — в ACC_RISKS).
+const RISK_SHORT: Record<RiskChoice, { uk: string; en: string }> = {
+  none: { uk: "Звичайна активність", en: "Everyday activity" },
+  sport: { uk: "Спорт", en: "Sports" },
+  profession: { uk: "Небезпечна професія", en: "Hazardous job" },
+};
 
 export interface AccidentForm {
   birthDate: string;          // ДД.ММ.РРРР
@@ -333,123 +347,137 @@ export function AccidentFlow() {
             </div>
 
             <form onSubmit={submit} className="rounded-2xl bg-white dark:bg-zinc-900 p-5 text-left shadow-2xl sm:p-7">
-              {/* Початок дії в калькуляторі не питаємо: за замовчуванням — із завтра
-                  (раніше не можна), змінити дату можна на кроці оформлення. */}
-              <div className="grid grid-cols-1 gap-4">
+              {/* 1. Кого страхуємо. Початок дії не питаємо: за замовчуванням із завтра,
+                  змінити можна на кроці оформлення. */}
+              <SectionTitle n={1} icon={UserRound} title={t({ uk: "Кого страхуємо", en: "Who is insured" })} />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <DateInput
                   label={t({ uk: "Дата народження застрахованого", en: "Insured person's date of birth" })}
                   value={f.birthDate} onChange={(v) => patch({ birthDate: v })} defaultYear={1990} required
                   error={f.birthDate && parseUaDate(f.birthDate) && !ageOk ? t({ uk: "Вік має бути від 1 до 75 років", en: "Age must be between 1 and 75" }) : undefined}
                 />
+                <div className="flex items-center sm:h-11">
+                  {ageAtStart !== null && ageOk ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                      <Check className="h-4 w-4" />
+                      {child
+                        ? t({ uk: `${ageAtStart} р. · дитяча програма`, en: `${ageAtStart} y.o. · child programme` })
+                        : t({ uk: `${ageAtStart} р. · доросла програма`, en: `${ageAtStart} y.o. · adult programme` })}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Від 1 до 75 років. Дітям до 18 — дитяча програма.", en: "Ages 1 to 75. Under 18 — child programme." })}</span>
+                  )}
+                </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* 2. Умови */}
+              <SectionTitle n={2} icon={Shield} title={t({ uk: "Умови захисту", en: "Cover terms" })} className="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-800" />
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Clock className="h-3.5 w-3.5" /> {t({ uk: "Строк страхування", en: "Insurance term" })}</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Clock className="h-3.5 w-3.5" /> {t({ uk: "Строк", en: "Term" })}</label>
                   <select value={f.period} onChange={(e) => patch({ period: e.target.value as AccidentPeriod })} className={selectClass}>
                     {ACC_PERIODS.map((p) => <option key={p.value} value={p.value}>{t({ uk: p.label, en: p.en })}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Shield className="h-3.5 w-3.5" /> {t({ uk: "Страхова сума", en: "Insured sum" })}</label>
-                  <select value={f.sum} onChange={(e) => patch({ sum: Number(e.target.value) })} className={selectClass}>
-                    {ACC_SUMS.map((s) => <option key={s} value={s}>{fmtSum(s)}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Globe className="h-3.5 w-3.5" /> {t({ uk: "Територія дії", en: "Territory" })}</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {ACC_COUNTRIES.map((c) => (
-                      <button key={c.value} type="button" onClick={() => patch({ countryId: c.value })}
-                        className={`flex h-11 items-center justify-center rounded-xl border text-sm font-medium transition-colors ${
-                          f.countryId === c.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
-                        }`}>
-                        {t({ uk: c.label, en: c.en })}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Коли діє захист", en: "When cover applies" })}</label>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Activity className="h-3.5 w-3.5" /> {t({ uk: "Коли діє захист", en: "When cover applies" })}</label>
                   <select value={f.protectionPeriod} onChange={(e) => patch({ protectionPeriod: e.target.value as AccidentProtection })} className={selectClass}>
-                    {ACC_PROTECTION.map((p) => <option key={p.value} value={p.value}>{t({ uk: p.label, en: p.en })}</option>)}
+                    {ACC_PROTECTION.map((p) => <option key={p.value} value={p.value}>{t(PROTECTION_SHORT[p.value])}</option>)}
                   </select>
                 </div>
               </div>
-
-              {/* Пакет ризиків (дорослі) / дитяча програма + перемикачі ризиків */}
-              <div className="mt-5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/40 p-4">
-                <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Що покриває поліс", en: "What the policy covers" })}</label>
-                {child ? (
-                  <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Вік до 18 років — дитяча програма ІНГО.", en: "Under 18 — INGO child programme." })}</p>
-                ) : (
-                  <div className="mb-3 grid grid-cols-3 gap-2">
-                    {ACC_PACKAGES.map((p) => (
-                      <button key={p.value} type="button" onClick={() => patch({ pkg: p.value })} title={t({ uk: p.hint, en: p.hintEn })}
-                        className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-medium leading-tight transition-colors sm:text-sm ${
-                          f.pkg === p.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
-                        }`}>
-                        {t({ uk: p.label, en: p.en })}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {!child && <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: ACC_PACKAGES.find((p) => p.value === f.pkg)!.hint, en: ACC_PACKAGES.find((p) => p.value === f.pkg)!.hintEn })}</p>}
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <RiskRow locked checked label={t({ uk: "Смерть від нещасного випадку", en: "Death from an accident" })} />
-                  {child ? (
-                    <>
-                      <RiskRow checked={f.disabledChild} onChange={(v) => patch({ disabledChild: v })} label={t({ uk: "Встановлення інвалідності дитині", en: "Child disability" })} />
-                      <RiskRow checked={f.injuries} onChange={(v) => patch({ injuries: v })} label={t({ uk: "Тілесні ушкодження (травми)", en: "Injuries" })} />
-                    </>
-                  ) : f.pkg === "complex" ? (
-                    <>
-                      <RiskRow locked checked label={t({ uk: "Інвалідність 1–3 гр. від НВ", en: "Disability groups 1–3 (accident)" })} />
-                      <RiskRow locked checked label={t({ uk: "Смерть від хвороби", en: "Death from illness" })} />
-                      <RiskRow locked checked label={t({ uk: "Інвалідність 1–3 гр. від хвороби", en: "Disability groups 1–3 (illness)" })} />
-                      <RiskRow locked checked label={t({ uk: "Лікарняні з будь-якої причини, 0,1%/день", en: "Sick leave for any cause, 0.1%/day" })} />
-                    </>
-                  ) : (
-                    <>
-                      <RiskRow locked checked label={t({ uk: "Інвалідність 1–2 гр. від НВ", en: "Disability groups 1–2 (accident)" })} />
-                      <RiskRow checked={f.groupThree} onChange={(v) => patch({ groupThree: v })} label={t({ uk: "Інвалідність 3 гр. від НВ", en: "Disability group 3 (accident)" })} />
-                      {f.pkg === "adults" && <RiskRow checked={f.injuries} onChange={(v) => patch({ injuries: v })} label={t({ uk: "Тілесні ушкодження (травми)", en: "Injuries" })} />}
-                      {f.pkg === "sick_leave" && <RiskRow checked={f.tempDisability} onChange={(v) => patch({ tempDisability: v })} label={t({ uk: "Лікарняні після НВ, 0,3%/день", en: "Sick leave after an accident, 0.3%/day" })} />}
-                    </>
-                  )}
+              <div className="mt-3">
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Coins className="h-3.5 w-3.5" /> {t({ uk: "Страхова сума, грн", en: "Insured sum, UAH" })}</label>
+                <select value={f.sum} onChange={(e) => patch({ sum: Number(e.target.value) })} className={`${selectClass} sm:hidden`} aria-label={t({ uk: "Страхова сума", en: "Insured sum" })}>
+                  {ACC_SUMS.map((sum) => <option key={sum} value={sum}>{fmtSum(sum)}</option>)}
+                </select>
+                <div className="hidden flex-wrap gap-2 sm:flex">
+                  {ACC_SUMS.map((sum) => (
+                    <Chip key={sum} active={f.sum === sum} onClick={() => patch({ sum })}>{sum.toLocaleString("uk-UA")}</Chip>
+                  ))}
                 </div>
               </div>
-
-              <div className="mt-4">
-                <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Діяльність", en: "Activity" })}</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {ACC_RISKS.filter((r) => !(child && r.value === "profession")).map((r) => (
-                    <button key={r.value} type="button" onClick={() => patch({ risk: r.value })}
-                      className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-medium leading-tight transition-colors sm:text-sm ${
-                        f.risk === r.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
-                      }`}>
-                      {t({ uk: r.label, en: r.en })}
-                    </button>
+              <div className="mt-3">
+                <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Globe className="h-3.5 w-3.5" /> {t({ uk: "Територія дії", en: "Territory" })}</label>
+                <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
+                  {ACC_COUNTRIES.map((c) => (
+                    <Segment key={c.value} active={f.countryId === c.value} onClick={() => patch({ countryId: c.value })}>{t({ uk: c.label, en: c.en })}</Segment>
                   ))}
                 </div>
               </div>
 
+              {/* 3. Покриття: пакет (дорослі) / дитяча програма, фіксовані ризики списком,
+                  необовʼязкові — чипами. */}
+              <SectionTitle n={3} icon={HeartPulse} title={t({ uk: "Що покриває поліс", en: "What the policy covers" })} className="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-800" />
+              {child ? (
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">{t({ uk: "Дітям до 18 років — дитяча програма ІНГО.", en: "Under 18 — the INGO child programme." })}</p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    {ACC_PACKAGES.map((p) => (
+                      <Segment key={p.value} active={f.pkg === p.value} onClick={() => patch({ pkg: p.value })}>{t({ uk: p.label, en: p.en })}</Segment>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: ACC_PACKAGES.find((p) => p.value === f.pkg)!.hint, en: ACC_PACKAGES.find((p) => p.value === f.pkg)!.hintEn })}</p>
+                </>
+              )}
+              {(() => {
+                const included: string[] = [t({ uk: "Смерть від нещасного випадку", en: "Death from an accident" })];
+                const toggles: { key: keyof RiskToggles; label: string }[] = [];
+                if (child) {
+                  toggles.push({ key: "disabledChild", label: t({ uk: "Інвалідність дитини", en: "Child disability" }) });
+                  toggles.push({ key: "injuries", label: t({ uk: "Тілесні ушкодження (травми)", en: "Injuries" }) });
+                } else if (f.pkg === "complex") {
+                  included.push(
+                    t({ uk: "Інвалідність 1–3 гр. від НВ", en: "Disability groups 1–3 (accident)" }),
+                    t({ uk: "Смерть від хвороби", en: "Death from illness" }),
+                    t({ uk: "Інвалідність 1–3 гр. від хвороби", en: "Disability groups 1–3 (illness)" }),
+                    t({ uk: "Лікарняні з будь-якої причини, 0,1%/день", en: "Sick leave for any cause, 0.1%/day" }),
+                  );
+                } else {
+                  included.push(t({ uk: "Інвалідність 1–2 гр. від НВ", en: "Disability groups 1–2 (accident)" }));
+                  toggles.push({ key: "groupThree", label: t({ uk: "Інвалідність 3 гр. від НВ", en: "Disability group 3 (accident)" }) });
+                  if (f.pkg === "adults") toggles.push({ key: "injuries", label: t({ uk: "Тілесні ушкодження (травми)", en: "Injuries" }) });
+                  if (f.pkg === "sick_leave") toggles.push({ key: "tempDisability", label: t({ uk: "Лікарняні після НВ, 0,3%/день", en: "Sick leave after an accident, 0.3%/day" }) });
+                }
+                return (
+                  <div className="mt-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/40">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Завжди входить", en: "Always included" })}</p>
+                    <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+                      {included.map((x) => (
+                        <li key={x} className="inline-flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-200"><Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />{x}</li>
+                      ))}
+                    </ul>
+                    {toggles.length > 0 && (
+                      <>
+                        <p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "За бажанням", en: "Optional" })}</p>
+                        <div className="mt-1.5 flex flex-wrap gap-2">
+                          {toggles.map((tg) => (
+                            <Chip key={tg.key} check active={f[tg.key]} onClick={() => patch({ [tg.key]: !f[tg.key] } as Partial<AccidentForm>)}>{tg.label}</Chip>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* 4. Діяльність і ризики */}
+              <SectionTitle n={4} icon={Activity} title={t({ uk: "Діяльність і ризики", en: "Activity and risks" })} className="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-800" />
+              <div className={`grid gap-2 ${child ? "grid-cols-2" : "grid-cols-3"}`}>
+                {ACC_RISKS.filter((r) => !(child && r.value === "profession")).map((r) => (
+                  <Segment key={r.value} active={f.risk === r.value} onClick={() => patch({ risk: r.value })}>{t(RISK_SHORT[r.value])}</Segment>
+                ))}
+              </div>
+
               {f.risk === "sport" && (
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <SportPicker value={f.sportName} onPick={(code, name) => patch({ sportType: code, sportName: name })} onClear={() => patch({ sportType: "", sportName: "" })} />
                   <div>
-                    <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Рівень", en: "Level" })}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Рівень", en: "Level" })}</label>
                     <div className="grid grid-cols-2 gap-2">
                       {ACC_SPORT_LEVELS.map((l) => (
-                        <button key={l.value} type="button" onClick={() => patch({ sportLevel: l.value })}
-                          className={`flex h-11 items-center justify-center rounded-xl border text-sm font-medium transition-colors ${
-                            f.sportLevel === l.value ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-900" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
-                          }`}>
-                          {t({ uk: l.label, en: l.en })}
-                        </button>
+                        <Segment key={l.value} active={f.sportLevel === l.value} onClick={() => patch({ sportLevel: l.value })}>{t({ uk: l.label, en: l.en })}</Segment>
                       ))}
                     </div>
                   </div>
@@ -457,25 +485,53 @@ export function AccidentFlow() {
               )}
 
               {f.risk === "profession" && (
-                <div className="mt-4">
-                  <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Професія", en: "Profession" })}</label>
+                <div className="mt-3">
+                  <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Професія", en: "Profession" })}</label>
                   <select value={f.profession} onChange={(e) => patch({ profession: e.target.value as AccidentForm["profession"] })} className={selectClass}>
                     {ACC_PROFESSIONS.map((p) => <option key={p.value} value={p.value}>{t({ uk: p.label, en: p.en })}</option>)}
                   </select>
                 </div>
               )}
 
-              <div className="mt-4">
-                <RiskRow checked={f.warRisk} onChange={(v) => patch({ warRisk: v })} label={t({ uk: "Додати воєнні ризики (обстріли, вибухи, міни)", en: "Add war risks (shelling, explosions, mines)" })} />
-              </div>
+              <button type="button" role="switch" aria-checked={f.warRisk} onClick={() => patch({ warRisk: !f.warRisk })}
+                className={`mt-3 flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+                  f.warRisk ? "border-indigo-400 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-950/40" : "border-zinc-200 bg-white hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900"
+                }`}>
+                <span>
+                  <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-100">{t({ uk: "Воєнні ризики", en: "War risks" })}</span>
+                  <span className="block text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "обстріли, вибухи, міни", en: "shelling, explosions, mines" })}</span>
+                </span>
+                <span className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${f.warRisk ? "bg-indigo-600" : "bg-zinc-300 dark:bg-zinc-600"}`}>
+                  <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${f.warRisk ? "translate-x-5" : "translate-x-0.5"}`} />
+                </span>
+              </button>
 
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-              <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!valid || loading} className="mt-5 w-full">
-                <span className="flex items-center gap-2">
-                  {loading ? t({ uk: "Шукаємо пропозиції…", en: "Searching for offers…" }) : <>{t({ uk: "Розрахувати вартість", en: "Calculate cost" })} <ArrowRight className="h-5 w-5" /></>}
-                </span>
-              </Button>
+              {/* Підсумок параметрів + кнопка */}
+              <div className="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <p className="mb-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                  {[
+                    t({ uk: ACC_PERIODS.find((x) => x.value === f.period)!.label, en: ACC_PERIODS.find((x) => x.value === f.period)!.en }),
+                    fmtSum(f.sum),
+                    t({ uk: ACC_COUNTRIES.find((x) => x.value === f.countryId)!.label, en: ACC_COUNTRIES.find((x) => x.value === f.countryId)!.en }),
+                    child ? t({ uk: "дитяча програма", en: "child programme" }) : t({ uk: ACC_PACKAGES.find((x) => x.value === f.pkg)!.label, en: ACC_PACKAGES.find((x) => x.value === f.pkg)!.en }),
+                    f.warRisk ? t({ uk: "+ воєнні ризики", en: "+ war risks" }) : null,
+                  ].filter(Boolean).join(" · ")}
+                </p>
+                <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!valid || loading} className="w-full">
+                  <span className="flex items-center gap-2">
+                    {loading ? t({ uk: "Шукаємо пропозиції…", en: "Searching for offers…" }) : <>{t({ uk: "Розрахувати вартість", en: "Calculate cost" })} <ArrowRight className="h-5 w-5" /></>}
+                  </span>
+                </Button>
+                {!valid && !loading && (
+                  <p className="mt-2 text-center text-xs text-zinc-400 dark:text-zinc-500">
+                    {!f.birthDate || !parseUaDate(f.birthDate) ? t({ uk: "Вкажіть дату народження, щоб побачити ціну", en: "Enter the date of birth to see the price" })
+                      : !ageOk ? t({ uk: "Страхуємо від 1 до 75 років", en: "We insure ages 1 to 75" })
+                      : t({ uk: "Оберіть вид спорту", en: "Choose the sport" })}
+                  </p>
+                )}
+              </div>
             </form>
           </motion.div>
         </div>
@@ -484,19 +540,44 @@ export function AccidentFlow() {
   );
 }
 
-// Рядок ризику: перемикач або зафіксований (входить у пакет завжди).
-function RiskRow({ label, checked, locked, onChange }: { label: string; checked: boolean; locked?: boolean; onChange?: (v: boolean) => void }) {
+// Заголовок секції форми: номер + іконка + назва.
+function SectionTitle({ n, icon: Icon, title, className = "" }: { n: number; icon: React.ComponentType<{ className?: string }>; title: string; className?: string }) {
   return (
-    <button type="button" disabled={locked} onClick={() => onChange?.(!checked)} aria-pressed={checked}
-      className={`flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors ${
-        locked ? "cursor-default border-zinc-100 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 text-zinc-500 dark:text-zinc-400"
-          : checked ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200"
-          : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:border-indigo-200"
+    <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 ${className}`}>
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">{n}</span>
+      <Icon className="h-3.5 w-3.5 text-indigo-500" />
+      {title}
+    </p>
+  );
+}
+
+// Сегмент (один із кількох варіантів) — рівна висота, текст може переноситись.
+function Segment({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active}
+      className={`flex min-h-11 items-center justify-center rounded-xl border px-2 py-2 text-center text-sm font-medium leading-tight transition-colors ${
+        active ? "border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900"
+          : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
       }`}>
-      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? "border-indigo-500 bg-indigo-600 text-white" : "border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800"}`}>
-        {locked ? <Lock className="h-3 w-3" /> : checked ? <Check className="h-3.5 w-3.5" /> : null}
-      </span>
-      <span className="leading-tight">{label}</span>
+      {children}
+    </button>
+  );
+}
+
+// Чип: вибір суми або необовʼязковий ризик (check — з квадратиком-галочкою).
+function Chip({ active, check, onClick, children }: { active: boolean; check?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors ${
+        active ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+          : "border-zinc-200 bg-white text-zinc-600 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+      }`}>
+      {check && (
+        <span className={`flex h-4 w-4 items-center justify-center rounded border ${active ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800"}`}>
+          {active && <Check className="h-3 w-3" />}
+        </span>
+      )}
+      {children}
     </button>
   );
 }
