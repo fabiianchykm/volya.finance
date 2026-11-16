@@ -37,9 +37,21 @@ function buildAllowedHosts(): Set<string> {
 
 const ALLOWED_HOSTS = buildAllowedHosts();
 
-function hostAllowed(rawUrl: string): boolean {
-  try { return ALLOWED_HOSTS.has(new URL(rawUrl).host); }
-  catch { return false; }
+const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])$/;
+
+function hostAllowed(rawUrl: string, req?: NextRequest): boolean {
+  try {
+    const u = new URL(rawUrl);
+    if (ALLOWED_HOSTS.has(u.host)) return true;
+    // Локальний прод-білд (`next start -p 3999`): NODE_ENV=production, а
+    // NEXT_PUBLIC_APP_URL вказує на :3000 — без цього кожен API-запит зі сторінки
+    // на localhost:3999 діставав 403 («не підтягується місто»). Loopback-origin
+    // пускаємо лише коли й сам сервер слухає на loopback — на проді Host ніколи не
+    // loopback, тож правило там мовчить.
+    const selfHost = req?.headers.get("host") ?? "";
+    const selfName = selfHost.replace(/:\d+$/, "");
+    return LOOPBACK.test(u.hostname) && LOOPBACK.test(selfName);
+  } catch { return false; }
 }
 
 /**
@@ -55,7 +67,7 @@ function isSameOrigin(req: NextRequest): boolean {
   // Браузери шлють Origin для cross-origin і для будь-яких POST, тож для
   // чутливих POST-роутів цей заголовок присутній і реально перевіряється.
   const source = req.headers.get("origin") ?? req.headers.get("referer");
-  if (source) return hostAllowed(source);
+  if (source) return hostAllowed(source, req);
 
   // Без Origin/Referer (буває для same-origin GET) — додатковий сигнал браузера.
   const secFetchSite = req.headers.get("sec-fetch-site");
