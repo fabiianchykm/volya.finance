@@ -32,7 +32,18 @@ export function PaymentSuccessClient() {
     ranRef.current = true;
     let cancelled = false;
 
+    // Локальний перегляд екрана успіху без оплати: /payment-success?preview=osago
+    // (або greencard, tourism, mini-kasko, accident, housing, pets). Працює ЛИШЕ на
+    // localhost — на проді параметр ігнорується.
+    const preview = params.get("preview");
+
     (async () => {
+      if (preview && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)) {
+        setContractId(null); // без договору: кнопка PDF прихована, решта екрана — як після реальної оплати
+        setProduct(preview);
+        setPhase("done");
+        return;
+      }
       if (!orderId) { setError(t({ uk: "Не вказано замовлення.", en: "No order specified." })); setPhase("error"); return; }
 
       // LiqPay зараховує оплату не миттєво — опитуємо статус ДОВГО (до ~3 хв) і не
