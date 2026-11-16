@@ -823,12 +823,6 @@ export function CheckoutClient() {
                     {promoError && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{promoError}</p>}
                   </div>
                 </div>
-                {estDiscount > 0 && (
-                  <p className="mt-3 border-t border-zinc-100 pt-3 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-200">
-                    {t({ uk: `Разом знижка ≈ ${formatPrice(estDiscount)}. До оплати ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}`, en: `Total discount ≈ ${formatPrice(estDiscount)}. Amount due ≈ ${formatPrice(Math.max(0, orderTotal - estDiscount))}` })}
-                    {discountCeiling < (promoApplied?.discount ?? 0) + bonusToApply && <span className="text-zinc-500 dark:text-zinc-400"> {t({ uk: `(стеля для цієї страхової — ${formatPrice(discountCeiling)})`, en: `(cap for this insurer — ${formatPrice(discountCeiling)})` })}</span>}
-                  </p>
-                )}
               </div>
             )}
 
