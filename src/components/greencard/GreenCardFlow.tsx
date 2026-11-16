@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, ArrowRight, Car, Hash, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Globe, FileText, CreditCard, Download } from "lucide-react";
+import { MapPin, CalendarDays, ArrowRight, Car, Hash, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Globe, FileText, CreditCard, Download } from "lucide-react";
+import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/offer-ranking";
+import { usePopularity } from "@/lib/use-popularity";
 import { HeroSteps } from "@/components/sections/HeroSteps";
 import { useI18n } from "@/lib/i18n";
 
@@ -294,14 +296,19 @@ function GreenCardOffers({
   onSelect: (o: GreenCardOffer) => void;
 }) {
   const { t } = useI18n();
-  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
+  const [sortBy, setSortBy] = useState<OfferSortKey>("recommended");
   const [sortOpen, setSortOpen] = useState(false);
   const SORT_OPTIONS = [
+    { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },
     { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
     { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
   ] as const;
+  // «Рекомендовані» = ціна + популярність СК серед наших клієнтів (див. lib/offer-ranking).
+  const popularity = usePopularity();
   const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
-  const sorted = [...offers].sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
+  const rankable = (o: GreenCardOffer) => ({ id: o.offerId, price: o.price, company: toInsuranceOffer(o).company?.publicName });
+  const sorted = rankOffers(offers, rankable, sortBy, popularity);
+  const badges = offerBadges(offers, rankable, popularity);
   const auto = vehicle ? [vehicle.mark, vehicle.model].filter(Boolean).join(" ") + (vehicle.year ? `, ${vehicle.year}` : "") : t({ uk: "Авто", en: "Vehicle" });
 
   return (
@@ -381,6 +388,7 @@ function GreenCardOffers({
               key={o.offerId}
               index={i}
               offer={toInsuranceOffer(o)}
+              cornerBadge={badgeText(badges.get(o.offerId), t)}
               selected={false}
               selectedDgoId={null}
               selectedAutolawyerId={null}

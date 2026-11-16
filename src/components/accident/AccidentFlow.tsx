@@ -4,7 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
-import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Shield, Globe, Search, Check, UserRound, Coins, Activity, HeartPulse } from "lucide-react";
+import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Shield, Globe, Search, Check, UserRound, Coins, Activity, HeartPulse } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { ProfilePicker } from "@/components/insurance/ProfilePicker";
+import { listProfiles, fetchServerProfiles, type CustomerProfile } from "@/lib/customer-profile";
+import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/offer-ranking";
+import { usePopularity } from "@/lib/use-popularity";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
@@ -196,6 +201,20 @@ export function AccidentFlow() {
   });
   const patch = (p: Partial<AccidentForm>) => setF((s) => ({ ...s, ...p }));
 
+  // Збережені особи акаунта — як на кроці оформлення: обрати людину, і її дата
+  // народження підставляється тут, а решта даних — одразу в анкету оформлення.
+  const { status: authStatus } = useSession();
+  const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);
+  const [pickedProfile, setPickedProfile] = useState<CustomerProfile | null>(null);
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSavedProfiles(listProfiles());
+    void fetchServerProfiles().then((all) => setSavedProfiles(all));
+  }, [authStatus]);
+  const pickableProfiles = savedProfiles.filter((p) => parseUaDate(p.dateBirth ?? ""));
+  const pickProfile = (p: CustomerProfile) => { setPickedProfile(p); patch({ birthDate: p.dateBirth ?? "" }); };
+
   const [offers, setOffers] = useState<AccidentOffer[]>([]);
   // Параметри, з якими СК реально порахувала (зі sportCategory) — ідуть у searchInfo заявки.
   const [calcParams, setCalcParams] = useState<AccidentParams | null>(null);
@@ -315,7 +334,7 @@ export function AccidentFlow() {
               />
             ) : (resumeCtx || selectedOffer) ? (
               <AccidentCheckout
-                ctx={resumeCtx ?? ({ offer: selectedOffer!, form: f, params: calcParams ?? toAccidentParams(f) } satisfies AccidentCheckoutCtx)}
+                ctx={resumeCtx ?? ({ offer: selectedOffer!, form: f, params: calcParams ?? toAccidentParams(f), profile: pickedProfile ?? undefined } satisfies AccidentCheckoutCtx)}
                 onBack={() => { if (resumeCtx) { clearResume("checkout_resume_accident"); setResumeCtx(null); setStep("form"); window.history.replaceState(null, "", window.location.pathname); } else setStep("offers"); }}
               />
             ) : null}
@@ -350,10 +369,20 @@ export function AccidentFlow() {
               {/* 1. Кого страхуємо. Початок дії не питаємо: за замовчуванням із завтра,
                   змінити можна на кроці оформлення. */}
               <SectionTitle n={1} icon={UserRound} title={t({ uk: "Кого страхуємо", en: "Who is insured" })} />
+              <ProfilePicker
+                profiles={pickableProfiles}
+                selected={pickedProfile}
+                label={t({ uk: "Обрати збережену особу", en: "Choose a saved person" })}
+                onPick={pickProfile}
+                meta="dob"
+                className="mb-3"
+              />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <DateInput
                   label={t({ uk: "Дата народження застрахованого", en: "Insured person's date of birth" })}
-                  value={f.birthDate} onChange={(v) => patch({ birthDate: v })} defaultYear={1990} required
+                  value={f.birthDate}
+                  onChange={(v) => { patch({ birthDate: v }); if (pickedProfile && v !== pickedProfile.dateBirth) setPickedProfile(null); }}
+                  defaultYear={1990} required
                   error={f.birthDate && parseUaDate(f.birthDate) && !ageOk ? t({ uk: "Вік має бути від 1 до 75 років", en: "Age must be between 1 and 75" }) : undefined}
                 />
                 <div className="flex items-center sm:h-11">
@@ -627,8 +656,12 @@ function AccidentOffers({ offers, loading, error, summary, coverage, onBack, onS
   onSelect: (o: AccidentOffer) => void;
 }) {
   const { t } = useI18n();
-  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
-  const cards = [...offers].sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
+  // «Рекомендовані» = ціна + популярність СК серед наших клієнтів (див. lib/offer-ranking).
+  const [sortBy, setSortBy] = useState<OfferSortKey>("recommended");
+  const popularity = usePopularity();
+  const rankable = (o: AccidentOffer) => ({ id: o.offerId, price: o.price, company: o.company?.publicName || o.companyNamePublic || o.companyName });
+  const cards = rankOffers(offers, rankable, sortBy, popularity);
+  const badges = offerBadges(offers, rankable, popularity);
 
   return (
     <div>
@@ -651,15 +684,16 @@ function AccidentOffers({ offers, loading, error, summary, coverage, onBack, onS
       </div>
 
       {!loading && cards.length > 0 && (
-        <div className="mb-5 flex items-center justify-end gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
-          <div className="inline-flex items-center gap-1 rounded-full border border-zinc-200/70 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-zinc-200/70 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             {([
-              { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
-              { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
+              { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },
+              { k: "price_asc", label: "Дешевші", en: "Cheapest", Icon: ArrowDownWideNarrow },
+              { k: "price_desc", label: "Дорожчі", en: "Most expensive", Icon: ArrowUpWideNarrow },
             ] as const).map(({ k, label, en, Icon }) => (
               <button key={k} type="button" onClick={() => setSortBy(k)}
-                className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>
+                className={`relative flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${sortBy === k ? "text-white" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>
                 {sortBy === k && (
                   <motion.span layoutId="accidentSortPill" transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-sm shadow-indigo-500/30" />
@@ -687,6 +721,7 @@ function AccidentOffers({ offers, loading, error, summary, coverage, onBack, onS
               key={o.offerId}
               index={i}
               offer={toInsuranceOffer(o)}
+              cornerBadge={badgeText(badges.get(o.offerId), t)}
               selected={false}
               selectedDgoId={null}
               selectedAutolawyerId={null}

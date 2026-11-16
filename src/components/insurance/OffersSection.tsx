@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { insurerFailuresText, type InsurerFailure } from "@/lib/insurer-errors";
 import { AlertTriangle } from "lucide-react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Info, Car, MapPin, CalendarDays } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Info, Car, MapPin, CalendarDays } from "lucide-react";
+import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/offer-ranking";
+import { usePopularity } from "@/lib/use-popularity";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
@@ -61,7 +63,7 @@ function OsagoInfo() {
   );
 }
 
-type SortKey = "price_asc" | "price_desc";
+type SortKey = OfferSortKey;
 
 // Прибираємо «Україна» та (коли відомий район) — область, щоб не захаращувати рядок.
 function cityLabel(city: string): string {
@@ -95,18 +97,20 @@ export function OffersSection({
   const unavailableNames = failures.filter((f) => f.reason === "unavailable").map((f) => f.name);
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
-  const [sortBy, setSortBy] = useState<SortKey>("price_asc");
+  const [sortBy, setSortBy] = useState<SortKey>("recommended");
   const [sortOpen, setSortOpen] = useState(false);
   const SORT_OPTIONS = [
+    { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },
     { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
     { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
   ] as const;
+  // «Рекомендовані» = ціна + популярність СК серед наших клієнтів (див. lib/offer-ranking).
+  const popularity = usePopularity();
   const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
 
-  const sorted = [...offers].sort((a, b) => {
-    if (sortBy === "price_desc") return b.price - a.price;
-    return a.price - b.price; // price_asc
-  });
+  const rankable = (o: InsuranceOffer) => ({ id: o.offerId, price: o.price, company: o.company?.publicName || o.companyNamePublic || o.companyName });
+  const sorted = rankOffers(offers, rankable, sortBy, popularity);
+  const badges = offerBadges(offers, rankable, popularity);
 
   return (
     <section className="min-h-screen bg-[#F5F5F7] pt-20 pb-8 dark:bg-[#0a0a0b]">
@@ -273,6 +277,7 @@ export function OffersSection({
                 key={offer.offerId}
                 offer={offer}
                 index={i}
+                cornerBadge={badgeText(badges.get(offer.offerId), t)}
                 selected={selectedOfferId === offer.offerId}
                 discountEligible
                 showAgeBasis

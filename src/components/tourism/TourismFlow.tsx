@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, CalendarCheck, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Compass } from "lucide-react";
+import { MapPin, CalendarDays, CalendarCheck, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Compass } from "lucide-react";
+import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/offer-ranking";
+import { usePopularity } from "@/lib/use-popularity";
 import { TRIP_PURPOSES, DEFAULT_TRIP_PURPOSE, isTripPurpose, isActivePurpose, isEconomProgram, type TripPurpose } from "@/lib/tourism-purpose";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
@@ -613,12 +615,15 @@ function TourismOffers({ offers, multiVisa, purpose, zoneLabel, dates, days, tou
   // Рівні покриття (10к…100к EUR). Мінімум для Шенгену — 30 000. Виносимо зверху.
   const coverages = Array.from(new Set(offers.map(coverageOf).filter((c) => c > 0))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
-  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc">("price_asc");
+  const [sortBy, setSortBy] = useState<OfferSortKey>("recommended");
   const [sortOpen, setSortOpen] = useState(false);
   const SORT_OPTIONS = [
+    { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },
     { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
     { k: "price_desc", label: "Спершу дорожчі", en: "Most expensive first", Icon: ArrowUpWideNarrow },
   ] as const;
+  // «Рекомендовані» = ціна + популярність СК серед наших клієнтів (див. lib/offer-ranking).
+  const popularity = usePopularity();
   const activeSort = SORT_OPTIONS.find((o) => o.k === sortBy) ?? SORT_OPTIONS[0];
 
   // За обраним покриттям — найдешевший варіант для кожної пари «страхова + програма».
@@ -628,10 +633,12 @@ function TourismOffers({ offers, multiVisa, purpose, zoneLabel, dates, days, tou
     const prev = best.get(key);
     if (!prev || o.price < prev.price) best.set(key, o);
   }
-  const allCards = Array.from(best.values()).sort((a, b) => (sortBy === "price_desc" ? b.price - a.price : a.price - b.price));
+  const rankable = (o: TourismOffer) => ({ id: o.offerId, price: o.price, company: o.company?.publicName || o.company?.name });
+  const allCards = rankOffers(Array.from(best.values()), rankable, sortBy, popularity);
   // Показуємо фільтр «365 днів» лише якщо в мультивізі є хоч одна така СК.
   const has365 = multiVisa && allCards.some((o) => isAnnual365(o, true));
   const cards = only365 && has365 ? allCards.filter((o) => isAnnual365(o, true)) : allCards;
+  const badges = offerBadges(cards, rankable, popularity);
 
   const touristsLabel = `${tourists} ${t({ uk: tourists === 1 ? "турист" : tourists < 5 ? "туристи" : "туристів", en: tourists === 1 ? "traveller" : "travellers" })}`;
   const purposeLabel = TRIP_PURPOSES.find((pp) => pp.v === purpose) ?? TRIP_PURPOSES[0];
@@ -791,7 +798,7 @@ function TourismOffers({ offers, multiVisa, purpose, zoneLabel, dates, days, tou
                 };
               })()}
               productDescription={<TourismRiskDetail o={o} />}
-              cornerBadge={o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined}
+              cornerBadge={[badgeText(badges.get(o.offerId), t), o.tripProgram ? t({ uk: PROGRAM_LABELS[o.tripProgram.toLowerCase()] ?? o.tripProgram, en: PROGRAM_LABELS_EN[o.tripProgram.toLowerCase()] ?? o.tripProgram }) : undefined].filter(Boolean).join(" · ") || undefined}
             />
           ))}
         </div>
