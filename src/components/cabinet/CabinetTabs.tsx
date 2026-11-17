@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 // Вкладки особистого кабінету: Поліси · Бонуси · Налаштування. Одні й ті самі
 // посилання в шапці (меню користувача) і тут — щоб із будь-якої вкладки було
 // видно решту. Активна — за поточним шляхом.
-export const CABINET_TABS: { href: string; label: Tr; title: Tr; subtitle: Tr; icon: LucideIcon }[] = [
+export const CABINET_TABS: { href: string; label: Tr; short?: Tr; title: Tr; subtitle: Tr; icon: LucideIcon }[] = [
   {
     href: "/policies", icon: FileText,
     label: { uk: "Поліси", en: "Policies" },
@@ -31,6 +31,7 @@ export const CABINET_TABS: { href: string; label: Tr; title: Tr; subtitle: Tr; i
   {
     href: "/profile", icon: Settings,
     label: { uk: "Налаштування", en: "Settings" },
+    short: { uk: "Профіль", en: "Profile" },
     title: { uk: "Налаштування", en: "Settings" },
     subtitle: { uk: "Збережені особи для швидкого оформлення та способи входу в кабінет.", en: "Saved people for quick checkout and the ways you sign in." },
   },
@@ -55,14 +56,15 @@ export function CabinetTabs() {
               href={tab.href}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 py-2 text-[13px] font-medium transition-colors sm:gap-2 sm:px-3 sm:text-sm",
                 isActive
                   ? "bg-white text-indigo-700 shadow-sm dark:bg-zinc-900 dark:text-indigo-300"
                   : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
               )}
             >
               <Icon className={cn("h-4 w-4", isActive ? "text-indigo-500" : "text-zinc-400 dark:text-zinc-500")} />
-              {t(tab.label)}
+              <span className="sm:hidden">{t(tab.short ?? tab.label)}</span>
+              <span className="hidden sm:inline">{t(tab.label)}</span>
             </Link>
           );
         })}
