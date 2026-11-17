@@ -427,10 +427,10 @@ export function OfferCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`relative rounded-2xl border bg-white shadow-sm transition-all duration-200 dark:bg-zinc-900 ${
+      className={`relative overflow-hidden rounded-2xl border bg-white transition-all duration-200 dark:bg-zinc-900 shadow-[0_10px_30px_-14px_rgba(30,16,96,0.28)] lg:shadow-sm ${
         selected
           ? "border-indigo-400 shadow-md shadow-indigo-100 ring-1 ring-indigo-400"
-          : "border-zinc-100 hover:border-zinc-200 hover:shadow-md dark:border-zinc-800 dark:hover:border-zinc-700"
+          : "border-zinc-200/80 hover:border-zinc-300 lg:hover:shadow-md dark:border-zinc-800 dark:hover:border-zinc-700"
       }`}
     >
       {specialOffer && (
@@ -444,91 +444,83 @@ export function OfferCard({
         </span>
       )}
 
-      {/* ── MOBILE layout (< lg) ── */}
-      <div className={`p-4 lg:hidden ${specialOffer ? "pt-8" : ""}`}>
-        {/* Ряд 1: лого + назва + ціна */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-1.5 dark:border-zinc-800 dark:bg-zinc-100">
-            <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold uppercase text-zinc-900 leading-snug dark:text-zinc-100">
-              {cleanCompanyName}
-            </p>
-            {subtitle && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">{subtitle}</p>}
-          </div>
-
-          <div className="flex shrink-0 flex-col items-end">
-            {strikePrice && (
-              <span className="flex items-center gap-1.5">
-                <span className="text-xs text-zinc-400 line-through tabular-nums dark:text-zinc-500">{formatPrice(strikePrice)}</span>
-                {discountPct != null && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">−{Math.round(discountPct)}%</span>}
-              </span>
-            )}
-            <span className="text-lg font-bold text-zinc-900 tabular-nums dark:text-zinc-100">
-              {formatPrice(totalPrice)}
-            </span>
-            {bonus > 0 && (
-              <Tooltip className="mt-0.5 cursor-help" content={bonusHint}>
-                <span className="whitespace-nowrap text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                  +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
+      {/* ── MOBILE layout (< lg): дві зони — «хто і що» зверху, «ціна і купити» в
+          тонованому підвалі. Так картка читається як обʼємний обʼєкт, а не як купа рядків. */}
+      <div className={`lg:hidden ${specialOffer || cornerBadge ? "pt-7" : ""}`}>
+        <div className="p-4">
+          {/* Ряд 1: лого + назва */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-100 dark:ring-zinc-700">
+              <CompanyLogo company={offer.company} cleanName={cleanCompanyName} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold leading-snug text-zinc-900 dark:text-zinc-100">{cleanCompanyName}</p>
+              {subtitle && <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</p>}
+              <Tooltip
+                className="mt-1 inline-flex cursor-help"
+                content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
+              >
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  <BadgeCheck className="h-3.5 w-3.5 shrink-0" />
+                  {t({ uk: "Виправлення поліса у разі помилки", en: "Free correction if there's a mistake" })}
                 </span>
               </Tooltip>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Що покриває — чипи (напр. міні-КАСКО) */}
-        {coverageChips && (
-          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-            {coverageChips}
-          </div>
-        )}
+          {/* Що покриває — чипи (напр. міні-КАСКО) */}
+          {coverageChips && <div className="mt-3">{coverageChips}</div>}
 
-        {/* Опції (автоюрист / ДГО / Допомога) */}
-        {showOptionsBlock && (
-          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-            {optionsBlock}
-          </div>
-        )}
-
-        {/* Ряд 2: кнопка купити (на всю ширину) + детальніше окремим рядком */}
-        <div className="mt-4 flex flex-col gap-2">
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => { onSelect(); onBuy(); }}
-            className="w-full"
-          >
-            {t({ uk: "Купити", en: "Buy" })}
-          </Button>
-          {canExpand && (
-            <button
-              onClick={() => setExpanded(v => !v)}
-              className="flex items-center justify-center gap-0.5 text-xs text-zinc-400 hover:text-indigo-600 transition-colors dark:text-zinc-500 dark:hover:text-indigo-400"
-            >
-              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-              {t({ uk: "Детальніше", en: "Details" })}
-            </button>
+          {/* Опції (автоюрист / ДЦВ) */}
+          {showOptionsBlock && (
+            <div className="mt-3 rounded-xl border border-dashed border-zinc-200 p-3 dark:border-zinc-700">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Додатково", en: "Add-ons" })}</p>
+              <div className="[&>div]:max-w-none">{optionsBlock}</div>
+            </div>
           )}
-          <Tooltip
-            className="cursor-help self-center"
-            content={t({ uk: "Помилку в даних поліса можна безкоштовно виправити до 23:59 того самого дня оформлення.", en: "A mistake in the policy details can be corrected for free until 23:59 on the same day it was issued." })}
-          >
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium leading-snug text-zinc-500 dark:text-zinc-400">
-              <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500 dark:text-emerald-400" />
-              <span className="underline decoration-dotted underline-offset-2">{t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" })}</span>
-            </span>
-          </Tooltip>
+
           {faceNote && (
-            <Tooltip className={cn("self-center", faceNoteHint && "cursor-help")} content={faceNoteHint ?? ""}>
+            <Tooltip className={cn("mt-3 inline-flex", faceNoteHint && "cursor-help")} content={faceNoteHint ?? ""}>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium leading-snug text-zinc-500 dark:text-zinc-400">
                 <CalendarCheck className={cn("h-4 w-4 shrink-0", faceNoteMuted ? "text-zinc-400 dark:text-zinc-500" : "text-emerald-500 dark:text-emerald-400")} />
                 <span className={cn(faceNoteHint && "underline decoration-dotted underline-offset-2")}>{faceNote}</span>
               </span>
             </Tooltip>
           )}
+        </div>
+
+        {/* Підвал: ціна ліворуч, «Купити» праворуч */}
+        <div className="flex items-center justify-between gap-3 border-t border-zinc-100 bg-zinc-50/80 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+          <div className="min-w-0">
+            {strikePrice && (
+              <span className="flex items-center gap-1.5">
+                <span className="text-xs tabular-nums text-zinc-400 line-through dark:text-zinc-500">{formatPrice(strikePrice)}</span>
+                {discountPct != null && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">−{Math.round(discountPct)}%</span>}
+              </span>
+            )}
+            <p className="text-2xl font-bold leading-none tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100">{formatPrice(totalPrice)}</p>
+            {bonus > 0 && (
+              <Tooltip className="mt-1 inline-flex cursor-help" content={bonusHint}>
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900">
+                  +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
+                </span>
+              </Tooltip>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <Button variant="primary" size="md" onClick={() => { onSelect(); onBuy(); }} className="h-11 px-6 text-[15px]">
+              {t({ uk: "Купити", en: "Buy" })}
+            </Button>
+            {canExpand && (
+              <button
+                onClick={() => setExpanded(v => !v)}
+                className="flex items-center gap-0.5 text-xs text-zinc-500 transition-colors hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400"
+              >
+                {t({ uk: "Детальніше", en: "Details" })}
+                {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
