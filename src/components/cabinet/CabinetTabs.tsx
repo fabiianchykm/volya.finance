@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Coins, Settings, type LucideIcon } from "lucide-react";
+import { FileText, Coins, Star, Settings, type LucideIcon } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,12 @@ export const CABINET_TABS: { href: string; label: Tr; title: Tr; subtitle: Tr; i
     label: { uk: "Бонуси", en: "Bonuses" },
     title: { uk: "Бонуси та запрошення", en: "Bonuses & referrals" },
     subtitle: { uk: "1% з кожної покупки, 5% з покупок друзів — списуються як знижка на автоцивілку.", en: "1% of each purchase and 5% of friends' purchases, redeemed as a car insurance discount." },
+  },
+  {
+    href: "/reviews", icon: Star,
+    label: { uk: "Відгуки", en: "Reviews" },
+    title: { uk: "Мої відгуки", en: "My reviews" },
+    subtitle: { uk: "Оцініть страхові, поліси яких ви купили, і керуйте своїми відгуками.", en: "Rate the insurers whose policies you bought and manage your reviews." },
   },
   {
     href: "/profile", icon: Settings,

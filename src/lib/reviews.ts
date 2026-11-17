@@ -88,3 +88,45 @@ export async function hasReviewed(insurer: string, email: string): Promise<boole
   `;
   return rows.length > 0;
 }
+
+// ── Кабінет: власні відгуки ──────────────────────────────────────────────
+// Відгук привʼязаний до канонічного ключа акаунта (email або phone:+380…); у
+// кабінеті шукаємо по ВСІХ ключах звʼязаних ідентичностей, щоб вхід за номером
+// бачив відгуки, лишені після входу через Google, і навпаки.
+export async function getReviewsByKeys(keys: string[]): Promise<Review[]> {
+  if (!sql || keys.length === 0) return [];
+  await ensureSchema();
+  const norm = keys.map((k) => k.trim().toLowerCase());
+  const rows = await sql`
+    SELECT id, insurer, author_name, rating, text, product, created_at
+    FROM insurer_reviews WHERE email = ANY(${norm}) ORDER BY created_at DESC LIMIT 100
+  `;
+  return rows.map((r) => ({
+    id: Number(r.id),
+    insurer: r.insurer as string,
+    authorName: (r.author_name as string) ?? null,
+    rating: Number(r.rating),
+    text: r.text as string,
+    product: (r.product as string) ?? null,
+    createdAt: (r.created_at as Date).toISOString?.() ?? String(r.created_at),
+  }));
+}
+
+export async function updateOwnReview(id: number, keys: string[], rating: number, text: string): Promise<boolean> {
+  if (!sql || keys.length === 0) return false;
+  await ensureSchema();
+  const norm = keys.map((k) => k.trim().toLowerCase());
+  const res = await sql`
+    UPDATE insurer_reviews SET rating = ${rating}, text = ${text}
+    WHERE id = ${id} AND email = ANY(${norm})
+  `;
+  return (res.count ?? 0) > 0;
+}
+
+export async function deleteOwnReview(id: number, keys: string[]): Promise<boolean> {
+  if (!sql || keys.length === 0) return false;
+  await ensureSchema();
+  const norm = keys.map((k) => k.trim().toLowerCase());
+  const res = await sql`DELETE FROM insurer_reviews WHERE id = ${id} AND email = ANY(${norm})`;
+  return (res.count ?? 0) > 0;
+}

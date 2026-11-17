@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Crosshair, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
+import { Menu, X, LogOut, LogIn, FileText, Star, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Crosshair, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
 import { isAdminClient } from "@/lib/admin";
 import { emitNavReset } from "@/lib/nav-reset";
 import { Wordmark } from "./VMark";
@@ -280,6 +280,14 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                       {t({ uk: "Бонуси", en: "Bonuses" })}
                     </Link>
                     <Link
+                      href="/reviews"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                    >
+                      <Star className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+                      {t({ uk: "Відгуки", en: "Reviews" })}
+                    </Link>
+                    <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
@@ -398,6 +406,14 @@ function UserMenu({
               >
                 <Coins className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                 {t({ uk: "Бонуси", en: "Bonuses" })}
+              </Link>
+              <Link
+                href="/reviews"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors"
+              >
+                <Star className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+                {t({ uk: "Відгуки", en: "Reviews" })}
               </Link>
               <Link
                 href="/profile"
