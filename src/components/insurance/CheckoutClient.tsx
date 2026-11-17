@@ -5,6 +5,7 @@ import { normalizeVin, isValidVin } from "@/lib/vin";
 import { uaNameProblem, normalizeUaName } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Gift, TicketPercent } from "lucide-react";
+import { companyLogo } from "@/lib/logos";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
 import { SuccessModal } from "./SuccessModal";
@@ -694,191 +695,172 @@ export function CheckoutClient() {
           />
         )}
 
-        {step === "pay" && (
-          <div className="space-y-5">
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Перевірте замовлення", en: "Review your order" })}</h2>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {t({ uk: "Бонуси й промокод застосовуються саме тут — до реєстрації поліса у страховій. Після цього кроку суму змінити не можна.", en: "Bonuses and a promo code are applied here, before the insurer registers the policy. The amount can't be changed after this step." })}
-              </p>
+        {step === "pay" && (() => {
+          const dgo = selectedDgoId ? offer.listDgo?.find((d) => d.id === selectedDgoId) : null;
+          const law = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
+          const insurerName = offer.companyNamePublic || offer.companyName;
+          const logo = companyLogo(insurerName);
+          const promoDiscount = promoApplied?.discount ?? 0;
+          const due = order ? orderTotal : Math.max(0, orderTotal - estDiscount);
+          const Row = ({ label, children, strong }: { label: React.ReactNode; children: React.ReactNode; strong?: boolean }) => (
+            <div className="flex items-start justify-between gap-4 py-2.5">
+              <dt className="text-sm text-zinc-500 dark:text-zinc-400">{label}</dt>
+              <dd className={`text-right text-sm ${strong ? "font-semibold" : "font-medium"} text-zinc-900 dark:text-zinc-100`}>{children}</dd>
             </div>
-
-            <dl className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-700">
-              <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Страхова", en: "Insurer" })}</dt>
-                <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{offer.companyNamePublic || offer.companyName}</dd>
-              </div>
-              <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Авто", en: "Vehicle" })}</dt>
-                <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">
-                  {[vehicle.mark, vehicle.model, vehicle.year].filter(Boolean).join(" ")}
-                  {vehicle.number && <span className="ml-2 rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-xs uppercase tracking-wider dark:bg-zinc-800">{vehicle.number}</span>}
-                </dd>
-              </div>
-              {customer && (
-                <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                  <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Страхувальник", en: "Policyholder" })}</dt>
-                  <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{[customer.surname, customer.name, customer.patronymic].filter(Boolean).join(" ")}</dd>
+          );
+          return (
+            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+              {/* Ліва колонка: що купуємо + знижки */}
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Перевірте замовлення", en: "Review your order" })}</h2>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    {t({ uk: "Бонуси й промокод застосовуються тут, до реєстрації поліса у страховій. Після цього кроку суму змінити не можна.", en: "Bonuses and a promo code are applied here, before the insurer registers the policy. The amount can't be changed after this step." })}
+                  </p>
                 </div>
-              )}
-              {offer.startDate && (
-                <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                  <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Період дії", en: "Coverage period" })}</dt>
-                  <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{offer.startDate}{offer.endDate ? ` — ${offer.endDate}` : ""}</dd>
-                </div>
-              )}
-              <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Автоцивілка (ОСЦПВ)", en: "MTPL policy" })}</dt>
-                <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(offer.price)}</dd>
-              </div>
-              {(() => {
-                const dgo = selectedDgoId ? offer.listDgo?.find((d) => d.id === selectedDgoId) : null;
-                const law = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
-                return (
-                  <>
-                    {dgo && (
-                      <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                        <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: `ДЦВ (ліміт ${formatPrice(Number(dgo.coverage))})`, en: `Extra liability (limit ${formatPrice(Number(dgo.coverage))})` })}</dt>
-                        <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(Number(dgo.cost))}</dd>
-                      </div>
-                    )}
-                    {law && (
-                      <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                        <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Автоюрист", en: "Legal assistance" })}</dt>
-                        <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(law.price)}</dd>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </dl>
 
-            {/* Списання бонусів — до заявлення (знижка фіксується в заявці Ukasko). */}
-            {!order && bonusMax >= 1 && (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
-                <div className="flex items-start gap-2">
-                  <Gift className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      {t({ uk: `Бонуси: на рахунку ${formatPrice(bonusAvailable)}`, en: `Bonuses: ${formatPrice(bonusAvailable)} on your account` })}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {bonusMax < bonusAvailable
-                        ? t({ uk: `По цій пропозиції можна списати до ${formatPrice(bonusMax)}. Впишіть суму — вона одразу зменшить платіж.`, en: `Up to ${formatPrice(bonusMax)} can be applied to this offer. Enter an amount — it reduces the payment right away.` })
-                        : t({ uk: "Впишіть, скільки списати, — сума одразу зменшить платіж.", en: "Enter how much to apply — it reduces the payment right away." })}
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <label className="text-sm text-zinc-600 dark:text-zinc-300" htmlFor="bonus-amount">{t({ uk: "Списати, грн", en: "Apply, UAH" })}</label>
-                      <input
-                        id="bonus-amount"
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        autoComplete="off"
-                        value={bonusAmount}
-                        onFocus={(e) => e.currentTarget.select()}
-                        // Текстове поле з цифровою клавіатурою — без браузерних стрілок «вгору/вниз».
-                        onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 0))))}
-                        className="h-10 w-28 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                      />
-                      <button type="button" onClick={() => setBonusAmount(bonusMax)} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
-                        {t({ uk: `Максимум (${formatPrice(bonusMax)})`, en: `Maximum (${formatPrice(bonusMax)})` })}
+                {/* Поліс */}
+                <section className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-700">
+                  <div className="flex items-center gap-3 border-b border-zinc-100 bg-zinc-50/70 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-zinc-200 dark:ring-zinc-700">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {logo ? <img src={logo} alt={insurerName} className="h-8 w-8 object-contain" /> : <span className="text-sm font-bold text-indigo-600">{insurerName.slice(0, 1)}</span>}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">{insurerName}</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Автоцивілка (ОСЦПВ)", en: "MTPL policy (OSAGO)" })}{offer.startDate && <> · {offer.startDate}{offer.endDate ? ` — ${offer.endDate}` : ""}</>}</p>
+                    </div>
+                    <p className="shrink-0 text-base font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(offer.price)}</p>
+                  </div>
+                  <dl className="divide-y divide-zinc-100 px-4 dark:divide-zinc-800">
+                    <Row label={t({ uk: "Авто", en: "Vehicle" })}>
+                      {[vehicle.mark, vehicle.model, vehicle.year].filter(Boolean).join(" ")}
+                      {vehicle.number && <span className="ml-2 inline-block rounded-md border border-zinc-200 bg-white px-1.5 py-0.5 font-mono text-xs uppercase tracking-wider text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">{vehicle.number}</span>}
+                    </Row>
+                    {customer && <Row label={t({ uk: "Страхувальник", en: "Policyholder" })}>{[customer.surname, customer.name, customer.patronymic].filter(Boolean).join(" ")}</Row>}
+                    {dgo && <Row label={t({ uk: `ДЦВ · ліміт ${formatPrice(Number(dgo.coverage))}`, en: `Extra liability · limit ${formatPrice(Number(dgo.coverage))}` })}>{formatPrice(Number(dgo.cost))}</Row>}
+                    {law && <Row label={t({ uk: "Автоюрист", en: "Legal assistance" })}>{formatPrice(law.price)}</Row>}
+                  </dl>
+                </section>
+
+                {/* Знижки: бонуси + промокод в одній картці */}
+                {!order && (
+                  <section className="rounded-2xl border border-indigo-100 bg-indigo-50/40 dark:border-indigo-900 dark:bg-indigo-950/20">
+                    <div className="divide-y divide-indigo-100 dark:divide-indigo-900/60">
+                      {bonusMax >= 1 && (
+                        <div className="p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                              <Gift className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> {t({ uk: "Бонуси", en: "Bonuses" })}
+                            </p>
+                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 ring-1 ring-indigo-100 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-indigo-900">{t({ uk: `На рахунку ${formatPrice(bonusAvailable)}`, en: `Balance ${formatPrice(bonusAvailable)}` })}</span>
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <label className="sr-only" htmlFor="bonus-amount">{t({ uk: "Списати, грн", en: "Apply, UAH" })}</label>
+                            <div className="flex h-11 items-center rounded-xl border border-zinc-200 bg-white pr-3 focus-within:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900">
+                              <input
+                                id="bonus-amount"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                autoComplete="off"
+                                value={bonusAmount}
+                                onFocus={(e) => e.currentTarget.select()}
+                                onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 0))))}
+                                className="h-full w-24 bg-transparent px-3 text-base font-semibold text-zinc-900 outline-none dark:text-zinc-100"
+                              />
+                              <span className="text-sm text-zinc-400">₴</span>
+                            </div>
+                            <button type="button" onClick={() => setBonusAmount(bonusMax)} className={`h-11 rounded-xl px-4 text-sm font-semibold transition-colors ${bonusToApply === bonusMax ? "bg-indigo-600 text-white" : "bg-white text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-50 dark:bg-zinc-900 dark:text-indigo-300 dark:ring-indigo-800"}`}>
+                              {t({ uk: `Списати максимум · ${formatPrice(bonusMax)}`, en: `Apply max · ${formatPrice(bonusMax)}` })}
+                            </button>
+                            {bonusToApply > 0 && (
+                              <button type="button" onClick={() => setBonusAmount(0)} className="text-sm font-medium text-zinc-500 hover:underline dark:text-zinc-400">{t({ uk: "Скинути", en: "Reset" })}</button>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                            {bonusMax < bonusAvailable
+                              ? t({ uk: `По цій пропозиції можна списати до ${formatPrice(bonusMax)}, решта лишиться на рахунку.`, en: `Up to ${formatPrice(bonusMax)} can be applied to this offer; the rest stays on your account.` })
+                              : t({ uk: "Сума одразу зменшує платіж.", en: "The amount reduces the payment right away." })}
+                          </p>
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                          <TicketPercent className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> {t({ uk: "Промокод", en: "Promo code" })}
+                        </p>
+                        {promoApplied ? (
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900">
+                              <span className="font-mono font-bold tracking-wider">{promoApplied.code}</span> · −{formatPrice(promoApplied.discount)}
+                            </span>
+                            <button type="button" onClick={() => { setPromoApplied(null); setPromoInput(""); }} className="text-sm font-medium text-zinc-500 hover:underline dark:text-zinc-400">{t({ uk: "Прибрати", en: "Remove" })}</button>
+                            <p className="w-full text-xs text-zinc-500 dark:text-zinc-400">{promoApplied.message}</p>
+                          </div>
+                        ) : (
+                          <div className="mt-3 flex items-center gap-2">
+                            <input
+                              type="text"
+                              inputMode="text"
+                              autoCapitalize="characters"
+                              aria-label={t({ uk: "Промокод", en: "Promo code" })}
+                              placeholder={t({ uk: "Введіть код", en: "Enter code" })}
+                              value={promoInput}
+                              onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null); }}
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void applyPromo(); } }}
+                              className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm uppercase tracking-wider text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 sm:max-w-[220px]"
+                            />
+                            <button type="button" onClick={() => void applyPromo()} disabled={promoChecking || !promoInput.trim()} className="h-11 shrink-0 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50">
+                              {promoChecking ? t({ uk: "Перевіряю…", en: "Checking…" }) : t({ uk: "Застосувати", en: "Apply" })}
+                            </button>
+                          </div>
+                        )}
+                        {promoError && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{promoError}</p>}
+                      </div>
+                    </div>
+                  </section>
+                )}
+              </div>
+
+              {/* Права колонка: разом + кнопка (на десктопі липка) */}
+              <aside className="mt-5 lg:mt-0">
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-700 dark:bg-zinc-800/40 lg:sticky lg:top-24">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Разом", en: "Total" })}</p>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between gap-3"><dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Вартість", en: "Price" })}</dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(orderTotal)}</dd></div>
+                    {!order && bonusToApply > 0 && <div className="flex justify-between gap-3"><dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Бонуси", en: "Bonuses" })}</dt><dd className="font-medium text-emerald-600 dark:text-emerald-400">−{formatPrice(Math.min(bonusToApply, estDiscount))}</dd></div>}
+                    {!order && promoDiscount > 0 && <div className="flex justify-between gap-3"><dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Промокод", en: "Promo code" })}</dt><dd className="font-medium text-emerald-600 dark:text-emerald-400">−{formatPrice(Math.max(0, estDiscount - Math.min(bonusToApply, estDiscount)))}</dd></div>}
+                  </dl>
+                  <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "До оплати", en: "Amount due" })}</span>
+                    <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">{formatPrice(due)}</span>
+                  </div>
+
+                  {order ? (
+                    <div className="mt-4 space-y-3">
+                      <Button type="button" variant="primary" size="lg" onClick={() => { setError(null); setStep("otp"); }} className="w-full">
+                        {t({ uk: "Ввести код підтвердження", en: "Enter the confirmation code" })}
+                      </Button>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Поліс уже зареєстровано у страховій, знижку зафіксовано. Код підтвердження надіслано на email.", en: "The policy is registered with the insurer and the discount is locked in. The confirmation code was sent by email." })}</p>
+                      <button type="button" onClick={() => { setOrder(null); setOrderId(null); setBonusNotice(null); setPriceNotice(null); setWarning(null); setError(null); }} className="text-xs font-medium text-zinc-500 hover:underline dark:text-zinc-400">
+                        {t({ uk: "Змінити знижку й оформити заново", en: "Change the discount and register again" })}
                       </button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Промокод — теж до заявлення (знижка фіксується в заявці Ukasko). */}
-            {!order && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-                <div className="flex items-start gap-2">
-                  <TicketPercent className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Промокод", en: "Promo code" })}</p>
-                    {promoApplied ? (
-                      <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-emerald-700 dark:text-emerald-400">
-                        <span>{promoApplied.message} · {t({ uk: `−${formatPrice(promoApplied.discount)}`, en: `−${formatPrice(promoApplied.discount)}` })}</span>
-                        <button type="button" onClick={() => { setPromoApplied(null); setPromoInput(""); }} className="text-xs font-medium text-zinc-500 hover:underline dark:text-zinc-400">{t({ uk: "Прибрати", en: "Remove" })}</button>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      <Button type="button" variant="primary" size="lg" loading={loading} onClick={() => void handleProceedToPayment()} className="w-full">
+                        {t({ uk: "Перейти до оплати", en: "Go to payment" })}
+                      </Button>
+                      <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                        {t({ uk: "Далі страхова зареєструє поліс і надішле код підтвердження на email, після коду — оплата карткою.", en: "Next the insurer registers the policy and emails a confirmation code; after the code, pay by card." })}
                       </p>
-                    ) : (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <input
-                          type="text"
-                          inputMode="text"
-                          autoCapitalize="characters"
-                          aria-label={t({ uk: "Промокод", en: "Promo code" })}
-                          placeholder={t({ uk: "Введіть код", en: "Enter code" })}
-                          value={promoInput}
-                          onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null); }}
-                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void applyPromo(); } }}
-                          className="h-10 w-44 rounded-xl border border-zinc-200 bg-white px-3 text-sm uppercase tracking-wider text-zinc-900 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                        />
-                        <button type="button" onClick={() => void applyPromo()} disabled={promoChecking || !promoInput.trim()} className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50">
-                          {promoChecking ? t({ uk: "Перевіряю…", en: "Checking…" }) : t({ uk: "Застосувати", en: "Apply" })}
-                        </button>
-                      </div>
-                    )}
-                    {promoError && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{promoError}</p>}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-
-            {/* Разом — після бонусів і промокоду, щоб сума до оплати була під тим, що на неї впливає. */}
-            <dl className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-700">
-              {!order && estDiscount > 0 && (
-                <>
-                  <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                    <dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Вартість", en: "Price" })}</dt>
-                    <dd className="text-right font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(orderTotal)}</dd>
-                  </div>
-                  <div className="flex items-start justify-between gap-4 px-4 py-2.5">
-                    <dt className="text-emerald-700 dark:text-emerald-400">
-                      {t({ uk: "Знижка", en: "Discount" })}
-                      {promoApplied?.discount && bonusToApply > 0 ? t({ uk: " (промокод + бонуси)", en: " (promo + bonuses)" }) : promoApplied?.discount ? t({ uk: " (промокод)", en: " (promo code)" }) : t({ uk: " (бонуси)", en: " (bonuses)" })}
-                    </dt>
-                    <dd className="text-right font-medium text-emerald-700 dark:text-emerald-400">−{formatPrice(estDiscount)}</dd>
-                  </div>
-                </>
-              )}
-              <div className="flex items-center justify-between gap-4 bg-zinc-50 px-4 py-3 dark:bg-zinc-800/60">
-                <dt className="font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "До оплати", en: "Amount due" })}</dt>
-                <dd className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{formatPrice(order ? orderTotal : Math.max(0, orderTotal - estDiscount))}</dd>
-              </div>
-            </dl>
-
-            {order ? (
-              <div className="space-y-3">
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  {t({ uk: "Поліс уже зареєстровано у страховій, знижку зафіксовано. Введіть код підтвердження з листа й переходьте до оплати.", en: "The policy is already registered with the insurer and the discount is locked in. Enter the confirmation code from the email and proceed to payment." })}
-                </p>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button type="button" variant="primary" size="lg" onClick={() => { setError(null); setStep("otp"); }} className="w-full sm:w-auto px-8">
-                    {t({ uk: "Ввести код підтвердження", en: "Enter the confirmation code" })}
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => { setOrder(null); setOrderId(null); setBonusNotice(null); setPriceNotice(null); setWarning(null); setError(null); }}
-                    className="text-sm font-medium text-zinc-500 hover:underline dark:text-zinc-400"
-                  >
-                    {t({ uk: "Змінити знижку й оформити заново", en: "Change the discount and register again" })}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Button type="button" variant="primary" size="lg" loading={loading} onClick={() => void handleProceedToPayment()} className="w-full sm:w-auto px-8">
-                  {t({ uk: "Перейти до оплати", en: "Go to payment" })}
-                </Button>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {t({ uk: "Далі: страхова зареєструє поліс і надішле код підтвердження на email, після коду — оплата карткою.", en: "Next: the insurer registers the policy and emails a confirmation code; after the code, pay by card." })}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+              </aside>
+            </div>
+          );
+        })()}
       </div>
 
       <OtpModal
