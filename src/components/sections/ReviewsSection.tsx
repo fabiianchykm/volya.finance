@@ -2,7 +2,6 @@
 
 import { Quote } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
-import { SectionHeading } from "./SectionHeading";
 
 // Бренд-іконки джерел відгуків (self-contained SVG, без залежностей).
 function GoogleIcon({ className }: { className?: string }) {
@@ -56,20 +55,18 @@ export function ReviewsSection() {
   const row = [...reviews, ...reviews];
 
   return (
-    <section className="bg-[#FAFAFA] py-16 dark:bg-[#0f0f11] sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <SectionHeading
-          eyebrow={t({ uk: "Відгуки", en: "Reviews" })}
-          icon={Quote}
-          title={t({ uk: "Що кажуть клієнти", en: "What customers say" })}
-          subtitle={(
-            <span className="inline-flex items-center gap-2">
-              {t({ uk: "Відгуки з", en: "Reviews from" })}
-              <GoogleIcon className="h-4 w-4 text-zinc-400" /><FacebookIcon className="h-4 w-4 text-zinc-400" /><ThreadsIcon className="h-4 w-4 text-zinc-400" /><XIcon className="h-4 w-4 text-zinc-400" />
-            </span>
-          )}
-          className="mb-8 sm:mb-10"
-        />
+    <section className="bg-[#FAFAFA] dark:bg-[#0f0f11] py-20 sm:py-24">
+      {/* Заголовок — ліворуч, трохи більший */}
+      <div className="mx-auto mb-12 max-w-7xl px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <h2 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">{t({ uk: "Відгуки клієнтів", en: "Customer reviews" })}</h2>
+          <div className="flex items-center gap-1.5">
+            <GoogleIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+            <FacebookIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+            <ThreadsIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+            <XIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+          </div>
+        </div>
       </div>
 
       <div className="relative overflow-hidden">
