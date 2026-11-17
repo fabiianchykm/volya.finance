@@ -148,7 +148,7 @@ export function HousingFlow() {
       <>
         <Navbar solid />
         <section className="min-h-screen pt-20 pb-10">
-          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
+          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-7xl" : "max-w-3xl"}`}>
             {step === "offers" ? (
               <HousingOffers
                 offers={offers}
@@ -247,7 +247,7 @@ function HousingOffers({
 }) {
   const { t } = useI18n();
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="mx-auto max-w-7xl">
       <div className="flex flex-col items-start gap-6 lg:flex-row">
         <div className="min-w-0 flex-1">
           <div className="mb-6 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-4 shadow-sm">

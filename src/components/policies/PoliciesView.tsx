@@ -177,8 +177,10 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
               <Download className="h-4 w-4" />
               {t({ uk: "Завантажити (PDF)", en: "Download (PDF)" })}
             </Button>
-            {mtsbuLink && (
-              <a href={mtsbuLink} target="_blank" rel="noopener noreferrer">
+            {/* Кнопка реєстру одразу, не лише після завантаження PDF: поки прямого
+                посилання на договір немає — ведемо на публічну перевірку за номером авто. */}
+            {(!policy.product || policy.product === "osago" || policy.product === "greencard") && (
+              <a href={mtsbuLink ?? "https://policy.mtsbu.ua"} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <ExternalLink className="h-4 w-4" />
                   {t({ uk: "Реєстр МТСБУ", en: "MTSBU registry" })}

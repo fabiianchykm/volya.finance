@@ -87,7 +87,7 @@ export function HomeHero() {
 
       {/* Продукти: бенто популярних + компактна решта. Трохи «наїжджає» на герой. */}
       <div id="products" className="scroll-mt-20 bg-white pb-20 dark:bg-zinc-900 sm:pb-24">
-        <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 sm:pt-14">
+        <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 sm:pt-14">
           <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2">
             {FEATURED.map((f, i) => <FeaturedCard key={f.href} f={f} big={i === 0} />)}
           </div>
@@ -97,7 +97,9 @@ export function HomeHero() {
               <Link
                 key={href}
                 href={href}
-                className="group flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200/70 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-200 dark:bg-zinc-900 dark:ring-zinc-700 dark:hover:ring-indigo-800"
+                className={`group flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200/70 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-200 dark:bg-zinc-900 dark:ring-zinc-700 dark:hover:ring-indigo-800 ${
+                  href === "/gift" ? "sm:col-span-2 lg:col-span-3 bg-gradient-to-r from-indigo-50 via-white to-violet-50 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-violet-950/30" : ""
+                }`}
               >
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-950/40 dark:text-indigo-400">
                   <Icon className="h-6 w-6" />

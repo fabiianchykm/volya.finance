@@ -321,7 +321,7 @@ export function AccidentFlow() {
       <>
         <Navbar solid />
         <section className="min-h-screen pt-20 pb-10">
-          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
+          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-7xl" : "max-w-3xl"}`}>
             {step === "offers" ? (
               <AccidentOffers
                 offers={offers}

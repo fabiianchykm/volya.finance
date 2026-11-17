@@ -23,7 +23,7 @@ const DOCS: { icon: LucideIcon; text: Tr }[] = [
 export function WeaponBenefits() {
   const { t } = useI18n();
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
       <div className="mb-12 text-center">
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">{t({ uk: "Навіщо власнику зброї поліс", en: "Why a firearm owner needs a policy" })}</h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">

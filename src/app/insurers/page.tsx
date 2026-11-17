@@ -23,7 +23,7 @@ export default function InsurersPage() {
       <JsonLd data={[breadcrumbLd([{ name: "Головна", path: "/" }, { name: "Страхові компанії", path: "/insurers" }])]} />
       <Navbar solid />
       <main className="flex-1 bg-[#FAFAFA] dark:bg-[#0f0f11] pt-24 pb-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">Страхові компанії</h1>
             <p className="mt-2 max-w-2xl text-base text-zinc-500 dark:text-zinc-400">

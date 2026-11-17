@@ -395,7 +395,7 @@ export function TourismFlow() {
       <>
         <Navbar solid />
         <section className="min-h-screen pt-20 pb-10">
-          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
+          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-7xl" : "max-w-3xl"}`}>
             {step === "offers" && loading && offers.length === 0 ? (
               // Завантаження — як в ОСЦПВ: банер «опитуємо страхові» + скелетони карток.
               <div className="min-w-0 flex-1 space-y-3">

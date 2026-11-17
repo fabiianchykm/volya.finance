@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, LogOut, LogIn, FileText, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Crosshair, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
 import { isAdminClient } from "@/lib/admin";
 import { emitNavReset } from "@/lib/nav-reset";
-import { VMark, BarlessA } from "./VMark";
+import { Wordmark } from "./VMark";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
@@ -156,18 +156,13 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
           : "bg-white/5 backdrop-blur-md border-b border-white/10"
       )}
     >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-1">
-          <VMark id="vmark-nav" className="h-9 w-9" />
-          <span
-            className={cn(
-              "text-2xl font-medium uppercase tracking-[0.2em] transition-colors duration-300",
-              opaque ? "text-zinc-900 dark:text-zinc-100" : "text-white"
-            )}
-          >
-            OLY<BarlessA className="inline-block h-[0.72em] w-auto align-baseline" />
-            <span className={cn("text-[0.7em] font-semibold normal-case tracking-normal", opaque ? "text-indigo-600 dark:text-indigo-400" : "text-indigo-300")}>.finance</span>
-          </span>
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <Link href="/" className="flex items-center" aria-label="VOLYA.finance">
+          <Wordmark
+            id="vmark-nav"
+            className={cn("text-[1.55rem] transition-colors duration-300", opaque ? "text-zinc-900 dark:text-zinc-100" : "text-white")}
+            accentClassName={opaque ? "text-indigo-600 dark:text-indigo-400" : "text-indigo-300"}
+          />
         </Link>
 
         <ul className="hidden items-center gap-0.5 md:flex">

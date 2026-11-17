@@ -21,9 +21,13 @@ export default function OpengraphImage() {
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", fontSize: 68, fontWeight: 800, letterSpacing: -1 }}>
-          <span>volya</span>
-          <span style={{ color: "#a5b4fc" }}>.finance</span>
+        <div style={{ display: "flex", alignItems: "flex-end", fontSize: 72, fontWeight: 700 }}>
+          <svg viewBox="0 0 20 20" width="58" height="58" style={{ marginRight: 12, marginBottom: 6 }}>
+            <path d="M0 0 L3.2 0 L10 13.6 L10 20 Z" fill="#a5b4fc" />
+            <path d="M10 20 L10 13.6 L16.8 0 L20 0 Z" fill="#8b5cf6" />
+          </svg>
+          <span style={{ letterSpacing: 10 }}>OLYA</span>
+          <span style={{ color: "#a5b4fc", fontSize: 48, marginLeft: -6, marginBottom: 6 }}>.finance</span>
         </div>
         <div style={{ fontSize: 44, marginTop: 28, color: "#e4e4e7" }}>
           Страхування авто онлайн

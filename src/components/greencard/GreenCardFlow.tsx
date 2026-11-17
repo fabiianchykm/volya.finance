@@ -193,7 +193,7 @@ export function GreenCardFlow() {
       <>
         <Navbar solid />
         <section className="min-h-screen pt-20 pb-10">
-          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
+          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-7xl" : "max-w-3xl"}`}>
             {step === "offers" ? (
               <GreenCardOffers
                 offers={offers}
@@ -312,7 +312,7 @@ function GreenCardOffers({
   const auto = vehicle ? [vehicle.mark, vehicle.model].filter(Boolean).join(" ") + (vehicle.year ? `, ${vehicle.year}` : "") : t({ uk: "Авто", en: "Vehicle" });
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="mx-auto max-w-7xl">
       <div className="flex flex-col items-start gap-6 lg:flex-row">
         <div className="min-w-0 flex-1">
       {/* Картка-підсумок */}

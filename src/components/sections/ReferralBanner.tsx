@@ -43,7 +43,7 @@ export function ReferralBanner() {
 
   return (
     <section className="bg-[#FAFAFA] py-10 dark:bg-[#0f0f11] sm:py-12">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="relative overflow-hidden rounded-[2rem] p-8 shadow-xl shadow-indigo-950/10 sm:p-12" style={{ backgroundImage: "linear-gradient(135deg, #1e1b4b 0%, #4338ca 45%, #6d28d9 100%)" }}>
           <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-violet-500/30 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl" />

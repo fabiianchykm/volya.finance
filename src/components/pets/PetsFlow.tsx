@@ -127,7 +127,7 @@ export function PetsFlow() {
       <>
         <Navbar solid />
         <section className="min-h-screen pt-20 pb-10">
-          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-[1200px]" : "max-w-3xl"}`}>
+          <div className={`mx-auto px-4 sm:px-6 ${step === "offers" ? "max-w-7xl" : "max-w-3xl"}`}>
             {step === "offers" ? (
               <div className="flex flex-col items-start gap-6 lg:flex-row">
                 <div className="min-w-0 flex-1">

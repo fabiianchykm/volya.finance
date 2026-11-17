@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <>
       <Navbar solid />
       <main className="flex-1 bg-[#FAFAFA] dark:bg-[#0f0f11] pt-24 pb-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
             <AdminSidebar />
             <div className="min-w-0 flex-1">{children}</div>
