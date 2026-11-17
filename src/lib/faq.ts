@@ -391,6 +391,65 @@ export const FAQ_WEAPON: FaqItem[] = [
   },
 ];
 
+export const FAQ_VIGNETTE: FaqItem[] = [
+  {
+    question: "Що таке віньєтка і в яких країнах вона потрібна?",
+    answer:
+      "Віньєтка — це передплата за проїзд автобанами й швидкісними дорогами. Вона обовʼязкова в Австрії, Чехії, Словаччині, Угорщині, Словенії, Швейцарії, Румунії, Болгарії та Молдові. У Польщі, Німеччині, Хорватії, Італії, Франції та Іспанії віньєток немає — там платять за окремі ділянки, мости чи тунелі.",
+    questionEn: "What is a vignette and where is it required?",
+    answerEn:
+      "A vignette is a prepaid toll for motorways and expressways. It is mandatory in Austria, Czechia, Slovakia, Hungary, Slovenia, Switzerland, Romania, Bulgaria and Moldova. Poland, Germany, Croatia, Italy, France and Spain have no vignettes — you pay for specific sections, bridges or tunnels instead.",
+  },
+  {
+    question: "Чи потрібна наліпка на скло?",
+    answer:
+      "Ні. Усі країни зі списку вже перейшли на електронні віньєтки: вона реєструється на державний номер авто, а камери на дорогах звіряють його з базою автоматично. Достатньо мати підтвердження оператора в телефоні.",
+    questionEn: "Do I need a windscreen sticker?",
+    answerEn:
+      "No. Every country on the list has moved to e-vignettes: it is registered to your plate number and roadside cameras check it against the database automatically. Keep the operator's confirmation on your phone.",
+  },
+  {
+    question: "Скільки коштує віньєтка у 2026 році?",
+    answer:
+      "Для легкового авто до 3,5 т орієнтовно: Австрія — 10 днів €12.80, 2 місяці €32, рік €106.80; Чехія — 10 днів 310 Kč, 30 днів 440 Kč, рік 2 570 Kč; Словаччина — 10 днів €12, рік €90; Угорщина — 10 днів 6 900 Ft; Словенія — 7 днів €16, рік €117.50; Швейцарія — лише річна, CHF 40; Румунія — 10 днів близько €6; Болгарія — 7 днів €10. Точну суму в гривні назве менеджер.",
+    questionEn: "How much does a vignette cost in 2026?",
+    answerEn:
+      "For a car up to 3.5 t, roughly: Austria — 10 days €12.80, 2 months €32, year €106.80; Czechia — 10 days CZK 310, 30 days CZK 440, year CZK 2,570; Slovakia — 10 days €12, year €90; Hungary — 10 days HUF 6,900; Slovenia — 7 days €16, year €117.50; Switzerland — annual only, CHF 40; Romania — 10 days about €6; Bulgaria — 7 days €10. The manager quotes the exact price in UAH.",
+  },
+  {
+    question: "З якого дня діє віньєтка?",
+    answer:
+      "З дати, яку ви вкажете в заявці — її можна обрати наперед, до року вперед. Віньєтка на 10 днів діє 10 календарних днів поспіль починаючи з обраної дати, тож оберіть день, коли реально вʼїдете на автобан.",
+    questionEn: "From which day is the vignette valid?",
+    answerEn:
+      "From the date you choose in the request — it can be set in advance, up to a year ahead. A 10-day vignette covers 10 consecutive calendar days from that date, so pick the day you actually enter the motorway.",
+  },
+  {
+    question: "Який штраф за проїзд без віньєтки?",
+    answer:
+      "Австрія — €120 на місці, до €300 і більше при оскарженні; Чехія — до 20 000 Kč; Словаччина — від €150; Угорщина — 20–30 тис. Ft; Словенія — €300–800; Швейцарія — CHF 200 плюс вартість віньєтки. Камери фіксують номер автоматично, штраф надсилають поштою навіть на українські номери.",
+    questionEn: "What is the fine for driving without a vignette?",
+    answerEn:
+      "Austria — €120 on the spot, €300+ if contested; Czechia — up to CZK 20,000; Slovakia — from €150; Hungary — HUF 20–30k; Slovenia — €300–800; Switzerland — CHF 200 plus the vignette price. Cameras capture the plate automatically and fines are mailed even to Ukrainian-registered cars.",
+  },
+  {
+    question: "Що потрібно, щоб оформити?",
+    answer:
+      "Державний номер авто, країна реєстрації, тип авто (легкове, мотоцикл, кемпер), країни маршруту, строк і дата початку. Паспорт чи техпаспорт не потрібні. Після оплати в гривні менеджер реєструє віньєтку в офіційного оператора й надсилає підтвердження в Telegram, Viber або на email.",
+    questionEn: "What do I need to apply?",
+    answerEn:
+      "Your plate number, country of registration, vehicle type (car, motorcycle, camper), countries on the route, period and start date. No passport or registration certificate needed. After payment in UAH the manager registers the vignette with the official operator and sends the confirmation via Telegram, Viber or email.",
+  },
+  {
+    question: "Авто понад 3,5 т або з причепом — теж віньєтка?",
+    answer:
+      "Для авто понад 3,5 т в Австрії, Чехії, Словаччині, Угорщині та Словенії діє дорожній збір за кілометр (GO-Box, Mýto, HU-GO, DarsGo) — це окрема реєстрація, допоможемо з нею вручну. Причіп до легкового авто в більшості країн додаткової віньєтки не потребує, крім Словенії (клас 2B для авто з причепом заввишки понад 1,3 м).",
+    questionEn: "Over 3.5 t or with a trailer — also a vignette?",
+    answerEn:
+      "Vehicles over 3.5 t in Austria, Czechia, Slovakia, Hungary and Slovenia pay a per-kilometre toll (GO-Box, Mýto, HU-GO, DarsGo) — a separate registration we help with manually. A trailer behind a car needs no extra vignette in most countries, except Slovenia (class 2B for cars over 1.3 m high with a trailer).",
+  },
+];
+
 export const FAQ_BY_PRODUCT: Record<string, FaqItem[]> = {
   osago: FAQ_OSAGO,
   kasko: FAQ_KASKO,
@@ -401,6 +460,7 @@ export const FAQ_BY_PRODUCT: Record<string, FaqItem[]> = {
   housing: FAQ_HOUSING,
   accident: FAQ_ACCIDENT,
   weapon: FAQ_WEAPON,
+  vignette: FAQ_VIGNETTE,
 };
 
 export function faqFor(product: string): FaqItem[] {

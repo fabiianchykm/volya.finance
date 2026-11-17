@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, LogIn, FileText, Star, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Crosshair, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
+import { Menu, X, LogOut, LogIn, FileText, Star, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Crosshair, Route, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
 import { isAdminClient } from "@/lib/admin";
 import { emitNavReset } from "@/lib/nav-reset";
 import { Wordmark } from "./VMark";
@@ -25,6 +25,7 @@ const MATERIAL_LINKS: NavItem[] = [
   { label: "КАСКО", labelEn: "CASCO", href: "/kasko", icon: Car, desc: "Повний захист авто", descEn: "Full protection for your car" },
   { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше", descEn: "Key risks, for less" },
   { label: "Зелена карта", labelEn: "Green Card", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон", descEn: "For trips abroad" },
+  { label: "Віньєтка", labelEn: "Vignette", href: "/vignette", icon: Route, desc: "Платні дороги Європи", descEn: "European toll roads" },
   { label: "Житло", labelEn: "Property", href: "/housing", icon: Home, desc: "Захист квартири чи будинку", descEn: "Protection for your flat or house" },
 ];
 // «Особисте» — здоровʼя/подорожі/улюбленці.

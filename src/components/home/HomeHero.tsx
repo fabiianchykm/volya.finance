@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Gift, Crosshair, ArrowRight, ChevronRight, BadgeCheck, Clock3, Building2, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Gift, Crosshair, Route, ArrowRight, ChevronRight, BadgeCheck, Clock3, Building2, type LucideIcon } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
 
 // Головна: темний герой (той самий градієнт, що й на сторінках продуктів) і «бенто»
@@ -44,6 +44,7 @@ const FEATURED: Featured[] = [
 const MORE: { href: string; icon: LucideIcon; title: Tr; desc: Tr; badge?: Tr }[] = [
   { href: "/kasko", icon: ShieldCheck, title: { uk: "КАСКО", en: "CASCO" }, desc: { uk: "Повний захист авто від ДТП, викрадення, стихії", en: "Full cover: accidents, theft, natural disasters" } },
   { href: "/mini-kasko", icon: Coins, title: { uk: "Міні-КАСКО", en: "Mini-CASCO" }, desc: { uk: "Ключові ризики за доступною ціною", en: "Key risks at an affordable price" } },
+  { href: "/vignette", icon: Route, title: { uk: "Віньєтка", en: "Vignette" }, desc: { uk: "Платні дороги Європи за номером авто", en: "European toll roads by plate number" } },
   { href: "/housing", icon: Home, title: { uk: "Житло", en: "Property" }, desc: { uk: "Квартира чи будинок — від пожежі й затоплення", en: "Flat or house — fire, flooding and more" } },
   { href: "/pets", icon: PawPrint, title: { uk: "Тварини", en: "Pets" }, desc: { uk: "Ветеринарні витрати для котів і собак", en: "Vet costs for cats and dogs" } },
   { href: "/accident", icon: HeartPulse, title: { uk: "Нещасні випадки", en: "Accident" }, desc: { uk: "Виплата при травмі — від 159 грн на рік", en: "Payout for injury — from UAH 159 a year" } },
@@ -98,7 +99,7 @@ export function HomeHero() {
                 key={href}
                 href={href}
                 className={`group flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200/70 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/5 hover:ring-indigo-200 dark:bg-zinc-900 dark:ring-zinc-700 dark:hover:ring-indigo-800 ${
-                  href === "/gift" ? "sm:col-span-2 lg:col-span-3 bg-gradient-to-r from-indigo-50 via-white to-violet-50 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-violet-950/30" : ""
+                  href === "/gift" ? "lg:col-span-2 bg-gradient-to-r from-indigo-50 via-white to-violet-50 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-violet-950/30" : ""
                 }`}
               >
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white dark:bg-indigo-950/40 dark:text-indigo-400">

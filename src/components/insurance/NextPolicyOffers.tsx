@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Car, Gift, Globe, HeartPulse, Home, PawPrint, Plane, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, Car, Gift, Globe, HeartPulse, Home, PawPrint, Plane, Route, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/analytics";
 import { GIFT_LAUNCH_LABEL, GIFT_PRESETS, isGiftLaunched } from "@/lib/gift-constants";
@@ -11,7 +11,7 @@ import { GIFT_LAUNCH_LABEL, GIFT_PRESETS, isGiftLaunched } from "@/lib/gift-cons
 // туристичне → НВ/Зелена карта, житло → тварини/НВ…), а внизу завжди подарунковий
 // сертифікат. Лише посилання на калькулятори, без автозаповнення — клієнт сам вирішує.
 
-type ProductKey = "osago" | "greencard" | "kasko" | "mini-kasko" | "accident" | "tourism" | "housing" | "pets";
+type ProductKey = "osago" | "greencard" | "kasko" | "mini-kasko" | "accident" | "tourism" | "housing" | "pets" | "vignette";
 type Tr = { uk: string; en: string };
 
 const CATALOG: Record<ProductKey, { href: string; icon: LucideIcon; title: Tr; tint: string; hint?: Tr }> = {
@@ -23,6 +23,7 @@ const CATALOG: Record<ProductKey, { href: string; icon: LucideIcon; title: Tr; t
   tourism: { href: "/tourism", icon: Plane, title: { uk: "Туристичне", en: "Travel insurance" }, tint: "from-cyan-500 to-sky-700", hint: { uk: "Шенген і весь світ", en: "Schengen & worldwide" } },
   housing: { href: "/housing", icon: Home, title: { uk: "Житло", en: "Property" }, tint: "from-amber-500 to-orange-700", hint: { uk: "квартира чи будинок", en: "flat or house" } },
   pets: { href: "/pets", icon: PawPrint, title: { uk: "Тварини", en: "Pets" }, tint: "from-emerald-500 to-teal-700", hint: { uk: "коти й собаки", en: "cats and dogs" } },
+  vignette: { href: "/vignette", icon: Route, title: { uk: "Віньєтка", en: "Vignette" }, tint: "from-slate-600 to-indigo-700", hint: { uk: "9 країн Європи", en: "9 European countries" } },
 };
 
 type Suggestion = { key: ProductKey; tag: Tr; text: Tr };
@@ -41,8 +42,8 @@ const PLAN: Record<ProductKey, { heading: Tr; items: Suggestion[] }> = {
     heading: { uk: "За кордон їдете захищеними. Доповніть поїздку", en: "You're covered abroad. Complete the trip" },
     items: [
       { key: "tourism", tag: { uk: "Для подорожі", en: "For the trip" }, text: { uk: "Лікування за кордоном коштує тисячі євро — туристичне покриє медичні витрати в дорозі.", en: "Medical care abroad costs thousands — travel insurance covers it on the road." } },
+      { key: "vignette", tag: { uk: "На той самий маршрут", en: "Same route" }, text: { uk: "Автобани Австрії, Чехії, Словаччини чи Угорщини платні — оформимо віньєтку на номер авто з потрібної дати.", en: "Motorways in Austria, Czechia, Slovakia or Hungary are tolled — we register a vignette to your plate from the date you need." } },
       { key: "mini-kasko", tag: { uk: "Те саме авто", en: "Same car" }, text: { uk: "Зелена карта покриває шкоду іншим. Міні-КАСКО — ремонт вашого авто після ДТП.", en: "The Green Card covers damage to others. Mini-CASCO covers repairs to your own car." } },
-      { key: "accident", tag: { uk: "Водій і пасажири", en: "Driver & passengers" }, text: { uk: "Виплата при травмі в ДТП — у поїздці й удома, цілий рік.", en: "A payout if injured in an accident — on the trip and at home, all year." } },
     ],
   },
   kasko: {
@@ -66,7 +67,7 @@ const PLAN: Record<ProductKey, { heading: Tr; items: Suggestion[] }> = {
     items: [
       { key: "accident", tag: { uk: "Для вас", en: "For you" }, text: { uk: "Травма не лише в поїздці: виплата при нещасному випадку цілий рік, де б ви не були.", en: "Injury cover beyond the trip: a payout after an accident all year, wherever you are." } },
       { key: "greencard", tag: { uk: "Своїм авто", en: "Own car" }, text: { uk: "Їдете автівкою? За кордоном для неї потрібна Зелена карта.", en: "Driving your own car? It needs a Green Card abroad." } },
-      { key: "housing", tag: { uk: "Поки вас немає", en: "While away" }, text: { uk: "Застрахуйте квартиру від затоплення, пожежі й крадіжки на час відпустки.", en: "Insure your home against flooding, fire and theft while you're on holiday." } },
+      { key: "vignette", tag: { uk: "Своїм авто", en: "Own car" }, text: { uk: "Платні автобани Європи — віньєтка за номером авто з дати виїзду, без наліпок і кас.", en: "European toll motorways — a vignette by plate number from your departure date, no stickers or booths." } },
     ],
   },
   accident: {
@@ -83,6 +84,14 @@ const PLAN: Record<ProductKey, { heading: Tr; items: Suggestion[] }> = {
       { key: "pets", tag: { uk: "Улюбленці", en: "Pets" }, text: { uk: "Є кіт чи собака? Страхування покриє лікування у ветеринара.", en: "Have a cat or a dog? Pet insurance covers vet treatment." } },
       { key: "accident", tag: { uk: "Для родини", en: "For family" }, text: { uk: "Виплата при травмі чи нещасному випадку — для вас і близьких.", en: "A payout after an injury or accident — for you and your family." } },
       { key: "osago", tag: { uk: "Є авто?", en: "Have a car?" }, text: { uk: "Автоцивілка за номером авто — порівняння 21+ страхових за хвилину.", en: "MTPL by plate number — compare 21+ insurers in a minute." } },
+    ],
+  },
+  vignette: {
+    heading: { uk: "Дороги оплачено. А авто й люди в ньому?", en: "Tolls are paid. What about the car and the people in it?" },
+    items: [
+      { key: "greencard", tag: { uk: "Обовʼязково в ЄС", en: "Mandatory in the EU" }, text: { uk: "Без Зеленої карти за кордон не випустять — міжнародна автоцивілка за номером авто.", en: "You can't cross the border without a Green Card — international MTPL by plate number." } },
+      { key: "tourism", tag: { uk: "Для подорожі", en: "For the trip" }, text: { uk: "Лікування за кордоном коштує тисячі євро — туристичне покриє медичні витрати в дорозі.", en: "Medical care abroad costs thousands — travel insurance covers it on the road." } },
+      { key: "mini-kasko", tag: { uk: "Те саме авто", en: "Same car" }, text: { uk: "Ремонт вашого авто після ДТП у поїздці — міні-КАСКО за доступною ціною.", en: "Repairs to your car after an accident on the trip — Mini-CASCO at a fair price." } },
     ],
   },
   pets: {
@@ -105,6 +114,7 @@ function normalizeProduct(p?: string | null): ProductKey {
   if (v === "tourism" || v.includes("турист")) return "tourism";
   if (v === "housing" || v === "home" || v.includes("житл")) return "housing";
   if (v === "pets" || v.includes("тварин")) return "pets";
+  if (v === "vignette" || v.includes("віньєт")) return "vignette";
   return "osago";
 }
 
