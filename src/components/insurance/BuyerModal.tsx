@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { BadgePercent, X } from "lucide-react";
+import { ProfilePicker } from "@/components/insurance/ProfilePicker";
+import { listProfiles, fetchServerProfiles, type CustomerProfile } from "@/lib/customer-profile";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { DateInput, parseUaDate } from "@/components/ui/DateInput";
@@ -42,6 +45,30 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
   const [ageError, setAgeError] = useState(false);
   const [wasOpen, setWasOpen] = useState(false);
 
+  // Збережені особи акаунта — щоб не вбивати ДН та ІПН руками (як на оформленні).
+  const { status: authStatus } = useSession();
+  const [savedProfiles, setSavedProfiles] = useState<CustomerProfile[]>([]);
+  const [picked, setPicked] = useState<CustomerProfile | null>(null);
+  useEffect(() => {
+    if (!open || authStatus !== "authenticated") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSavedProfiles(listProfiles());
+    void fetchServerProfiles().then((all) => setSavedProfiles(all));
+  }, [open, authStatus]);
+  const pickable = savedProfiles.filter((p) => parseUaDate(p.dateBirth ?? "") || /^\d{10}$/.test(p.identificationCode ?? ""));
+  const applyProfile = (p: CustomerProfile) => {
+    setPicked(p);
+    if (parseUaDate(p.dateBirth ?? "")) {
+      setPolicyholderBirth(p.dateBirth);
+      setPhError(false);
+      // Якщо в профілі є окрема ДН наймолодшого водія — беремо її, інакше та сама людина.
+      if (p.youngestBirthDate && parseUaDate(p.youngestBirthDate) && p.youngestBirthDate !== p.dateBirth) { setYoungestBirth(p.youngestBirthDate); setSameAsPh(false); }
+      else { setYoungestBirth(p.dateBirth); setSameAsPh(true); }
+      setAgeError(false);
+    }
+    if (/^\d{10}$/.test(p.identificationCode ?? "")) { setIpn(p.identificationCode); setIpnError(false); }
+  };
+
   // Засіваємо форму поточними даними в момент відкриття (як у VehicleConfirmModal).
   if (open && !wasOpen) {
     setWasOpen(true);
@@ -53,6 +80,7 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
     setIpn(buyer.identificationCode ?? "");
     setIpnError(false);
     setAgeError(false);
+    setPicked(null);
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
@@ -143,11 +171,13 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
           </div>
         )}
 
+        <ProfilePicker profiles={pickable} selected={picked} onPick={applyProfile} label={t({ uk: "Обрати збережену особу", en: "Choose a saved person" })} className="mb-0" />
+
         <div>
           <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Дата народження людини, на яку оформлюється страхування", en: "Date of birth of the person the insurance is issued for" })}</label>
           <DateInput
             value={policyholderBirth}
-            onChange={(v) => { setPolicyholderBirth(v); if (sameAsPh) setYoungestBirth(v); if (phError) setPhError(false); }}
+            onChange={(v) => { setPolicyholderBirth(v); if (sameAsPh) setYoungestBirth(v); if (phError) setPhError(false); if (picked && v !== picked.dateBirth) setPicked(null); }}
             defaultYear={1990}
             required
             error={phError && !dobOk(policyholderBirth) ? t({ uk: "Вкажіть коректну дату (18–99 років)", en: "Enter a valid date (18–99 years)" }) : undefined}
@@ -158,11 +188,11 @@ export function BuyerModal({ open, onClose, buyer, onConfirm, loading, required 
           <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
             <input
               type="checkbox"
-              checked={sameAsPh}
-              onChange={(e) => { setSameAsPh(e.target.checked); if (e.target.checked) { setYoungestBirth(policyholderBirth); setAgeError(false); } }}
+              checked={!sameAsPh}
+              onChange={(e) => { const other = e.target.checked; setSameAsPh(!other); if (!other) { setYoungestBirth(policyholderBirth); setAgeError(false); } }}
               className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600"
             />
-            {t({ uk: "Наймолодший водій — та сама людина (дата народження збігається)", en: "The youngest driver is the same person (same date of birth)" })}
+            {t({ uk: "Авто також водить молодша людина (вкажу її дату народження)", en: "A younger person also drives the car (I'll add their date of birth)" })}
           </label>
           {!sameAsPh && (
             <div>

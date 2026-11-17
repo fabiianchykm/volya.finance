@@ -1275,11 +1275,11 @@ function CheckoutCustomerForm({ onSubmit, privilegeId = 1, initialPolicyholderBi
             <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
             <input
               type="checkbox"
-              checked={sameDob}
-              onChange={(e) => { setSameDob(e.target.checked); if (e.target.checked) { setYoungestBirth(form.dateBirth); setYoungestErr(false); } }}
+              checked={!sameDob}
+              onChange={(e) => { const other = e.target.checked; setSameDob(!other); if (!other) { setYoungestBirth(form.dateBirth); setYoungestErr(false); } }}
               className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600"
             />
-            {t({ uk: "Наймолодший водій — та сама людина (дата народження збігається)", en: "The youngest driver is the same person (same date of birth)" })}
+            {t({ uk: "Авто також водить молодша людина (вкажу її дату народження)", en: "A younger person also drives the car (I'll add their date of birth)" })}
           </label>
             {!sameDob && (
               <DateInput

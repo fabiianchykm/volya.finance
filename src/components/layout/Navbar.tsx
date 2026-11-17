@@ -181,18 +181,19 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
           ) : session?.user ? (
             <UserMenu scrolled={opaque} user={session.user} />
           ) : (
-            <Button
-              size="md"
-              variant="primary"
-              className={cn(
-                "flex items-center gap-2",
-                !opaque ? "bg-white text-indigo-700 hover:bg-white/90 shadow-none" : ""
-              )}
+            <button
+              type="button"
               onClick={() => openLogin()}
+              className={cn(
+                "inline-flex h-10 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
+                opaque
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/25 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  : "bg-white/10 text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/20"
+              )}
             >
               <LogIn className="h-4 w-4" />
               {t({ uk: "Увійти", en: "Sign in" })}
-            </Button>
+            </button>
           )}
         </div>
 
@@ -312,15 +313,14 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    size="md"
-                    variant="primary"
-                    className="w-full flex items-center justify-center gap-2"
+                  <button
+                    type="button"
                     onClick={() => { setMobileOpen(false); openLogin(); }}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.99]"
                   >
                     <LogIn className="h-4 w-4" />
                     {t({ uk: "Увійти", en: "Sign in" })}
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
