@@ -68,7 +68,7 @@ export function InsurersSection() {
       <div className="pointer-events-none absolute -top-24 left-1/4 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-indigo-200/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 right-1/4 h-72 w-[40rem] translate-x-1/2 rounded-full bg-violet-200/25 blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-6 sm:px-10">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}

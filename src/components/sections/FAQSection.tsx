@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FAQ_ITEMS, type FaqItem } from "@/lib/faq";
 import { useI18n } from "@/lib/i18n";
+import { SectionHeading } from "./SectionHeading";
 
 function FAQItem({ faq, index }: { faq: FaqItem; index: number }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -70,16 +71,13 @@ export function FAQSection({
 }) {
   const { t } = useI18n();
   return (
-    <section id="faq" className="bg-[#FAFAFA] dark:bg-[#0f0f11] py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-6 sm:px-10">
-        <div className="mb-14 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">
-            {t({ uk: "Поширені запитання", en: "Frequently asked questions" })}
-          </h2>
-          <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-300">
-            {subtitle ?? t({ uk: "Усе, що потрібно знати про електронну автоцивілку", en: "Everything you need to know about the electronic OSAGO policy" })}
-          </p>
-        </div>
+    <section id="faq" className="bg-[#FAFAFA] py-16 dark:bg-[#0f0f11] sm:py-20">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <SectionHeading
+          eyebrow="FAQ"
+          title={t({ uk: "Поширені запитання", en: "Frequently asked questions" })}
+          subtitle={subtitle ?? t({ uk: "Усе, що потрібно знати про електронну автоцивілку", en: "Everything you need to know about the electronic OSAGO policy" })}
+        />
 
         <div>
           {items.map((faq, index) => (

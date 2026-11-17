@@ -5,14 +5,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A47862] disabled:pointer-events-none disabled:opacity-50 select-none",
+  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 disabled:pointer-events-none disabled:opacity-50 select-none",
   {
     variants: {
       variant: {
         primary:
-          "bg-[#A47862] text-white hover:bg-[#8F6550] active:scale-[0.98] shadow-lg shadow-[#A47862]/20",
+          "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98] shadow-lg shadow-indigo-600/20 dark:bg-indigo-500 dark:hover:bg-indigo-400",
         secondary:
-          "bg-white dark:bg-zinc-900 text-[#A47862] border border-[#A47862]/30 hover:bg-[#A47862]/10 active:scale-[0.98]",
+          "bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 active:scale-[0.98] dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900 dark:hover:bg-indigo-950/70",
         ghost:
           "bg-transparent text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-[0.98]",
         danger:

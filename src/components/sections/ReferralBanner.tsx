@@ -42,22 +42,23 @@ export function ReferralBanner() {
   };
 
   return (
-    <section className="bg-[#FAFAFA] dark:bg-[#0f0f11] py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 shadow-xl shadow-indigo-500/10 sm:p-10">
-          <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-10 h-52 w-52 rounded-full bg-white/5 blur-2xl" />
+    <section className="bg-[#FAFAFA] py-10 dark:bg-[#0f0f11] sm:py-12">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="relative overflow-hidden rounded-[2rem] p-8 shadow-xl shadow-indigo-950/10 sm:p-12" style={{ backgroundImage: "linear-gradient(135deg, #1e1b4b 0%, #4338ca 45%, #6d28d9 100%)" }}>
+          <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-violet-500/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-indigo-400/20 blur-3xl" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "44px 44px" }} />
 
           <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
                 <Gift className="h-7 w-7 text-white" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
                   {t({ uk: "Запрошуй друзів — отримуй 5% бонус", en: "Invite friends — get a 5% bonus" })}
                 </h2>
-                <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-indigo-100">
+                <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-indigo-200">
                   {t({ uk: "Ділися своїм посиланням: друг оформлює поліс — ти отримуєш 5% від його вартості на рахунок.", en: "Share your link: a friend buys a policy — you receive 5% of its value to your account." })}
                 </p>
               </div>
