@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Gift, ArrowRight, ChevronRight, BadgeCheck, Clock3, Building2, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Gift, Crosshair, ArrowRight, ChevronRight, BadgeCheck, Clock3, Building2, type LucideIcon } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
 
 // Головна: темний герой (той самий градієнт, що й на сторінках продуктів) і «бенто»
@@ -47,6 +47,7 @@ const MORE: { href: string; icon: LucideIcon; title: Tr; desc: Tr; badge?: Tr }[
   { href: "/housing", icon: Home, title: { uk: "Житло", en: "Property" }, desc: { uk: "Квартира чи будинок — від пожежі й затоплення", en: "Flat or house — fire, flooding and more" } },
   { href: "/pets", icon: PawPrint, title: { uk: "Тварини", en: "Pets" }, desc: { uk: "Ветеринарні витрати для котів і собак", en: "Vet costs for cats and dogs" } },
   { href: "/accident", icon: HeartPulse, title: { uk: "Нещасні випадки", en: "Accident" }, desc: { uk: "Виплата при травмі — від 159 грн на рік", en: "Payout for injury — from UAH 159 a year" } },
+  { href: "/weapon", icon: Crosshair, title: { uk: "Зброя", en: "Firearms" }, desc: { uk: "Поліс власника зброї для дозволу — від 100 грн", en: "Owner's liability policy for the permit — from UAH 100" } },
   { href: "/gift", icon: Gift, title: { uk: "Подарунковий сертифікат", en: "Gift certificate" }, desc: { uk: "Подаруйте будь-який поліс", en: "Give any policy as a gift" }, badge: { uk: "з 1 січня", en: "from 1 Jan" } },
 ];
 

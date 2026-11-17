@@ -49,6 +49,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
   products: [
     { label: "Автоцивілка", labelEn: "Car insurance (OSAGO)", href: "/osago" },
     { label: "Житло", labelEn: "Property", href: "/housing" },
+    { label: "Зброя", labelEn: "Firearms", href: "/weapon" },
     { label: "Зелена карта", labelEn: "Green Card", href: "/green-card" },
     { label: "КАСКО", labelEn: "CASCO", href: "/kasko" },
     { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko" },

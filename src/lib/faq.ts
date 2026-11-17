@@ -340,6 +340,57 @@ const FAQ_ACCIDENT: FaqItem[] = [
   },
 ];
 
+export const FAQ_WEAPON: FaqItem[] = [
+  {
+    question: "Чи обовʼязково страхувати зброю?",
+    answer:
+      "Так. Громадяни, які мають у власності чи користуванні зброю, зобовʼязані застрахувати свою цивільну відповідальність перед третіми особами. Чинний поліс вимагають при отриманні дозволу на зброю та при кожному його продовженні.",
+    questionEn: "Is firearms insurance mandatory?",
+    answerEn:
+      "Yes. Citizens who own or use firearms must insure their civil liability towards third parties. A valid policy is required when obtaining a firearms permit and at every renewal.",
+  },
+  {
+    question: "Яка зброя підлягає страхуванню?",
+    answer:
+      "Мисливська гладкоствольна та нарізна, травматична (пристрої для відстрілу гумових куль), газові пістолети й револьвери, пневматична зброя калібру понад 4,5 мм зі швидкістю кулі понад 100 м/с, холодна та нагородна зброя. Кілька одиниць можна включити в один договір.",
+    questionEn: "Which weapons must be insured?",
+    answerEn:
+      "Hunting smoothbore and rifled firearms, traumatic (rubber-bullet) devices, gas pistols and revolvers, pneumatic weapons over 4.5 mm calibre with a muzzle velocity above 100 m/s, cold steel and award weapons. Several units can be covered by one contract.",
+  },
+  {
+    question: "Скільки коштує поліс?",
+    answer:
+      "Орієнтовно від 100 грн на рік за одну одиницю залежно від страхової суми, строку та страхової компанії. Поліс на 3 роки зазвичай вигідніший і збігається зі строком дії дозволу. Точну вартість менеджер назве після заявки.",
+    questionEn: "How much does the policy cost?",
+    answerEn:
+      "Roughly from UAH 100 a year per unit, depending on the sum insured, term and insurer. A 3-year policy is usually better value and matches the permit term. The manager quotes the exact price after your request.",
+  },
+  {
+    question: "Що покриває страховка?",
+    answer:
+      "Шкоду життю, здоровʼю або майну третіх осіб, заподіяну внаслідок володіння чи використання зброї. Шкода самому власнику, його зброї або події у стані спʼяніння не покриваються.",
+    questionEn: "What does the policy cover?",
+    answerEn:
+      "Harm to the life, health or property of third parties caused by owning or using the weapon. Harm to the owner, to the weapon itself, or incidents under the influence are not covered.",
+  },
+  {
+    question: "Які документи потрібні?",
+    answer:
+      "Паспорт або ID-картка та ІПН власника, дозвіл на зброю (номер, ким і коли виданий) і дані зброї: вид, модель, калібр, серійний номер. Фото документів можна надіслати менеджеру в Telegram або Viber.",
+    questionEn: "What documents are needed?",
+    answerEn:
+      "The owner's passport or ID card and tax number, the firearms permit (number, issuer, date) and the weapon details: type, model, calibre, serial number. Photos can be sent to the manager via Telegram or Viber.",
+  },
+  {
+    question: "Як швидко я отримаю поліс?",
+    answer:
+      "Зазвичай протягом 15–30 хвилин у робочий час після підтвердження даних і оплати. Електронний договір надходить на email, його приймає дозвільна система Національної поліції.",
+    questionEn: "How quickly will I get the policy?",
+    answerEn:
+      "Usually within 15–30 minutes during business hours after the details are confirmed and paid. The electronic contract arrives by email and is accepted by the National Police permit office.",
+  },
+];
+
 export const FAQ_BY_PRODUCT: Record<string, FaqItem[]> = {
   osago: FAQ_OSAGO,
   kasko: FAQ_KASKO,
@@ -349,6 +400,7 @@ export const FAQ_BY_PRODUCT: Record<string, FaqItem[]> = {
   pets: FAQ_PETS,
   housing: FAQ_HOUSING,
   accident: FAQ_ACCIDENT,
+  weapon: FAQ_WEAPON,
 };
 
 export function faqFor(product: string): FaqItem[] {
