@@ -427,7 +427,7 @@ export function OfferCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`relative overflow-hidden rounded-2xl border bg-white transition-all duration-200 dark:bg-zinc-900 shadow-[0_10px_30px_-14px_rgba(30,16,96,0.28)] lg:shadow-sm ${
+      className={`relative rounded-2xl border bg-white transition-all duration-200 dark:bg-zinc-900 shadow-[0_10px_30px_-14px_rgba(30,16,96,0.28)] lg:shadow-sm ${
         selected
           ? "border-indigo-400 shadow-md shadow-indigo-100 ring-1 ring-indigo-400"
           : "border-zinc-200/80 hover:border-zinc-300 lg:hover:shadow-md dark:border-zinc-800 dark:hover:border-zinc-700"
@@ -489,38 +489,41 @@ export function OfferCard({
           )}
         </div>
 
-        {/* Підвал: ціна ліворуч, «Купити» праворуч */}
-        <div className="flex items-center justify-between gap-3 border-t border-zinc-100 bg-zinc-50/80 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/40">
-          <div className="min-w-0">
-            {strikePrice && (
-              <span className="flex items-center gap-1.5">
-                <span className="text-xs tabular-nums text-zinc-400 line-through dark:text-zinc-500">{formatPrice(strikePrice)}</span>
-                {discountPct != null && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">−{Math.round(discountPct)}%</span>}
-              </span>
-            )}
-            <p className="text-2xl font-bold leading-none tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100">{formatPrice(totalPrice)}</p>
+        {/* Підвал: ціна зі знижкою ліворуч, бонус праворуч, «Купити поліс» на всю
+            ширину, «Детальніше» окремим рядком під лінією. */}
+        <div className="rounded-b-2xl border-t border-zinc-100 bg-zinc-50/80 px-4 pb-3 pt-4 dark:border-zinc-800 dark:bg-zinc-800/40">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              {strikePrice && (
+                <span className="mb-1 flex items-center gap-2">
+                  <span className="text-sm tabular-nums text-zinc-400 line-through dark:text-zinc-500">{formatPrice(strikePrice)}</span>
+                  {discountPct != null && <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white">−{Math.round(discountPct)}%</span>}
+                </span>
+              )}
+              <p className="text-3xl font-bold leading-none tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100">{formatPrice(totalPrice)}</p>
+            </div>
             {bonus > 0 && (
-              <Tooltip className="mt-1 inline-flex cursor-help" content={bonusHint}>
-                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900">
+              <Tooltip className="shrink-0 cursor-help" content={bonusHint}>
+                <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                   +{formatPrice(bonus)} {t({ uk: "бонус", en: "bonus" })}
                 </span>
               </Tooltip>
             )}
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <Button variant="primary" size="md" onClick={() => { onSelect(); onBuy(); }} className="h-11 px-6 text-[15px]">
-              {t({ uk: "Купити", en: "Buy" })}
-            </Button>
-            {canExpand && (
-              <button
-                onClick={() => setExpanded(v => !v)}
-                className="flex items-center gap-0.5 text-xs text-zinc-500 transition-colors hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400"
-              >
-                {t({ uk: "Детальніше", en: "Details" })}
-                {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              </button>
-            )}
-          </div>
+
+          <Button variant="primary" size="lg" onClick={() => { onSelect(); onBuy(); }} className="mt-4 w-full">
+            {t({ uk: "Купити поліс", en: "Buy the policy" })}
+          </Button>
+
+          {canExpand && (
+            <button
+              onClick={() => setExpanded(v => !v)}
+              className="mt-3 flex w-full items-center justify-center gap-1 border-t border-zinc-200/70 pt-3 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:border-zinc-700 dark:text-indigo-400"
+            >
+              {t({ uk: "Детальніше про поліс", en: "More about the policy" })}
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          )}
         </div>
       </div>
 
