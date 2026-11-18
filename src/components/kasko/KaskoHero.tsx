@@ -6,6 +6,8 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatPlate } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { RecentPlates } from "@/components/insurance/RecentPlates";
+import { prettyPlate } from "@/lib/recent-plates";
 
 interface KaskoHeroProps {
   onSearch: (plate: string) => void;
@@ -61,7 +63,7 @@ export function KaskoHero({ onSearch, loading, titleLead, titleLeadEn, titleHigh
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8 w-full pt-4">
-            <div className="relative w-full flex justify-center">
+            <div className="relative flex w-full flex-col items-center gap-3">
               <div className="relative flex rounded-xl overflow-hidden border-4 border-zinc-300 animate-plate-glow" style={{ height: 72 }}>
                 <div className="flex flex-col items-center justify-center bg-blue-700 gap-1" style={{ width: 44 }}>
                   <div className="grid grid-cols-3 gap-[3px]">
@@ -92,6 +94,7 @@ export function KaskoHero({ onSearch, loading, titleLead, titleLeadEn, titleHigh
                   />
                 </div>
               </div>
+              <RecentPlates tone="dark" current={plate} onPick={(p) => { setPlate(prettyPlate(p)); onSearch(p); }} />
             </div>
 
             <Button

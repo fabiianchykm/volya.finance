@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { DateInput } from "@/components/ui/DateInput";
 import { useI18n } from "@/lib/i18n";
+import { RecentPlates } from "@/components/insurance/RecentPlates";
+import { rememberPlate, prettyPlate } from "@/lib/recent-plates";
 import { useFlowReset } from "@/lib/nav-reset";
 import { trackEvent, trackCalc } from "@/lib/analytics";
 import { VIGNETTE_LAUNCHED, VIGNETTE_COUNTRIES, VIGNETTE_PERIODS, VIGNETTE_VEHICLES } from "./vignette-options";
@@ -80,6 +82,7 @@ export function VignetteFlow() {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? t({ uk: "Не вдалося надіслати заявку", en: "Failed to submit the request" }));
+      rememberPlate(plateClean);
       trackEvent("generate_lead", { form: "vignette", product: "vignette" });
       setStep("success");
     } catch (err) {
@@ -217,15 +220,18 @@ export function VignetteFlow() {
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input
-                  label={t({ uk: "Номер авто", en: "Plate number" })}
-                  value={plate}
-                  onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                  placeholder="AA 1234 BB"
-                  autoComplete="off"
-                  maxLength={12}
-                  className="font-semibold uppercase tracking-wider"
-                />
+                <div>
+                  <Input
+                    label={t({ uk: "Номер авто", en: "Plate number" })}
+                    value={plate}
+                    onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                    placeholder="AA 1234 BB"
+                    autoComplete="off"
+                    maxLength={12}
+                    className="font-semibold uppercase tracking-wider"
+                  />
+                  <RecentPlates current={plate} onPick={(p) => setPlate(prettyPlate(p))} className="mt-2 !justify-start" max={3} />
+                </div>
                 <Input label={t({ uk: "Імʼя (необовʼязково)", en: "Name (optional)" })} value={name} onChange={(e) => setName(e.target.value)} placeholder={t({ uk: "Як до вас звертатись", en: "How to address you" })} autoComplete="given-name" maxLength={80} />
               </div>
 

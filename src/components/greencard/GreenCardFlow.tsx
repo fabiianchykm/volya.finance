@@ -9,6 +9,8 @@ import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/off
 import { usePopularity } from "@/lib/use-popularity";
 import { HeroSteps } from "@/components/sections/HeroSteps";
 import { useI18n } from "@/lib/i18n";
+import { RecentPlates } from "@/components/insurance/RecentPlates";
+import { rememberPlate } from "@/lib/recent-plates";
 
 const GC_STEPS = [
   { icon: Globe, label: "Країна та авто", en: "Country & car" },
@@ -129,6 +131,7 @@ export function GreenCardFlow() {
     window.history.replaceState(null, "", `?step=offers&carType=${ct}&territory=${terr}&start=${encodeURIComponent(sUa)}&end=${encodeURIComponent(eUa)}&plate=${encodeURIComponent(num)}`);
     trackEvent("calculate_cost", { product: "greencard" });
     trackCalc("greencard", { carType: ct, territory: terr, start: sUa, end: eUa });
+    rememberPlate(num);
     try {
       const iso = `${sD.getFullYear()}-${String(sD.getMonth() + 1).padStart(2, "0")}-${String(sD.getDate()).padStart(2, "0")}`;
       const res = await fetch("/api/greencard", {
@@ -244,6 +247,7 @@ export function GreenCardFlow() {
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Hash className="h-3.5 w-3.5" /> {t({ uk: "Держномер авто", en: "Licence plate" })}</label>
                     <input type="text" value={plate} onChange={(e) => setPlate(normalizePlate(e.target.value))} placeholder="AA1234BB" autoComplete="off" spellCheck={false} required minLength={6} maxLength={10}
                       className={`${selectClass} font-mono tracking-[0.2em] uppercase placeholder:tracking-normal placeholder:font-sans`} />
+                    <RecentPlates current={plate} onPick={(p) => setPlate(normalizePlate(p))} className="mt-2 !justify-start" max={3} />
                   </div>
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400"><Car className="h-3.5 w-3.5" /> {t({ uk: "Тип авто", en: "Vehicle type" })}</label>

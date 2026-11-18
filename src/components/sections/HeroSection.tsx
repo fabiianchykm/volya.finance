@@ -8,6 +8,8 @@ import { HeroSteps } from "@/components/sections/HeroSteps";
 import { formatPlate } from "@/lib/utils";
 import { logoSrc } from "@/lib/logos";
 import { useI18n } from "@/lib/i18n";
+import { RecentPlates } from "@/components/insurance/RecentPlates";
+import { prettyPlate } from "@/lib/recent-plates";
 
 const heroSteps = [
   { icon: Search, label: { uk: "Номер авто", en: "Car number" } },
@@ -97,7 +99,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
           <HeroSteps steps={steps} />
 
           <form onSubmit={handleSubmit} className="flex flex-col items-center gap-8 w-full pt-4">
-            <div className="relative w-full flex justify-center">
+            <div className="relative flex w-full flex-col items-center gap-3">
               <div className="relative flex rounded-xl overflow-hidden border-4 border-zinc-300 animate-plate-glow" style={{ height: 72 }}>
                 <div className="flex flex-col items-center justify-center bg-blue-700 gap-1" style={{ width: 44 }}>
                   <div className="grid grid-cols-3 gap-[3px]">
@@ -129,6 +131,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
                   />
                 </div>
               </div>
+              <RecentPlates tone="dark" current={plate} onPick={(p) => { setPlate(prettyPlate(p)); onSearch(p); }} />
             </div>
 
             <Button

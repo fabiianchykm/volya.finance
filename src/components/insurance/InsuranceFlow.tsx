@@ -13,6 +13,7 @@ import type { InsuranceOffer } from "@/types/api";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
 import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n } from "@/lib/i18n";
+import { rememberPlate } from "@/lib/recent-plates";
 
 const VehicleConfirmModal = dynamic(() => import("./VehicleConfirmModal").then(mod => mod.VehicleConfirmModal), { ssr: false });
 import type { DriverAges } from "./VehicleConfirmModal";
@@ -97,6 +98,7 @@ export function InsuranceFlow() {
 
       if (json.success) {
         const car = json.data;
+        rememberPlate(car.number ?? plate, { mark: car.mark, model: car.model, year: Number(car.year) || null });
         const vehicle: VehicleData = {
           number: car.number ?? plate,
           vin: car.vin ?? "",
@@ -290,6 +292,7 @@ export function InsuranceFlow() {
         const json = await res.json();
         if (!json.success) return; // не вдалося — лишаємось на головному екрані
         const car = json.data;
+        rememberPlate(car.number ?? plate, { mark: car.mark, model: car.model, year: Number(car.year) || null });
         const vehicle: VehicleData = {
           number: car.number ?? plate,
           vin: car.vin ?? "",

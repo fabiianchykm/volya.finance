@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import type { VehicleData } from "@/types/insurance";
 import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n } from "@/lib/i18n";
+import { rememberPlate } from "@/lib/recent-plates";
 
 const VehicleConfirmModal = dynamic(
   () => import("@/components/insurance/VehicleConfirmModal").then((m) => m.VehicleConfirmModal),
@@ -45,6 +46,7 @@ export function KaskoFlow({ product = "kasko" }: { product?: KaskoProduct }) {
       const json = await res.json();
       if (json.success) {
         const car = json.data;
+        rememberPlate(car.number ?? p, { mark: car.mark, model: car.model, year: Number(car.year) || null });
         setVehicle({
           number: car.number ?? p,
           vin: car.vin ?? "",
