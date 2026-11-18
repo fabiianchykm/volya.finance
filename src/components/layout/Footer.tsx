@@ -40,6 +40,7 @@ function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: s
   );
 }
 import { FooterContact } from "./FooterContact";
+import { FooterSeoText } from "./FooterSeoText";
 
 type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean; /** Зовнішнє посилання — у новій вкладці. */ external?: boolean };
 
@@ -131,15 +132,9 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Довідковий SEO-текст дрібним шрифтом — ПРИРОДНА проза з ключовими фразами,
-            вплетеними органічно (без keyword-stuffing, щоб не отримати штраф Google). */}
-        <div className="border-t border-zinc-200 py-6 dark:border-zinc-800">
-          <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-            {t({
-              uk: "Воля Фінанс (VOLYA.FINANCE) — сервіс онлайн-страхування в Україні. У нас можна оформити автоцивілку (ОСЦПВ / ОСАГО), КАСКО та міні-КАСКО, Зелену карту для виїзду за кордон, туристичне страхування для подорожей і страхування домашніх тварин. Ми порівнюємо ціни від 21+ провідних страхових компаній і показуємо найвигідніші пропозиції, а всі поліси електронні та офіційно зареєстровані в МТСБУ. Розрахуйте вартість і купіть страховку на авто онлайн за кілька хвилин — без черг, візитів до офісу та зайвих документів, з готовим полісом на email. Оформлення доступне по всій Україні: Київ, Львів, Одеса, Харків, Дніпро та інші міста.",
-              en: "Volya Finance (VOLYA.FINANCE) is an online insurance service in Ukraine. Here you can arrange car insurance (OSAGO), CASCO and Mini-CASCO, a Green Card for trips abroad, travel insurance for your journeys and pet insurance. We compare prices from 21+ leading insurance companies and show the best offers, and all policies are electronic and officially registered with MTSBU. Calculate the cost and buy car insurance online in just a few minutes — no queues, office visits or extra paperwork, with a ready policy sent to your email. Available across Ukraine: Kyiv, Lviv, Odesa, Kharkiv, Dnipro and other cities.",
-            })}
-          </p>
+        {/* Довідковий SEO-блок — власний текст про сервіс із внутрішніми посиланнями (FooterSeoText). */}
+        <div className="border-t border-zinc-200 py-7 dark:border-zinc-800">
+          <FooterSeoText />
         </div>
 
         {/* Нижній рядок: копірайт і документи ліворуч, мова · доступність · тема праворуч */}
