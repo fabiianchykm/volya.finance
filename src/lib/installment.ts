@@ -7,6 +7,9 @@
 // розстрочку — перемкнути INSTALLMENT_ENABLED і вписати продукти.
 
 export const INSTALLMENT_ENABLED = false;
+/** При оплаті частинами бонуси й промокоди НЕ застосовуються — списується повна вартість
+ *  (комісію банку покриваємо з маржі, тож знижку з комісії дати не можемо). */
+export const INSTALLMENT_NO_DISCOUNTS = true;
 export const INSTALLMENT_MIN = 500;
 /** Ключі продуктів, де розстрочка доступна (osago, greencard, tourism, housing, pets, accident, mini-kasko, kasko). Порожній = усі. */
 export const INSTALLMENT_PRODUCTS: string[] = [];

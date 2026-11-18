@@ -8,7 +8,7 @@ import { ArrowLeft, Gift, TicketPercent } from "lucide-react";
 import { companyLogo } from "@/lib/logos";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
-import { PaymentMethods } from "./PaymentMethods";
+import { PaymentMethods, type PayMethod } from "./PaymentMethods";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { registerPendingOrder } from "@/lib/pending-order-client";
@@ -92,6 +92,13 @@ export function CheckoutClient() {
   const [bonusAvailable, setBonusAvailable] = useState(0);
   // Скільки бонусів списати: поле з 0 за замовчуванням, клієнт вписує суму сам.
   const [bonusAmount, setBonusAmount] = useState(0);
+  // Спосіб оплати. При розстрочці бонуси й промокод не застосовуються (повна вартість).
+  const [payMethod, setPayMethod] = useState<PayMethod>("card");
+  const installment = payMethod === "installment";
+  const choosePayMethod = (m: PayMethod) => {
+    setPayMethod(m);
+    if (m === "installment") { setBonusAmount(0); setPromoApplied(null); setPromoInput(""); setPromoError(null); }
+  };
   const [bonusNotice, setBonusNotice] = useState<string | null>(null);
   // Промокод volya.finance (наша знижка, той самий discountPercent). Перевіряється на
   // /api/promo, остаточна сума — у відповіді заявлення (стеля СК може урізати).
@@ -710,7 +717,7 @@ export function CheckoutClient() {
             </div>
           );
           return (
-            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+            <div>
               {/* Ліва колонка: що купуємо + знижки */}
               <div className="space-y-5">
                 <div>
@@ -766,6 +773,7 @@ export function CheckoutClient() {
                                 pattern="[0-9]*"
                                 autoComplete="off"
                                 value={bonusAmount}
+                                disabled={installment}
                                 onFocus={(e) => e.currentTarget.select()}
                                 onChange={(e) => setBonusAmount(Math.min(bonusMax, Math.max(0, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 0))))}
                                 className="h-full w-24 bg-transparent px-3 text-base font-semibold text-zinc-900 outline-none dark:text-zinc-100"
@@ -824,8 +832,9 @@ export function CheckoutClient() {
               </div>
 
               {/* Права колонка: разом + кнопка (на десктопі липка) */}
-              <aside className="mt-5 lg:mt-0">
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-700 dark:bg-zinc-800/40 lg:sticky lg:top-24">
+              {/* Підсумок і кнопка — під картками, в одну колонку (не збоку). */}
+              <aside className="mt-5">
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-700 dark:bg-zinc-800/40">
                   <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Разом", en: "Total" })}</p>
                   <dl className="mt-3 space-y-2 text-sm">
                     <div className="flex justify-between gap-3"><dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Вартість", en: "Price" })}</dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(orderTotal)}</dd></div>
@@ -849,7 +858,7 @@ export function CheckoutClient() {
                     </div>
                   ) : (
                     <div className="mt-4 space-y-3">
-                      <PaymentMethods product="osago" amount={due} />
+                      <PaymentMethods product="osago" amount={due} value={payMethod} onChange={choosePayMethod} />
                       <Button type="button" variant="primary" size="lg" loading={loading} onClick={() => void handleProceedToPayment()} className="w-full">
                         {t({ uk: "Перейти до оплати", en: "Go to payment" })}
                       </Button>
