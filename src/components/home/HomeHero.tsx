@@ -22,7 +22,7 @@ const FEATURED: Featured[] = [
     href: "/osago", icon: Car,
     title: { uk: "Автоцивілка", en: "Car insurance (OSAGO)" },
     desc: { uk: "Порівняйте ціни 21+ страхових за номером авто й отримайте електронний поліс на email за кілька хвилин.", en: "Compare 21+ insurers by plate number and get an e-policy by email in minutes." },
-    chips: [{ uk: "21+ страхових", en: "21+ insurers" }, { uk: "Поліс за 3 хвилини", en: "Policy in 3 minutes" }, { uk: "Бонус 1%", en: "1% bonus" }],
+    chips: [{ uk: "Поліс за 3 хвилини", en: "Policy in 3 minutes" }],
     bg: "linear-gradient(135deg, #1e1b4b 0%, #4338ca 55%, #6366f1 100%)",
   },
   {
@@ -36,7 +36,7 @@ const FEATURED: Featured[] = [
     href: "/green-card", icon: Globe,
     title: { uk: "Зелена карта", en: "Green Card" },
     desc: { uk: "Міжнародна автоцивілка для виїзду за кордон — за номером авто.", en: "International car insurance for trips abroad — by plate number." },
-    chips: [{ uk: "Онлайн-поліс", en: "Online policy" }],
+    chips: [],
     bg: "linear-gradient(135deg, #2e1065 0%, #6d28d9 55%, #a78bfa 100%)",
   },
 ];
