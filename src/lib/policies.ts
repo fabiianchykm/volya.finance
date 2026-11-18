@@ -33,6 +33,8 @@ export interface PolicyRecord {
   policyNumber: string | null;
   /** Пряме посилання на підтвердження в реєстрі МТСБУ (ОСЦПВ/ЗК), якщо вже відоме. */
   mtsbuLink: string | null;
+  /** Тестовий поліс (dev-режим Ukasko або позначка адміна). */
+  isTest: boolean;
 }
 
 export interface SavePolicyInput {
@@ -54,6 +56,7 @@ export interface SavePolicyInput {
   product?: string | null;
   policyNumber?: string | null;
   mtsbuLink?: string | null;
+  isTest?: boolean;
 }
 
 // Приводить телефон до "+380XXXXXXXXX" (щоб збігалося зі входом за номером).
@@ -74,12 +77,12 @@ export async function savePolicy(p: SavePolicyInput): Promise<void> {
   const email = p.email.trim().toLowerCase();
   const phone = normPhone(p.phone);
   await sql`
-    INSERT INTO policies (id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, source, product, policy_number, mtsbu_link)
+    INSERT INTO policies (id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, source, product, policy_number, mtsbu_link, is_test)
     VALUES (
       ${p.id}, ${email}, ${phone}, ${p.customerName ?? null}, ${json(p.customer)},
       ${p.contractId ?? null}, ${p.orderId ?? null}, ${p.company ?? null},
       ${json(p.vehicle)}, ${p.price ?? null}, ${p.startDate ?? null}, ${p.endDate ?? null},
-      ${p.source ?? "issued"}, ${p.product ?? null}, ${p.policyNumber ?? null}, ${p.mtsbuLink ?? null}
+      ${p.source ?? "issued"}, ${p.product ?? null}, ${p.policyNumber ?? null}, ${p.mtsbuLink ?? null}, ${p.isTest ?? false}
     )
     ON CONFLICT (id) DO UPDATE SET
       phone         = EXCLUDED.phone,
@@ -94,7 +97,8 @@ export async function savePolicy(p: SavePolicyInput): Promise<void> {
       source        = EXCLUDED.source,
       product       = EXCLUDED.product,
       policy_number = EXCLUDED.policy_number,
-      mtsbu_link    = COALESCE(EXCLUDED.mtsbu_link, policies.mtsbu_link)
+      mtsbu_link    = COALESCE(EXCLUDED.mtsbu_link, policies.mtsbu_link),
+      is_test       = policies.is_test OR EXCLUDED.is_test
   `;
   // Ненав'язливий моніторинг розміру БД (throttled) — алерт у dev-Telegram, якщо
   // сховище наближається до ліміту. Не блокує основний потік.
@@ -135,6 +139,7 @@ interface PolicyRow {
   product: string | null;
   policy_number: string | null;
   mtsbu_link: string | null;
+  is_test: boolean | null;
 }
 
 function mapRow(r: PolicyRow): PolicyRecord {
@@ -156,7 +161,16 @@ function mapRow(r: PolicyRow): PolicyRecord {
     product: r.product,
     policyNumber: r.policy_number,
     mtsbuLink: r.mtsbu_link ?? null,
+    isTest: r.is_test === true,
   };
+}
+
+// Позначка «тестовий» з адмінки (в обидва боки).
+export async function setPolicyTest(id: string, isTest: boolean): Promise<boolean> {
+  if (!sql) return false;
+  await ensureSchema();
+  const res = await sql`UPDATE policies SET is_test = ${isTest} WHERE id = ${id}`;
+  return (res.count ?? 0) > 0;
 }
 
 // Кешуємо пряме посилання на реєстр МТСБУ, щойно воно стало відоме (contract/take).
@@ -166,7 +180,7 @@ export async function setPolicyMtsbuLink(id: string, link: string): Promise<void
   await sql`UPDATE policies SET mtsbu_link = ${link} WHERE id = ${id} AND (mtsbu_link IS NULL OR mtsbu_link <> ${link})`;
 }
 
-const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at, source, product, policy_number, mtsbu_link`;
+const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at, source, product, policy_number, mtsbu_link, is_test`;
 
 export async function getPoliciesByEmail(email: string): Promise<PolicyRecord[]> {
   if (!sql) return [];

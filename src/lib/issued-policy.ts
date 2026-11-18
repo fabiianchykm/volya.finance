@@ -4,6 +4,7 @@ import { getPendingOrder, markPendingFinalized, type PendingMeta } from "@/lib/p
 import { trySendTelegram, notifyDevError, escapeHtml } from "@/lib/telegram";
 import { applyBonusRedemption } from "@/lib/bonus-redemption";
 import { applyPromoUse } from "@/lib/promo";
+import { UKASKO_IS_DEV } from "@/services/ukasko";
 
 // Один «поліс оформлено» для всіх шляхів видачі: sales-сповіщення в Telegram
 // (клієнтський POST /api/policies, /api/finalize після LiqPay, confirm у модалці
@@ -81,6 +82,7 @@ export async function recordIssuedPolicy(args: {
         startDate: meta.startDate ?? null,
         endDate: meta.endDate ?? null,
         product,
+        isTest: UKASKO_IS_DEV,
       });
     } catch (e) {
       await notifyDevError("issued savePolicy", e);

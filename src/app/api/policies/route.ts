@@ -9,6 +9,7 @@ import { sourceLine } from "@/lib/attribution";
 import { creditPolicyRewards } from "@/lib/referral";
 import { applyBonusRedemption } from "@/lib/bonus-redemption";
 import { applyPromoUse } from "@/lib/promo";
+import { UKASKO_IS_DEV } from "@/services/ukasko";
 
 // POST — зберегти оформлений поліс під email клієнта (логін не обовʼязковий:
 // купити можна гостем, у кабінеті поліс зʼявиться після входу з тим же email).
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Бракує id або email" }, { status: 400 });
     }
     await savePolicy({
+      isTest: UKASKO_IS_DEV,
       id: String(id),
       email: String(email),
       phone: phone ?? null,

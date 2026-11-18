@@ -60,6 +60,9 @@ export function ensureSchema(): Promise<void> {
       // Пряме посилання на підтвердження в реєстрі МТСБУ (з contract/take Ukasko) —
       // кешуємо, щоб кнопка «Реєстр МТСБУ» в кабінеті відкривала саме цей поліс.
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS mtsbu_link text`;
+      // Тестові поліси (укладені в dev-режимі Ukasko або позначені адміном) — у
+      // кабінеті з бейджем «Тестовий», в адмінці не рахуються у виручку.
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS is_test boolean NOT NULL DEFAULT false`;
       // Профіль страхувальника, привʼязаний до АКАУНТА (email сесії). Один запис на
       // акаунт; синхронізується між пристроями. data — весь CustomerProfile як jsonb.
       await sql`

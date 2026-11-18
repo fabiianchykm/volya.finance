@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Phone, Mail, Download, ExternalLink } from "lucide-react";
+import { Loader2, Phone, Mail, Download, ExternalLink, FlaskConical } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { downloadEndpointFor } from "@/lib/policy-download";
 import type { PolicyRecord } from "@/lib/policies";
@@ -35,6 +35,18 @@ export function AdminPolicies() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [toggling, setToggling] = useState<string | null>(null);
+  const toggleTest = async (p: PolicyRecord) => {
+    setToggling(p.id);
+    try {
+      const res = await fetch("/api/admin/policies", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: p.id, isTest: !p.isTest }) });
+      const json = await res.json().catch(() => ({}));
+      if (json?.success) setPolicies((prev) => prev.map((x) => (x.id === p.id ? { ...x, isTest: !p.isTest } : x)));
+    } finally {
+      setToggling(null);
+    }
+  };
+
   const download = async (p: PolicyRecord) => {
     if (!p.contractId) return;
     setDownloading(p.id);
@@ -59,26 +71,29 @@ export function AdminPolicies() {
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (policies.length === 0) return <p className="text-sm text-zinc-500 dark:text-zinc-400">{t({ uk: "Полісів ще немає.", en: "No policies yet." })}</p>;
 
-  const issued = policies.filter((p) => p.source !== "manual");
+  const issued = policies.filter((p) => p.source !== "manual" && !p.isTest);
   const revenue = issued.reduce((s, p) => s + (p.price ?? 0), 0);
+  const tests = policies.filter((p) => p.isTest).length;
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         {t({ uk: "Усього:", en: "Total:" })} {policies.length} · {t({ uk: "оформлено на сайті:", en: "issued on site:" })} <span className="font-semibold text-indigo-600 dark:text-indigo-400">{issued.length}</span> · {t({ uk: "на суму", en: "for" })} <span className="font-semibold text-zinc-700 dark:text-zinc-200">{revenue.toLocaleString("uk-UA")} грн</span>
+        {tests > 0 && <> · {t({ uk: "тестових:", en: "test:" })} <span className="font-semibold text-amber-600 dark:text-amber-400">{tests}</span></>}
       </p>
       {policies.map((p) => {
         const v = p.vehicle ?? {};
         const car = [v.mark, v.model, v.year, v.plate].filter(Boolean).join(" ");
         const isManual = p.source === "manual";
         return (
-          <div key={p.id} className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <div key={p.id} className={`rounded-2xl border bg-white p-4 shadow-sm dark:bg-zinc-900 ${p.isTest ? "border-dashed border-amber-300 dark:border-amber-800" : "border-zinc-100 dark:border-zinc-800"}`}>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                   {(p.product && PRODUCT_LABELS[p.product]) || p.product || "Поліс"}
                 </span>
                 {isManual && <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t({ uk: "вручну", en: "manual" })}</span>}
+                {p.isTest && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><FlaskConical className="h-3 w-3" />{t({ uk: "тестовий", en: "test" })}</span>}
                 {p.company && <span className="text-xs text-zinc-500 dark:text-zinc-400">{p.company}</span>}
                 {typeof p.price === "number" && <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{p.price} грн</span>}
               </div>
@@ -122,6 +137,16 @@ export function AdminPolicies() {
                   <ExternalLink className="h-3.5 w-3.5" /> МТСБУ
                 </a>
                 {dlError[p.id] && <span className="text-xs text-red-500">{dlError[p.id]}</span>}
+                <button
+                  type="button"
+                  onClick={() => toggleTest(p)}
+                  disabled={toggling === p.id}
+                  className={`ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${p.isTest ? "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300" : "text-zinc-500 hover:bg-zinc-50 hover:text-amber-700 dark:text-zinc-400 dark:hover:bg-zinc-800"}`}
+                  title={p.isTest ? t({ uk: "Зняти позначку «тестовий»", en: "Unmark as test" }) : t({ uk: "Позначити як тестовий", en: "Mark as test" })}
+                >
+                  {toggling === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
+                  {p.isTest ? t({ uk: "Тестовий", en: "Test" }) : t({ uk: "Позначити тестовим", en: "Mark as test" })}
+                </button>
               </div>
             )}
           </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2, Archive, Clock, CheckCircle2 } from "lucide-react";
+import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2, Archive, Clock, CheckCircle2, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useI18n, type Tr } from "@/lib/i18n";
 import type { PolicyRecord } from "@/lib/policies";
@@ -207,7 +207,7 @@ function PolicyCard({ policy, archived = false }: { policy: PolicyRecord; archiv
   const subtitle = [v.plate, v.year].filter(Boolean).join(" · ");
 
   return (
-    <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5 py-4 shadow-sm">
+    <div className={`rounded-2xl border bg-white px-5 py-4 shadow-sm dark:bg-zinc-900 ${policy.isTest ? "border-dashed border-amber-300 dark:border-amber-800" : "border-zinc-100 dark:border-zinc-800"}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${archived ? "bg-zinc-100 dark:bg-zinc-800" : "bg-indigo-50 dark:bg-indigo-950/40"}`}>
@@ -229,6 +229,11 @@ function PolicyCard({ policy, archived = false }: { policy: PolicyRecord; archiv
               {policy.policyNumber && <span>№ {policy.policyNumber}</span>}
               {policy.startDate && policy.endDate && <span>{policy.startDate} — {policy.endDate}</span>}
               <TermBadge endDate={policy.endDate} archived={archived} />
+              {policy.isTest && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" title={t({ uk: "Оформлений у тестовому режимі — не є чинним договором", en: "Issued in test mode — not a valid contract" })}>
+                  <FlaskConical className="h-3 w-3" />{t({ uk: "Тестовий", en: "Test" })}
+                </span>
+              )}
             </div>
           </div>
         </div>
