@@ -50,6 +50,17 @@ export const INSURERS: InsurerProfile[] = [
   { slug: "eia",          name: "ЄСА",           match: /\bєса\b|европейс|європейс/i, ...SAMPLE },
 ];
 
+/** Відгуки про сам сервіс volya.finance зберігаються в тій самій таблиці під цим слагом. */
+export const SERVICE_REVIEW_SLUG = "volya";
+export const SERVICE_REVIEW_NAME = "volya.finance";
+
+/** Профіль для відгуків: страхова за слагом або псевдо-профіль сервісу (будь-який поліс = клієнт). */
+export function getReviewTarget(slug: string): { slug: string; name: string; match: RegExp } | undefined {
+  if (slug === SERVICE_REVIEW_SLUG) return { slug, name: SERVICE_REVIEW_NAME, match: /./ };
+  const ins = getInsurer(slug);
+  return ins ? { slug: ins.slug, name: ins.name, match: ins.match } : undefined;
+}
+
 export function getInsurer(slug: string): InsurerProfile | undefined {
   return INSURERS.find((i) => i.slug === slug);
 }

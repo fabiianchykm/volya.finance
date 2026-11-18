@@ -191,7 +191,7 @@ export function MyReviews({ reviews, pending }: { reviews: MyReview[]; pending: 
                     <InsurerBadge logo={p.logo} name={p.name} />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{p.name}</p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{prod ? t({ uk: `Ваш поліс: ${prod}`, en: `Your policy: ${prod}` }) : t({ uk: "Поліс, куплений у нас", en: "Policy bought from us" })}</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{p.slug === "volya" ? t({ uk: "Як вам сервіс: оформлення, оплата, підтримка", en: "How was the service: checkout, payment, support" }) : prod ? t({ uk: `Ваш поліс: ${prod}`, en: `Your policy: ${prod}` }) : t({ uk: "Поліс, куплений у нас", en: "Policy bought from us" })}</p>
                     </div>
                     {!open && (
                       <Button variant="primary" size="sm" className="flex items-center gap-1.5" onClick={() => setOpenSlug(p.slug)}>
@@ -228,7 +228,7 @@ export function MyReviews({ reviews, pending }: { reviews: MyReview[]; pending: 
                     <InsurerBadge logo={r.logo} name={r.insurerName} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                        <Link href={`/insurers/${r.insurer}`} className="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:text-indigo-600 dark:text-zinc-100 dark:hover:text-indigo-300">
+                        <Link href={r.insurer === "volya" ? "/" : `/insurers/${r.insurer}`} className="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:text-indigo-600 dark:text-zinc-100 dark:hover:text-indigo-300">
                           {r.insurerName}<ExternalLink className="h-3.5 w-3.5 text-zinc-400" />
                         </Link>
                         {!editing && <Stars value={r.rating} size="h-4 w-4" />}

@@ -1,7 +1,11 @@
 "use client";
 
-import { Quote } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Quote, Star } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
+import { ServiceReviewForm } from "@/components/reviews/ServiceReviewForm";
+import { SERVICE_REVIEW_SLUG } from "@/lib/insurers";
+import { VMark } from "@/components/layout/VMark";
 
 // Бренд-іконки джерел відгуків (self-contained SVG, без залежностей).
 function GoogleIcon({ className }: { className?: string }) {
@@ -50,22 +54,54 @@ const reviews: { name: string; city: Tr; text: Tr; color: string; source: Source
   { name: "Наталія", city: { uk: "Вінниця", en: "Vinnytsia" }, text: { uk: "Туристичне для всієї родини оформила за кілька хвилин. Ціни приємно здивували.", en: "Arranged travel insurance for the whole family in a few minutes. The prices were a pleasant surprise." }, color: "bg-violet-500", source: "google" },
 ];
 
+interface LiveReview { id: number; authorName: string | null; rating: number; text: string; createdAt: string }
+
+const COLORS = ["bg-indigo-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-sky-500", "bg-violet-500"];
+
 export function ReviewsSection() {
   const { t } = useI18n();
-  const row = [...reviews, ...reviews];
+  // Реальні відгуки про сервіс (з кабінету/форми нижче) — попереду стрічки; заготовки
+  // лишаються як наповнення, поки живих мало.
+  const [live, setLive] = useState<LiveReview[]>([]);
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/reviews?insurer=${SERVICE_REVIEW_SLUG}`);
+      const j = await r.json();
+      if (j?.success && Array.isArray(j.reviews)) setLive(j.reviews);
+    } catch { /* стрічка без живих відгуків */ }
+  }, []);
+  // Завантаження списку (setState — лише після відповіді сервера).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void load(); }, [load]);
+
+  const liveCards = live.map((r, i) => ({
+    key: `live-${r.id}`,
+    name: r.authorName?.split(" ")[0] || t({ uk: "Клієнт", en: "Client" }),
+    sub: new Date(r.createdAt).toLocaleDateString("uk-UA", { day: "numeric", month: "long", year: "numeric" }),
+    text: r.text,
+    color: COLORS[i % COLORS.length],
+    rating: r.rating,
+    source: "volya" as const,
+  }));
+  const sampleCards = reviews.map((r, i) => ({ key: `s-${i}`, name: r.name, sub: t(r.city), text: t(r.text), color: r.color, rating: 0, source: r.source as Source | "volya" }));
+  const cards = [...liveCards, ...sampleCards];
+  const row = cards.length < 6 ? [...cards, ...cards, ...cards] : [...cards, ...cards];
 
   return (
     <section className="bg-[#FAFAFA] dark:bg-[#0f0f11] py-20 sm:py-24">
       {/* Заголовок — ліворуч, трохи більший */}
       <div className="mx-auto mb-12 max-w-7xl px-4 sm:px-6">
-        <div className="flex items-center gap-3">
-          <h2 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">{t({ uk: "Відгуки клієнтів", en: "Customer reviews" })}</h2>
-          <div className="flex items-center gap-1.5">
-            <GoogleIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
-            <FacebookIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
-            <ThreadsIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
-            <XIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">{t({ uk: "Відгуки клієнтів", en: "Customer reviews" })}</h2>
+            <div className="flex items-center gap-1.5">
+              <GoogleIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+              <FacebookIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+              <ThreadsIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+              <XIcon className="h-6 w-6 text-zinc-400 dark:text-zinc-500" />
+            </div>
           </div>
+          <ServiceReviewForm onPublished={() => void load()} />
         </div>
       </div>
 
@@ -73,22 +109,26 @@ export function ReviewsSection() {
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[#FAFAFA] dark:from-[#0f0f11] to-transparent sm:w-24" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[#FAFAFA] dark:from-[#0f0f11] to-transparent sm:w-24" />
         <div className="animate-marquee">
-          {row.map(({ name, city, text, color, source }, i) => {
-            const SourceIcon = SOURCE_ICON[source];
+          {row.map(({ key, name, sub, text, color, rating, source }, i) => {
+            const SourceIcon = source === "volya" ? null : SOURCE_ICON[source];
             return (
-              <div key={i} className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-sm ring-1 ring-zinc-200/50 dark:ring-zinc-700">
+              <div key={`${key}-${i}`} className="mr-4 flex min-h-[240px] w-[290px] shrink-0 flex-col rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-sm ring-1 ring-zinc-200/50 dark:ring-zinc-700">
                 <div className="mb-3 flex items-center justify-between">
-                  <Quote className="h-6 w-6 text-zinc-200 dark:text-zinc-700" />
-                  <SourceIcon className="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
+                  {rating > 0 ? (
+                    <span className="inline-flex items-center gap-0.5">{[1, 2, 3, 4, 5].map((n) => <Star key={n} className={`h-4 w-4 ${n <= rating ? "fill-amber-400 text-amber-400" : "text-zinc-200 dark:text-zinc-700"}`} />)}</span>
+                  ) : (
+                    <Quote className="h-6 w-6 text-zinc-200 dark:text-zinc-700" />
+                  )}
+                  {SourceIcon ? <SourceIcon className="h-5 w-5 text-zinc-400 dark:text-zinc-500" /> : <VMark id={`vmark-rev-${i}`} className="h-5 w-5" />}
                 </div>
-                <p className="flex-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">{t(text)}</p>
+                <p className="flex-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">{text}</p>
                 <div className="mt-5 flex items-center gap-3">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${color}`}>
                     {name[0]}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{name}</p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">{t(city)}</p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">{sub}</p>
                   </div>
                 </div>
               </div>

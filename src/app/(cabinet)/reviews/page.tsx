@@ -3,7 +3,7 @@ import { getPoliciesByIdentities } from "@/lib/policies";
 import { resolveIdentities, identityKeys } from "@/lib/identity";
 import { getSessionIdentity } from "@/lib/session-identity";
 import { getReviewsByKeys } from "@/lib/reviews";
-import { INSURERS } from "@/lib/insurers";
+import { INSURERS, SERVICE_REVIEW_SLUG, SERVICE_REVIEW_NAME } from "@/lib/insurers";
 import { logoSrc, companyLogo } from "@/lib/logos";
 import { MyReviews, type MyReview, type PendingInsurer } from "@/components/reviews/MyReviews";
 
@@ -29,11 +29,15 @@ export default async function ReviewsPage() {
     const bySlug = new Map(INSURERS.map((i) => [i.slug, i]));
     reviews = mine.map((r) => ({
       ...r,
-      insurerName: bySlug.get(r.insurer)?.name ?? r.insurer,
-      logo: logoSrc(r.insurer),
+      insurerName: r.insurer === SERVICE_REVIEW_SLUG ? SERVICE_REVIEW_NAME : (bySlug.get(r.insurer)?.name ?? r.insurer),
+      logo: r.insurer === SERVICE_REVIEW_SLUG ? null : logoSrc(r.insurer),
     }));
     const reviewed = new Set(mine.map((r) => r.insurer));
     const seen = new Set<string>();
+    // Відгук про сам сервіс — якщо є хоч один оформлений у нас поліс.
+    if (policies.some((p) => p.source !== "manual") && !reviewed.has(SERVICE_REVIEW_SLUG)) {
+      pending.push({ slug: SERVICE_REVIEW_SLUG, name: SERVICE_REVIEW_NAME, logo: null, product: null });
+    }
     for (const p of policies) {
       if (!p.company) continue;
       const ins = INSURERS.find((i) => i.match.test(p.company!));

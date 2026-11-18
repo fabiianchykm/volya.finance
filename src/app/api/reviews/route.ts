@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { getReviews, saveReview, hasReviewed, updateOwnReview, deleteOwnReview } from "@/lib/reviews";
-import { getInsurer } from "@/lib/insurers";
+import { getReviewTarget } from "@/lib/insurers";
 import { getPoliciesByIdentities } from "@/lib/policies";
 import { resolveIdentities, primaryEmail, identityKeys } from "@/lib/identity";
 import { trySendTelegram, escapeHtml } from "@/lib/telegram";
@@ -10,7 +10,7 @@ import { trySendTelegram, escapeHtml } from "@/lib/telegram";
 // GET ?insurer=slug — список відгуків + середня оцінка (публічно).
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("insurer")?.trim() ?? "";
-  if (!getInsurer(slug)) return NextResponse.json({ success: false, error: "Невідома страхова" }, { status: 400 });
+  if (!getReviewTarget(slug)) return NextResponse.json({ success: false, error: "Невідома страхова" }, { status: 400 });
   try {
     const data = await getReviews(slug);
     return NextResponse.json({ success: true, ...data });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const slug = String(body?.insurer ?? "");
   const rating = Number(body?.rating);
   const text = String(body?.text ?? "").trim();
-  const ins = getInsurer(slug);
+  const ins = getReviewTarget(slug);
   if (!ins) return NextResponse.json({ success: false, error: "Невідома страхова" }, { status: 400 });
   if (!(rating >= 1 && rating <= 5)) return NextResponse.json({ success: false, error: "Оцінка має бути від 1 до 5" }, { status: 400 });
   if (text.length < 10) return NextResponse.json({ success: false, error: "Відгук замалий (мін. 10 символів)" }, { status: 400 });
@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
     // Рівноправна звʼязка: перевіряємо покупку по ВСІХ повʼязаних ідентичностях.
     const ids = await resolveIdentities({ email, phone });
     const policies = await getPoliciesByIdentities(ids.emails, ids.phones);
-    const bought = policies.find((p) => !!p.company && ins.match.test(p.company));
+    // Про сервіс — достатньо будь-якого поліса, купленого у нас; про страхову — саме її поліса.
+    const bought = policies.find((p) => p.source !== "manual" && !!p.company && ins.match.test(p.company));
     if (!bought) {
-      return NextResponse.json({ success: false, error: "Відгук можна лишити лише про страхову, поліс якої ви купили у нас." }, { status: 403 });
+      return NextResponse.json({ success: false, error: slug === "volya" ? "Відгук про сервіс може лишити клієнт, який оформив у нас хоча б один поліс." : "Відгук можна лишити лише про страхову, поліс якої ви купили у нас." }, { status: 403 });
     }
 
     // Канонічний ключ відгуку + перевірка «вже лишав» по всіх ключах акаунта.
