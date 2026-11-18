@@ -57,6 +57,9 @@ export function ensureSchema(): Promise<void> {
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'issued'`;
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS product text`;
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS policy_number text`;
+      // Пряме посилання на підтвердження в реєстрі МТСБУ (з contract/take Ukasko) —
+      // кешуємо, щоб кнопка «Реєстр МТСБУ» в кабінеті відкривала саме цей поліс.
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS mtsbu_link text`;
       // Профіль страхувальника, привʼязаний до АКАУНТА (email сесії). Один запис на
       // акаунт; синхронізується між пристроями. data — весь CustomerProfile як jsonb.
       await sql`

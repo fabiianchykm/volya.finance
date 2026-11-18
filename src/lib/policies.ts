@@ -31,6 +31,8 @@ export interface PolicyRecord {
   product: string | null;
   /** Номер полісу (для manual). */
   policyNumber: string | null;
+  /** Пряме посилання на підтвердження в реєстрі МТСБУ (ОСЦПВ/ЗК), якщо вже відоме. */
+  mtsbuLink: string | null;
 }
 
 export interface SavePolicyInput {
@@ -51,6 +53,7 @@ export interface SavePolicyInput {
   source?: string | null;
   product?: string | null;
   policyNumber?: string | null;
+  mtsbuLink?: string | null;
 }
 
 // Приводить телефон до "+380XXXXXXXXX" (щоб збігалося зі входом за номером).
@@ -71,12 +74,12 @@ export async function savePolicy(p: SavePolicyInput): Promise<void> {
   const email = p.email.trim().toLowerCase();
   const phone = normPhone(p.phone);
   await sql`
-    INSERT INTO policies (id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, source, product, policy_number)
+    INSERT INTO policies (id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, source, product, policy_number, mtsbu_link)
     VALUES (
       ${p.id}, ${email}, ${phone}, ${p.customerName ?? null}, ${json(p.customer)},
       ${p.contractId ?? null}, ${p.orderId ?? null}, ${p.company ?? null},
       ${json(p.vehicle)}, ${p.price ?? null}, ${p.startDate ?? null}, ${p.endDate ?? null},
-      ${p.source ?? "issued"}, ${p.product ?? null}, ${p.policyNumber ?? null}
+      ${p.source ?? "issued"}, ${p.product ?? null}, ${p.policyNumber ?? null}, ${p.mtsbuLink ?? null}
     )
     ON CONFLICT (id) DO UPDATE SET
       phone         = EXCLUDED.phone,
@@ -90,7 +93,8 @@ export async function savePolicy(p: SavePolicyInput): Promise<void> {
       end_date      = EXCLUDED.end_date,
       source        = EXCLUDED.source,
       product       = EXCLUDED.product,
-      policy_number = EXCLUDED.policy_number
+      policy_number = EXCLUDED.policy_number,
+      mtsbu_link    = COALESCE(EXCLUDED.mtsbu_link, policies.mtsbu_link)
   `;
   // Ненав'язливий моніторинг розміру БД (throttled) — алерт у dev-Telegram, якщо
   // сховище наближається до ліміту. Не блокує основний потік.
@@ -130,6 +134,7 @@ interface PolicyRow {
   source: string | null;
   product: string | null;
   policy_number: string | null;
+  mtsbu_link: string | null;
 }
 
 function mapRow(r: PolicyRow): PolicyRecord {
@@ -150,10 +155,18 @@ function mapRow(r: PolicyRow): PolicyRecord {
     source: r.source ?? "issued",
     product: r.product,
     policyNumber: r.policy_number,
+    mtsbuLink: r.mtsbu_link ?? null,
   };
 }
 
-const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at, source, product, policy_number`;
+// Кешуємо пряме посилання на реєстр МТСБУ, щойно воно стало відоме (contract/take).
+export async function setPolicyMtsbuLink(id: string, link: string): Promise<void> {
+  if (!sql) return;
+  await ensureSchema();
+  await sql`UPDATE policies SET mtsbu_link = ${link} WHERE id = ${id} AND (mtsbu_link IS NULL OR mtsbu_link <> ${link})`;
+}
+
+const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at, source, product, policy_number, mtsbu_link`;
 
 export async function getPoliciesByEmail(email: string): Promise<PolicyRecord[]> {
   if (!sql) return [];

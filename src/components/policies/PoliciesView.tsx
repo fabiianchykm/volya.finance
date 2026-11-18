@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2 } from "lucide-react";
@@ -67,10 +67,27 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [mtsbuLink, setMtsbuLink] = useState<string | null>(null);
+  const [mtsbuLink, setMtsbuLink] = useState<string | null>(policy.mtsbuLink ?? null);
   const [error, setError] = useState<string | null>(null);
 
   const isManual = policy.source === "manual";
+  const inRegistry = !isManual && (!policy.product || policy.product === "osago" || policy.product === "greencard");
+
+  // Пряме посилання на підтвердження в реєстрі МТСБУ: якщо його ще немає в БД
+  // (старі поліси), підтягуємо у фоні через contract/take — сервер закешує.
+  useEffect(() => {
+    if (mtsbuLink || !inRegistry || !policy.contractId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/policies/mtsbu", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: policy.id }) });
+        const json = await r.json().catch(() => ({}));
+        if (!cancelled && json?.success && json.link) setMtsbuLink(json.link);
+      } catch { /* кнопка лишається на публічну перевірку */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [policy.id]);
 
   const handleDownload = async () => {
     if (!policy.contractId) {
@@ -179,11 +196,11 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
             </Button>
             {/* Кнопка реєстру одразу, не лише після завантаження PDF: поки прямого
                 посилання на договір немає — ведемо на публічну перевірку за номером авто. */}
-            {(!policy.product || policy.product === "osago" || policy.product === "greencard") && (
-              <a href={mtsbuLink ?? "https://policy.mtsbu.ua"} target="_blank" rel="noopener noreferrer">
+            {inRegistry && (
+              <a href={mtsbuLink ?? "https://policy.mtsbu.ua"} target="_blank" rel="noopener noreferrer" title={mtsbuLink ? t({ uk: "Підтвердження цього поліса в реєстрі МТСБУ", en: "This policy's confirmation in the MTSBU registry" }) : t({ uk: "Перевірка за номером авто в реєстрі МТСБУ", en: "Check by plate number in the MTSBU registry" })}>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <ExternalLink className="h-4 w-4" />
-                  {t({ uk: "Реєстр МТСБУ", en: "MTSBU registry" })}
+                  {mtsbuLink ? t({ uk: "Підтвердження МТСБУ", en: "MTSBU confirmation" }) : t({ uk: "Реєстр МТСБУ", en: "MTSBU registry" })}
                 </Button>
               </a>
             )}
