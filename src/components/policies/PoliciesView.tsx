@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2, Archive, Clock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useI18n, type Tr } from "@/lib/i18n";
 import type { PolicyRecord } from "@/lib/policies";
@@ -13,6 +14,31 @@ interface PoliciesViewProps {
   loggedIn: boolean;
   email: string | null;
   policies: PolicyRecord[];
+}
+
+// Дата закінчення приходить у різних форматах (ДД.ММ.РРРР з чекаутів, YYYY-MM-DD
+// з Ukasko, ISO). Невідома дата → поліс вважаємо активним.
+function parseDate(v?: string | null): Date | null {
+  if (!v) return null;
+  const s = v.trim();
+  let m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+function daysLeft(endDate?: string | null): number | null {
+  const end = parseDate(endDate);
+  if (!end) return null;
+  const today = new Date();
+  const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const t1 = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+  return Math.round((t1 - t0) / 86_400_000);
+}
+function isArchived(p: PolicyRecord): boolean {
+  const d = daysLeft(p.endDate);
+  return d !== null && d < 0;
 }
 
 const PRODUCT_LABELS: Record<string, Tr> = {
@@ -53,16 +79,59 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
     );
   }
 
+  const active = policies.filter((p) => !isArchived(p));
+  const archived = policies.filter(isArchived);
+
   return (
-    <div className="space-y-3">
-      {policies.map((p) => (
-        <PolicyCard key={p.id} policy={p} />
-      ))}
+    <div className="space-y-8">
+      <section>
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Активні", en: "Active" })}</h2>
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">{active.length}</span>
+        </div>
+        {active.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-5 py-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">{t({ uk: "Чинних полісів немає — усі вже завершились.", en: "No active policies — all of them have expired." })}</p>
+            <Link href="/osago" className="mt-2 inline-block text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-400">{t({ uk: "Оформити новий →", en: "Get a new one →" })}</Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {active.map((p) => <PolicyCard key={p.id} policy={p} />)}
+          </div>
+        )}
+      </section>
+
+      {archived.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <Archive className="h-4 w-4 text-zinc-400" />
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Архів", en: "Archive" })}</h2>
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{archived.length}</span>
+          </div>
+          <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Поліси, строк дії яких минув. Договори й далі можна завантажити.", en: "Policies whose term has ended. Contracts can still be downloaded." })}</p>
+          <div className="space-y-3 opacity-80">
+            {archived.map((p) => <PolicyCard key={p.id} policy={p} archived />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
 
-function PolicyCard({ policy }: { policy: PolicyRecord }) {
+function TermBadge({ endDate, archived }: { endDate: string | null; archived?: boolean }) {
+  const { t } = useI18n();
+  const d = daysLeft(endDate);
+  if (archived || (d !== null && d < 0)) {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"><Archive className="h-3 w-3" />{t({ uk: "Завершився", en: "Expired" })}</span>;
+  }
+  if (d === null) return null;
+  if (d <= 30) {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><Clock className="h-3 w-3" />{d === 0 ? t({ uk: "Останній день", en: "Last day" }) : t({ uk: `Ще ${d} дн.`, en: `${d} days left` })}</span>;
+  }
+  return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><CheckCircle2 className="h-3 w-3" />{t({ uk: "Діє", en: "Active" })}</span>;
+}
+
+function PolicyCard({ policy, archived = false }: { policy: PolicyRecord; archived?: boolean }) {
   const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -141,8 +210,8 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
     <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5 py-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40">
-            <ShieldCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${archived ? "bg-zinc-100 dark:bg-zinc-800" : "bg-indigo-50 dark:bg-indigo-950/40"}`}>
+            <ShieldCheck className={`h-5 w-5 ${archived ? "text-zinc-400 dark:text-zinc-500" : "text-indigo-600 dark:text-indigo-400"}`} />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -159,6 +228,7 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
               {policy.company && <span>{policy.company}</span>}
               {policy.policyNumber && <span>№ {policy.policyNumber}</span>}
               {policy.startDate && policy.endDate && <span>{policy.startDate} — {policy.endDate}</span>}
+              <TermBadge endDate={policy.endDate} archived={archived} />
             </div>
           </div>
         </div>
