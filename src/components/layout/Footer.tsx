@@ -29,11 +29,11 @@ function GooglePlayLogo({ className }: { className?: string }) {
 function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: string }) {
   const { t } = useI18n();
   return (
-    <div className="relative inline-flex cursor-default items-center gap-2.5 rounded-xl bg-zinc-900 px-4 py-2.5 ring-1 ring-white/10 dark:bg-black">
+    <div className="relative inline-flex h-[52px] w-[158px] cursor-default items-center gap-2.5 rounded-xl bg-zinc-900 px-3.5 ring-1 ring-white/10 dark:bg-black sm:w-[170px] sm:px-4">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center text-white">{logo}</span>
-      <span className="flex flex-col leading-tight">
+      <span className="flex min-w-0 flex-col leading-tight">
         <span className="text-[10px] text-zinc-300">{top}</span>
-        <span className="text-base font-semibold text-white">{name}</span>
+        <span className="truncate text-base font-semibold text-white">{name}</span>
       </span>
       <span className="absolute -right-2 -top-2 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm">{t({ uk: "Скоро", en: "Soon" })}</span>
     </div>
