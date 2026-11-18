@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Sun, Moon, MonitorSmartphone } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
-// Перемикач теми з трьома режимами: Авто (за системою, з живим перемиканням,
-// коли ОС змінює тему вдень/уночі) · Світла · Темна. Клас .dark на <html>
+// Перемикач теми з трьома режимами: Авто (темна, якщо система темна АБО ніч
+// 20:00–07:00; перевіряється живо) · Світла · Темна. Клас .dark на <html>
 // виставляє інлайн-скрипт у layout (без FOUC) і він же слухає matchMedia;
 // тут лише зберігаємо вибір і просимо скрипт перезастосувати тему.
 
@@ -44,14 +44,15 @@ export function ThemeToggle() {
       reapply();
     } else {
       // Фолбек, якщо інлайн-скрипт не відпрацював.
-      const dark = next === "dark" || (next === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      const h = new Date().getHours();
+      const dark = next === "dark" || (next === "auto" && (window.matchMedia("(prefers-color-scheme: dark)").matches || h >= 20 || h < 7));
       document.documentElement.classList.toggle("dark", dark);
       document.documentElement.style.setProperty("color-scheme", dark ? "dark" : "light");
     }
   };
 
   const OPTIONS: { value: Mode; Icon: typeof Sun; label: string }[] = [
-    { value: "auto", Icon: MonitorSmartphone, label: t({ uk: "Авто (як у системі)", en: "Auto (system)" }) },
+    { value: "auto", Icon: MonitorSmartphone, label: t({ uk: "Авто: як у системі, а з 20:00 до 7:00 — темна", en: "Auto: follows the system, dark from 8 pm to 7 am" }) },
     { value: "light", Icon: Sun, label: t({ uk: "Світла тема", en: "Light theme" }) },
     { value: "dark", Icon: Moon, label: t({ uk: "Темна тема", en: "Dark theme" }) },
   ];

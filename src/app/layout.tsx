@@ -72,11 +72,11 @@ export default async function RootLayout({
   return (
     <html lang="uk" className={`${openSans.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        {/* Клас теми ДО рендеру (без FOUC). Режими: 'light' | 'dark' | авто (ключа немає або 'auto' → за системою,
-            і живе перемикання за зміною системної теми через matchMedia). */}
+        {/* Клас теми ДО рендеру (без FOUC). Режими: 'light' | 'dark' | авто (ключа немає → темна, якщо система темна
+            АБО ніч 20:00–07:00 за локальним часом; перевіряється при зміні системної теми й щохвилини). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var e=document.documentElement;try{var m=window.matchMedia('(prefers-color-scheme: dark)');var ap=function(){var t=localStorage.getItem('theme');var d=t==='dark'||(t!=='light'&&m.matches);e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';};ap();window.__applyTheme=ap;if(m.addEventListener)m.addEventListener('change',ap);else if(m.addListener)m.addListener(ap);}catch(x){}try{var a=JSON.parse(localStorage.getItem('a11y')||'{}');if(a.fontScale)e.style.fontSize=(16*a.fontScale)+'px';e.classList.toggle('a11y-contrast',!!a.contrast);e.classList.toggle('a11y-spacing',!!a.spacing);e.classList.toggle('a11y-underline',!!a.underline);e.classList.toggle('a11y-no-motion',!!a.motion);}catch(x){}})();`,
+            __html: `(function(){var e=document.documentElement;try{var m=window.matchMedia('(prefers-color-scheme: dark)');var night=function(){var h=new Date().getHours();return h>=20||h<7;};var ap=function(){var t=localStorage.getItem('theme');var d=t==='dark'||(t!=='light'&&(m.matches||night()));e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';};ap();window.__applyTheme=ap;if(m.addEventListener)m.addEventListener('change',ap);else if(m.addListener)m.addListener(ap);setInterval(ap,60000);}catch(x){}try{var a=JSON.parse(localStorage.getItem('a11y')||'{}');if(a.fontScale)e.style.fontSize=(16*a.fontScale)+'px';e.classList.toggle('a11y-contrast',!!a.contrast);e.classList.toggle('a11y-spacing',!!a.spacing);e.classList.toggle('a11y-underline',!!a.underline);e.classList.toggle('a11y-no-motion',!!a.motion);}catch(x){}})();`,
           }}
         />
       </head>
