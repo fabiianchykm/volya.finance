@@ -40,7 +40,6 @@ function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: s
   );
 }
 import { FooterContact } from "./FooterContact";
-import { Wordmark } from "./VMark";
 
 type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean; /** Зовнішнє посилання — у новій вкладці. */ external?: boolean };
 
@@ -120,13 +119,7 @@ export function Footer() {
         {/* Верх: бренд (лого, слоган, соцмережі, застосунки) ліворуч, колонки посилань праворуч */}
         <div className="grid gap-12 py-14 lg:grid-cols-12 lg:gap-10 lg:py-16">
           <div className="lg:col-span-4">
-            <Link href="/" aria-label="VOLYA.finance" className="inline-flex">
-              <Wordmark id="vmark-footer" className="text-xl text-zinc-900 dark:text-zinc-100" />
-            </Link>
-
-            <div className="mt-7">
-              <FooterContact />
-            </div>
+            <FooterContact />
 
             <div className="mt-7">
               <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Застосунок", en: "App" })}</p>
