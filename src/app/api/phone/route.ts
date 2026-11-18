@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guardRequest, assertSameOrigin } from "@/lib/api-guard";
 import { normalizePhone, createPhoneCode } from "@/lib/phone-login";
+import { isReviewDemoPhone } from "@/lib/review-demo";
 import { checkTelegramDeliverable, sendTelegramCode } from "@/lib/tg-gateway";
 
 // Надсилання коду входу за номером телефону.
@@ -25,6 +26,12 @@ export async function POST(req: NextRequest) {
   const phone = normalizePhone(phoneRaw);
   if (!phone) {
     return NextResponse.json({ success: false, error: "Невірний номер телефону" }, { status: 400 });
+  }
+
+  // Демо-акаунт App Review: код фіксований (env), нічого не надсилаємо — лише
+  // кажемо клієнту показати поле коду.
+  if (isReviewDemoPhone(phone)) {
+    return NextResponse.json({ success: true, channel: "telegram" });
   }
 
   // Чи доставимо через Telegram?

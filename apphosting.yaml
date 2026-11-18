@@ -115,6 +115,12 @@ env:
   #   firebase apphosting:secrets:set mobile-api-key   (вставити згенероване значення)
   - variable: MOBILE_API_KEY
     secret: mobile-api-key
+  # Демо-акаунт для App Review (Apple/Google): службовий номер + фіксований код входу
+  # без Telegram; кабінет наповнюється тестовими полісами. Без обох змінних режим вимкнений.
+  - variable: REVIEW_DEMO_PHONE
+    value: "+380000000000"
+  - variable: REVIEW_DEMO_CODE
+    secret: review-demo-code
   # Токен захисту фонового sweep (/api/finalize/sweep) — добирає ОПЛАЧЕНІ, але не
   # видані замовлення й доукладає їх (safety-net проти «оплачено, поліса нема»).
   # Викликається зовнішнім cron із заголовком x-sweep-secret. Створити:

@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { normalizePhone, verifyPhoneCode } from "@/lib/phone-login";
+import { ensureReviewDemoPolicies, isReviewDemoPhone, verifyReviewDemoCode } from "@/lib/review-demo";
 import { getPoliciesByPhone } from "@/lib/policies";
 
 /** Дозволені audience для Google id_token: веб-клієнт + мобільні (через кому). */
@@ -59,6 +60,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const phone = normalizePhone(String(rawPhone ?? ""));
         const code = String(rawCode ?? "").trim();
         if (!phone || !/^\d{6}$/.test(code)) return null;
+        // Демо-акаунт для App Review: фіксований код з env, без Telegram (див. lib/review-demo).
+        if (isReviewDemoPhone(phone)) {
+          if (!verifyReviewDemoCode(phone, code)) return null;
+          await ensureReviewDemoPolicies(phone);
+          return { id: `phone:${phone}`, name: "Демо Клієнт" };
+        }
         if (!(await verifyPhoneCode(phone, code))) return null;
         // Канонічне ім'я підставить jwt-callback з даних полісу.
         return { id: `phone:${phone}`, name: phone };
