@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { useStepHistory } from "@/lib/step-history";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, ArrowRight, Car, Hash, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Globe, FileText, CreditCard, Download } from "lucide-react";
@@ -70,6 +71,11 @@ export function GreenCardFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
   useFlowReset(() => setStep("params"));
+  // Кроки в історії браузера: системна «назад» → попередній крок; з першого — звичайний перехід назад.
+  useStepHistory(step, setStep, "params", {
+    tracked: ["offers", "checkout"],
+    onInitial: () => { clearResume("checkout_resume_greencard"); window.history.replaceState(window.history.state, "", window.location.pathname); },
+  });
 
   // З 19.10.2026 Ukasko вимагає держномер уже в калькуляторі (422 carNumber
   // обовʼязковий); марку/модель і далі збираємо на кроці оформлення.

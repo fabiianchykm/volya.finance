@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { useStepHistory } from "@/lib/step-history";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Shield, Globe, Search, Check, UserRound, Coins, Activity, HeartPulse } from "lucide-react";
@@ -194,6 +195,11 @@ export function AccidentFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
   useFlowReset(() => setStep("form"));
+  // Кроки в історії браузера: системна «назад» → попередній крок; з першого — звичайний перехід назад.
+  useStepHistory(step, setStep, "form", {
+    tracked: ["offers", "checkout"],
+    onInitial: () => { clearResume("checkout_resume_accident"); window.history.replaceState(window.history.state, "", window.location.pathname); },
+  });
   const [f, setF] = useState<AccidentForm>({
     birthDate: "", startDate: uaDate(tomorrow()), period: "12_month", sum: 100000, countryId: 1,
     protectionPeriod: "24_7", risk: "none", warRisk: false, sportType: "", sportName: "", sportLevel: "amateur", profession: "builder",

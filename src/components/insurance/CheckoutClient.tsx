@@ -9,6 +9,8 @@ import { companyLogo } from "@/lib/logos";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
 import { PaymentMethods, type PayMethod } from "./PaymentMethods";
+import { useStepHistory } from "@/lib/step-history";
+import { buildOsagoOffersUrl } from "@/lib/osago-offers-url";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { registerPendingOrder } from "@/lib/pending-order-client";
@@ -66,6 +68,8 @@ export function CheckoutClient() {
   // Кроки: 1 клієнт → 2 авто → 3 «Оплата» (підсумок + бонуси/промокод; звідси йде
   // заявлення в СК) → OTP-модалка → модалка оплати → успіх.
   const [step, setStep] = useState<"customer" | "vehicle" | "pay" | "otp" | "payment" | "success">("customer");
+  // Кроки 2–3 в історії браузера: системна «назад» повертає на попередній крок, а не на /osago.
+  useStepHistory(step, setStep, "customer", { tracked: ["vehicle", "pay"] });
   // Дані авто з кроку 2 (марка/модель/VIN, обʼєм…) — заявлення робимо вже з кроку «Оплата».
   const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails | null>(null);
   
@@ -634,9 +638,9 @@ export function CheckoutClient() {
       <div className="flex items-center gap-4">
         <button 
           onClick={() => {
-            if (step === "vehicle") setStep("customer");
-            else if (step === "pay") setStep("vehicle");
-            else router.push("/osago");
+            if (step === "vehicle" || step === "pay") { window.history.back(); return; }
+            // З 1-го кроку — на пропозиції для цього авто (не на екран номера).
+            router.push(vehicle?.number ? buildOsagoOffersUrl(vehicle.number, buyer) : "/osago");
           }}
           aria-label={t({ uk: "Назад", en: "Back" })}
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-zinc-200 text-zinc-500 transition-colors hover:text-zinc-900 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-100"

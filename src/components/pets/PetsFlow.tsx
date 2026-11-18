@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { useStepHistory } from "@/lib/step-history";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { Clock, ArrowRight, Home, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
@@ -47,6 +48,11 @@ export function PetsFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
   useFlowReset(() => setStep("form"));
+  // Кроки в історії браузера: системна «назад» → попередній крок; з першого — звичайний перехід назад.
+  useStepHistory(step, setStep, "form", {
+    tracked: ["offers", "checkout"],
+    onInitial: () => { clearResume("checkout_resume_pets"); window.history.replaceState(window.history.state, "", window.location.pathname); },
+  });
   const [petType, setPetType] = useState("cat");
   // Дата початку зашита за замовчуванням (мінімум за API — через 10 днів), поле не показуємо.
   const [startDate] = useState(() => {

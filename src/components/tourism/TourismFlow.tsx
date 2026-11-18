@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { useStepHistory } from "@/lib/step-history";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { MapPin, CalendarDays, CalendarCheck, Users, ArrowRight, Plus, X, Home, ChevronRight, ChevronDown, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Compass } from "lucide-react";
@@ -251,6 +252,11 @@ export function TourismFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"form" | "offers" | "checkout">("form");
   useFlowReset(() => setStep("form"));
+  // Кроки в історії браузера: системна «назад» → попередній крок; з першого — звичайний перехід назад.
+  useStepHistory(step, setStep, "form", {
+    tracked: ["offers", "checkout"],
+    onInitial: () => { clearResume("checkout_resume_tourism"); window.history.replaceState(window.history.state, "", window.location.pathname); },
+  });
   const [selectedOffer, setSelectedOffer] = useState<TourismOffer | null>(null);
   // Відновлення оформлення після перезавантаження вкладки (див. lib/checkout-resume):
   // якщо є свіжий знімок з orderId — одразу відкриваємо checkout із його ctx.

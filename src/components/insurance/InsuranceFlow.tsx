@@ -14,6 +14,7 @@ import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insuran
 import { trackEvent, trackCalc } from "@/lib/analytics";
 import { useI18n } from "@/lib/i18n";
 import { rememberPlate } from "@/lib/recent-plates";
+import { buildOsagoOffersUrl } from "@/lib/osago-offers-url";
 
 const VehicleConfirmModal = dynamic(() => import("./VehicleConfirmModal").then(mod => mod.VehicleConfirmModal), { ssr: false });
 import type { DriverAges } from "./VehicleConfirmModal";
@@ -67,13 +68,8 @@ export function InsuranceFlow() {
   // URL екрана пропозицій: номер + введені дати народження (страхувальник / наймолодший
   // водій / власник). Тримаємо їх у URL, щоб при перезавантаженні/поверненні дані бралися
   // саме звідси, а не з дефолтів/кукі. Порожні — не додаємо.
-  const buildOffersUrl = (vehicle: VehicleData, buyer: BuyerData, plateFallback: string) => {
-    const sp = new URLSearchParams({ step: "offers", plate: vehicle.number || plateFallback });
-    if (buyer.policyholderBirthDate) sp.set("ph", buyer.policyholderBirthDate);
-    if (buyer.youngestBirthDate) sp.set("yd", buyer.youngestBirthDate);
-    if (buyer.birthDate) sp.set("ob", buyer.birthDate);
-    return `${pathname}?${sp.toString()}`;
-  };
+  const buildOffersUrl = (vehicle: VehicleData, buyer: BuyerData, plateFallback: string) =>
+    buildOsagoOffersUrl(vehicle.number || plateFallback, buyer, pathname);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -201,7 +197,9 @@ export function InsuranceFlow() {
     setState((s) => ({ ...s, step: "offers", vehicle, buyer, periodId: period, offers: [], offersLoading: !askDobs }));
     // Номер авто (напівпублічний) — у URL через РОУТЕР (не replaceState), щоб клік по
     // меню на /osago розпізнавався як навігація й повертав на головний екран.
-    router.replace(buildOffersUrl(vehicle, buyer, state.plate), { scroll: false });
+    // push (не replace): системна «назад» з пропозицій веде на екран номера,
+    // а з /checkout — на пропозиції.
+    router.push(buildOffersUrl(vehicle, buyer, state.plate), { scroll: false });
 
     if (askDobs) {
       setShowBuyerModal(true);
@@ -347,9 +345,12 @@ export function InsuranceFlow() {
   // б у момент самого показу оферів (гонка).
   useEffect(() => {
     if (searchParams.get("step") !== "offers") {
-      // URL без «?step=offers» (клік по меню на /osago) → повертаємось на перший екран.
+      // URL без «?step=offers» (клік по меню на /osago, системна «назад») → перший екран.
       // Функціональний сет — читаємо актуальний крок без stepRef (без гонок при показі).
       setState((s) => (s.step === "offers" ? { ...s, step: "hero" } : s));
+    } else {
+      // «Вперед» після «назад»: URL знову з пропозиціями, дані авто ще в стані → показуємо їх.
+      setState((s) => (s.step === "hero" && s.vehicle && s.offers.length > 0 ? { ...s, step: "offers" } : s));
     }
   }, [searchParams]);
 

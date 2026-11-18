@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { useStepHistory } from "@/lib/step-history";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { Home as HomeIcon, Building2, ShieldCheck, CalendarDays, ArrowRight, ChevronRight } from "lucide-react";
@@ -44,6 +45,11 @@ export function HousingFlow() {
   const { t } = useI18n();
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
   useFlowReset(() => setStep("params"));
+  // Кроки в історії браузера: системна «назад» → попередній крок; з першого — звичайний перехід назад.
+  useStepHistory(step, setStep, "params", {
+    tracked: ["offers", "checkout"],
+    onInitial: () => { clearResume("checkout_resume_housing"); window.history.replaceState(window.history.state, "", window.location.pathname); },
+  });
 
   const [homeType, setHomeType] = useState<"flat" | "house">("flat");
   const [amount, setAmount] = useState(1000000);

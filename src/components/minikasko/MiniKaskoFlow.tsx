@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFlowReset } from "@/lib/nav-reset";
+import { useStepHistory } from "@/lib/step-history";
 import { readResume, clearResume } from "@/lib/checkout-resume";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight, Home, ChevronRight, ChevronDown, ShieldCheck, Loader2, Phone, Car, FileText, CreditCard, Download, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
@@ -42,6 +43,11 @@ export function MiniKaskoFlow() {
   ];
   const [step, setStep] = useState<"params" | "offers" | "checkout">("params");
   useFlowReset(() => setStep("params"));
+  // Кроки в історії браузера: системна «назад» → попередній крок; з першого — звичайний перехід назад.
+  useStepHistory(step, setStep, "params", {
+    tracked: ["offers", "checkout"],
+    onInitial: () => { clearResume("checkout_resume_minikasko"); window.history.replaceState(window.history.state, "", window.location.pathname); },
+  });
 
   // Місто (автопідбір) + дата початку.
   const [cityQuery, setCityQuery] = useState("");
