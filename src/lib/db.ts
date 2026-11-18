@@ -63,6 +63,10 @@ export function ensureSchema(): Promise<void> {
       // Тестові поліси (укладені в dev-режимі Ukasko або позначені адміном) — у
       // кабінеті з бейджем «Тестовий», в адмінці не рахуються у виручку.
       await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS is_test boolean NOT NULL DEFAULT false`;
+      // Статус договору: active | terminated (достроково припинений — позначає адмін,
+      // Ukasko такого статусу в API не віддає). terminated_at — коли позначили.
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'`;
+      await sql`ALTER TABLE policies ADD COLUMN IF NOT EXISTS terminated_at timestamptz`;
       // Профіль страхувальника, привʼязаний до АКАУНТА (email сесії). Один запис на
       // акаунт; синхронізується між пристроями. data — весь CustomerProfile як jsonb.
       await sql`

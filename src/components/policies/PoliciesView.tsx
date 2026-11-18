@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2, Archive, Clock, CheckCircle2, FlaskConical } from "lucide-react";
+import { FileText, Download, ExternalLink, ShieldCheck, LogIn, Trash2, Loader2, Archive, Clock, CheckCircle2, FlaskConical, Ban } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useI18n, type Tr } from "@/lib/i18n";
 import type { PolicyRecord } from "@/lib/policies";
@@ -37,6 +37,7 @@ function daysLeft(endDate?: string | null): number | null {
   return Math.round((t1 - t0) / 86_400_000);
 }
 function isArchived(p: PolicyRecord): boolean {
+  if (p.status === "terminated") return true;
   const d = daysLeft(p.endDate);
   return d !== null && d < 0;
 }
@@ -108,7 +109,7 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
             <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">{t({ uk: "Архів", en: "Archive" })}</h2>
             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{archived.length}</span>
           </div>
-          <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Поліси, строк дії яких минув. Договори й далі можна завантажити.", en: "Policies whose term has ended. Contracts can still be downloaded." })}</p>
+          <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t({ uk: "Поліси, строк дії яких минув або які припинено достроково. Договори й далі можна завантажити.", en: "Policies whose term has ended or that were terminated early. Contracts can still be downloaded." })}</p>
           <div className="space-y-3 opacity-80">
             {archived.map((p) => <PolicyCard key={p.id} policy={p} archived />)}
           </div>
@@ -118,9 +119,12 @@ export function PoliciesView({ loggedIn, email, policies }: PoliciesViewProps) {
   );
 }
 
-function TermBadge({ endDate, archived }: { endDate: string | null; archived?: boolean }) {
+function TermBadge({ endDate, archived, terminated }: { endDate: string | null; archived?: boolean; terminated?: boolean }) {
   const { t } = useI18n();
   const d = daysLeft(endDate);
+  if (terminated) {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" title={t({ uk: "Договір припинено до закінчення строку дії", en: "The contract was terminated before its end date" })}><Ban className="h-3 w-3" />{t({ uk: "Припинено достроково", en: "Terminated early" })}</span>;
+  }
   if (archived || (d !== null && d < 0)) {
     return <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"><Archive className="h-3 w-3" />{t({ uk: "Завершився", en: "Expired" })}</span>;
   }
@@ -228,7 +232,7 @@ function PolicyCard({ policy, archived = false }: { policy: PolicyRecord; archiv
               {policy.company && <span>{policy.company}</span>}
               {policy.policyNumber && <span>№ {policy.policyNumber}</span>}
               {policy.startDate && policy.endDate && <span>{policy.startDate} — {policy.endDate}</span>}
-              <TermBadge endDate={policy.endDate} archived={archived} />
+              <TermBadge endDate={policy.endDate} archived={archived} terminated={policy.status === "terminated"} />
               {policy.isTest && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" title={t({ uk: "Оформлений у тестовому режимі — не є чинним договором", en: "Issued in test mode — not a valid contract" })}>
                   <FlaskConical className="h-3 w-3" />{t({ uk: "Тестовий", en: "Test" })}

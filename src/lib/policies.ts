@@ -35,7 +35,12 @@ export interface PolicyRecord {
   mtsbuLink: string | null;
   /** Тестовий поліс (dev-режим Ukasko або позначка адміна). */
   isTest: boolean;
+  /** active | terminated (достроково припинений — позначка адміна). */
+  status: PolicyStatus;
+  terminatedAt: string | null;
 }
+
+export type PolicyStatus = "active" | "terminated";
 
 export interface SavePolicyInput {
   /** Унікальний ключ полісу (contractId, або orderId якщо контракту ще нема). */
@@ -140,6 +145,8 @@ interface PolicyRow {
   policy_number: string | null;
   mtsbu_link: string | null;
   is_test: boolean | null;
+  status: string | null;
+  terminated_at: Date | string | null;
 }
 
 function mapRow(r: PolicyRow): PolicyRecord {
@@ -162,7 +169,19 @@ function mapRow(r: PolicyRow): PolicyRecord {
     policyNumber: r.policy_number,
     mtsbuLink: r.mtsbu_link ?? null,
     isTest: r.is_test === true,
+    status: r.status === "terminated" ? "terminated" : "active",
+    terminatedAt: r.terminated_at ? (r.terminated_at instanceof Date ? r.terminated_at.toISOString() : String(r.terminated_at)) : null,
   };
+}
+
+// Статус договору з адмінки: достроково припинений / знову активний.
+export async function setPolicyStatus(id: string, status: PolicyStatus): Promise<boolean> {
+  if (!sql) return false;
+  await ensureSchema();
+  const res = status === "terminated"
+    ? await sql`UPDATE policies SET status = 'terminated', terminated_at = now() WHERE id = ${id}`
+    : await sql`UPDATE policies SET status = 'active', terminated_at = NULL WHERE id = ${id}`;
+  return (res.count ?? 0) > 0;
 }
 
 // Позначка «тестовий» з адмінки (в обидва боки).
@@ -180,7 +199,7 @@ export async function setPolicyMtsbuLink(id: string, link: string): Promise<void
   await sql`UPDATE policies SET mtsbu_link = ${link} WHERE id = ${id} AND (mtsbu_link IS NULL OR mtsbu_link <> ${link})`;
 }
 
-const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at, source, product, policy_number, mtsbu_link, is_test`;
+const SELECT_COLS = `id, email, phone, customer_name, customer, contract_id, order_id, company, vehicle, price, start_date, end_date, created_at, source, product, policy_number, mtsbu_link, is_test, status, terminated_at`;
 
 export async function getPoliciesByEmail(email: string): Promise<PolicyRecord[]> {
   if (!sql) return [];

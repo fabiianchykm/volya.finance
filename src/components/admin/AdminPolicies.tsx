@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Phone, Mail, Download, ExternalLink, FlaskConical } from "lucide-react";
+import { Loader2, Phone, Mail, Download, ExternalLink, FlaskConical, Ban, RotateCcw } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { downloadEndpointFor } from "@/lib/policy-download";
 import type { PolicyRecord } from "@/lib/policies";
@@ -44,6 +44,20 @@ export function AdminPolicies() {
       if (json?.success) setPolicies((prev) => prev.map((x) => (x.id === p.id ? { ...x, isTest: !p.isTest } : x)));
     } finally {
       setToggling(null);
+    }
+  };
+
+  const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
+  const toggleTerminated = async (p: PolicyRecord) => {
+    const next = p.status === "terminated" ? "active" : "terminated";
+    if (next === "terminated" && !window.confirm(t({ uk: "Позначити поліс як достроково припинений? У кабінеті клієнта він піде в архів.", en: "Mark this policy as terminated early? It will move to the client's archive." }))) return;
+    setTogglingStatus(p.id);
+    try {
+      const res = await fetch("/api/admin/policies", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: p.id, status: next }) });
+      const json = await res.json().catch(() => ({}));
+      if (json?.success) setPolicies((prev) => prev.map((x) => (x.id === p.id ? { ...x, status: next, terminatedAt: next === "terminated" ? new Date().toISOString() : null } : x)));
+    } finally {
+      setTogglingStatus(null);
     }
   };
 
@@ -94,6 +108,7 @@ export function AdminPolicies() {
                 </span>
                 {isManual && <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t({ uk: "вручну", en: "manual" })}</span>}
                 {p.isTest && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><FlaskConical className="h-3 w-3" />{t({ uk: "тестовий", en: "test" })}</span>}
+                {p.status === "terminated" && <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"><Ban className="h-3 w-3" />{t({ uk: "припинено достроково", en: "terminated early" })}</span>}
                 {p.company && <span className="text-xs text-zinc-500 dark:text-zinc-400">{p.company}</span>}
                 {typeof p.price === "number" && <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{p.price} грн</span>}
               </div>
@@ -139,9 +154,19 @@ export function AdminPolicies() {
                 {dlError[p.id] && <span className="text-xs text-red-500">{dlError[p.id]}</span>}
                 <button
                   type="button"
+                  onClick={() => toggleTerminated(p)}
+                  disabled={togglingStatus === p.id}
+                  className={`ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${p.status === "terminated" ? "bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300" : "text-zinc-500 hover:bg-zinc-50 hover:text-rose-700 dark:text-zinc-400 dark:hover:bg-zinc-800"}`}
+                  title={p.status === "terminated" ? t({ uk: "Повернути в активні", en: "Restore as active" }) : t({ uk: "Позначити достроково припиненим", en: "Mark as terminated early" })}
+                >
+                  {togglingStatus === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : p.status === "terminated" ? <RotateCcw className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
+                  {p.status === "terminated" ? t({ uk: "Відновити", en: "Restore" }) : t({ uk: "Припинити достроково", en: "Terminate early" })}
+                </button>
+                <button
+                  type="button"
                   onClick={() => toggleTest(p)}
                   disabled={toggling === p.id}
-                  className={`ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${p.isTest ? "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300" : "text-zinc-500 hover:bg-zinc-50 hover:text-amber-700 dark:text-zinc-400 dark:hover:bg-zinc-800"}`}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${p.isTest ? "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300" : "text-zinc-500 hover:bg-zinc-50 hover:text-amber-700 dark:text-zinc-400 dark:hover:bg-zinc-800"}`}
                   title={p.isTest ? t({ uk: "Зняти позначку «тестовий»", en: "Unmark as test" }) : t({ uk: "Позначити як тестовий", en: "Mark as test" })}
                 >
                   {toggling === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
