@@ -1,49 +1,86 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, MonitorSmartphone } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
-// Перемикач світла/темна тема. Клас .dark на <html> уже виставляє інлайн-скрипт у
-// layout (без FOUC); тут лише синхронізуємо стан кнопки й перемикаємо + памʼятаємо
-// вибір у localStorage.
+// Перемикач теми з трьома режимами: Авто (за системою, з живим перемиканням,
+// коли ОС змінює тему вдень/уночі) · Світла · Темна. Клас .dark на <html>
+// виставляє інлайн-скрипт у layout (без FOUC) і він же слухає matchMedia;
+// тут лише зберігаємо вибір і просимо скрипт перезастосувати тему.
+
+type Mode = "auto" | "light" | "dark";
+
+declare global {
+  interface Window { __applyTheme?: () => void }
+}
+
+function readMode(): Mode {
+  try {
+    const t = localStorage.getItem("theme");
+    return t === "light" || t === "dark" ? t : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
 export function ThemeToggle() {
-  const [dark, setDark] = useState(false);
+  const { t } = useI18n();
+  const [mode, setMode] = useState<Mode>("auto");
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+  // Режим читаємо з localStorage лише після монтування (SSR не знає вибору).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMounted(true); setMode(readMode()); }, []);
 
-  const toggle = () => {
-    const next = !dark;
-    setDark(next);
-    const el = document.documentElement;
-    el.classList.toggle("dark", next);
-    el.style.colorScheme = next ? "dark" : "light";
+  const apply = (next: Mode) => {
+    setMode(next);
     try {
-      localStorage.setItem("theme", next ? "dark" : "light");
+      if (next === "auto") localStorage.removeItem("theme");
+      else localStorage.setItem("theme", next);
     } catch {}
+    const reapply = window.__applyTheme;
+    if (typeof reapply === "function") {
+      reapply();
+    } else {
+      // Фолбек, якщо інлайн-скрипт не відпрацював.
+      const dark = next === "dark" || (next === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.style.setProperty("color-scheme", dark ? "dark" : "light");
+    }
   };
 
+  const OPTIONS: { value: Mode; Icon: typeof Sun; label: string }[] = [
+    { value: "auto", Icon: MonitorSmartphone, label: t({ uk: "Авто (як у системі)", en: "Auto (system)" }) },
+    { value: "light", Icon: Sun, label: t({ uk: "Світла тема", en: "Light theme" }) },
+    { value: "dark", Icon: Moon, label: t({ uk: "Темна тема", en: "Dark theme" }) },
+  ];
+
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      role="switch"
-      aria-checked={dark}
-      aria-label={dark ? "Увімкнути світлу тему" : "Увімкнути темну тему"}
-      title={dark ? "Світла тема" : "Темна тема"}
-      className="relative inline-flex h-9 w-16 items-center rounded-full border border-zinc-200 bg-white px-1 shadow-sm transition-colors dark:border-zinc-700 dark:bg-zinc-800"
+    <div
+      role="radiogroup"
+      aria-label={t({ uk: "Тема оформлення", en: "Colour theme" })}
+      className="inline-flex h-9 items-center rounded-full border border-zinc-200 bg-white p-1 shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
     >
-      {/* Повзунок */}
-      <span
-        className={`flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-white shadow transition-transform duration-300 ${
-          mounted && dark ? "translate-x-7" : "translate-x-0"
-        }`}
-      >
-        {mounted && dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-      </span>
-    </button>
+      {OPTIONS.map(({ value, Icon, label }) => {
+        const active = mounted && mode === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={label}
+            title={label}
+            onClick={() => apply(value)}
+            className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+              active ? "bg-indigo-600 text-white shadow" : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+          </button>
+        );
+      })}
+    </div>
   );
 }

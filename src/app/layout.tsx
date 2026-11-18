@@ -72,10 +72,11 @@ export default async function RootLayout({
   return (
     <html lang="uk" className={`${openSans.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        {/* Ставимо клас теми ДО рендеру, щоб не було спалаху світлого фону (FOUC). */}
+        {/* Клас теми ДО рендеру (без FOUC). Режими: 'light' | 'dark' | авто (ключа немає або 'auto' → за системою,
+            і живе перемикання за зміною системної теми через matchMedia). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var e=document.documentElement;try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(x){}try{var a=JSON.parse(localStorage.getItem('a11y')||'{}');if(a.fontScale)e.style.fontSize=(16*a.fontScale)+'px';e.classList.toggle('a11y-contrast',!!a.contrast);e.classList.toggle('a11y-spacing',!!a.spacing);e.classList.toggle('a11y-underline',!!a.underline);e.classList.toggle('a11y-no-motion',!!a.motion);}catch(x){}})();`,
+            __html: `(function(){var e=document.documentElement;try{var m=window.matchMedia('(prefers-color-scheme: dark)');var ap=function(){var t=localStorage.getItem('theme');var d=t==='dark'||(t!=='light'&&m.matches);e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';};ap();window.__applyTheme=ap;if(m.addEventListener)m.addEventListener('change',ap);else if(m.addListener)m.addListener(ap);}catch(x){}try{var a=JSON.parse(localStorage.getItem('a11y')||'{}');if(a.fontScale)e.style.fontSize=(16*a.fontScale)+'px';e.classList.toggle('a11y-contrast',!!a.contrast);e.classList.toggle('a11y-spacing',!!a.spacing);e.classList.toggle('a11y-underline',!!a.underline);e.classList.toggle('a11y-no-motion',!!a.motion);}catch(x){}})();`,
           }}
         />
       </head>
