@@ -48,10 +48,10 @@ export function FooterContact() {
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-x-14 gap-y-8">
+      <div>
         {/* Соцмережі */}
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+          <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
             {t({ uk: "Соцмережі", en: "Social media" })}
           </p>
           <div className="flex flex-wrap items-center gap-3">

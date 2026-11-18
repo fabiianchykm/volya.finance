@@ -40,6 +40,7 @@ function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: s
   );
 }
 import { FooterContact } from "./FooterContact";
+import { Wordmark } from "./VMark";
 
 type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean };
 
@@ -72,7 +73,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
   ],
 };
 
-function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
+function LinkColumn({ title, links, twoCols = false }: { title: string; links: FooterLink[]; twoCols?: boolean }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
@@ -81,7 +82,7 @@ function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
       <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
         {title}
       </h3>
-      <ul className="space-y-1.5">
+      <ul className={twoCols ? "grid grid-cols-2 gap-x-6 gap-y-1.5" : "space-y-1.5"}>
         {links.map((link) => (
           <li key={link.label}>
             {link.frozen ? (
@@ -110,55 +111,62 @@ export function Footer() {
   return (
     <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-[#F5F5F7] dark:bg-[#0a0a0b] text-zinc-600 dark:text-zinc-300">
       <div className="mx-auto max-w-7xl px-6 sm:px-10">
-        {/* Бренд + контакти + застосунок, а під ними — компактні колонки посилань */}
-        <div className="py-16 lg:py-20">
-          <FooterContact />
+        {/* Верх: бренд (лого, слоган, соцмережі, застосунки) ліворуч, колонки посилань праворуч */}
+        <div className="grid gap-12 py-14 lg:grid-cols-12 lg:gap-10 lg:py-16">
+          <div className="lg:col-span-4">
+            <Link href="/" aria-label="VOLYA.finance" className="inline-flex">
+              <Wordmark id="vmark-footer" className="text-xl text-zinc-900 dark:text-zinc-100" />
+            </Link>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {t({ uk: "Порівнюємо ціни страхових і видаємо електронні поліси онлайн — за кілька хвилин, без візитів до офісу.", en: "We compare insurers' prices and issue electronic policies online — in minutes, with no office visits." })}
+            </p>
 
-          {/* Застосунки (iOS + Android) — «Скоро» у правому верхньому куті рамок */}
-          <div className="mt-7">
-            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Застосунок", en: "App" })}</p>
-            <div className="flex flex-wrap gap-3">
-              <StoreBadge logo={<AppleLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Download on" })} name="App Store" />
-              <StoreBadge logo={<GooglePlayLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Get it on" })} name="Google Play" />
+            <div className="mt-7">
+              <FooterContact />
+            </div>
+
+            <div className="mt-7">
+              <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Застосунок", en: "App" })}</p>
+              <div className="flex flex-wrap gap-3">
+                <StoreBadge logo={<AppleLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Download on" })} name="App Store" />
+                <StoreBadge logo={<GooglePlayLogo className="h-6 w-6" />} top={t({ uk: "Завантажити в", en: "Get it on" })} name="Google Play" />
+              </div>
             </div>
           </div>
 
-          {/* Колонки посилань — компактні, під підтримкою й застосунком */}
-          <div className="mt-10 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-3">
-            <LinkColumn title={t({ uk: "Продукти", en: "Products" })} links={footerLinks.products} />
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-[2fr_1fr_1fr] lg:col-span-8 lg:gap-x-12">
+            <div className="col-span-2 sm:col-span-1">
+              <LinkColumn title={t({ uk: "Продукти", en: "Products" })} links={footerLinks.products} twoCols />
+            </div>
             <LinkColumn title={t({ uk: "Медіа", en: "Media" })} links={footerLinks.media} />
             <LinkColumn title={t({ uk: "Документи", en: "Documents" })} links={footerLinks.legal} />
           </div>
         </div>
 
-        {/* Нижній рядок — мова, доступність і тема */}
-        <div className="flex items-center justify-end gap-4 border-t border-zinc-200 py-6 dark:border-zinc-800">
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <LanguageToggle />
-            <AccessibilityControls />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Тема", en: "Theme" })}</span>
-            <ThemeToggle />
-          </div>
-        </div>
-
         {/* Довідковий SEO-текст дрібним шрифтом — ПРИРОДНА проза з ключовими фразами,
             вплетеними органічно (без keyword-stuffing, щоб не отримати штраф Google). */}
-        <div className="border-t border-zinc-200 dark:border-zinc-800 py-6">
-          <p className="text-justify text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+        <div className="border-t border-zinc-200 py-6 dark:border-zinc-800">
+          <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
             {t({
               uk: "Воля Фінанс (VOLYA.FINANCE) — сервіс онлайн-страхування в Україні. У нас можна оформити автоцивілку (ОСЦПВ / ОСАГО), КАСКО та міні-КАСКО, Зелену карту для виїзду за кордон, туристичне страхування для подорожей і страхування домашніх тварин. Ми порівнюємо ціни від 21+ провідних страхових компаній і показуємо найвигідніші пропозиції, а всі поліси електронні та офіційно зареєстровані в МТСБУ. Розрахуйте вартість і купіть страховку на авто онлайн за кілька хвилин — без черг, візитів до офісу та зайвих документів, з готовим полісом на email. Оформлення доступне по всій Україні: Київ, Львів, Одеса, Харків, Дніпро та інші міста.",
               en: "Volya Finance (VOLYA.FINANCE) is an online insurance service in Ukraine. Here you can arrange car insurance (OSAGO), CASCO and Mini-CASCO, a Green Card for trips abroad, travel insurance for your journeys and pet insurance. We compare prices from 21+ leading insurance companies and show the best offers, and all policies are electronic and officially registered with MTSBU. Calculate the cost and buy car insurance online in just a few minutes — no queues, office visits or extra paperwork, with a ready policy sent to your email. Available across Ukraine: Kyiv, Lviv, Odesa, Kharkiv, Dnipro and other cities.",
             })}
           </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              © {new Date().getFullYear()} VOLYA.FINANCE. {t({ uk: "Усі права захищені.", en: "All rights reserved." })}
-            </p>
+        </div>
+
+        {/* Нижній рядок: копірайт і документи ліворуч, мова · доступність · тема праворуч */}
+        <div className="flex flex-col gap-4 border-t border-zinc-200 py-5 dark:border-zinc-800 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+            <span>© {new Date().getFullYear()} VOLYA.FINANCE. {t({ uk: "Усі права захищені.", en: "All rights reserved." })}</span>
             {/* Публічна оферта — заморожена (документа ще нема); політика конфіденційності — /privacy. */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-400 dark:text-zinc-500">
-              <span className="cursor-default">{t({ uk: "Публічна оферта", en: "Public offer" })}</span>
-              <Link href="/privacy" className="hover:text-zinc-600 dark:hover:text-zinc-300">{t({ uk: "Політика конфіденційності", en: "Privacy policy" })}</Link>
-            </div>
+            <span className="cursor-default text-zinc-400 dark:text-zinc-500">{t({ uk: "Публічна оферта", en: "Public offer" })}</span>
+            <Link href="/privacy" className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">{t({ uk: "Політика конфіденційності", en: "Privacy policy" })}</Link>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <LanguageToggle />
+            <AccessibilityControls />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">{t({ uk: "Тема", en: "Theme" })}</span>
+            <ThemeToggle />
           </div>
         </div>
       </div>
