@@ -218,7 +218,9 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 md:hidden"
           >
-            <div className="flex flex-col gap-1 px-4 py-4">
+            {/* Шапка fixed, тож меню довше за екран не прокрутити разом зі сторінкою —
+                даємо панелі власний скрол у межах видимої висоти (dvh враховує панель Safari). */}
+            <div className="flex max-h-[calc(100dvh-4.25rem)] flex-col gap-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
               {navLinks.map((link) => {
                 const badge = (link as { badge?: string }).badge;
                 const soon = (link as { soon?: boolean }).soon;
