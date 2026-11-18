@@ -43,22 +43,9 @@ import { FooterContact } from "./FooterContact";
 
 type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean; /** Зовнішнє посилання — у новій вкладці. */ external?: boolean };
 
-const footerLinks: { products: FooterLink[]; business: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
-  // За абеткою (українські назви).
-  products: [
-    { label: "Автоцивілка", labelEn: "Car insurance (OSAGO)", href: "/osago" },
-    { label: "Віньєтка (скоро)", labelEn: "Vignette (soon)", href: "/vignette" },
-    { label: "Житло", labelEn: "Property", href: "/housing" },
-    { label: "Зброя", labelEn: "Firearms", href: "/weapon" },
-    { label: "Зелена карта", labelEn: "Green Card", href: "/green-card" },
-    { label: "КАСКО", labelEn: "CASCO", href: "/kasko" },
-    { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko" },
-    { label: "Нещасні випадки", labelEn: "Accident", href: "/accident" },
-    { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift" },
-    { label: "Тварини", labelEn: "Pets", href: "/pets" },
-    { label: "Туристичне", labelEn: "Travel", href: "/tourism" },
-  ],
-  // Продукти «через менеджера» (B2B і спеціальні) — лише у футері, не в головному меню.
+const footerLinks: { business: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
+  // Основні продукти — у меню шапки, тут не дублюємо. У футері лише додаткові
+  // (через менеджера: B2B і спеціальні), яких у головному меню немає.
   business: [
     { label: "Страхування пасажирів", labelEn: "Passenger insurance", href: "/passengers" },
     { label: "CMR — відповідальність перевізника", labelEn: "CMR carrier liability", href: "/cmr" },
@@ -81,7 +68,7 @@ const footerLinks: { products: FooterLink[]; business: FooterLink[]; media: Foot
   ],
 };
 
-function LinkColumn({ title, links, twoCols = false }: { title: string; links: FooterLink[]; twoCols?: boolean }) {
+function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
@@ -90,7 +77,7 @@ function LinkColumn({ title, links, twoCols = false }: { title: string; links: F
       <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
         {title}
       </h3>
-      <ul className={twoCols ? "grid grid-cols-2 gap-x-6 gap-y-1.5" : "space-y-1.5"}>
+      <ul className="space-y-1.5">
         {links.map((link) => (
           <li key={link.label}>
             {link.frozen ? (
@@ -137,11 +124,10 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-[2fr_1.3fr_1fr_1fr] lg:col-span-8 lg:gap-x-10">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-[1.6fr_1fr_1fr] lg:col-span-8 lg:gap-x-12">
             <div className="col-span-2 sm:col-span-1">
-              <LinkColumn title={t({ uk: "Продукти", en: "Products" })} links={footerLinks.products} twoCols />
+              <LinkColumn title={t({ uk: "Додаткові продукти", en: "Additional products" })} links={footerLinks.business} />
             </div>
-            <LinkColumn title={t({ uk: "Для бізнесу та інше", en: "Business & more" })} links={footerLinks.business} />
             <LinkColumn title={t({ uk: "Медіа", en: "Media" })} links={footerLinks.media} />
             <LinkColumn title={t({ uk: "Документи", en: "Documents" })} links={footerLinks.legal} />
           </div>
