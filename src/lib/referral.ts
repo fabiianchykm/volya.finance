@@ -156,7 +156,7 @@ export interface ReferralSummary {
   bonusTotal: number;      // сума саме реферальних бонусів (історія запрошень)
   items: ReferralItem[];
   /** Єдиний бонусний рахунок: покупки (1%) + реферальні (5%) − списання. */
-  balance: { total: number; purchase: number; referral: number; redeemed: number };
+  balance: { total: number; purchase: number; referral: number; redeemed: number; donated: number };
   /** Рух по рахунку (нарахування, списання, резерви), найновіше першим. */
   history: BonusHistoryItem[];
 }

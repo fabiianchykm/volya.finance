@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/utils";
 import { useI18n, type Tr } from "@/lib/i18n";
 import type { ReferralSummary } from "@/lib/referral";
 import type { BonusHistoryItem } from "@/lib/bonus";
+import { DonateBonusButton } from "./DonateBonusButton";
 
 const PRODUCT: Record<string, Tr> = {
   osago: { uk: "Автоцивілка", en: "Car insurance" }, kasko: { uk: "КАСКО", en: "CASCO" }, minikasko: { uk: "Міні-КАСКО", en: "Mini CASCO" },
@@ -40,6 +41,8 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
         return { title: t({ uk: "5% за поліс друга", en: "5% for a friend's policy" }), sub: h.friend ?? "" };
       case "redeem":
         return { title: t({ uk: "Списано як знижку", en: "Redeemed as a discount" }), sub: policyLine };
+      case "donation":
+        return { title: t({ uk: "Пожертва на благодійність", en: "Charity donation" }), sub: h.fund ?? "" };
       case "held":
         return { title: t({ uk: "Зарезервовано під заявку", en: "Reserved for a pending order" }), sub: policyLine || t({ uk: "Повернеться, якщо поліс не оплатять протягом доби", en: "Returned if the policy is not paid within a day" }) };
     }
@@ -59,15 +62,22 @@ export function ReferralCard({ summary }: { summary: ReferralSummary }) {
     <div className="mb-6 overflow-hidden rounded-2xl border border-indigo-100 dark:border-indigo-900 bg-white dark:bg-zinc-900 shadow-sm">
       {/* Баланс бонусного рахунку */}
       <div className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 py-5 text-white">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20">
-            <Wallet className="h-5 w-5" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20">
+              <Wallet className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-indigo-100">{t({ uk: "Бонусний рахунок", en: "Bonus account" })}</p>
+              <p className="text-2xl font-bold leading-tight">{formatPrice(balance.total)}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-medium text-indigo-100">{t({ uk: "Бонусний рахунок", en: "Bonus account" })}</p>
-            <p className="text-2xl font-bold leading-tight">{formatPrice(balance.total)}</p>
-          </div>
+          {/* Пожертва бонусів на благодійність (списання з рахунку, переказ фонду робить менеджер). */}
+          <DonateBonusButton available={Math.floor(balance.total)} />
         </div>
+        {balance.donated > 0 && (
+          <p className="mt-3 text-xs text-indigo-100">{t({ uk: `Пожертвувано на благодійність: ${formatPrice(balance.donated)}. Дякуємо!`, en: `Donated to charity: ${formatPrice(balance.donated)}. Thank you!` })}</p>
+        )}
       </div>
 
       {/* Запрошення друзів */}

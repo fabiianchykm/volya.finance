@@ -4,11 +4,13 @@ import { sql } from "./db";
 // - 'purchase' — 1% від власної покупки полісу;
 // - 'referral' — 5% від покупки запрошеного друга;
 // - 'redeem'   — списання бонусів у рахунок знижки на поліс (відʼємна сума, див.
-//                bonus-redemption.ts).
+//                bonus-redemption.ts);
+// - 'donation' — пожертва бонусів на благодійність (відʼємна сума, див.
+//                bonus-donation.ts; менеджер переказує гроші фонду).
 // Баланс = сума всіх записів. Дедуплікація за id = `${kind}:${policyId}` —
 // один поліс дає максимум один запис кожного типу.
 
-export type BonusKind = "purchase" | "referral" | "redeem";
+export type BonusKind = "purchase" | "referral" | "redeem" | "donation";
 
 let schemaPromise: Promise<void> | null = null;
 function ensureBonusSchema(): Promise<void> {
@@ -56,15 +58,16 @@ export async function creditBonus(input: {
 }
 
 export interface BonusBreakdown {
-  total: number;      // доступний залишок = нараховано − списано
+  total: number;      // доступний залишок = нараховано − списано − пожертвувано
   purchase: number;
   referral: number;
   redeemed: number;   // скільки вже списано на знижки (додатне число)
+  donated: number;    // скільки пожертвувано на благодійність (додатне число)
 }
 
 /** Баланс бонусного рахунку з розбивкою за типом. */
 export async function getBonusBreakdown(email: string): Promise<BonusBreakdown> {
-  const empty = { total: 0, purchase: 0, referral: 0, redeemed: 0 };
+  const empty = { total: 0, purchase: 0, referral: 0, redeemed: 0, donated: 0 };
   if (!sql) return empty;
   await ensureBonusSchema();
   const rows = await sql<{ kind: string; sum: string }[]>`
@@ -78,14 +81,15 @@ export async function getBonusBreakdown(email: string): Promise<BonusBreakdown> 
     if (r.kind === "purchase") out.purchase = v;
     else if (r.kind === "referral") out.referral = v;
     else if (r.kind === "redeem") out.redeemed = Math.abs(v);
+    else if (r.kind === "donation") out.donated = Math.abs(v);
   }
-  out.total = Math.max(0, out.purchase + out.referral - out.redeemed);
+  out.total = Math.max(0, out.purchase + out.referral - out.redeemed - out.donated);
   return out;
 }
 
 /** Баланс за НАБОРОМ email-ів (рівноправна звʼязка акаунтів). */
 export async function getBonusBreakdownMulti(emails: string[]): Promise<BonusBreakdown> {
-  const empty = { total: 0, purchase: 0, referral: 0, redeemed: 0 };
+  const empty = { total: 0, purchase: 0, referral: 0, redeemed: 0, donated: 0 };
   const list = [...new Set(emails.map((e) => norm(e)).filter(Boolean))];
   if (!sql || !list.length) return empty;
   await ensureBonusSchema();
@@ -100,8 +104,9 @@ export async function getBonusBreakdownMulti(emails: string[]): Promise<BonusBre
     if (r.kind === "purchase") out.purchase = v;
     else if (r.kind === "referral") out.referral = v;
     else if (r.kind === "redeem") out.redeemed = Math.abs(v);
+    else if (r.kind === "donation") out.donated = Math.abs(v);
   }
-  out.total = Math.max(0, out.purchase + out.referral - out.redeemed);
+  out.total = Math.max(0, out.purchase + out.referral - out.redeemed - out.donated);
   return out;
 }
 
@@ -117,6 +122,8 @@ export interface BonusHistoryItem {
   policy: { company: string | null; product: string | null; plate: string | null; customerName: string | null } | null;
   /** Для referral — замаскований email запрошеного друга. */
   friend: string | null;
+  /** Для donation — назва фонду. */
+  fund?: string | null;
 }
 
 const maskEmail = (e: string | null | undefined): string | null => {
@@ -138,13 +145,15 @@ export async function getBonusHistory(emails: string[], limit = 50): Promise<Bon
     id: string; kind: string; amount: string; policy_id: string | null; created_at: Date;
     company: string | null; product: string | null; vehicle: { plate?: string } | null; customer_name: string | null;
     referred_email: string | null;
+    fund: string | null;
   };
   // policies шукаємо і за id (contractId / orderId при збереженні), і за order_id
   // (redeem зберігає orderId заявки). referrals — за id поліса запрошеного.
   const rows = await sql<Row[]>`
     SELECT b.id, b.kind, b.amount, b.policy_id, b.created_at,
            p.company, p.product, p.vehicle, p.customer_name,
-           r.referred_email
+           r.referred_email,
+           d.fund
     FROM bonus_entries b
     LEFT JOIN LATERAL (
       SELECT company, product, vehicle, customer_name FROM policies
@@ -152,6 +161,7 @@ export async function getBonusHistory(emails: string[], limit = 50): Promise<Bon
       ORDER BY created_at DESC LIMIT 1
     ) p ON true
     LEFT JOIN referrals r ON b.kind = 'referral' AND r.id = b.policy_id
+    LEFT JOIN bonus_donations d ON b.kind = 'donation' AND d.entry_id = b.id
     WHERE lower(b.email) = ANY(${list})
     ORDER BY b.created_at DESC
     LIMIT ${limit}
@@ -165,6 +175,7 @@ export async function getBonusHistory(emails: string[], limit = 50): Promise<Bon
       ? { company: r.company, product: r.product, plate: r.vehicle?.plate ?? null, customerName: r.customer_name }
       : null,
     friend: r.kind === "referral" ? maskEmail(r.referred_email) : null,
+    fund: r.kind === "donation" ? r.fund : null,
   }));
   // Активні резерви (ще не проведені списання).
   try {
