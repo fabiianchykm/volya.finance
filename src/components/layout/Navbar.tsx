@@ -9,7 +9,7 @@ import { Menu, X, LogOut, LogIn, FileText, Star, ChevronDown, ShieldCheck, Car, 
 import { isAdminClient } from "@/lib/admin";
 import { emitNavReset } from "@/lib/nav-reset";
 import { Wordmark } from "./VMark";
-import { Button } from "@/components/ui/Button";
+import { CABINET_TABS } from "@/components/cabinet/CabinetTabs";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
 import { useLogin } from "@/components/auth/LoginProvider";
@@ -36,8 +36,6 @@ const PERSONAL_LINKS: NavItem[] = [
   { label: "Зброя", labelEn: "Firearms", href: "/weapon", icon: Crosshair, desc: "Поліс власника для дозволу", descEn: "Owner's policy for the permit" },
   { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift", badge: "з 1 січня", divider: true },
 ];
-// Плаский список для мобільного меню (там ширини вистачає).
-const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];
 
 // Дропдаун меню з підпунктами-описами. Керований клік/тап + hover (на планшетах
 // hover нема, тож потрібен клік), закривається по кліку поза ним і по Escape.
@@ -133,14 +131,103 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
   );
 }
 
+// Розкривна група мобільного меню: заголовок із шевроном, усередині — список.
+function MobileGroup({ title, subtitle, icon: Icon, avatar, open, onToggle, children, id }: {
+  id: string; title: string; subtitle?: string; icon?: LucideIcon; avatar?: string | null; open: boolean; onToggle: () => void; children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`mobile-group-${id}`}
+        className={cn("flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors", open ? "bg-indigo-50/60 dark:bg-indigo-950/30" : "bg-white hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800/60")}
+      >
+        {avatar ? (
+          <Image src={avatar} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-full" />
+        ) : Icon ? (
+          <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", open ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400")}>
+            <Icon className="h-4.5 w-4.5" />
+          </span>
+        ) : null}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</span>
+          {subtitle && <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</span>}
+        </span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200", open && "rotate-180 text-indigo-600 dark:text-indigo-300")} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div id={`mobile-group-${id}`} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
+            <div className="border-t border-zinc-100 p-1.5 dark:border-zinc-800">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Пункти групи в мобільному меню — з іконкою, описом і бейджем, як у десктопному дропдауні.
+function MobileLinks({ links }: { links: NavItem[] }) {
+  const { t } = useI18n();
+  const pathname = usePathname();
+  const router = useRouter();
+  return (
+    <div className="flex flex-col gap-0.5">
+      {links.map(({ href, label, labelEn, icon: Icon, desc, descEn, badge, soon, divider }) => {
+        const row = (
+          <>
+            <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", soon ? "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500" : "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400")}>
+              <Icon className="h-4.5 w-4.5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {t({ uk: label, en: labelEn })}
+                {badge && <span className="shrink-0 whitespace-nowrap rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300">{badge}</span>}
+              </span>
+              <span className="block truncate text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: desc, en: descEn })}</span>
+            </span>
+          </>
+        );
+        return (
+          <Fragment key={href}>
+            {divider && <div className="mx-3 my-1 border-t border-zinc-100 dark:border-zinc-800" />}
+            {soon ? (
+              <div aria-disabled className="flex cursor-default items-center gap-3 rounded-xl px-2.5 py-2 opacity-70">{row}</div>
+            ) : (
+              <Link
+                href={href}
+                className="flex items-center gap-3 rounded-xl px-2.5 py-2 transition-colors hover:bg-indigo-50/70 dark:hover:bg-indigo-950/30"
+                onClick={(e) => {
+                  // Закриваємо меню через подію (меню вище по дереву), скидаємо флоу, якщо вже на сторінці.
+                  window.dispatchEvent(new CustomEvent("volya:close-mobile-menu"));
+                  if (href === pathname) { e.preventDefault(); emitNavReset(); router.replace(href, { scroll: true }); }
+                }}
+              >
+                {row}
+              </Link>
+            )}
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Navbar({ solid = false }: { solid?: boolean }) {
   const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileGroup, setMobileGroup] = useState<"material" | "personal" | "account" | null>(null);
+  // Пункти груп (MobileLinks) закривають меню подією — вони рендеряться нижче по дереву.
+  useEffect(() => {
+    const close = () => setMobileOpen(false);
+    window.addEventListener("volya:close-mobile-menu", close);
+    return () => window.removeEventListener("volya:close-mobile-menu", close);
+  }, []);
   const [scrolled, setScrolled] = useState(false);
   const { data: session, status } = useSession();
   const { open: openLogin } = useLogin();
-  const pathname = usePathname();
-  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -226,120 +313,66 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
           >
             {/* Шапка fixed, тож меню довше за екран не прокрутити разом зі сторінкою —
                 даємо панелі власний скрол у межах видимої висоти (dvh враховує панель Safari). */}
-            <div className="flex max-h-[calc(100dvh-4.25rem)] flex-col gap-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-              {navLinks.map((link) => {
-                const badge = (link as { badge?: string }).badge;
-                const soon = (link as { soon?: boolean }).soon;
-                const label = (
-                  <>
-                    {t({ uk: link.label, en: link.labelEn })}
-                    {badge && (
-                      <span className="rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">{badge}</span>
-                    )}
-                  </>
-                );
-                const item = soon ? (
-                  <span aria-disabled className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-400 dark:text-zinc-500">
-                    {label}
-                  </span>
-                ) : (
-                  <Link
-                    href={link.href}
-                    className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                    onClick={(e) => {
-                      setMobileOpen(false);
-                      // Той самий pathname → подія скидання ПЕРШОЮ, потім чистимо query.
-                      if (link.href === pathname) { e.preventDefault(); emitNavReset(); router.replace(link.href, { scroll: true }); }
-                    }}
-                  >
-                    {label}
-                  </Link>
-                );
-                return (
-                  <Fragment key={link.href}>
-                    {link.divider && <div className="mx-3.5 my-1.5 border-t border-zinc-100 dark:border-zinc-800" />}
-                    {item}
-                  </Fragment>
-                );
-              })}
-              <div className="mt-3 border-t border-zinc-100 dark:border-zinc-800 pt-3">
-                {session?.user ? (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3 px-1 py-1">
-                      {session.user.image && (
-                        <Image
-                          src={session.user.image}
-                          alt={session.user.name ?? ""}
-                          width={32}
-                          height={32}
-                          className="rounded-full"
-                        />
-                      )}
-                      <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{session.user.name}</span>
-                    </div>
-                    <Link
-                      href="/policies"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                    >
-                      <FileText className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                      {t({ uk: "Мої поліси", en: "My policies" })}
-                    </Link>
-                    <Link
-                      href="/bonus"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                    >
-                      <Coins className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                      {t({ uk: "Бонуси", en: "Bonuses" })}
-                    </Link>
-                    <Link
-                      href="/reviews"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                    >
-                      <Star className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                      {t({ uk: "Відгуки", en: "Reviews" })}
-                    </Link>
-                    <Link
-                      href="/profile"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                    >
-                      <Settings className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                      {t({ uk: "Налаштування", en: "Settings" })}
-                    </Link>
+            <div className="flex max-h-[calc(100dvh-4.25rem)] flex-col gap-2 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              {/* Групи продуктів — розкривні списки (як дропдауни на десктопі). */}
+              <MobileGroup
+                id="material"
+                title={t({ uk: "Матеріальне страхування", en: "Property insurance" })}
+                icon={ShieldCheck}
+                open={mobileGroup === "material"}
+                onToggle={() => setMobileGroup((g) => (g === "material" ? null : "material"))}
+              >
+                <MobileLinks links={MATERIAL_LINKS} />
+              </MobileGroup>
+              <MobileGroup
+                id="personal"
+                title={t({ uk: "Особисте страхування", en: "Personal insurance" })}
+                icon={HeartPulse}
+                open={mobileGroup === "personal"}
+                onToggle={() => setMobileGroup((g) => (g === "personal" ? null : "personal"))}
+              >
+                <MobileLinks links={PERSONAL_LINKS} />
+              </MobileGroup>
+
+              {/* Профіль — окремий розкривний рядок з пунктами кабінету; гостю — кнопка входу. */}
+              {session?.user ? (
+                <MobileGroup
+                  id="account"
+                  title={session.user.name || session.user.email || t({ uk: "Мій кабінет", en: "My account" })}
+                  subtitle={session.user.name && session.user.email ? session.user.email : t({ uk: "Поліси, бонуси, відгуки, налаштування", en: "Policies, bonuses, reviews, settings" })}
+                  avatar={session.user.image ?? null}
+                  open={mobileGroup === "account"}
+                  onToggle={() => setMobileGroup((g) => (g === "account" ? null : "account"))}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    {CABINET_TABS.map((tab) => {
+                      const Icon = tab.icon;
+                      return (
+                        <Link key={tab.href} href={tab.href} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800/60">
+                          <Icon className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />{t(tab.label)}
+                        </Link>
+                      );
+                    })}
                     {isAdminClient(session?.user?.email) && (
-                      <Link
-                        href="/admin/funnel"
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
-                      >
-                        <LayoutDashboard className="h-4 w-4" />
-                        {t({ uk: "Адмінка", en: "Admin" })}
+                      <Link href="/admin/funnel" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-950/40">
+                        <LayoutDashboard className="h-4 w-4" />{t({ uk: "Адмінка", en: "Admin" })}
                       </Link>
                     )}
-                    <Button
-                      size="md"
-                      variant="outline"
-                      className="w-full flex items-center gap-2"
-                      onClick={() => signOut()}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {t({ uk: "Вийти", en: "Sign out" })}
-                    </Button>
+                    <button type="button" onClick={() => signOut({ callbackUrl: "/" })} className="mt-1 flex items-center gap-3 rounded-xl border-t border-zinc-100 px-3 pb-1 pt-3 text-sm font-medium text-zinc-500 hover:text-red-600 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-red-400">
+                      <LogOut className="h-4 w-4" />{t({ uk: "Вийти", en: "Sign out" })}
+                    </button>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => { setMobileOpen(false); openLogin(); }}
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.99]"
-                  >
-                    <LogIn className="h-4 w-4" />
-                    {t({ uk: "Увійти", en: "Sign in" })}
-                  </button>
-                )}
-              </div>
+                </MobileGroup>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setMobileOpen(false); openLogin(); }}
+                  className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.99]"
+                >
+                  <LogIn className="h-4 w-4" />
+                  {t({ uk: "Увійти", en: "Sign in" })}
+                </button>
+              )}
             </div>
           </motion.div>
         )}
