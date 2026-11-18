@@ -141,6 +141,7 @@ export function HeroSection({ onSearch, loading }: HeroSectionProps) {
               className="
                 group relative overflow-hidden rounded-2xl
                 bg-white text-indigo-700
+                dark:bg-white dark:text-indigo-700 dark:hover:bg-white
                 px-10 font-bold tracking-wide
                 shadow-[0_0_32px_rgba(255,255,255,0.18),0_4px_24px_rgba(99,102,241,0.25)]
                 hover:shadow-[0_0_48px_rgba(255,255,255,0.28),0_8px_32px_rgba(99,102,241,0.35)]
