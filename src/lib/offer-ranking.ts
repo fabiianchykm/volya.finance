@@ -50,6 +50,11 @@ export function rankOffers<T>(offers: T[], get: (o: T) => RankableOffer, sortBy:
 
 export type OfferBadge = "cheapest" | "popular" | "both";
 
+/** Ручний вибір «Популярний вибір» (слаги lib/insurers): якщо така СК є серед
+ *  пропозицій, бейдж іде їй (найдешевшій її пропозиції) незалежно від статистики.
+ *  Порожній масив — бейдж за фактичною популярністю серед наших клієнтів. */
+export const POPULAR_PICK: string[] = ["tas"];
+
 /**
  * Бейджі для карток: найдешевша пропозиція → «Найвигідніше»; пропозиція найпопулярнішої
  * СК (мінімум 3 оформлені поліси, щоб не «популяризувати» випадкову) → «Популярний вибір».
@@ -61,6 +66,15 @@ export function offerBadges<T>(offers: T[], get: (o: T) => RankableOffer & { id:
   let cheapest: T | null = null;
   for (const o of offers) if (get(o).price > 0 && (!cheapest || get(o).price < get(cheapest).price)) cheapest = o;
   if (cheapest) out.set(get(cheapest).id, "cheapest");
+
+  // Ручний вибір має пріоритет над статистикою.
+  const picked = offers.filter((o) => { const slug = insurerSlug(get(o).company); return !!slug && POPULAR_PICK.includes(slug); })
+    .sort((a, b) => get(a).price - get(b).price)[0];
+  if (picked) {
+    const id = get(picked).id;
+    out.set(id, out.get(id) === "cheapest" ? "both" : "popular");
+    return out;
+  }
 
   const withPop = offers.map((o) => ({ o, n: popularityOf(get(o).company, pop) }));
   const maxPop = Math.max(0, ...withPop.map((x) => x.n));
