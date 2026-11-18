@@ -123,9 +123,6 @@ export function Footer() {
             <Link href="/" aria-label="VOLYA.finance" className="inline-flex">
               <Wordmark id="vmark-footer" className="text-xl text-zinc-900 dark:text-zinc-100" />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-              {t({ uk: "Порівнюємо ціни страхових і видаємо електронні поліси онлайн — за кілька хвилин, без візитів до офісу.", en: "We compare insurers' prices and issue electronic policies online — in minutes, with no office visits." })}
-            </p>
 
             <div className="mt-7">
               <FooterContact />
