@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { emitNavReset } from "@/lib/nav-reset";
 import { type ReactNode } from "react";
-import { CheckCircle2 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { AccessibilityControls } from "./AccessibilityControls";
 import { LanguageToggle } from "./LanguageToggle";
@@ -132,24 +131,8 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Рядок довіри — лого МТСБУ (лінк на реєстр) + доступність і тема праворуч */}
-        <div className="flex items-center justify-between gap-4 border-t border-zinc-200 py-6 dark:border-zinc-800">
-          <a
-            href="https://policy.mtsbu.ua"
-            target="_blank"
-            rel="noopener noreferrer"
-            title={t({ uk: "Перевірити поліс у реєстрі МТСБУ", en: "Check a policy in the MTSBU register" })}
-            className="inline-flex items-center gap-2.5 rounded-full bg-white px-4 py-2 ring-1 ring-black/5 transition-transform hover:scale-[1.03] dark:bg-zinc-800 dark:ring-white/10"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/mtsbu-logo.svg"
-              alt={t({ uk: "МТСБУ — Моторне (транспортне) страхове бюро України", en: "MTSBU — Motor (Transport) Insurance Bureau of Ukraine" })}
-              className="h-5 w-auto opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0 dark:invert"
-            />
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          </a>
-
+        {/* Нижній рядок — мова, доступність і тема */}
+        <div className="flex items-center justify-end gap-4 border-t border-zinc-200 py-6 dark:border-zinc-800">
           <div className="flex flex-wrap items-center justify-end gap-3">
             <LanguageToggle />
             <AccessibilityControls />
