@@ -17,7 +17,7 @@ declare global {
 
 function readMode(): Mode {
   try {
-    const t = localStorage.getItem("theme");
+    const t = localStorage.getItem("themeMode");
     return t === "light" || t === "dark" ? t : "auto";
   } catch {
     return "auto";
@@ -36,8 +36,8 @@ export function ThemeToggle() {
   const apply = (next: Mode) => {
     setMode(next);
     try {
-      if (next === "auto") localStorage.removeItem("theme");
-      else localStorage.setItem("theme", next);
+      if (next === "auto") localStorage.removeItem("themeMode");
+      else localStorage.setItem("themeMode", next);
     } catch {}
     const reapply = window.__applyTheme;
     if (typeof reapply === "function") {
