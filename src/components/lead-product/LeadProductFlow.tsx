@@ -46,7 +46,6 @@ export function LeadProductFlow({ slug }: { slug: string }) {
   const [step, setStep] = useState<"form" | "success">("form");
   useFlowReset(() => setStep("form"));
   const [values, setValues] = useState<Values>(() => initialValues(cfg.fields));
-  const [name, setName] = useState("");
   const [digits, setDigits] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +74,7 @@ export function LeadProductFlow({ slug }: { slug: string }) {
       const res = await fetch("/api/lead-product", {
         method: "POST",
         headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
-        body: JSON.stringify({ slug, phone: `+380${digits}`, name, fields: values }),
+        body: JSON.stringify({ slug, phone: `+380${digits}`, fields: values }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? t({ uk: "Не вдалося надіслати заявку", en: "Failed to submit the request" }));
@@ -192,8 +191,7 @@ export function LeadProductFlow({ slug }: { slug: string }) {
                   );
                 })}
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Input label={t({ uk: "Імʼя (необовʼязково)", en: "Name (optional)" })} value={name} onChange={(e) => setName(e.target.value)} placeholder={t({ uk: "Як до вас звертатись", en: "How to address you" })} autoComplete="given-name" maxLength={80} />
+                <div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Номер телефону", en: "Phone number" })}</label>
                     <div className="flex items-center rounded-xl border border-zinc-200 bg-white px-4 transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 dark:border-zinc-700 dark:bg-zinc-900 dark:focus-within:ring-indigo-900">
