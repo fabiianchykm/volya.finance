@@ -862,7 +862,7 @@ export function CheckoutClient() {
                     </div>
                   ) : (
                     <div className="mt-4 space-y-3">
-                      <PaymentMethods product="osago" amount={due} value={payMethod} onChange={choosePayMethod} />
+                      <PaymentMethods product="osago" amount={due} eligible={offer?.installmentEligible === true} value={payMethod} onChange={choosePayMethod} />
                       <Button type="button" variant="primary" size="lg" loading={loading} onClick={() => void handleProceedToPayment()} className="w-full">
                         {t({ uk: "Перейти до оплати", en: "Go to payment" })}
                       </Button>

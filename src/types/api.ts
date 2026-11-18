@@ -104,6 +104,8 @@ export interface InsuranceOffer {
   driverAgeHint?: string | null;
   // v2: СК оформлює цю пропозицію ЛИШЕ разом із ДЦВ (dgoId обов'язковий).
   dgoRequired?: boolean;
+  /** Розстрочка доступна для цієї пропозиції (дорожча з пари у страхової зі списку; див. lib/installment). */
+  installmentEligible?: boolean;
   discountPrice?: number;
   discountPercent?: number | null;
   maxDiscount?: number | null;      // скільки бонусів можна списати по цій пропозиції, грн

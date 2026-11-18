@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { insurerFailuresText, type InsurerFailure } from "@/lib/insurer-errors";
 import { AlertTriangle } from "lucide-react";
 import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Info, Car, MapPin, CalendarDays } from "lucide-react";
 import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/offer-ranking";
+import { installmentEligibleOffers } from "@/lib/installment";
 import { usePopularity } from "@/lib/use-popularity";
 import { OfferCard } from "./OfferCard";
 import { SearchingInsurers } from "./SearchingInsurers";
@@ -110,6 +111,8 @@ export function OffersSection({
 
   const rankable = (o: InsuranceOffer) => ({ id: o.offerId, price: o.price, company: o.company?.publicName || o.companyNamePublic || o.companyName });
   const sorted = rankOffers(offers, rankable, sortBy, popularity);
+  // Право на розстрочку: дорожча з пари пропозицій у страхових зі списку (лише ОСЦПВ).
+  const installmentIds = useMemo(() => installmentEligibleOffers(offers), [offers]);
   const badges = offerBadges(offers, rankable, popularity);
 
   return (
@@ -272,12 +275,16 @@ export function OffersSection({
               const dgoId = dgoMap[offer.offerId] !== undefined
                 ? dgoMap[offer.offerId]
                 : offer.dgoRequired ? (offer.listDgo?.[0]?.id ?? null) : null;
+              const canInstallment = installmentIds.has(offer.offerId);
               return (
               <OfferCard
                 key={offer.offerId}
                 offer={offer}
                 index={i}
-                cornerBadge={badgeText(badges.get(offer.offerId), t)}
+                cornerBadge={[badgeText(badges.get(offer.offerId), t), canInstallment ? t({ uk: "Оплата частинами", en: "Instalments" }) : null].filter(Boolean).join(" · ") || undefined}
+                faceNote={canInstallment ? t({ uk: "Оплата частинами — скоро", en: "Instalments — coming soon" }) : undefined}
+                faceNoteMuted
+                faceNoteHint={canInstallment ? t({ uk: "Для цієї пропозиції буде доступна розстрочка від банку. У розстрочку бонуси й промокод не застосовуються.", en: "Bank instalments will be available for this offer. Bonuses and promo codes do not apply to instalments." }) : undefined}
                 selected={selectedOfferId === offer.offerId}
                 discountEligible
                 showAgeBasis
@@ -289,7 +296,7 @@ export function OffersSection({
                 onSelectAutolawyer={(id) => setAutolawyerMap((m) => ({ ...m, [offer.offerId]: id }))}
                 onBuy={() =>
                   onSelectOffer(
-                    offer,
+                    { ...offer, installmentEligible: canInstallment },
                     dgoId,
                     autolawyerMap[offer.offerId] ?? null
                   )

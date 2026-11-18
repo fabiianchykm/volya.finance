@@ -7,18 +7,21 @@ import { trackEvent } from "@/lib/analytics";
 
 // Вибір способу оплати на кроці оплати: «Карткою онлайн» (активний) і «Частинами»
 // (поки «скоро» — неактивний, клік лише фіксується в аналітиці). Показується лише
-// коли сума ≥ INSTALLMENT_MIN і продукт у списку (див. lib/installment).
+// для пропозицій з правом на розстрочку й сумою ≥ INSTALLMENT_MIN (див. lib/installment).
 
 export type PayMethod = "card" | "installment";
 
-export function PaymentMethods({ product, amount, className = "", value = "card", onChange }: {
-  product?: string | null; amount: number; className?: string;
+export function PaymentMethods({ product, amount, eligible, className = "", value = "card", onChange }: {
+  product?: string | null; amount: number;
+  /** Чи має ця пропозиція право на розстрочку (дорожча з пари у страхової зі списку). */
+  eligible: boolean;
+  className?: string;
   /** Обраний спосіб (керований ззовні, щоб чекаут міг обнулити бонуси при розстрочці). */
   value?: PayMethod;
   onChange?: (m: PayMethod) => void;
 }) {
   const { t } = useI18n();
-  const state = installmentState(product, amount);
+  const state = installmentState(amount, eligible);
   if (!state) return null;
   const soon = state === "soon";
   const cardSel = value === "card" || soon;

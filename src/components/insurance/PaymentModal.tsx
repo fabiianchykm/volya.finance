@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { PaymentMethods } from "./PaymentMethods";
 import { CheckCircle, ExternalLink, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -158,7 +157,6 @@ export function PaymentModal({ open, onClose, orderId, amount, onPaid, confirmEn
                 <img src={invoice.qrCode} alt={t({ uk: "QR код оплати", en: "Payment QR code" })} className="h-40 w-40 rounded-xl border border-zinc-100 dark:border-zinc-800" />
               </div>
             )}
-            <PaymentMethods product={product} amount={amount} />
             <Button variant="primary" size="lg" className="w-full"
               onClick={() => window.open(invoice.invoiceLink, "_blank")}>
               {t({ uk: "Перейти до оплати", en: "Proceed to payment" })}
