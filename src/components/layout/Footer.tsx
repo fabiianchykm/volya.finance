@@ -42,7 +42,7 @@ function StoreBadge({ logo, top, name }: { logo: ReactNode; top: string; name: s
 import { FooterContact } from "./FooterContact";
 import { Wordmark } from "./VMark";
 
-type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean };
+type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean; /** Зовнішнє посилання — у новій вкладці. */ external?: boolean };
 
 const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
   // За абеткою (українські назви).
@@ -69,6 +69,8 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
   legal: [
     { label: "Підтримка", labelEn: "Support", href: "/support" },
     { label: "Інформація про Субагента", labelEn: "Sub-agent information", href: "/subagent" },
+    // Swagger-документація API Ukasko (для партнерів/розробників).
+    { label: "Довідник API", labelEn: "API reference", href: "https://devconnect.ukasko.ua/api/documentation", external: true },
     // Публічна оферта / Політика конфіденційності — біля копірайта внизу (заморожені).
   ],
 };
@@ -87,6 +89,10 @@ function LinkColumn({ title, links, twoCols = false }: { title: string; links: F
           <li key={link.label}>
             {link.frozen ? (
               <span className="cursor-default text-[13px] text-zinc-400 dark:text-zinc-500">{t({ uk: link.label, en: link.labelEn })}</span>
+            ) : link.external ? (
+              <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-zinc-600 dark:text-zinc-300 transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">
+                {t({ uk: link.label, en: link.labelEn })}
+              </a>
             ) : (
               <Link
                 href={link.href}
