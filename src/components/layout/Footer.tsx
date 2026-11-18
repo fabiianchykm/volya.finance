@@ -43,7 +43,7 @@ import { FooterContact } from "./FooterContact";
 
 type FooterLink = { label: string; labelEn: string; href: string; frozen?: boolean; /** Зовнішнє посилання — у новій вкладці. */ external?: boolean };
 
-const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
+const footerLinks: { products: FooterLink[]; business: FooterLink[]; media: FooterLink[]; legal: FooterLink[] } = {
   // За абеткою (українські назви).
   products: [
     { label: "Автоцивілка", labelEn: "Car insurance (OSAGO)", href: "/osago" },
@@ -57,6 +57,13 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
     { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift" },
     { label: "Тварини", labelEn: "Pets", href: "/pets" },
     { label: "Туристичне", labelEn: "Travel", href: "/tourism" },
+  ],
+  // Продукти «через менеджера» (B2B і спеціальні) — лише у футері, не в головному меню.
+  business: [
+    { label: "Страхування пасажирів", labelEn: "Passenger insurance", href: "/passengers" },
+    { label: "CMR — відповідальність перевізника", labelEn: "CMR carrier liability", href: "/cmr" },
+    { label: "Заставне майно", labelEn: "Collateral insurance", href: "/collateral" },
+    { label: "Медичне для іноземців", labelEn: "Medical for foreigners", href: "/foreigners-medical" },
   ],
   media: [
     // Заморожені (порожні, контент готується) — некликабельні.
@@ -130,10 +137,11 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-[2fr_1fr_1fr] lg:col-span-8 lg:gap-x-12">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-[2fr_1.3fr_1fr_1fr] lg:col-span-8 lg:gap-x-10">
             <div className="col-span-2 sm:col-span-1">
               <LinkColumn title={t({ uk: "Продукти", en: "Products" })} links={footerLinks.products} twoCols />
             </div>
+            <LinkColumn title={t({ uk: "Для бізнесу та інше", en: "Business & more" })} links={footerLinks.business} />
             <LinkColumn title={t({ uk: "Медіа", en: "Media" })} links={footerLinks.media} />
             <LinkColumn title={t({ uk: "Документи", en: "Documents" })} links={footerLinks.legal} />
           </div>
