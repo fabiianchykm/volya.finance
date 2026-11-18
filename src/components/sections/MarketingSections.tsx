@@ -21,11 +21,13 @@ export function MarketingSections({
 }) {
   return (
     <>
+      {/* FAQ одразу під калькулятором/пропозиціями — питання виникають саме там,
+          а не після відгуків і банерів. */}
+      {showFaq && <FAQSection items={faqItems} subtitle={faqSubtitle} />}
       <FeaturesSection />
       <InsurersSection />
       <ReferralBanner />
       <ReviewsSection />
-      {showFaq && <FAQSection items={faqItems} subtitle={faqSubtitle} />}
       <CTAWrapper />
     </>
   );
