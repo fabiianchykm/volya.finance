@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Gift, Crosshair, Route, ArrowRight, ChevronRight, BadgeCheck, Clock3, Building2, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Gift, Crosshair, Route, ArrowRight, ChevronRight, Clock3, Building2, type LucideIcon } from "lucide-react";
 import { useI18n, type Tr } from "@/lib/i18n";
 
 // Головна: темний герой (той самий градієнт, що й на сторінках продуктів) і «бенто»
@@ -63,9 +63,6 @@ export function HomeHero() {
       >
         <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.12) 100%)" }} />
         <div className="relative z-10 mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-100 ring-1 ring-white/15">
-            <BadgeCheck className="h-3.5 w-3.5" /> {t({ uk: "Офіційний страховий посередник", en: "Licensed insurance intermediary" })}
-          </span>
           <h1 className="text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
             {t({ uk: "Страхування онлайн", en: "Insurance online" })}
             <span className="mt-1 block bg-gradient-to-r from-indigo-300 to-violet-300 bg-clip-text text-transparent">{t({ uk: "за кілька хвилин", en: "in a few minutes" })}</span>
