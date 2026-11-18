@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -15,7 +15,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useLogin } from "@/components/auth/LoginProvider";
 import { useI18n } from "@/lib/i18n";
 
-type NavItem = { label: string; labelEn: string; href: string; icon: LucideIcon; desc: string; descEn: string; badge?: string; soon?: boolean };
+type NavItem = { label: string; labelEn: string; href: string; icon: LucideIcon; desc: string; descEn: string; badge?: string; soon?: boolean; /** Лінія-розділювач перед пунктом (не страхування, напр. сертифікат). */ divider?: boolean };
 
 // Продукти згруповані у два дропдауни за типом страхування (майнове / особисте),
 // щоб меню не розтягувалось і кожен підпункт мав зрозумілий опис.
@@ -25,8 +25,8 @@ const MATERIAL_LINKS: NavItem[] = [
   { label: "КАСКО", labelEn: "CASCO", href: "/kasko", icon: Car, desc: "Повний захист авто", descEn: "Full protection for your car" },
   { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше", descEn: "Key risks, for less" },
   { label: "Зелена карта", labelEn: "Green Card", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон", descEn: "For trips abroad" },
-  { label: "Віньєтка", labelEn: "Vignette", href: "/vignette", icon: Route, desc: "Платні дороги Європи", descEn: "European toll roads" },
   { label: "Житло", labelEn: "Property", href: "/housing", icon: Home, desc: "Захист квартири чи будинку", descEn: "Protection for your flat or house" },
+  { label: "Віньєтка", labelEn: "Vignette", href: "/vignette", icon: Route, desc: "Платні дороги Європи", descEn: "European toll roads", divider: true },
 ];
 // «Особисте» — здоровʼя/подорожі/улюбленці.
 const PERSONAL_LINKS: NavItem[] = [
@@ -34,7 +34,7 @@ const PERSONAL_LINKS: NavItem[] = [
   { label: "Тварини", labelEn: "Pets", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак", descEn: "Insurance for cats and dogs" },
   { label: "Нещасні випадки", labelEn: "Accident", href: "/accident", icon: HeartPulse, desc: "Виплата при травмі чи нещасному випадку", descEn: "Payout for injury or accident" },
   { label: "Зброя", labelEn: "Firearms", href: "/weapon", icon: Crosshair, desc: "Поліс власника для дозволу", descEn: "Owner's policy for the permit" },
-  { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift", badge: "з 1 січня" },
+  { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift", badge: "з 1 січня", divider: true },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];
@@ -81,7 +81,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
         )}
       >
         <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03] dark:ring-white/10">
-          {links.map(({ href, label, labelEn, icon: Icon, desc, descEn, badge, soon }) => {
+          {links.map(({ href, label, labelEn, icon: Icon, desc, descEn, badge, soon, divider }) => {
             const row = (
               <>
                 <span className={cn(
@@ -101,13 +101,12 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
                 </span>
               </>
             );
-            return soon ? (
-              <div key={label} aria-disabled className="flex cursor-default items-center gap-3 rounded-xl p-2.5 opacity-80">
+            const item = soon ? (
+              <div aria-disabled className="flex cursor-default items-center gap-3 rounded-xl p-2.5 opacity-80">
                 {row}
               </div>
             ) : (
               <Link
-                key={href}
                 href={href}
                 onClick={(e) => {
                   setOpen(false);
@@ -120,6 +119,12 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
               >
                 {row}
               </Link>
+            );
+            return (
+              <Fragment key={href}>
+                {divider && <div className="mx-2 my-1.5 border-t border-zinc-100 dark:border-zinc-800" />}
+                {item}
+              </Fragment>
             );
           })}
         </div>
@@ -233,13 +238,12 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                     )}
                   </>
                 );
-                return soon ? (
-                  <span key={link.label} aria-disabled className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-400 dark:text-zinc-500">
+                const item = soon ? (
+                  <span aria-disabled className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-400 dark:text-zinc-500">
                     {label}
                   </span>
                 ) : (
                   <Link
-                    key={link.href}
                     href={link.href}
                     className="flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                     onClick={(e) => {
@@ -250,6 +254,12 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                   >
                     {label}
                   </Link>
+                );
+                return (
+                  <Fragment key={link.href}>
+                    {link.divider && <div className="mx-3.5 my-1.5 border-t border-zinc-100 dark:border-zinc-800" />}
+                    {item}
+                  </Fragment>
                 );
               })}
               <div className="mt-3 border-t border-zinc-100 dark:border-zinc-800 pt-3">
