@@ -62,8 +62,6 @@ const footerLinks: { business: FooterLink[]; media: FooterLink[]; legal: FooterL
   legal: [
     { label: "Підтримка", labelEn: "Support", href: "/support" },
     { label: "Інформація про Субагента", labelEn: "Sub-agent information", href: "/subagent" },
-    // Swagger-документація API Ukasko (для партнерів/розробників).
-    { label: "Довідник API", labelEn: "API reference", href: "https://devconnect.ukasko.ua/api/documentation", external: true },
     // Публічна оферта / Політика конфіденційності — біля копірайта внизу (заморожені).
   ],
 };
