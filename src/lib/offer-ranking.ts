@@ -55,6 +55,10 @@ export type OfferBadge = "cheapest" | "popular" | "both";
  *  Порожній масив — бейдж за фактичною популярністю серед наших клієнтів. */
 export const POPULAR_PICK: string[] = ["tas"];
 
+/** СК, яким не ставимо «Найвигідніше», навіть якщо їхня ціна найнижча (слаги lib/insurers).
+ *  Бейдж переходить до наступної найдешевшої пропозиції. */
+export const CHEAPEST_EXCLUDE: string[] = ["guardian"];
+
 /**
  * Бейджі для карток: найдешевша пропозиція → «Найвигідніше»; пропозиція найпопулярнішої
  * СК (мінімум 3 оформлені поліси, щоб не «популяризувати» випадкову) → «Популярний вибір».
@@ -64,7 +68,11 @@ export function offerBadges<T>(offers: T[], get: (o: T) => RankableOffer & { id:
   const out = new Map<string, OfferBadge>();
   if (offers.length < 2) return out;
   let cheapest: T | null = null;
-  for (const o of offers) if (get(o).price > 0 && (!cheapest || get(o).price < get(cheapest).price)) cheapest = o;
+  for (const o of offers) {
+    const slug = insurerSlug(get(o).company);
+    if (slug && CHEAPEST_EXCLUDE.includes(slug)) continue;
+    if (get(o).price > 0 && (!cheapest || get(o).price < get(cheapest).price)) cheapest = o;
+  }
   if (cheapest) out.set(get(cheapest).id, "cheapest");
 
   // Ручний вибір має пріоритет над статистикою.
