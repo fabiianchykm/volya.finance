@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, LogIn, FileText, Star, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Crosshair, Route, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
+import { Menu, X, LogOut, LogIn, FileText, Star, ChevronDown, ShieldCheck, Car, Coins, Globe, Plane, PawPrint, Home, HeartPulse, Crosshair, Route, Gift, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
 import { isAdminClient } from "@/lib/admin";
 import { emitNavReset } from "@/lib/nav-reset";
 import { Wordmark } from "./VMark";
@@ -34,6 +34,7 @@ const PERSONAL_LINKS: NavItem[] = [
   { label: "Тварини", labelEn: "Pets", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак", descEn: "Insurance for cats and dogs" },
   { label: "Нещасні випадки", labelEn: "Accident", href: "/accident", icon: HeartPulse, desc: "Виплата при травмі чи нещасному випадку", descEn: "Payout for injury or accident" },
   { label: "Зброя", labelEn: "Firearms", href: "/weapon", icon: Crosshair, desc: "Поліс власника для дозволу", descEn: "Owner's policy for the permit" },
+  { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift", badge: "з 1 січня" },
 ];
 // Плаский список для мобільного меню (там ширини вистачає).
 const navLinks = [...MATERIAL_LINKS, ...PERSONAL_LINKS];
