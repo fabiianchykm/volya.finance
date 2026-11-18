@@ -5,6 +5,10 @@
 
 export type Tr = { uk: string; en: string };
 
+// Чи приймаємо заявки. Поки Ukasko не віддав API і оформити навіть вручну не
+// можемо — false: форма показується, але неактивна («Скоро»), API відповідає 403.
+export const VIGNETTE_LAUNCHED = false;
+
 export interface VignetteCountry {
   code: string;
   flag: string;

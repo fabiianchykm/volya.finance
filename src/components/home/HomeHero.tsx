@@ -44,7 +44,7 @@ const FEATURED: Featured[] = [
 const MORE: { href: string; icon: LucideIcon; title: Tr; desc: Tr; badge?: Tr }[] = [
   { href: "/kasko", icon: ShieldCheck, title: { uk: "КАСКО", en: "CASCO" }, desc: { uk: "Повний захист авто від ДТП, викрадення, стихії", en: "Full cover: accidents, theft, natural disasters" } },
   { href: "/mini-kasko", icon: Coins, title: { uk: "Міні-КАСКО", en: "Mini-CASCO" }, desc: { uk: "Ключові ризики за доступною ціною", en: "Key risks at an affordable price" } },
-  { href: "/vignette", icon: Route, title: { uk: "Віньєтка", en: "Vignette" }, desc: { uk: "Платні дороги Європи за номером авто", en: "European toll roads by plate number" } },
+  { href: "/vignette", icon: Route, title: { uk: "Віньєтка", en: "Vignette" }, desc: { uk: "Платні дороги Європи за номером авто", en: "European toll roads by plate number" }, badge: { uk: "скоро", en: "soon" } },
   { href: "/housing", icon: Home, title: { uk: "Житло", en: "Property" }, desc: { uk: "Квартира чи будинок — від пожежі й затоплення", en: "Flat or house — fire, flooding and more" } },
   { href: "/pets", icon: PawPrint, title: { uk: "Тварини", en: "Pets" }, desc: { uk: "Ветеринарні витрати для котів і собак", en: "Vet costs for cats and dogs" } },
   { href: "/accident", icon: HeartPulse, title: { uk: "Нещасні випадки", en: "Accident" }, desc: { uk: "Виплата при травмі — від 159 грн на рік", en: "Payout for injury — from UAH 159 a year" } },

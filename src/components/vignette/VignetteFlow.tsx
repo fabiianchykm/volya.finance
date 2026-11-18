@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Phone, Send, MessageCircle, Clock, Car, Route, Zap, Globe, BadgeCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, Phone, Send, MessageCircle, Clock, Car, Route, Zap, Globe, BadgeCheck, CalendarClock } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -10,7 +10,7 @@ import { DateInput } from "@/components/ui/DateInput";
 import { useI18n } from "@/lib/i18n";
 import { useFlowReset } from "@/lib/nav-reset";
 import { trackEvent, trackCalc } from "@/lib/analytics";
-import { VIGNETTE_COUNTRIES, VIGNETTE_PERIODS, VIGNETTE_VEHICLES } from "./vignette-options";
+import { VIGNETTE_LAUNCHED, VIGNETTE_COUNTRIES, VIGNETTE_PERIODS, VIGNETTE_VEHICLES } from "./vignette-options";
 
 // Віньєтка — оплата платних доріг Європи. Онлайн-оформлення через API ще
 // готується, тож поки це заявка: країни, строк, дата, номер авто, телефон →
@@ -135,8 +135,8 @@ export function VignetteFlow() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-8 text-center">
             <div className="space-y-4">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-indigo-100 ring-1 ring-white/15">
-                <Route className="h-3.5 w-3.5" />
-                {t({ uk: "Платні дороги Європи", en: "European toll roads" })}
+                {VIGNETTE_LAUNCHED ? <Route className="h-3.5 w-3.5" /> : <CalendarClock className="h-3.5 w-3.5" />}
+                {VIGNETTE_LAUNCHED ? t({ uk: "Платні дороги Європи", en: "European toll roads" }) : t({ uk: "Скоро — готуємо запуск", en: "Coming soon" })}
               </span>
               <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
                 {t({ uk: "Віньєтка онлайн", en: "Vignette online" })}
@@ -164,7 +164,14 @@ export function VignetteFlow() {
               </div>
             </div>
 
-            <form onSubmit={submit} className="rounded-2xl bg-white p-5 text-left shadow-2xl dark:bg-zinc-900 sm:p-7">
+            <form onSubmit={submit} className="relative rounded-2xl bg-white p-5 text-left shadow-2xl dark:bg-zinc-900 sm:p-7">
+              {!VIGNETTE_LAUNCHED && (
+                <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{t({ uk: "Оформлення віньєток ще не відкрито — підключаємо операторів. Нижче можна подивитись країни, строки й орієнтовні ціни; щойно запустимо, форма запрацює.", en: "Vignette ordering is not open yet — we are connecting the operators. Below you can see countries, periods and indicative prices; the form will work as soon as we launch." })}</span>
+                </div>
+              )}
+              <fieldset disabled={!VIGNETTE_LAUNCHED} className={VIGNETTE_LAUNCHED ? "" : "pointer-events-none select-none opacity-60"}>
               <div>
                 <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{t({ uk: "Країни (можна кілька)", en: "Countries (select several)" })}</label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -240,9 +247,10 @@ export function VignetteFlow() {
 
               {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-              <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!valid || loading} className="mt-5 w-full">
+              </fieldset>
+              <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!VIGNETTE_LAUNCHED || !valid || loading} className="mt-5 w-full">
                 <span className="flex items-center gap-2">
-                  {t({ uk: "Оформити віньєтку", en: "Get the vignette" })} <ArrowRight className="h-5 w-5" />
+                  {VIGNETTE_LAUNCHED ? t({ uk: "Оформити віньєтку", en: "Get the vignette" }) : t({ uk: "Скоро", en: "Coming soon" })} <ArrowRight className="h-5 w-5" />
                 </span>
               </Button>
               <p className="mt-3 text-center text-xs text-zinc-400 dark:text-zinc-500">

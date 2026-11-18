@@ -26,7 +26,7 @@ const MATERIAL_LINKS: NavItem[] = [
   { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше", descEn: "Key risks, for less" },
   { label: "Зелена карта", labelEn: "Green Card", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон", descEn: "For trips abroad" },
   { label: "Житло", labelEn: "Property", href: "/housing", icon: Home, desc: "Захист квартири чи будинку", descEn: "Protection for your flat or house" },
-  { label: "Віньєтка", labelEn: "Vignette", href: "/vignette", icon: Route, desc: "Платні дороги Європи", descEn: "European toll roads", divider: true },
+  { label: "Віньєтка", labelEn: "Vignette", href: "/vignette", icon: Route, desc: "Платні дороги Європи", descEn: "European toll roads", badge: "скоро", divider: true },
 ];
 // «Особисте» — здоровʼя/подорожі/улюбленці.
 const PERSONAL_LINKS: NavItem[] = [

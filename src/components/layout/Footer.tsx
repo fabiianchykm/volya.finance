@@ -48,7 +48,7 @@ const footerLinks: { products: FooterLink[]; media: FooterLink[]; legal: FooterL
   // За абеткою (українські назви).
   products: [
     { label: "Автоцивілка", labelEn: "Car insurance (OSAGO)", href: "/osago" },
-    { label: "Віньєтка", labelEn: "Vignette", href: "/vignette" },
+    { label: "Віньєтка (скоро)", labelEn: "Vignette (soon)", href: "/vignette" },
     { label: "Житло", labelEn: "Property", href: "/housing" },
     { label: "Зброя", labelEn: "Firearms", href: "/weapon" },
     { label: "Зелена карта", labelEn: "Green Card", href: "/green-card" },

@@ -9,6 +9,7 @@ import { GIFT_LAUNCH_LABEL, GIFT_PRESETS, isGiftLaunched } from "@/lib/gift-cons
 // Крос-продаж на екрані «Поліс оформлено» — «круговорот»: кожен куплений поліс веде
 // до наступного, що логічно його доповнює (автоцивілка → міні-КАСКО/КАСКО/НВ,
 // туристичне → НВ/Зелена карта, житло → тварини/НВ…), а внизу завжди подарунковий
+// сертифікат. Віньєтку повернемо в пропозиції ЗК/туризму після запуску (VIGNETTE_LAUNCHED).
 // сертифікат. Лише посилання на калькулятори, без автозаповнення — клієнт сам вирішує.
 
 type ProductKey = "osago" | "greencard" | "kasko" | "mini-kasko" | "accident" | "tourism" | "housing" | "pets" | "vignette";
@@ -42,8 +43,8 @@ const PLAN: Record<ProductKey, { heading: Tr; items: Suggestion[] }> = {
     heading: { uk: "За кордон їдете захищеними. Доповніть поїздку", en: "You're covered abroad. Complete the trip" },
     items: [
       { key: "tourism", tag: { uk: "Для подорожі", en: "For the trip" }, text: { uk: "Лікування за кордоном коштує тисячі євро — туристичне покриє медичні витрати в дорозі.", en: "Medical care abroad costs thousands — travel insurance covers it on the road." } },
-      { key: "vignette", tag: { uk: "На той самий маршрут", en: "Same route" }, text: { uk: "Автобани Австрії, Чехії, Словаччини чи Угорщини платні — оформимо віньєтку на номер авто з потрібної дати.", en: "Motorways in Austria, Czechia, Slovakia or Hungary are tolled — we register a vignette to your plate from the date you need." } },
       { key: "mini-kasko", tag: { uk: "Те саме авто", en: "Same car" }, text: { uk: "Зелена карта покриває шкоду іншим. Міні-КАСКО — ремонт вашого авто після ДТП.", en: "The Green Card covers damage to others. Mini-CASCO covers repairs to your own car." } },
+      { key: "accident", tag: { uk: "Водій і пасажири", en: "Driver & passengers" }, text: { uk: "Виплата при травмі в ДТП — у поїздці й удома, цілий рік.", en: "A payout if injured in an accident — on the trip and at home, all year." } },
     ],
   },
   kasko: {
@@ -67,7 +68,7 @@ const PLAN: Record<ProductKey, { heading: Tr; items: Suggestion[] }> = {
     items: [
       { key: "accident", tag: { uk: "Для вас", en: "For you" }, text: { uk: "Травма не лише в поїздці: виплата при нещасному випадку цілий рік, де б ви не були.", en: "Injury cover beyond the trip: a payout after an accident all year, wherever you are." } },
       { key: "greencard", tag: { uk: "Своїм авто", en: "Own car" }, text: { uk: "Їдете автівкою? За кордоном для неї потрібна Зелена карта.", en: "Driving your own car? It needs a Green Card abroad." } },
-      { key: "vignette", tag: { uk: "Своїм авто", en: "Own car" }, text: { uk: "Платні автобани Європи — віньєтка за номером авто з дати виїзду, без наліпок і кас.", en: "European toll motorways — a vignette by plate number from your departure date, no stickers or booths." } },
+      { key: "housing", tag: { uk: "Поки вас немає", en: "While away" }, text: { uk: "Застрахуйте квартиру від затоплення, пожежі й крадіжки на час відпустки.", en: "Insure your home against flooding, fire and theft while you're on holiday." } },
     ],
   },
   accident: {

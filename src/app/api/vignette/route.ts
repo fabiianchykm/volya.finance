@@ -5,7 +5,7 @@ import { sourceLine } from "@/lib/attribution";
 import { withIdempotency } from "@/lib/idempotency";
 import { normalizePhone, isValidPhone } from "@/lib/phone";
 import { saveLead } from "@/lib/leads";
-import { VIGNETTE_COUNTRIES, VIGNETTE_PERIODS, VIGNETTE_VEHICLES, vignetteCountryName, vignettePeriodLabel, vignetteVehicleLabel } from "@/components/vignette/vignette-options";
+import { VIGNETTE_LAUNCHED, VIGNETTE_COUNTRIES, VIGNETTE_PERIODS, VIGNETTE_VEHICLES, vignetteCountryName, vignettePeriodLabel, vignetteVehicleLabel } from "@/components/vignette/vignette-options";
 
 // Заявка на віньєтку (оплата платних доріг Європи). Онлайн-оформлення через API
 // ще готується — поки менеджер купує е-віньєтку в офіційного оператора за
@@ -14,6 +14,9 @@ import { VIGNETTE_COUNTRIES, VIGNETTE_PERIODS, VIGNETTE_VEHICLES, vignetteCountr
 export async function POST(req: NextRequest) {
   const blocked = guardRequest(req, { name: "vignette", limit: 10, windowMs: 10 * 60 * 1000 });
   if (blocked) return blocked;
+  if (!VIGNETTE_LAUNCHED) {
+    return NextResponse.json({ success: false, error: "Оформлення віньєток скоро відкриємо — слідкуйте за оновленнями." }, { status: 403 });
+  }
 
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return NextResponse.json({ success: false, error: "Некоректний запит" }, { status: 400 }); }
