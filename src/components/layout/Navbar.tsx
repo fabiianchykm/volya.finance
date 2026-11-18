@@ -26,7 +26,6 @@ const MATERIAL_LINKS: NavItem[] = [
   { label: "Міні-КАСКО", labelEn: "Mini-CASCO", href: "/mini-kasko", icon: Coins, desc: "Ключові ризики, дешевше", descEn: "Key risks, for less" },
   { label: "Зелена карта", labelEn: "Green Card", href: "/green-card", icon: Globe, desc: "Для виїзду за кордон", descEn: "For trips abroad" },
   { label: "Житло", labelEn: "Property", href: "/housing", icon: Home, desc: "Захист квартири чи будинку", descEn: "Protection for your flat or house" },
-  { label: "Віньєтка", labelEn: "Vignette", href: "/vignette", icon: Route, desc: "Платні дороги Європи", descEn: "European toll roads", badge: "скоро", divider: true },
 ];
 // «Особисте» — здоровʼя/подорожі/улюбленці.
 const PERSONAL_LINKS: NavItem[] = [
@@ -34,7 +33,11 @@ const PERSONAL_LINKS: NavItem[] = [
   { label: "Тварини", labelEn: "Pets", href: "/pets", icon: PawPrint, desc: "Страхування котів і собак", descEn: "Insurance for cats and dogs" },
   { label: "Нещасні випадки", labelEn: "Accident", href: "/accident", icon: HeartPulse, desc: "Виплата при травмі чи нещасному випадку", descEn: "Payout for injury or accident" },
   { label: "Зброя", labelEn: "Firearms", href: "/weapon", icon: Crosshair, desc: "Поліс власника для дозволу", descEn: "Owner's policy for the permit" },
-  { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift", badge: "з 1 січня", divider: true },
+];
+// «Додатково» — не страхування: сертифікат і віньєтка.
+const EXTRA_LINKS: NavItem[] = [
+  { label: "Подарунковий сертифікат", labelEn: "Gift certificate", href: "/gift", icon: Gift, desc: "Подаруйте будь-який поліс", descEn: "Give any policy as a gift", badge: "з 1 січня" },
+  { label: "Віньєтка", labelEn: "Vignette", href: "/vignette", icon: Route, desc: "Платні дороги Європи", descEn: "European toll roads", badge: "скоро" },
 ];
 
 // Дропдаун меню з підпунктами-описами. Керований клік/тап + hover (на планшетах
@@ -218,7 +221,7 @@ function MobileLinks({ links }: { links: NavItem[] }) {
 export function Navbar({ solid = false }: { solid?: boolean }) {
   const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileGroup, setMobileGroup] = useState<"material" | "personal" | "account" | null>(null);
+  const [mobileGroup, setMobileGroup] = useState<"material" | "personal" | "extra" | "account" | null>(null);
   // Пункти груп (MobileLinks) закривають меню подією — вони рендеряться нижче по дереву.
   useEffect(() => {
     const close = () => setMobileOpen(false);
@@ -262,6 +265,7 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         <ul className="hidden items-center gap-0.5 md:flex">
           <NavDropdown title={t({ uk: "Матеріальне страхування", en: "Property insurance" })} links={MATERIAL_LINKS} opaque={opaque} />
           <NavDropdown title={t({ uk: "Особисте страхування", en: "Personal insurance" })} links={PERSONAL_LINKS} opaque={opaque} />
+          <NavDropdown title={t({ uk: "Додатково", en: "More" })} links={EXTRA_LINKS} opaque={opaque} />
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -332,6 +336,15 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
                 onToggle={() => setMobileGroup((g) => (g === "personal" ? null : "personal"))}
               >
                 <MobileLinks links={PERSONAL_LINKS} />
+              </MobileGroup>
+              <MobileGroup
+                id="extra"
+                title={t({ uk: "Додатково", en: "More" })}
+                icon={Gift}
+                open={mobileGroup === "extra"}
+                onToggle={() => setMobileGroup((g) => (g === "extra" ? null : "extra"))}
+              >
+                <MobileLinks links={EXTRA_LINKS} />
               </MobileGroup>
 
               {/* Профіль — окремий розкривний рядок з пунктами кабінету; гостю — кнопка входу. */}
