@@ -80,7 +80,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
           open ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0"
         )}
       >
-        <div className="w-[320px] overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03] dark:ring-white/10">
+        <div className="w-[344px] overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 shadow-xl shadow-indigo-500/5 ring-1 ring-black/[0.03] dark:ring-white/10">
           {links.map(({ href, label, labelEn, icon: Icon, desc, descEn, badge, soon, divider }) => {
             const row = (
               <>
@@ -94,7 +94,7 @@ function NavDropdown({ title, links, opaque }: { title: string; links: NavItem[]
                   <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                     {t({ uk: label, en: labelEn })}
                     {badge && (
-                      <span className="rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">{badge}</span>
+                      <span className="shrink-0 whitespace-nowrap rounded-full bg-indigo-100 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">{badge}</span>
                     )}
                   </span>
                   <span className="block truncate text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: desc, en: descEn })}</span>
