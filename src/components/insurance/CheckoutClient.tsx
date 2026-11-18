@@ -8,6 +8,7 @@ import { ArrowLeft, Gift, TicketPercent } from "lucide-react";
 import { companyLogo } from "@/lib/logos";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
+import { PaymentMethods } from "./PaymentMethods";
 import { SuccessModal } from "./SuccessModal";
 import { Button } from "@/components/ui/Button";
 import { registerPendingOrder } from "@/lib/pending-order-client";
@@ -848,6 +849,7 @@ export function CheckoutClient() {
                     </div>
                   ) : (
                     <div className="mt-4 space-y-3">
+                      <PaymentMethods product="osago" amount={due} />
                       <Button type="button" variant="primary" size="lg" loading={loading} onClick={() => void handleProceedToPayment()} className="w-full">
                         {t({ uk: "Перейти до оплати", en: "Go to payment" })}
                       </Button>
