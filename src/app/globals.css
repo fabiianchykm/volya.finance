@@ -231,3 +231,15 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #52525b;
 }
+
+/* Числові поля без стрілок-спінерів (кількість авто, місць, вартість тощо) —
+   вводяться з клавіатури, стрілки лише заважають і ламають вигляд поля. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
