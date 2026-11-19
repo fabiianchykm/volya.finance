@@ -13,7 +13,7 @@ export const INSTALLMENT_ENABLED = true;
 /** При оплаті частинами бонуси й промокоди НЕ застосовуються — списується повна вартість
  *  (комісію банку покриваємо з маржі, тож знижку з комісії дати не можемо). */
 export const INSTALLMENT_NO_DISCOUNTS = true;
-export const INSTALLMENT_MIN = 500;
+export const INSTALLMENT_MIN = 5000;
 /** Слаги страхових (lib/insurers), у яких доступна розстрочка. */
 export const INSTALLMENT_INSURERS = ["usg", "utsk", "inho", "pzu", "inter-polis", "express"];
 
@@ -43,7 +43,7 @@ export function installmentEligibleOffers<T extends { offerId: string; companyNa
   for (const list of groups.values()) {
     if (list.length < 2) continue;
     const top = list.reduce((a, b) => (b.price > a.price ? b : a));
-    out.add(top.offerId);
+    if (top.price >= INSTALLMENT_MIN) out.add(top.offerId);
   }
   return out;
 }
