@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
       if (retry.offers.length > 0) ({ offers, errorInfo } = retry);
     }
     if (errorInfo.length > 0) {
-      console.error(`[offers v2] errorInfo (${errorInfo.length} СК не порахували):`, JSON.stringify(errorInfo).slice(0, 600));
+      console.error(`[offers v2] errorInfo (${errorInfo.length} СК не порахували): ${(errorInfo as { moduleName?: unknown; step?: unknown; code?: unknown; errorText?: unknown }[]).map((e) => `${String(e?.moduleName ?? "?")}/${String(e?.step ?? "?")}/${String(e?.code ?? "?")}: ${String(e?.errorText ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").match(/(Forbidden|[^.]{0,120})/)?.[0] ?? ""}`).join(" | ").slice(0, 900)}`);
     }
 
     // failures — які СК не порахували і чому (для плашки над списком / пояснення «0 пропозицій»).

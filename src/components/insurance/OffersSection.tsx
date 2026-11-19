@@ -100,7 +100,7 @@ export function OffersSection({
   const unavailableNames = failures.filter((f) => f.reason === "unavailable").map((f) => f.name);
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
-  const [sortBy, setSortBy] = useState<SortKey>("recommended");
+  const [sortBy, setSortBy] = useState<SortKey>("price_asc");
   const [compareOpen, setCompareOpen] = useState(false);
   const [onlyInstallment, setOnlyInstallment] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
