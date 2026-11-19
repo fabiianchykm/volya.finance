@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { insurerFailuresText, type InsurerFailure } from "@/lib/insurer-errors";
 import { AlertTriangle } from "lucide-react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Info, Car, MapPin, CalendarDays, Columns3, CalendarRange } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Info, Car, MapPin, CalendarDays, Columns3, CalendarRange, Building2, Check } from "lucide-react";
 import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/offer-ranking";
 import { installmentEligibleOffers } from "@/lib/installment";
 import { usePopularity } from "@/lib/use-popularity";
@@ -15,6 +15,7 @@ import { PRIVILEGES } from "@/lib/constants";
 import type { InsuranceOffer } from "@/types/api";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useI18n } from "@/lib/i18n";
+import { formatCompanyName } from "@/lib/utils";
 import { DEFAULT_BUYER, type BuyerData, type VehicleData } from "@/types/insurance";
 
 interface OffersSectionProps {
@@ -103,6 +104,9 @@ export function OffersSection({
   const [compareOpen, setCompareOpen] = useState(false);
   const [onlyInstallment, setOnlyInstallment] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  // Фільтр за страховими: порожній набір = усі.
+  const [insurerFilter, setInsurerFilter] = useState<string[]>([]);
+  const [insurerOpen, setInsurerOpen] = useState(false);
   const SORT_OPTIONS = [
     { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },
     { k: "price_asc", label: "Спершу дешевші", en: "Cheapest first", Icon: ArrowDownWideNarrow },
@@ -114,6 +118,14 @@ export function OffersSection({
 
   const rankable = (o: InsuranceOffer) => ({ id: o.offerId, price: o.price, company: o.company?.publicName || o.companyNamePublic || o.companyName });
   const sorted = rankOffers(offers, rankable, sortBy, popularity);
+  const insurerName = (o: InsuranceOffer) => formatCompanyName(o.company?.publicName || o.companyNamePublic || o.companyName);
+  const insurerOptions = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const o of offers) { const n = insurerName(o); m.set(n, (m.get(n) ?? 0) + 1); }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], "uk"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offers]);
+  const toggleInsurer = (n: string) => setInsurerFilter((f) => (f.includes(n) ? f.filter((x) => x !== n) : [...f, n]));
   // Право на розстрочку: дорожча з пари пропозицій у страхових зі списку (лише ОСЦПВ).
   const installmentIds = useMemo(() => installmentEligibleOffers(offers), [offers]);
   const badges = offerBadges(offers, rankable, popularity);
@@ -226,6 +238,44 @@ export function OffersSection({
                 <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${onlyInstallment ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"}`}>{installmentIds.size}</span>
               </button>
             )}
+            {insurerOptions.length > 1 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setInsurerOpen((o) => !o)}
+                  aria-expanded={insurerOpen}
+                  aria-haspopup="menu"
+                  className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${insurerFilter.length ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 bg-white text-zinc-800 hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+                >
+                  <Building2 className="h-4 w-4" />
+                  {insurerFilter.length ? t({ uk: `Страхові · ${insurerFilter.length}`, en: `Insurers · ${insurerFilter.length}` }) : t({ uk: "Страхові", en: "Insurers" })}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${insurerOpen ? "rotate-180" : ""}`} />
+                </button>
+                {insurerOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setInsurerOpen(false)} />
+                    <div className="absolute right-0 top-full z-20 mt-2 max-h-[60vh] w-[240px] overflow-y-auto rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                      {insurerOptions.map(([n, c]) => {
+                        const on = insurerFilter.includes(n);
+                        return (
+                          <button key={n} type="button" onClick={() => toggleInsurer(n)} aria-pressed={on}
+                            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${on ? "bg-indigo-50 font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300" : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800/60"}`}>
+                            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${on ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-300 dark:border-zinc-600"}`}>{on && <Check className="h-3 w-3" />}</span>
+                            <span className="flex-1 truncate">{n}</span>
+                            <span className="text-xs text-zinc-400">{c}</span>
+                          </button>
+                        );
+                      })}
+                      {insurerFilter.length > 0 && (
+                        <button type="button" onClick={() => setInsurerFilter([])} className="mt-1 w-full rounded-lg border-t border-zinc-100 px-3 pt-2 pb-1 text-left text-xs font-medium text-zinc-500 hover:text-indigo-600 dark:border-zinc-800 dark:text-zinc-400">
+                          {t({ uk: "Скинути фільтр", en: "Clear filter" })}
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
             <div className="relative">
               <button
@@ -308,7 +358,7 @@ export function OffersSection({
                 </span>
               </div>
             )}
-            {(onlyInstallment ? sorted.filter((o) => installmentIds.has(o.offerId)) : sorted).map((offer, i) => {
+            {sorted.filter((o) => (!onlyInstallment || installmentIds.has(o.offerId)) && (insurerFilter.length === 0 || insurerFilter.includes(insurerName(o)))).map((offer, i) => {
               // v2: СК оформлює поліс ЛИШЕ з ДЦВ (dgoRequired) → за замовчуванням
               // найдешевший варіант, «без покриття» недоступне.
               const dgoId = dgoMap[offer.offerId] !== undefined
