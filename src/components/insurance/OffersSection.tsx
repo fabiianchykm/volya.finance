@@ -217,14 +217,14 @@ export function OffersSection({
         </div>
 
         {!loading && offers.length > 0 && (
-          <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
+          <div className="mb-5 grid grid-cols-2 items-stretch gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
             {offers.length > 1 && (
               <button
                 type="button"
                 onClick={() => setCompareOpen(true)}
-                className="mr-auto flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
+                className="order-3 flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold sm:mr-auto sm:px-4 text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
               >
-                <Columns3 className="h-4 w-4" />
+                <Columns3 className="h-4 w-4 shrink-0" />
                 {compareIds.length >= 2 ? t({ uk: "Порівняти обрані", en: "Compare selected" }) : t({ uk: "Порівняти всі", en: "Compare all" })}
                 <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-zinc-900 dark:text-indigo-300">{compareIds.length >= 2 ? compareIds.length : offers.length}</span>
               </button>
@@ -234,21 +234,21 @@ export function OffersSection({
                 type="button"
                 onClick={() => setOnlyInstallment((v) => !v)}
                 aria-pressed={onlyInstallment}
-                className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${onlyInstallment ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 bg-white text-zinc-800 hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+                className={`order-2 flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold shadow-sm transition-colors sm:px-4 ${onlyInstallment ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 bg-white text-zinc-800 hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
               >
-                <CalendarRange className="h-4 w-4" />
+                <CalendarRange className="h-4 w-4 shrink-0" />
                 {t({ uk: "Оплата частинами", en: "Instalments" })}
                 <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${onlyInstallment ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"}`}>{installmentIds.size}</span>
               </button>
             )}
             {insurerOptions.length > 1 && (
-              <div className="relative">
+              <div className="relative order-1">
                 <button
                   type="button"
                   onClick={() => setInsurerOpen((o) => !o)}
                   aria-expanded={insurerOpen}
                   aria-haspopup="menu"
-                  className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${insurerFilter.length ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 bg-white text-zinc-800 hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+                  className={`flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold shadow-sm transition-colors sm:w-auto sm:px-4 ${insurerFilter.length ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 bg-white text-zinc-800 hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
                 >
                   <Building2 className="h-4 w-4" />
                   {insurerFilter.length ? t({ uk: `Страхові · ${insurerFilter.length}`, en: `Insurers · ${insurerFilter.length}` }) : t({ uk: "Страхові", en: "Insurers" })}
@@ -279,14 +279,14 @@ export function OffersSection({
                 )}
               </div>
             )}
-            <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
-            <div className="relative">
+            <span className="order-4 hidden text-xs font-medium text-zinc-400 dark:text-zinc-500 sm:inline">{t({ uk: "Сортувати", en: "Sort" })}</span>
+            <div className="relative order-5">
               <button
                 type="button"
                 onClick={() => setSortOpen((o) => !o)}
                 aria-expanded={sortOpen}
                 aria-haspopup="menu"
-                className="flex min-w-[190px] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition-colors hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                className="flex h-10 w-full items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold sm:min-w-[190px] sm:px-4 text-zinc-800 shadow-sm transition-colors hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
               >
                 <span className="flex items-center gap-1.5"><activeSort.Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />{t({ uk: activeSort.label, en: activeSort.en })}</span>
                 <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform dark:text-zinc-500 ${sortOpen ? "rotate-180" : ""}`} />
