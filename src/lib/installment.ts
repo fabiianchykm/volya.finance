@@ -9,7 +9,7 @@
 
 import { insurerSlug } from "./offer-ranking";
 
-export const INSTALLMENT_ENABLED = false;
+export const INSTALLMENT_ENABLED = true;
 /** При оплаті частинами бонуси й промокоди НЕ застосовуються — списується повна вартість
  *  (комісію банку покриваємо з маржі, тож знижку з комісії дати не можемо). */
 export const INSTALLMENT_NO_DISCOUNTS = true;

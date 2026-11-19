@@ -755,8 +755,14 @@ export function CheckoutClient() {
                   </dl>
                 </section>
 
+                {/* При оплаті частинами бонуси й промокод недоступні — лише повна вартість. */}
+                {!order && installment && (
+                  <section className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                    {t({ uk: "Обрано оплату частинами: бонуси й промокод не застосовуються, до оплати — повна вартість поліса. Щоб скористатися бонусами, оберіть оплату карткою.", en: "Instalments selected: bonuses and promo codes do not apply, the full policy price is due. To use bonuses, choose card payment." })}
+                  </section>
+                )}
                 {/* Знижки: бонуси + промокод в одній картці */}
-                {!order && (
+                {!order && !installment && (
                   <section className="rounded-2xl border border-indigo-100 bg-indigo-50/40 dark:border-indigo-900 dark:bg-indigo-950/20">
                     <div className="divide-y divide-indigo-100 dark:divide-indigo-900/60">
                       {bonusMax >= 1 && (

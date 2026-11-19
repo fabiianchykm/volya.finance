@@ -3,11 +3,12 @@
 import { useState, useMemo } from "react";
 import { insurerFailuresText, type InsurerFailure } from "@/lib/insurer-errors";
 import { AlertTriangle } from "lucide-react";
-import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Info, Car, MapPin, CalendarDays } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Home, ArrowDownWideNarrow, ArrowUpWideNarrow, Sparkles, Info, Car, MapPin, CalendarDays, Columns3, CalendarRange } from "lucide-react";
 import { rankOffers, offerBadges, badgeText, type OfferSortKey } from "@/lib/offer-ranking";
 import { installmentEligibleOffers } from "@/lib/installment";
 import { usePopularity } from "@/lib/use-popularity";
 import { OfferCard } from "./OfferCard";
+import { CompareOffersModal } from "./CompareOffersModal";
 import { SearchingInsurers } from "./SearchingInsurers";
 import { Button } from "@/components/ui/Button";
 import { PRIVILEGES } from "@/lib/constants";
@@ -99,6 +100,8 @@ export function OffersSection({
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
   const [sortBy, setSortBy] = useState<SortKey>("recommended");
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [onlyInstallment, setOnlyInstallment] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const SORT_OPTIONS = [
     { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },
@@ -199,7 +202,30 @@ export function OffersSection({
         </div>
 
         {!loading && offers.length > 0 && (
-          <div className="mb-5 flex items-center justify-end gap-3">
+          <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
+            {offers.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setCompareOpen(true)}
+                className="mr-auto flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
+              >
+                <Columns3 className="h-4 w-4" />
+                {t({ uk: "Порівняти пропозиції", en: "Compare offers" })}
+                <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-zinc-900 dark:text-indigo-300">{offers.length}</span>
+              </button>
+            )}
+            {installmentIds.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setOnlyInstallment((v) => !v)}
+                aria-pressed={onlyInstallment}
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${onlyInstallment ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-200 bg-white text-zinc-800 hover:border-indigo-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"}`}
+              >
+                <CalendarRange className="h-4 w-4" />
+                {t({ uk: "Оплата частинами", en: "Instalments" })}
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${onlyInstallment ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"}`}>{installmentIds.size}</span>
+              </button>
+            )}
             <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{t({ uk: "Сортувати", en: "Sort" })}</span>
             <div className="relative">
               <button
@@ -237,6 +263,19 @@ export function OffersSection({
         )}
 
 
+        <CompareOffersModal
+          open={compareOpen}
+          onClose={() => setCompareOpen(false)}
+          offers={offers}
+          badges={badges}
+          installmentIds={installmentIds}
+          onPick={(o) => {
+            setCompareOpen(false);
+            const dgoId = dgoMap[o.offerId] !== undefined ? dgoMap[o.offerId] : o.dgoRequired ? (o.listDgo?.[0]?.id ?? null) : null;
+            onSelectOffer({ ...o, installmentEligible: installmentIds.has(o.offerId) }, dgoId, autolawyerMap[o.offerId] ?? null);
+          }}
+        />
+
         {awaitingBuyer && offers.length === 0 && !loading ? (
           <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Заповніть дати народження", en: "Enter the birth dates" })}</p>
@@ -269,7 +308,7 @@ export function OffersSection({
                 </span>
               </div>
             )}
-            {sorted.map((offer, i) => {
+            {(onlyInstallment ? sorted.filter((o) => installmentIds.has(o.offerId)) : sorted).map((offer, i) => {
               // v2: СК оформлює поліс ЛИШЕ з ДЦВ (dgoRequired) → за замовчуванням
               // найдешевший варіант, «без покриття» недоступне.
               const dgoId = dgoMap[offer.offerId] !== undefined
@@ -282,9 +321,9 @@ export function OffersSection({
                 offer={offer}
                 index={i}
                 cornerBadge={[badgeText(badges.get(offer.offerId), t), canInstallment ? t({ uk: "Оплата частинами", en: "Instalments" }) : null].filter(Boolean).join(" · ") || undefined}
-                faceNote={canInstallment ? t({ uk: "Оплата частинами — скоро", en: "Instalments — coming soon" }) : undefined}
+                faceNote={canInstallment ? t({ uk: "Можна оплатити частинами", en: "Instalments available" }) : undefined}
                 faceNoteMuted
-                faceNoteHint={canInstallment ? t({ uk: "Для цієї пропозиції буде доступна розстрочка від банку. У розстрочку бонуси й промокод не застосовуються.", en: "Bank instalments will be available for this offer. Bonuses and promo codes do not apply to instalments." }) : undefined}
+                faceNoteHint={canInstallment ? t({ uk: "Для цієї пропозиції доступна оплата частинами — оберіть її на кроці оплати. У розстрочку бонуси й промокод не застосовуються.", en: "Instalments are available for this offer — choose them at the payment step. Bonuses and promo codes do not apply to instalments." }) : undefined}
                 selected={selectedOfferId === offer.offerId}
                 discountEligible
                 showAgeBasis

@@ -6,7 +6,7 @@ import { installmentState, INSTALLMENT_NO_DISCOUNTS } from "@/lib/installment";
 import { trackEvent } from "@/lib/analytics";
 
 // Вибір способу оплати на кроці оплати: «Карткою онлайн» (активний) і «Частинами»
-// (поки «скоро» — неактивний, клік лише фіксується в аналітиці). Показується лише
+// (активна, коли INSTALLMENT_ENABLED; інакше «скоро»). Показується лише
 // для пропозицій з правом на розстрочку й сумою ≥ INSTALLMENT_MIN (див. lib/installment).
 
 export type PayMethod = "card" | "installment";
