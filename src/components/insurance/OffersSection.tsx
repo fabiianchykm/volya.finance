@@ -102,6 +102,9 @@ export function OffersSection({
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
   const [sortBy, setSortBy] = useState<SortKey>("price_asc");
   const [compareOpen, setCompareOpen] = useState(false);
+  // Вибір пропозицій для порівняння (тап «Порівняти» на картці). Порожньо — порівнюємо всі.
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const toggleCompare = (id: string) => setCompareIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
   const [onlyInstallment, setOnlyInstallment] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   // Фільтр за страховими: порожній набір = усі.
@@ -222,8 +225,8 @@ export function OffersSection({
                 className="mr-auto flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
               >
                 <Columns3 className="h-4 w-4" />
-                {t({ uk: "Порівняти пропозиції", en: "Compare offers" })}
-                <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-zinc-900 dark:text-indigo-300">{offers.length}</span>
+                {compareIds.length >= 2 ? t({ uk: "Порівняти обрані", en: "Compare selected" }) : t({ uk: "Порівняти всі", en: "Compare all" })}
+                <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-zinc-900 dark:text-indigo-300">{compareIds.length >= 2 ? compareIds.length : offers.length}</span>
               </button>
             )}
             {installmentIds.size > 0 && (
@@ -313,10 +316,24 @@ export function OffersSection({
         )}
 
 
+        {compareIds.length > 0 && !compareOpen && (
+          <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+            <div className="flex items-center gap-3 rounded-2xl bg-zinc-900 px-4 py-3 text-white shadow-2xl ring-1 ring-white/10 dark:bg-zinc-800">
+              <span className="text-sm">{t({ uk: `Обрано: ${compareIds.length}`, en: `Selected: ${compareIds.length}` })}</span>
+              <button type="button" onClick={() => setCompareIds([])} className="text-xs text-zinc-400 hover:text-white">{t({ uk: "Очистити", en: "Clear" })}</button>
+              <button type="button" disabled={compareIds.length < 2} onClick={() => setCompareOpen(true)}
+                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-50">
+                <Columns3 className="h-4 w-4" />
+                {compareIds.length < 2 ? t({ uk: "Оберіть ще одну", en: "Pick one more" }) : t({ uk: `Порівняти (${compareIds.length})`, en: `Compare (${compareIds.length})` })}
+              </button>
+            </div>
+          </div>
+        )}
+
         <CompareOffersModal
           open={compareOpen}
           onClose={() => setCompareOpen(false)}
-          offers={offers}
+          offers={compareIds.length >= 2 ? offers.filter((o) => compareIds.includes(o.offerId)) : offers}
           badges={badges}
           installmentIds={installmentIds}
           onPick={(o) => {
@@ -365,7 +382,18 @@ export function OffersSection({
                 ? dgoMap[offer.offerId]
                 : offer.dgoRequired ? (offer.listDgo?.[0]?.id ?? null) : null;
               const canInstallment = installmentIds.has(offer.offerId);
+              const inCompare = compareIds.includes(offer.offerId);
               return (
+              <div key={offer.offerId} className="relative">
+              <button
+                type="button"
+                onClick={() => toggleCompare(offer.offerId)}
+                aria-pressed={inCompare}
+                className={`absolute -top-3 right-4 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm ring-1 transition-colors ${inCompare ? "bg-indigo-600 text-white ring-indigo-600" : "bg-white text-zinc-600 ring-zinc-200 hover:text-indigo-700 hover:ring-indigo-300 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-zinc-700"}`}
+              >
+                <span className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${inCompare ? "border-white bg-white text-indigo-600" : "border-zinc-300 dark:border-zinc-600"}`}>{inCompare && <Check className="h-2.5 w-2.5" />}</span>
+                {t({ uk: "Порівняти", en: "Compare" })}
+              </button>
               <OfferCard
                 key={offer.offerId}
                 offer={offer}
@@ -391,6 +419,7 @@ export function OffersSection({
                   )
                 }
               />
+              </div>
               );
             })}
           </div>
