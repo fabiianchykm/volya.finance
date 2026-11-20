@@ -726,9 +726,6 @@ export function CheckoutClient() {
               <div className="space-y-5">
                 <div>
                   <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Перевірте замовлення", en: "Review your order" })}</h2>
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    {t({ uk: "Бонуси й промокод застосовуються тут, до реєстрації поліса у страховій. Після цього кроку суму змінити не можна.", en: "Bonuses and a promo code are applied here, before the insurer registers the policy. The amount can't be changed after this step." })}
-                  </p>
                 </div>
 
                 {/* Поліс */}
@@ -845,13 +842,16 @@ export function CheckoutClient() {
               {/* Підсумок і кнопка — під картками, в одну колонку (не збоку). */}
               <aside className="mt-5">
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 dark:border-zinc-700 dark:bg-zinc-800/40">
+                  {/* Розбивка лише коли є знижки — інакше «Вартість» дублює «До оплати». */}
+                  {!order && (bonusToApply > 0 || promoDiscount > 0) && (<>
                   <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{t({ uk: "Разом", en: "Total" })}</p>
                   <dl className="mt-3 space-y-2 text-sm">
                     <div className="flex justify-between gap-3"><dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Вартість", en: "Price" })}</dt><dd className="font-medium text-zinc-900 dark:text-zinc-100">{formatPrice(orderTotal)}</dd></div>
                     {!order && bonusToApply > 0 && <div className="flex justify-between gap-3"><dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Бонуси", en: "Bonuses" })}</dt><dd className="font-medium text-emerald-600 dark:text-emerald-400">−{formatPrice(Math.min(bonusToApply, estDiscount))}</dd></div>}
                     {!order && promoDiscount > 0 && <div className="flex justify-between gap-3"><dt className="text-zinc-500 dark:text-zinc-400">{t({ uk: "Промокод", en: "Promo code" })}</dt><dd className="font-medium text-emerald-600 dark:text-emerald-400">−{formatPrice(Math.max(0, estDiscount - Math.min(bonusToApply, estDiscount)))}</dd></div>}
                   </dl>
-                  <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                  </>)}
+                  <div className={`flex items-baseline justify-between gap-3 ${!order && (bonusToApply > 0 || promoDiscount > 0) ? "mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-700" : ""}`}>
                     <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "До оплати", en: "Amount due" })}</span>
                     <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">{formatPrice(due)}</span>
                   </div>
