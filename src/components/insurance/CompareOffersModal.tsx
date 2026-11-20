@@ -9,6 +9,7 @@ import { formatPrice, formatCompanyName } from "@/lib/utils";
 import { companyLogo } from "@/lib/logos";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
 import { osagoAgeBasis } from "@/lib/osago-age-basis";
+import { INSURERS } from "@/lib/insurers";
 import type { InsuranceOffer } from "@/types/api";
 import type { OfferBadge } from "@/lib/offer-ranking";
 
@@ -59,6 +60,14 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
     {
       key: "age", label: t({ uk: "Ціна рахується за віком", en: "Price based on age of" }),
       render: (o) => { const a = o.driverAgeHint ? { uk: o.driverAgeHint, en: o.driverAgeHint } : osagoAgeBasis(matchName(o)); return a ? <span className="text-xs text-zinc-600 dark:text-zinc-300">{lang === "en" ? a.en : a.uk}</span> : <span className="text-xs text-zinc-400">—</span>; },
+    },
+    {
+      key: "founded", label: t({ uk: "На ринку з", en: "On the market since" }),
+      render: (o) => { const y = INSURERS.find((i) => i.match.test(matchName(o)))?.foundedYear; return y ? <span className="text-sm text-zinc-700 dark:text-zinc-200">{y}</span> : <span className="text-xs text-zinc-400">—</span>; },
+    },
+    {
+      key: "origin", label: t({ uk: "Країна капіталу", en: "Country of capital" }), hint: t({ uk: "Звідки материнська група страхової", en: "Home country of the insurer's parent group" }),
+      render: (o) => { const ins = INSURERS.find((i) => i.match.test(matchName(o))); const g = ins?.origin; return g ? <span className="text-xs text-zinc-700 dark:text-zinc-200"><span className="mr-1">{g.flag}</span>{g.country}{g.group && <span className="block text-[10px] text-zinc-400 dark:text-zinc-500">{g.group}</span>}</span> : <span className="text-xs text-zinc-400">—</span>; },
     },
     {
       key: "fix", label: t({ uk: "Виправлення поліса у разі помилки", en: "Policy correction if there's a mistake" }),

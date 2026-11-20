@@ -17,6 +17,10 @@ export interface InsurerProfile {
   offices?: string[];   // адреси офісів (приклад)
   phones?: string[];    // контактні телефони (приклад)
   website?: string;     // офіційний сайт
+  /** Рік заснування в Україні (перевірено за джерелами 20.11.2026; без даних — не показуємо). */
+  foundedYear?: number;
+  /** Країна капіталу (материнська група): прапор + назва. */
+  origin?: { flag: string; country: string; group?: string };
 }
 
 // Приклад-профіль (однаковий шаблон) — щоб було видно, як виглядатиме сторінка.
@@ -30,24 +34,24 @@ const SAMPLE = {
 };
 
 export const INSURERS: InsurerProfile[] = [
-  { slug: "inho",         name: "ІНГО",          match: /інго|ingo/i,                 website: "https://ingo.ua", ...SAMPLE },
-  { slug: "pzu",          name: "PZU",           match: /\bpzu\b|пзу/i,               website: "https://pzu.com.ua", ...SAMPLE },
-  { slug: "arx",          name: "ARX",           match: /\barx\b|аркс/i,              website: "https://arx.com.ua", ...SAMPLE },
-  { slug: "unika",        name: "Уніка",         match: /уніка|uniqa/i,               website: "https://uniqa.ua", ...SAMPLE },
-  { slug: "oranta",       name: "Оранта",        match: /оранта/i,                    website: "https://oranta.ua", ...SAMPLE },
-  { slug: "knyazha",      name: "Княжа",         match: /княжа/i,                     website: "https://kniazha.ua", ...SAMPLE },
-  { slug: "usg",          name: "УСГ",           match: /усг|\busg\b/i,               ...SAMPLE },
-  { slug: "vuso",         name: "ВУСО",          match: /вусо|vuso/i,                 website: "https://vuso.ua", ...SAMPLE },
-  { slug: "tas",          name: "ТАС",           match: /\bтас\b|«тас»|\btas\b/i,     website: "https://sg.tas.ua", ...SAMPLE },
-  { slug: "euroins",      name: "Євроінс",       match: /євроінс|euroins/i,           website: "https://euroins.com.ua", ...SAMPLE },
-  { slug: "arsenal",      name: "Арсенал",       match: /арсенал/i,                   website: "https://arsenal-ic.ua", ...SAMPLE },
-  { slug: "brokbyzness",  name: "Брокбізнес / BBS", match: /брокбізнес|ббс|bbs/i,     ...SAMPLE },
-  { slug: "express",      name: "Експрес",       match: /експрес|express/i,           ...SAMPLE },
-  { slug: "guardian",     name: "Гардіан",       match: /гардіан|guardian/i,          ...SAMPLE },
-  { slug: "inter-polis",  name: "Інтер-Поліс",   match: /інтер[\s-]?поліс|inter[\s-]?polis/i, ...SAMPLE },
-  { slug: "utico",        name: "ЮТІКО",         match: /ютіко|ютико|utico/i,         ...SAMPLE },
-  { slug: "utsk",         name: "УТСК",          match: /утск|utsk|українська транспортна|укр.*трансп/i, ...SAMPLE },
-  { slug: "eia",          name: "ЄСА",           match: /\bєса\b|европейс|європейс/i, ...SAMPLE },
+  { slug: "inho",         name: "ІНГО",          match: /інго|ingo/i,                 website: "https://ingo.ua", ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "pzu",          name: "PZU",           match: /\bpzu\b|пзу/i,               website: "https://pzu.com.ua", ...SAMPLE, foundedYear: 1993, origin: { flag: "🇵🇱", country: "Польща", group: "PZU Group" } },
+  { slug: "arx",          name: "ARX",           match: /\barx\b|аркс/i,              website: "https://arx.com.ua", ...SAMPLE, foundedYear: 1994, origin: { flag: "🇨🇦", country: "Канада", group: "Fairfax Financial" } },
+  { slug: "unika",        name: "Уніка",         match: /уніка|uniqa/i,               website: "https://uniqa.ua", ...SAMPLE, origin: { flag: "🇦🇹", country: "Австрія", group: "UNIQA Group" } },
+  { slug: "oranta",       name: "Оранта",        match: /оранта/i,                    website: "https://oranta.ua", ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "knyazha",      name: "Княжа",         match: /княжа/i,                     website: "https://kniazha.ua", ...SAMPLE, foundedYear: 1997, origin: { flag: "🇦🇹", country: "Австрія", group: "Vienna Insurance Group" } },
+  { slug: "usg",          name: "УСГ",           match: /усг|\busg\b/i,               ...SAMPLE, foundedYear: 2000, origin: { flag: "🇦🇹", country: "Австрія", group: "Vienna Insurance Group" } },
+  { slug: "vuso",         name: "ВУСО",          match: /вусо|vuso/i,                 website: "https://vuso.ua", ...SAMPLE, foundedYear: 2001, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "tas",          name: "ТАС",           match: /(^|[^а-яіїєґa-z])тас($|[^а-яіїєґa-z])|\btas\b/i,     website: "https://sg.tas.ua", ...SAMPLE, foundedYear: 1998, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "euroins",      name: "Євроінс",       match: /євроінс|euroins/i,           website: "https://euroins.com.ua", ...SAMPLE, origin: { flag: "🇧🇬", country: "Болгарія", group: "Eurohold" } },
+  { slug: "arsenal",      name: "Арсенал",       match: /арсенал/i,                   website: "https://arsenal-ic.ua", ...SAMPLE, foundedYear: 2005, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "brokbyzness",  name: "Брокбізнес / BBS", match: /брокбізнес|ббс|bbs/i,     ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "express",      name: "Експрес",       match: /експрес|express/i,           ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "guardian",     name: "Гардіан",       match: /гардіан|guardian/i,          ...SAMPLE, foundedYear: 2007, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "inter-polis",  name: "Інтер-Поліс",   match: /інтер[\s-]?поліс|inter[\s-]?polis/i, ...SAMPLE, foundedYear: 1993, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "utico",        name: "ЮТІКО",         match: /ютіко|ютико|utico/i,         ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "utsk",         name: "УТСК",          match: /утск|utsk|українська транспортна|укр.*трансп/i, ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
+  { slug: "eia",          name: "ЄСА",           match: /(^|[^а-яіїєґa-z])єса($|[^а-яіїєґa-z])|европейс|європейс/i, ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
 ];
 
 /** Відгуки про сам сервіс volya.finance зберігаються в тій самій таблиці під цим слагом. */
