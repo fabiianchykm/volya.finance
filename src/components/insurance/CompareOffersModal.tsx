@@ -35,7 +35,6 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
 
   const matchName = (o: InsuranceOffer) => [o.company?.publicName, (o.company as { companyName?: string })?.companyName, o.companyName].filter(Boolean).join(" ");
   const dgo = (o: InsuranceOffer) => (Array.isArray(o.listDgo) ? o.listDgo : []);
-  const lawyer = (o: InsuranceOffer) => (Array.isArray(o.listAutolawyer) ? o.listAutolawyer : []);
   const yes = <Check className="mx-auto h-4 w-4 text-emerald-600" />;
   const no = <Minus className="mx-auto h-4 w-4 text-zinc-300 dark:text-zinc-600" />;
 
@@ -57,10 +56,6 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
     {
       key: "dgo", label: t({ uk: "ДЦВ (додаткове покриття)", en: "Extra liability cover" }), hint: t({ uk: "Підвищує ліміт виплати потерпілому понад законний", en: "Raises the payout limit above the statutory one" }),
       render: (o) => { const l = dgo(o); if (!l.length) return no; const min = l.reduce((a, b) => (Number(b.cost) < Number(a.cost) ? b : a)); const max = l.reduce((a, b) => (Number(b.coverage) > Number(a.coverage) ? b : a)); return <span className="text-xs text-zinc-700 dark:text-zinc-200">{t({ uk: `до +${Number(max.coverage).toLocaleString("uk-UA")} ₴`, en: `up to +${Number(max.coverage).toLocaleString("uk-UA")} ₴` })}<br /><span className="text-zinc-400">{t({ uk: `від ${formatPrice(Number(min.cost))}`, en: `from ${formatPrice(Number(min.cost))}` })}{o.dgoRequired ? ` · ${t({ uk: "обовʼязково", en: "required" })}` : ""}</span></span>; },
-    },
-    {
-      key: "lawyer", label: t({ uk: "Автоюрист", en: "Legal assistance" }),
-      render: (o) => { const l = lawyer(o); if (!l.length) return no; const min = Math.min(...l.map((a) => a.price)); return <span className="text-xs text-zinc-700 dark:text-zinc-200">{t({ uk: `від ${formatPrice(min)}`, en: `from ${formatPrice(min)}` })}</span>; },
     },
     {
       key: "installment", label: t({ uk: "Оплата частинами", en: "Instalments" }), hint: t({ uk: "Повна вартість, без бонусів і промокоду", en: "Full price, no bonuses or promo codes" }),
@@ -91,19 +86,19 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
         <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 w-[180px] min-w-[150px] bg-white p-2 align-bottom text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:bg-zinc-900 dark:text-zinc-500">{t({ uk: "Параметр", en: "Parameter" })}</th>
+              <th className="sticky left-0 z-10 w-[180px] min-w-[150px] bg-white p-2 align-middle text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:bg-zinc-900 dark:text-zinc-500">{t({ uk: "Параметр", en: "Parameter" })}</th>
               {cols.map((o) => {
                 const name = formatCompanyName(o.company?.publicName || o.companyNamePublic || o.companyName);
                 const logo = companyLogo(name);
                 const items = badgeOf(o);
                 return (
-                  <th key={o.offerId} className="min-w-[150px] p-2 align-bottom">
+                  <th key={o.offerId} className="min-w-[150px] p-2 align-top">
                     <div className="flex flex-col items-center gap-1.5 text-center">
                       <span className="flex h-12 w-full items-center justify-center rounded-xl bg-white p-1.5 ring-1 ring-zinc-200 dark:ring-zinc-700">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         {logo ? <img src={logo} alt={name} className="max-h-full max-w-full object-contain" /> : <span className="text-sm font-bold text-indigo-600">{name.slice(0, 2).toUpperCase()}</span>}
                       </span>
-                      <span className="text-sm font-semibold leading-tight text-zinc-900 dark:text-zinc-100">{name}</span>
+                      <span className="flex min-h-[2.5rem] items-center text-sm font-semibold leading-tight text-zinc-900 dark:text-zinc-100">{name}</span>
                       {items && items.length > 0 && (
                         <span className="flex flex-wrap justify-center gap-1">
                           {items.map(({ Icon, text, cls }) => <span key={text} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${cls}`}><Icon className="h-3 w-3" />{text}</span>)}
@@ -136,7 +131,7 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Ціни вже зі знижкою volya.finance. ДЦВ і автоюрист додаються до ціни за бажанням на картці пропозиції.", en: "Prices already include the volya.finance discount. Extra cover and legal assistance are optional add-ons on the offer card." })}</p>
+      <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">{t({ uk: "Ціни вже зі знижкою volya.finance. ДЦВ додається до ціни за бажанням на картці пропозиції.", en: "Prices already include the volya.finance discount. Extra cover is an optional add-on on the offer card." })}</p>
     </Modal>
   );
 }

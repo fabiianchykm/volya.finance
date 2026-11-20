@@ -50,6 +50,12 @@ export function rankOffers<T>(offers: T[], get: (o: T) => RankableOffer, sortBy:
 
 export type OfferBadge = "cheapest" | "popular" | "both";
 
+/** Бейджі «Найвигідніше» / «Популярний вибір» на картках і в порівнянні.
+ *  Вимкнено 20.11.2026: клієнтів ще мало, «популярність» нерепрезентативна.
+ *  Облік не зупиняється — /api/insurers/popular рахує оформлені поліси за рік;
+ *  щоб повернути бейджі, достатньо поставити true. */
+export const OFFER_BADGES_ENABLED = false;
+
 /** Ручний вибір «Популярний вибір» (слаги lib/insurers): якщо така СК є серед
  *  пропозицій, бейдж іде їй (найдешевшій її пропозиції) незалежно від статистики.
  *  Порожній масив — бейдж за фактичною популярністю серед наших клієнтів. */
@@ -66,7 +72,7 @@ export const CHEAPEST_EXCLUDE: string[] = ["guardian"];
  */
 export function offerBadges<T>(offers: T[], get: (o: T) => RankableOffer & { id: string }, pop: InsurerPopularity): Map<string, OfferBadge> {
   const out = new Map<string, OfferBadge>();
-  if (offers.length < 2) return out;
+  if (!OFFER_BADGES_ENABLED || offers.length < 2) return out;
   let cheapest: T | null = null;
   for (const o of offers) {
     const slug = insurerSlug(get(o).company);
