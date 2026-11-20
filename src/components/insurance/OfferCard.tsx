@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck, CalendarCheck, Star } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck, CalendarCheck, Star, MessageSquareQuote } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { INSURERS, MTSBU_PERIOD, MTSBU_SOURCE_URL, insurerBySlug } from "@/lib/insurers";
 import { Button } from "@/components/ui/Button";
@@ -307,12 +307,27 @@ function SettlementDays({ slug, center = false }: { slug: string | null; center?
   );
 }
 
+// Відгук експерта volya.finance (якщо внесено в довідник): коротко на картці, повністю — у підказці.
+function ExpertNote({ slug, center = false }: { slug: string | null; center?: boolean }) {
+  const { t } = useI18n();
+  const note = insurerBySlug(slug)?.expertNote;
+  if (!note) return null;
+  return (
+    <Tooltip className={cn("inline-flex max-w-[16rem] cursor-help items-start gap-1 text-xs text-zinc-600 dark:text-zinc-300", center && "justify-center text-center")} content={note}>
+      <MessageSquareQuote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-500" />
+      <span className="line-clamp-2"><span className="font-semibold">{t({ uk: "Експерт:", en: "Expert:" })}</span> {note}</span>
+    </Tooltip>
+  );
+}
+
 // Рейтинг страхової з відгуків наших клієнтів: «★ 4,6 · 12 відгуків» або «Ще без відгуків».
 function InsurerRating({ slug, center = false }: { slug: string | null; center?: boolean }) {
   const { t } = useI18n();
   const ratings = useReviewSummaries();
   if (!slug) return null;
   const r = ratings[slug];
+  // Поки відгуків немає — нічого не показуємо (без «Ще без відгуків»).
+  if (!r || r.count === 0) return null;
   const plural = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? "відгук" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "відгуки" : "відгуків");
   return (
     <Link
@@ -507,6 +522,7 @@ export function OfferCard({
               <p className="text-[15px] font-bold leading-snug text-zinc-900 dark:text-zinc-100">{cleanCompanyName}</p>
               <InsurerRating slug={insurerSlug} />
               <SettlementDays slug={insurerSlug} />
+              <ExpertNote slug={insurerSlug} />
               {subtitle && <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</p>}
               <Tooltip
                 className="mt-1 inline-flex cursor-help"
@@ -592,6 +608,7 @@ export function OfferCard({
           </span>
           <InsurerRating slug={insurerSlug} center />
           <SettlementDays slug={insurerSlug} center />
+          <ExpertNote slug={insurerSlug} center />
           {subtitle && <span className="text-xs text-zinc-400 text-center dark:text-zinc-500">{subtitle}</span>}
         </div>
 

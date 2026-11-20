@@ -17,6 +17,8 @@ export interface InsurerProfile {
   offices?: string[];   // адреси офісів (приклад)
   phones?: string[];    // контактні телефони (приклад)
   website?: string;     // офіційний сайт
+  /** Короткий відгук експерта volya.finance про страхову (1–2 речення). Без тексту — не показуємо. */
+  expertNote?: string;
   /** Показники ОСЦПВ з дашборду МТСБУ (вносимо вручну щокварталу, період — MTSBU_PERIOD). */
   mtsbu?: { settlementDays?: number; complaintsPer10k?: number };
   /** Рік заснування в Україні (перевірено за джерелами 20.11.2026; без даних — не показуємо). */

@@ -69,6 +69,10 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
       key: "complaints", label: t({ uk: "Скарги на 10 000 договорів", en: "Complaints per 10,000 contracts" }), hint: t({ uk: `МТСБУ, ${MTSBU_PERIOD}`, en: `MTIBU, ${MTSBU_PERIOD}` }), hintHref: MTSBU_SOURCE_URL,
       render: (o: InsuranceOffer) => { const c = INSURERS.find((i) => i.match.test(matchName(o)))?.mtsbu?.complaintsPer10k; return c != null ? <span className="text-sm text-zinc-700 dark:text-zinc-200">{c.toLocaleString("uk-UA")}</span> : <span className="text-xs text-zinc-400">—</span>; },
     }] : []),
+    ...(cols.some((o) => INSURERS.find((i) => i.match.test(matchName(o)))?.expertNote) ? [{
+      key: "expert", label: t({ uk: "Відгук експерта", en: "Expert review" }), hint: t({ uk: "Думка фахівців volya.finance", en: "Opinion of volya.finance specialists" }),
+      render: (o: InsuranceOffer) => { const n = INSURERS.find((i) => i.match.test(matchName(o)))?.expertNote; return n ? <span className="block text-left text-xs leading-snug text-zinc-600 dark:text-zinc-300">{n}</span> : <span className="text-xs text-zinc-400">—</span>; },
+    }] : []),
     {
       key: "founded", label: t({ uk: "На ринку з", en: "On the market since" }),
       render: (o) => { const y = INSURERS.find((i) => i.match.test(matchName(o)))?.foundedYear; return y ? <span className="text-sm text-zinc-700 dark:text-zinc-200">{y}</span> : <span className="text-xs text-zinc-400">—</span>; },
