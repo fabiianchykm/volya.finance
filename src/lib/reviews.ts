@@ -130,3 +130,17 @@ export async function deleteOwnReview(id: number, keys: string[]): Promise<boole
   const res = await sql`DELETE FROM insurer_reviews WHERE id = ${id} AND email = ANY(${norm})`;
   return (res.count ?? 0) > 0;
 }
+
+// ── Зведення рейтингів для карток пропозицій ─────────────────────────────
+export type ReviewSummaryMap = Record<string, { average: number; count: number }>;
+
+export async function getReviewSummaries(): Promise<ReviewSummaryMap> {
+  if (!sql) return {};
+  await ensureSchema();
+  const rows = await sql<{ insurer: string; avg: string; cnt: string }[]>`
+    SELECT insurer, AVG(rating) AS avg, COUNT(*) AS cnt FROM insurer_reviews GROUP BY insurer
+  `;
+  const out: ReviewSummaryMap = {};
+  for (const r of rows) out[r.insurer] = { average: Math.round(Number(r.avg) * 10) / 10, count: Number(r.cnt) || 0 };
+  return out;
+}

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck, CalendarCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck, CalendarCheck, Star } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { INSURERS } from "@/lib/insurers";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +15,7 @@ import { logoSrc } from "@/lib/logos";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "next-auth/react";
 import { isAdminClient } from "@/lib/admin";
+import { useReviewSummaries } from "@/lib/use-review-summaries";
 import type { InsuranceCompany, InsuranceOffer, AutolawyerOffer, DgoOffer } from "@/types/api";
 
 interface OfferCardProps {
@@ -287,6 +288,36 @@ function CoverageSelect({ dgoList, selectedId, onSelect, required }: {
   );
 }
 
+// Рейтинг страхової з відгуків наших клієнтів: «★ 4,6 · 12 відгуків» або «Ще без відгуків».
+function InsurerRating({ slug, center = false }: { slug: string | null; center?: boolean }) {
+  const { t } = useI18n();
+  const ratings = useReviewSummaries();
+  if (!slug) return null;
+  const r = ratings[slug];
+  const plural = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? "відгук" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "відгуки" : "відгуків");
+  return (
+    <Link
+      href={`/insurers/${slug}`}
+      onClick={(e) => e.stopPropagation()}
+      className={cn("inline-flex items-center gap-1 text-xs hover:underline", center && "justify-center")}
+      title={t({ uk: "Оцінки клієнтів volya.finance", en: "Ratings from volya.finance clients" })}
+    >
+      {r && r.count > 0 ? (
+        <>
+          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">{r.average.toFixed(1).replace(".", ",")}</span>
+          <span className="text-zinc-400 dark:text-zinc-500">· {t({ uk: `${r.count} ${plural(r.count)}`, en: `${r.count} review${r.count === 1 ? "" : "s"}` })}</span>
+        </>
+      ) : (
+        <>
+          <Star className="h-3.5 w-3.5 text-zinc-300 dark:text-zinc-600" />
+          <span className="text-zinc-400 dark:text-zinc-500">{t({ uk: "Ще без відгуків", en: "No reviews yet" })}</span>
+        </>
+      )}
+    </Link>
+  );
+}
+
 export function OfferCard({
   offer,
   selected,
@@ -455,6 +486,7 @@ export function OfferCard({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold leading-snug text-zinc-900 dark:text-zinc-100">{cleanCompanyName}</p>
+              <InsurerRating slug={insurerSlug} />
               {subtitle && <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</p>}
               <Tooltip
                 className="mt-1 inline-flex cursor-help"
@@ -538,6 +570,7 @@ export function OfferCard({
           <span className="text-sm uppercase text-zinc-900 leading-tight text-center dark:text-zinc-100">
             {cleanCompanyName}
           </span>
+          <InsurerRating slug={insurerSlug} center />
           {subtitle && <span className="text-xs text-zinc-400 text-center dark:text-zinc-500">{subtitle}</span>}
         </div>
 
