@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 import { formatPrice, formatCompanyName } from "@/lib/utils";
 import { companyLogo } from "@/lib/logos";
-import { BONUS_RATE } from "@/lib/constants";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
 import { osagoAgeBasis } from "@/lib/osago-age-basis";
 import type { InsuranceOffer } from "@/types/api";
@@ -48,10 +47,6 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
     {
       key: "discount", label: t({ uk: "Знижка volya.finance", en: "volya.finance discount" }), hint: t({ uk: "Частину комісії віддаємо знижкою — ціна вже з нею", en: "We pass part of our commission on as a discount — already included" }),
       render: (o) => { const strike = osagoStrikePrice(matchName(o), o.price); const pct = osagoDiscountPct(matchName(o)); return strike && pct ? <span className="text-sm"><span className="text-zinc-400 line-through">{formatPrice(strike)}</span> <span className="font-semibold text-rose-600">−{pct}%</span></span> : no; },
-    },
-    {
-      key: "bonus", label: t({ uk: "Бонус на рахунок", en: "Bonus to account" }),
-      render: (o) => <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">+{formatPrice(Math.round(o.price * BONUS_RATE))}</span>,
     },
     {
       key: "dgo", label: t({ uk: "ДЦВ (додаткове покриття)", en: "Extra liability cover" }), hint: t({ uk: "Підвищує ліміт виплати потерпілому понад законний", en: "Raises the payout limit above the statutory one" }),
