@@ -13,7 +13,7 @@ export const INSTALLMENT_ENABLED = true;
 /** При оплаті частинами бонуси й промокоди НЕ застосовуються — списується повна вартість
  *  (комісію банку покриваємо з маржі, тож знижку з комісії дати не можемо). */
 export const INSTALLMENT_NO_DISCOUNTS = true;
-export const INSTALLMENT_MIN = 5000;
+export const INSTALLMENT_MIN = 0; // без мінімальної суми (ліміт 5 000 ₴ прибрано 20.11.2026)
 /** Слаги страхових (lib/insurers), у яких доступна розстрочка. */
 export const INSTALLMENT_INSURERS = ["usg", "utsk", "inho", "pzu", "inter-polis", "express"];
 
