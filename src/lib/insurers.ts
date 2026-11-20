@@ -17,6 +17,8 @@ export interface InsurerProfile {
   offices?: string[];   // адреси офісів (приклад)
   phones?: string[];    // контактні телефони (приклад)
   website?: string;     // офіційний сайт
+  /** Показники ОСЦПВ з дашборду МТСБУ (вносимо вручну щокварталу, період — MTSBU_PERIOD). */
+  mtsbu?: { settlementDays?: number; complaintsPer10k?: number };
   /** Рік заснування в Україні (перевірено за джерелами 20.11.2026; без даних — не показуємо). */
   foundedYear?: number;
   /** Країна капіталу (материнська група): прапор + назва. */
@@ -32,6 +34,11 @@ const SAMPLE = {
   offices: ["приклад: вул. Прикладна, 1, Київ", "приклад: вул. Демонстраційна, 10, Львів"],
   phones: ["0 800 00 00 00 (приклад)"],
 };
+
+/** Період показників МТСБУ в полі mtsbu (підпис на сайті). Оновлювати разом із цифрами. */
+export const MTSBU_PERIOD = "3 кв. 2026";
+/** Звідки взято показники МТСБУ (посилання біля цифр). */
+export const MTSBU_SOURCE_URL = "https://mtsbu.ua/about/statistics";
 
 export const INSURERS: InsurerProfile[] = [
   { slug: "inho",         name: "ІНГО",          match: /інго|ingo/i,                 website: "https://ingo.ua", ...SAMPLE, origin: { flag: "🇺🇦", country: "Україна" } },
@@ -74,4 +81,8 @@ export function matchesInsurer(slug: string, companyNames: (string | null | unde
   const ins = getInsurer(slug);
   if (!ins) return false;
   return companyNames.some((c) => !!c && ins.match.test(c));
+}
+
+export function insurerBySlug(slug: string | null | undefined): InsurerProfile | undefined {
+  return slug ? INSURERS.find((i) => i.slug === slug) : undefined;
 }

@@ -9,7 +9,7 @@ import { formatPrice, formatCompanyName } from "@/lib/utils";
 import { companyLogo } from "@/lib/logos";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
 import { osagoAgeBasis } from "@/lib/osago-age-basis";
-import { INSURERS } from "@/lib/insurers";
+import { INSURERS, MTSBU_PERIOD, MTSBU_SOURCE_URL } from "@/lib/insurers";
 import type { InsuranceOffer } from "@/types/api";
 import type { OfferBadge } from "@/lib/offer-ranking";
 
@@ -18,7 +18,7 @@ import type { OfferBadge } from "@/lib/offer-ranking";
 // віком рахують, бейджі). Перший стовпець із назвами параметрів липкий, таблиця
 // прокручується горизонтально. «Обрати» → той самий шлях, що «Купити» на картці.
 
-type Row = { key: string; label: string; hint?: string; render: (o: InsuranceOffer) => React.ReactNode };
+type Row = { key: string; label: string; hint?: string; hintHref?: string; render: (o: InsuranceOffer) => React.ReactNode };
 
 export function CompareOffersModal({ open, onClose, offers, badges, installmentIds, onPick }: {
   open: boolean;
@@ -61,6 +61,14 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
       key: "age", label: t({ uk: "Ціна рахується за віком", en: "Price based on age of" }),
       render: (o) => { const a = o.driverAgeHint ? { uk: o.driverAgeHint, en: o.driverAgeHint } : osagoAgeBasis(matchName(o)); return a ? <span className="text-xs text-zinc-600 dark:text-zinc-300">{lang === "en" ? a.en : a.uk}</span> : <span className="text-xs text-zinc-400">—</span>; },
     },
+    ...(cols.some((o) => INSURERS.find((i) => i.match.test(matchName(o)))?.mtsbu?.settlementDays) ? [{
+      key: "settle", label: t({ uk: "Середній строк виплати", en: "Average claim settlement" }), hint: t({ uk: `МТСБУ, ${MTSBU_PERIOD}`, en: `MTIBU, ${MTSBU_PERIOD}` }), hintHref: MTSBU_SOURCE_URL,
+      render: (o: InsuranceOffer) => { const d = INSURERS.find((i) => i.match.test(matchName(o)))?.mtsbu?.settlementDays; return d ? <span className="text-sm text-zinc-700 dark:text-zinc-200">{t({ uk: `${d} дн.`, en: `${d} days` })}</span> : <span className="text-xs text-zinc-400">—</span>; },
+    }] : []),
+    ...(cols.some((o) => INSURERS.find((i) => i.match.test(matchName(o)))?.mtsbu?.complaintsPer10k != null) ? [{
+      key: "complaints", label: t({ uk: "Скарги на 10 000 договорів", en: "Complaints per 10,000 contracts" }), hint: t({ uk: `МТСБУ, ${MTSBU_PERIOD}`, en: `MTIBU, ${MTSBU_PERIOD}` }), hintHref: MTSBU_SOURCE_URL,
+      render: (o: InsuranceOffer) => { const c = INSURERS.find((i) => i.match.test(matchName(o)))?.mtsbu?.complaintsPer10k; return c != null ? <span className="text-sm text-zinc-700 dark:text-zinc-200">{c.toLocaleString("uk-UA")}</span> : <span className="text-xs text-zinc-400">—</span>; },
+    }] : []),
     {
       key: "founded", label: t({ uk: "На ринку з", en: "On the market since" }),
       render: (o) => { const y = INSURERS.find((i) => i.match.test(matchName(o)))?.foundedYear; return y ? <span className="text-sm text-zinc-700 dark:text-zinc-200">{y}</span> : <span className="text-xs text-zinc-400">—</span>; },
@@ -119,7 +127,7 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
               <tr key={r.key} className={i % 2 ? "bg-zinc-50/70 dark:bg-zinc-800/30" : ""}>
                 <th scope="row" className={`sticky left-0 z-10 p-2 text-left text-xs font-medium text-zinc-600 dark:text-zinc-300 ${i % 2 ? "bg-zinc-50 dark:bg-zinc-800/60" : "bg-white dark:bg-zinc-900"}`}>
                   {r.label}
-                  {r.hint && <span className="block text-[10px] font-normal text-zinc-400 dark:text-zinc-500">{r.hint}</span>}
+                  {r.hint && (r.hintHref ? <a href={r.hintHref} target="_blank" rel="noopener noreferrer" className="block text-[10px] font-normal text-indigo-500 underline underline-offset-2 hover:text-indigo-700 dark:text-indigo-400">{r.hint}</a> : <span className="block text-[10px] font-normal text-zinc-400 dark:text-zinc-500">{r.hint}</span>)}
                 </th>
                 {cols.map((o) => <td key={o.offerId} className="p-2 text-center align-middle">{r.render(o)}</td>)}
               </tr>

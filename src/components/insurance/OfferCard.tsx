@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, ChevronRight, FileText, ExternalLink, Info, Check, BadgeCheck, CalendarCheck, Star } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { INSURERS } from "@/lib/insurers";
+import { INSURERS, MTSBU_PERIOD, MTSBU_SOURCE_URL, insurerBySlug } from "@/lib/insurers";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, formatCompanyName, cn } from "@/lib/utils";
 import { osagoStrikePrice, osagoDiscountPct } from "@/lib/osago-discounts";
@@ -288,6 +288,25 @@ function CoverageSelect({ dgoList, selectedId, onSelect, required }: {
   );
 }
 
+// Середній строк виплати за даними МТСБУ (якщо внесено в довідник).
+function SettlementDays({ slug, center = false }: { slug: string | null; center?: boolean }) {
+  const { t } = useI18n();
+  const d = insurerBySlug(slug)?.mtsbu?.settlementDays;
+  if (!d) return null;
+  return (
+    <a
+      href={MTSBU_SOURCE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title={t({ uk: `Середній строк врегулювання збитків за ОСЦПВ, дані МТСБУ за ${MTSBU_PERIOD}`, en: `Average OSAGO claim settlement time, MTIBU data for ${MTSBU_PERIOD}` })}
+      className={cn("inline-flex text-xs text-zinc-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-300", center && "justify-center")}
+    >
+      <span className="underline decoration-dotted underline-offset-2">{t({ uk: `Виплата в середньому за ${d} дн. · МТСБУ`, en: `Pays out in ~${d} days · MTIBU` })}</span>
+    </a>
+  );
+}
+
 // Рейтинг страхової з відгуків наших клієнтів: «★ 4,6 · 12 відгуків» або «Ще без відгуків».
 function InsurerRating({ slug, center = false }: { slug: string | null; center?: boolean }) {
   const { t } = useI18n();
@@ -487,6 +506,7 @@ export function OfferCard({
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold leading-snug text-zinc-900 dark:text-zinc-100">{cleanCompanyName}</p>
               <InsurerRating slug={insurerSlug} />
+              <SettlementDays slug={insurerSlug} />
               {subtitle && <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</p>}
               <Tooltip
                 className="mt-1 inline-flex cursor-help"
@@ -571,6 +591,7 @@ export function OfferCard({
             {cleanCompanyName}
           </span>
           <InsurerRating slug={insurerSlug} center />
+          <SettlementDays slug={insurerSlug} center />
           {subtitle && <span className="text-xs text-zinc-400 text-center dark:text-zinc-500">{subtitle}</span>}
         </div>
 
