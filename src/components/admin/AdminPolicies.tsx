@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Phone, Mail, Download, ExternalLink, FlaskConical, Ban, RotateCcw } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { downloadEndpointFor } from "@/lib/policy-download";
+import { preOpenDownloadWindow, showDownload, closePreOpened } from "@/lib/open-download";
 import type { PolicyRecord } from "@/lib/policies";
 
 const PRODUCT_LABELS: Record<string, string> = {
@@ -65,6 +66,7 @@ export function AdminPolicies() {
     if (!p.contractId) return;
     setDownloading(p.id);
     setDlError((e) => ({ ...e, [p.id]: "" }));
+    const pre = preOpenDownloadWindow();
     try {
       const res = await fetch(downloadEndpointFor(p.product), {
         method: "POST",
@@ -72,9 +74,10 @@ export function AdminPolicies() {
         body: JSON.stringify({ action: "download", contractId: p.contractId }),
       });
       const json = await res.json();
-      if (json.data?.contract) window.open(json.data.contract, "_blank");
-      else setDlError((e) => ({ ...e, [p.id]: json.error ?? t({ uk: "Договір недоступний", en: "Contract unavailable" }) }));
+      if (json.data?.contract) showDownload(json.data.contract, pre);
+      else { closePreOpened(pre); setDlError((e) => ({ ...e, [p.id]: json.error ?? t({ uk: "Договір недоступний", en: "Contract unavailable" }) })); }
     } catch {
+      closePreOpened(pre);
       setDlError((e) => ({ ...e, [p.id]: t({ uk: "Помилка завантаження", en: "Download error" }) }));
     } finally {
       setDownloading(null);

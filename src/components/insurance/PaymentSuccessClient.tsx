@@ -7,6 +7,7 @@ import { CheckCircle, Loader2, Download, ExternalLink, AlertCircle, FileText } f
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
 import { downloadEndpointFor } from "@/lib/policy-download";
+import { preOpenDownloadWindow, showDownload, closePreOpened } from "@/lib/open-download";
 import { NextPolicyOffers } from "./NextPolicyOffers";
 
 // Сторінка, куди LiqPay повертає клієнта після оплати (result_url). Перевіряє
@@ -89,6 +90,7 @@ export function PaymentSuccessClient() {
     if (!contractId) return;
     setDownloading(true);
     setError(null);
+    const pre = preOpenDownloadWindow();
     try {
       const res = await fetch(downloadEndpointFor(product), {
         method: "POST",
@@ -96,9 +98,10 @@ export function PaymentSuccessClient() {
         body: JSON.stringify({ action: "download", contractId }),
       });
       const json = await res.json();
-      if (json.data?.contract) window.open(json.data.contract, "_blank");
-      else setError(json.error ?? t({ uk: "Договір ще формується. Спробуйте за 1–2 хвилини — він також є в кабінеті.", en: "The contract is still being generated. Try again in 1–2 minutes — it is also in your account." }));
+      if (json.data?.contract) showDownload(json.data.contract, pre);
+      else { closePreOpened(pre); setError(json.error ?? t({ uk: "Договір ще формується. Спробуйте за 1–2 хвилини — він також є в кабінеті.", en: "The contract is still being generated. Try again in 1–2 minutes — it is also in your account." })); }
     } catch {
+      closePreOpened(pre);
       setError(t({ uk: "Не вдалося завантажити. Договір також доступний у кабінеті.", en: "Download failed. The contract is also available in your account." }));
     } finally {
       setDownloading(false);

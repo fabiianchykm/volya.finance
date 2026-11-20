@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { useI18n, type Tr } from "@/lib/i18n";
 import type { PolicyRecord } from "@/lib/policies";
 import { downloadEndpointFor } from "@/lib/policy-download";
+import { preOpenDownloadWindow, showDownload, closePreOpened } from "@/lib/open-download";
 
 interface PoliciesViewProps {
   loggedIn: boolean;
@@ -169,6 +170,7 @@ function PolicyCard({ policy, archived = false }: { policy: PolicyRecord; archiv
     }
     setLoading(true);
     setError(null);
+    const pre = preOpenDownloadWindow();
     try {
       const res = await fetch(downloadEndpointFor(policy.product), {
         method: "POST",
@@ -178,9 +180,10 @@ function PolicyCard({ policy, archived = false }: { policy: PolicyRecord; archiv
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
       if (json.data?.mtsbuLink) setMtsbuLink(json.data.mtsbuLink);
-      if (json.data?.contract) window.open(json.data.contract, "_blank");
-      else setError(t({ uk: "Договір недоступний для завантаження.", en: "The contract is not available for download." }));
+      if (json.data?.contract) showDownload(json.data.contract, pre);
+      else { closePreOpened(pre); setError(t({ uk: "Договір недоступний для завантаження.", en: "The contract is not available for download." })); }
     } catch (e) {
+      closePreOpened(pre);
       setError(e instanceof Error ? e.message : t({ uk: "Помилка завантаження", en: "Download error" }));
     } finally {
       setLoading(false);

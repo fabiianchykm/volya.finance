@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle, Download, ExternalLink } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { preOpenDownloadWindow, showDownload, closePreOpened } from "@/lib/open-download";
 import { NextPolicyOffers } from "./NextPolicyOffers";
 
 interface SuccessModalProps {
@@ -26,6 +27,7 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
   const handleDownload = async () => {
     setLoading(true);
     setError(null);
+    const pre = preOpenDownloadWindow();
     try {
       const res = await fetch(downloadEndpoint, {
         method: "POST",
@@ -35,10 +37,10 @@ export function SuccessModal({ open, onClose, contractId, downloadEndpoint = "/a
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
       setContract(json.data);
-      if (json.data.contract) {
-        window.open(json.data.contract, "_blank");
-      }
+      if (json.data.contract) showDownload(json.data.contract, pre);
+      else closePreOpened(pre);
     } catch (e) {
+      closePreOpened(pre);
       setError(e instanceof Error ? e.message : t({ uk: "Помилка завантаження", en: "Download error" }));
     } finally {
       setLoading(false);
