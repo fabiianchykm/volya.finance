@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check, Minus, Star, Crown, CalendarRange } from "lucide-react";
+import { Check, Minus, Star, Crown } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n";
@@ -54,7 +54,7 @@ export function CompareOffersModal({ open, onClose, offers, badges, installmentI
     },
     {
       key: "installment", label: t({ uk: "Оплата частинами", en: "Instalments" }), hint: t({ uk: "Повна вартість, без бонусів і промокоду", en: "Full price, no bonuses or promo codes" }),
-      render: (o) => installmentIds.has(o.offerId) ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300"><CalendarRange className="h-3.5 w-3.5" />{t({ uk: "так", en: "yes" })}</span> : no,
+      render: (o) => installmentIds.has(o.offerId) ? yes : no,
     },
     {
       key: "age", label: t({ uk: "Ціна рахується за віком", en: "Price based on age of" }),
