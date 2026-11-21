@@ -39,6 +39,10 @@ export function useStepHistory<T extends string>(
     if (typeof window === "undefined") return;
     if (!pathRef.current) pathRef.current = window.location.pathname;
     const order: readonly T[] = trackedRef.current ?? [step];
+    // Невідстежувані кроки (модалки OTP/оплати/успіху поверх «pay») історію не
+    // чіпають: раніше indexOf() давав для них -1, і хук сприймав це як повернення
+    // на початковий крок → history.go(-N) → після «Оплатити» кидало на 1-й крок.
+    if (step !== initial && !order.includes(step)) return;
     const idx = (s: T) => (s === initial ? -1 : order.indexOf(s));
     const prev = prevRef.current;
     prevRef.current = step;
