@@ -663,7 +663,7 @@ function AccidentOffers({ offers, loading, error, summary, coverage, onBack, onS
 }) {
   const { t } = useI18n();
   // «Рекомендовані» = ціна + популярність СК серед наших клієнтів (див. lib/offer-ranking).
-  const [sortBy, setSortBy] = useState<OfferSortKey>("recommended");
+  const [sortBy, setSortBy] = useState<OfferSortKey>("price_asc");
   const popularity = usePopularity();
   const rankable = (o: AccidentOffer) => ({ id: o.offerId, price: o.price, company: o.company?.publicName || o.companyNamePublic || o.companyName });
   const cards = rankOffers(offers, rankable, sortBy, popularity);

@@ -306,7 +306,7 @@ function GreenCardOffers({
   onSelect: (o: GreenCardOffer) => void;
 }) {
   const { t } = useI18n();
-  const [sortBy, setSortBy] = useState<OfferSortKey>("recommended");
+  const [sortBy, setSortBy] = useState<OfferSortKey>("price_asc");
   const [sortOpen, setSortOpen] = useState(false);
   const SORT_OPTIONS = [
     { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },

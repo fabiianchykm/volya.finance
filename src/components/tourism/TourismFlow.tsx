@@ -621,7 +621,7 @@ function TourismOffers({ offers, multiVisa, purpose, zoneLabel, dates, days, tou
   // Рівні покриття (10к…100к EUR). Мінімум для Шенгену — 30 000. Виносимо зверху.
   const coverages = Array.from(new Set(offers.map(coverageOf).filter((c) => c > 0))).sort((a, b) => a - b);
   const [coverage, setCoverage] = useState<number>(coverages.includes(30000) ? 30000 : coverages[0] ?? 0);
-  const [sortBy, setSortBy] = useState<OfferSortKey>("recommended");
+  const [sortBy, setSortBy] = useState<OfferSortKey>("price_asc");
   const [sortOpen, setSortOpen] = useState(false);
   const SORT_OPTIONS = [
     { k: "recommended", label: "Рекомендовані", en: "Recommended", Icon: Sparkles },
