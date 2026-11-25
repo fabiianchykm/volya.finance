@@ -132,6 +132,7 @@ function buildPayload(body: Record<string, unknown>): OsagoV2OrderRequest {
     offerId,
     ...(optStr(body.dgoId, 64) ? { dgoId: optStr(body.dgoId, 64) } : {}),
     ...(optStr(body.autolawyerId, 64) ? { autolawyerId: optStr(body.autolawyerId, 64) } : {}),
+    ...(optStr(body.roadMedicineId, 64) ? { roadMedicineId: optStr(body.roadMedicineId, 64) } : {}),
     insurer,
     vehicle,
     isSendPhoneMessage: body.isSendPhoneMessage === true,
@@ -251,7 +252,7 @@ async function handlePost(req: NextRequest) {
           }
           if (plan.bonusRequested > 0) result.bonus = { requested: plan.bonusRequested, applied: bonusApplied, reason: discountRejected ? "rejected" : plan.bonusReason };
           if (plan.promoCode) result.promo = { code: plan.promoCode, requested: plan.promoDiscount, applied: promoApplied, error: discountRejected ? "Страхова не прийняла знижку на цю заявку." : plan.promoError };
-          console.error(`[order v2] created id=${result.id} mtsbu=${result.mtsbuCode ?? "-"} price=${result.price} changed=${result.priceChanged} otpSent=${result.otpSent} otpLen=${result.otpLength ?? "-"} dgoOtp=${result.dgo?.otpRequired ?? "-"} promo=${plan.promoCode ?? "-"}/${promoApplied} bonus=${plan.bonusRequested}/${bonusApplied} pct=${plan.percent} discountPrice=${result.discountPrice ?? "-"} capped=${result.discountCapped ?? "-"}`);
+          console.error(`[order v2] created id=${result.id} mtsbu=${result.mtsbuCode ?? "-"} price=${result.price} changed=${result.priceChanged} otpSent=${result.otpSent} otpLen=${result.otpLength ?? "-"} dgoOtp=${result.dgo?.otpRequired ?? "-"} roadMed=${payload.roadMedicineId ? (result.roadMedicine ? `${result.roadMedicine.price}/otp:${result.roadMedicine.otpRequired}` : `rejected:${(result.roadMedicineError ?? "?").slice(0, 120)}`) : "-"} promo=${plan.promoCode ?? "-"}/${promoApplied} bonus=${plan.bonusRequested}/${bonusApplied} pct=${plan.percent} discountPrice=${result.discountPrice ?? "-"} capped=${result.discountCapped ?? "-"}`);
           return { status: 200, body: { success: true, data: result } };
         }
       );

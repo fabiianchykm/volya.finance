@@ -30,7 +30,7 @@ interface OtpModalProps {
   open: boolean;
   onClose: () => void;
   /** otpDgo — окремий код для підпису договору ДЦВ (ОСЦПВ v2, якщо СК його видала). */
-  onConfirm: (otp: string, otpDgo?: string) => void;
+  onConfirm: (otp: string, otpDgo?: string, otpRoadMedicine?: string) => void;
   onResend: () => void;
   email: string;
   /** Якщо СК дублює код у SMS/Viber (туризм v2: isSendPhoneMessage) — показуємо й телефон. */
@@ -44,9 +44,11 @@ interface OtpModalProps {
   /** ОСЦПВ v2 з ДЦВ: СК видала другий код «для підпису ДЦВ» (у тому ж листі) — показуємо
    *  окреме поле. length — к-сть символів (null = невідома; код може містити кирилицю). */
   dgoCode?: { length: number | null } | null;
+  /** ОСЦПВ v2 з «Медициною в дорозі»: ГАРДІАН видав окремий код (окремим листом). */
+  roadMedicineCode?: { length: number | null } | null;
 }
 
-export function OtpModal({ open, onClose, onConfirm, onResend, email, phone, loading, error, minLength = 6, maxLength = 6, dgoCode }: OtpModalProps) {
+export function OtpModal({ open, onClose, onConfirm, onResend, email, phone, loading, error, minLength = 6, maxLength = 6, dgoCode, roadMedicineCode }: OtpModalProps) {
   const { t } = useI18n();
   const variable = maxLength !== minLength;
   const boxes = minLength; // к-сть комірок у фіксованому режимі
@@ -55,13 +57,17 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, phone, loa
   const [dgo, setDgo] = useState("");   // код ДЦВ (без транслітерації — може бути «ДЦВ666851»)
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   // З кодом ДЦВ авто-сабміт по останній комірці вимкнено — потрібні обидва коди.
-  const needDgo = !!dgoCode;
-  const dgoOk = !needDgo || (dgoCode?.length ? dgo.length === dgoCode.length : dgo.length >= 4);
+  const [rm, setRm] = useState("");     // код «Медицини в дорозі» (окремий лист)
+  const needRm = !!roadMedicineCode;
+  const rmOk = !needRm || (roadMedicineCode?.length ? rm.length === roadMedicineCode.length : rm.length >= 4);
+  // needDgo вимикає авто-сабміт — так само, коли потрібен код «Медицини в дорозі».
+  const needDgo = !!dgoCode || needRm;
+  const dgoOk = (!dgoCode || (dgoCode.length ? dgo.length === dgoCode.length : dgo.length >= 4)) && rmOk;
 
   useEffect(() => {
     if (open) {
       // Reset only when opening to ensure clean state
-      const timer = setTimeout(() => { setDigits(Array(boxes).fill("")); setCode(""); setDgo(""); }, 0);
+      const timer = setTimeout(() => { setDigits(Array(boxes).fill("")); setCode(""); setDgo(""); setRm(""); }, 0);
       return () => clearTimeout(timer);
     }
   }, [open, boxes]);
@@ -100,7 +106,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, phone, loa
   };
 
   const canSubmit = (variable ? code.length >= minLength && code.length <= maxLength : digits.every((d) => d !== "")) && dgoOk;
-  const submit = () => onConfirm(variable ? code : digits.join(""), needDgo ? dgo : undefined);
+  const submit = () => onConfirm(variable ? code : digits.join(""), dgoCode ? dgo : undefined, needRm ? rm : undefined);
 
   return (
     <Modal open={open} onClose={onClose} title={t({ uk: "Підтвердіть email", en: "Confirm email" })} size="sm" preventOutsideClose>
@@ -166,7 +172,7 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, phone, loa
           </div>
         )}
 
-        {needDgo && (
+        {!!dgoCode && (
           <div className="space-y-1.5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-900 dark:bg-indigo-950/30">
             <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
               {t({ uk: "Код для підпису договору ДЦВ (з того самого листа)", en: "Code to sign the DGO contract (from the same email)" })}
@@ -185,6 +191,27 @@ export function OtpModal({ open, onClose, onConfirm, onResend, email, phone, loa
               {dgoCode?.length
                 ? t({ uk: `Код ДЦВ складається з ${dgoCode.length} символів`, en: `The DGO code has ${dgoCode.length} characters` })
                 : t({ uk: "Другий рядок у листі: «Код для підпису ДЦВ: …»", en: "Second line in the email: “Code to sign DGO: …”" })}
+            </p>
+          </div>
+        )}
+
+        {needRm && (
+          <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-900 dark:bg-emerald-950/30">
+            <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              {t({ uk: "Код для підпису «Медицини в дорозі» (окремий лист)", en: "Code to sign “Road Medicine” (separate email)" })}
+            </label>
+            <input
+              type="text"
+              inputMode="text"
+              aria-label={t({ uk: "Код «Медицини в дорозі»", en: "Road Medicine code" })}
+              value={rm}
+              onChange={(e) => setRm(e.target.value.replace(/\s/g, "").toUpperCase().slice(0, roadMedicineCode?.length ?? 16))}
+              onKeyDown={(e) => { if (e.key === "Enter" && canSubmit && !loading) submit(); }}
+              placeholder={t({ uk: "напр. М12345", en: "e.g. M12345" })}
+              className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-4 text-center text-base font-bold tracking-[0.2em] text-zinc-900 outline-none transition-colors focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            />
+            <p className="text-center text-[11px] text-zinc-400 dark:text-zinc-500">
+              {t({ uk: "Прийде окремим листом «Медицина в дорозі» — літера і 5 цифр", en: "Comes in a separate “Road Medicine” email — a letter and 5 digits" })}
             </p>
           </div>
         )}

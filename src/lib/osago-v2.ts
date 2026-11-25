@@ -60,6 +60,19 @@ export function toInsuranceOffer(o: OsagoV2Offer): InsuranceOffer {
       program: a.program ?? null,
       programName: a.programName ?? null,
     })),
+    roadMedicine: o.roadMedicine && Array.isArray(o.roadMedicine.options) && o.roadMedicine.options.length > 0
+      ? {
+          companyName: o.roadMedicine.company?.name ?? null,
+          descriptionLink: o.roadMedicine.company?.descriptionLink ?? null,
+          docProduct: o.roadMedicine.company?.docProduct ?? null,
+          minAge: Number(o.roadMedicine.minAge) || 18,
+          maxAge: Number(o.roadMedicine.maxAge) || 70,
+          options: o.roadMedicine.options
+            .map((r) => ({ id: r.id, insuranceSum: Number(r.insuranceSum) || 0, price: Number(r.price) || 0, ageAssumed: r.ageAssumed === true }))
+            .filter((r) => r.id && r.price > 0)
+            .sort((a, b) => a.insuranceSum - b.insuranceSum),
+        }
+      : null,
   };
 }
 

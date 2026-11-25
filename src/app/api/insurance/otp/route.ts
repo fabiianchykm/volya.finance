@@ -37,7 +37,7 @@ async function handlePost(req: NextRequest) {
 
     maybeCleanup();
 
-    const { action, orderId, otp, otpDgo, v2, product } = await req.json();
+    const { action, orderId, otp, otpDgo, otpRoadMedicine, v2, product } = await req.json();
     const isV2 = v2 === true;
     // v2-продукт за назвою з клієнта: туризм → /tourism/, решта (ОСЦПВ) → /oscpv/.
     const v2Product: V2OtpProduct = product === "tourism" ? "tourism" : product === "greencard" ? "greencard" : "oscpv";
@@ -81,7 +81,7 @@ async function handlePost(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Введіть код підтвердження." }, { status: 400 });
       }
       if (isV2) {
-        const r = await ukaskoService.verifyOsagoOtpV2(orderId, otp.trim(), typeof otpDgo === "string" && otpDgo.trim() ? otpDgo.trim() : null, v2Product);
+        const r = await ukaskoService.verifyOsagoOtpV2(orderId, otp.trim(), typeof otpDgo === "string" && otpDgo.trim() ? otpDgo.trim() : null, v2Product, typeof otpRoadMedicine === "string" && otpRoadMedicine.trim() ? otpRoadMedicine.trim() : null);
         console.error(`[otp v2 check] ${v2Product} order=${orderId} valid=${r.valid}${r.error ? ` reason=${r.error.slice(0, 160)}` : ""}`);
         return NextResponse.json({ success: true, valid: r.valid, ...(r.error ? { reason: r.error } : {}) });
       }

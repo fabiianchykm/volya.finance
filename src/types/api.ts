@@ -54,6 +54,25 @@ export interface DgoOffer {
   sameCompany?: boolean;   // false → ДЦВ надає інша компанія (підказка клієнту)
 }
 
+// «Медицина в дорозі» (СК «ГАРДІАН») — крос-продукт до ОСЦПВ будь-якої СК: захист
+// самого водія (клас 1 — смерть/інвалідність I–III гр. унаслідок ДТП, клас 2 —
+// медична допомога після ДТП). Варіанти за страховою сумою; ціна НЕ входить у price
+// оферу. Для 18–70 років; 61–70 — удвічі дорожче (ageAssumed → СК перерахує).
+export interface RoadMedicineOption {
+  id: string;
+  insuranceSum: number;
+  price: number;
+  ageAssumed?: boolean;
+}
+export interface RoadMedicineInfo {
+  companyName: string | null;
+  descriptionLink: string | null;
+  docProduct: string | null;
+  minAge: number;
+  maxAge: number;
+  options: RoadMedicineOption[];
+}
+
 // Варіант «Автоюрист» (окрема послуга Ukasko) до пропозиції ОСЦПВ.
 export interface AutolawyerOffer {
   id: string;
@@ -99,6 +118,8 @@ export interface InsuranceOffer {
   programmName?: string | null;
   listDgo: DgoOffer[] | null;
   listAutolawyer: AutolawyerOffer[] | null;
+  /** «Медицина в дорозі» (ГАРДІАН) — null, якщо для пропозиції недоступна. */
+  roadMedicine?: RoadMedicineInfo | null;
   // v2: чиїм віком СК рахує тариф + підказка словами для картки.
   ageSemantic?: "owner" | "insurer" | "driver" | null;
   driverAgeHint?: string | null;
@@ -188,6 +209,12 @@ export interface OsagoV2Offer {
     company: Partial<OsagoV2Company> | null;
     options: { id: string; program: number; programName: string; price: number }[];
   } | null;
+  roadMedicine?: {
+    company: Partial<OsagoV2Company> | null;
+    minAge?: number;
+    maxAge?: number;
+    options: { id: string; insuranceSum: number; price: number; ageAssumed?: boolean }[];
+  } | null;
 }
 
 // Заявлення (order/create): сервер бере тариф/ціну/СК зі збереженого офера.
@@ -253,6 +280,7 @@ export interface OsagoV2OrderRequest {
   offerId: string;
   dgoId?: string | null;
   autolawyerId?: string | null;
+  roadMedicineId?: string | null;
   promoCode?: string | null;
   // Знижка інтегратора у % від ціни пропозиції (списання бонусів клієнта); Ukasko
   // сам уріже її до стелі maxDiscount і поверне фактичні discountPrice/discountAmount.
@@ -301,6 +329,17 @@ export interface OsagoV2OrderResult {
     price: number;
     offerDocument: string | null;
   } | null;
+  // «Медицина в дорозі»: null — без неї (або ГАРДІАН відхилив чернетку → roadMedicineError).
+  roadMedicine?: {
+    id: string;
+    insuranceSum: number;
+    price: number;                // фактична, після перерахунку за віком
+    contractNumber: string | null;
+    offerDocument: string | null;
+    otpRequired: boolean;         // окремий код з окремого листа (otpRoadMedicine)
+    otpLength: number | null;
+  } | null;
+  roadMedicineError?: string | null;
   // Текст попередження СК (дублює warningCancelMessage) або "OK".
   message?: string;
 }

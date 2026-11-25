@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { normalizeVin, isValidVin } from "@/lib/vin";
 import { uaNameProblem, normalizeUaName } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Gift, TicketPercent } from "lucide-react";
+import { ArrowLeft, Gift, HeartPulse, TicketPercent } from "lucide-react";
 import { companyLogo } from "@/lib/logos";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
@@ -62,6 +62,8 @@ export function CheckoutClient() {
   const [buyer, setBuyer] = useState<BuyerData>(DEFAULT_BUYER);
   const [selectedDgoId, setSelectedDgoId] = useState<string | null>(null);
   const [selectedAutolawyerId, setSelectedAutolawyerId] = useState<string | null>(null);
+  // «Медицина в дорозі» (ГАРДІАН) — обирається на кроці «Оплата», за замовчуванням без неї.
+  const [selectedRoadMedId, setSelectedRoadMedId] = useState<string | null>(null);
   
   // UI state
   const [loaded, setLoaded] = useState(false);
@@ -238,17 +240,27 @@ export function CheckoutClient() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Сума до оплати: ОСЦПВ + ДЦВ + автоюрист. Після заявлення — з відповіді Ukasko
+  // «Медицина в дорозі»: вік страхувальника на дату початку поліса. Поза 18–70 —
+  // продукт недоступний; 61–70 — удвічі дорожче (якщо калькуляція рахувала без ДН).
+  const insurerAge = ageOn(customer?.dateBirth, offer.startDate);
+  const rmInfo = offer.roadMedicine ?? null;
+  const rmAvailable = !!rmInfo && rmInfo.options.length > 0 && offer.customerType !== 2 &&
+    (insurerAge == null || (insurerAge >= rmInfo.minAge && insurerAge <= rmInfo.maxAge));
+  const roadMedPrice = (r: { price: number; ageAssumed?: boolean } | null | undefined) =>
+    r ? (r.ageAssumed && insurerAge != null && insurerAge >= 61 ? r.price * 2 : r.price) : 0;
+
+  // Сума до оплати: ОСЦПВ + ДЦВ + автоюрист + «Медицина в дорозі». Після заявлення — з відповіді Ukasko
   // (ціна після декларування може відрізнятись від оферу), до того — з оферу.
-  const offerTotal = (o: InsuranceOffer, dgoId: string | null, lawId: string | null) =>
+  const offerTotal = (o: InsuranceOffer, dgoId: string | null, lawId: string | null, rmId: string | null = null) =>
     o.price +
     (dgoId ? Number(o.listDgo?.find((d) => d.id === dgoId)?.cost ?? 0) : 0) +
-    (lawId ? (o.listAutolawyer?.find((a) => a.id === lawId)?.price ?? 0) : 0);
+    (lawId ? (o.listAutolawyer?.find((a) => a.id === lawId)?.price ?? 0) : 0) +
+    (rmId ? roadMedPrice(o.roadMedicine?.options.find((r) => r.id === rmId)) : 0);
   // Після заявлення ОСЦПВ-частина — discountPrice (ціна зі списаними бонусами), якщо є.
   const orderOsagoPrice = order ? (order.discountPrice && order.discountPrice > 0 ? order.discountPrice : order.price) : 0;
   const orderTotal = order
-    ? orderOsagoPrice + (order.dgo?.price ?? 0) + (order.autolawyer?.price ?? 0)
-    : offerTotal(offer, selectedDgoId, selectedAutolawyerId);
+    ? orderOsagoPrice + (order.dgo?.price ?? 0) + (order.autolawyer?.price ?? 0) + (order.roadMedicine?.price ?? 0)
+    : offerTotal(offer, selectedDgoId, selectedAutolawyerId, selectedRoadMedId);
   // Скільки бонусів можна списати по ЦІЙ пропозиції: залишок, стеля СК, сама ціна.
   const bonusMax = Math.max(0, Math.floor(Math.min(bonusAvailable, offer.maxDiscount ?? Infinity, offer.price)));
   const bonusToApply = Math.min(Math.max(0, Math.floor(bonusAmount)), bonusMax);
@@ -335,7 +347,9 @@ export function CheckoutClient() {
     if (!dgo && fresh.dgoRequired) dgo = fresh.listDgo?.[0] ?? null;
     const curLaw = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
     const law = curLaw ? fresh.listAutolawyer?.find((a) => a.program === curLaw.program) ?? null : null;
-    return { dgoId: dgo?.id ?? null, lawId: law?.id ?? null };
+    const curRm = selectedRoadMedId ? offer.roadMedicine?.options.find((r) => r.id === selectedRoadMedId) : null;
+    const rm = curRm ? fresh.roadMedicine?.options.find((r) => r.insuranceSum === curRm.insuranceSum) ?? null : null;
+    return { dgoId: dgo?.id ?? null, lawId: law?.id ?? null, rmId: rm?.id ?? null };
   };
 
   const handleVehicleSubmit = (details: VehicleDetails) => {
@@ -377,12 +391,13 @@ export function CheckoutClient() {
         return;
       }
       const extras = remapExtras(fresh);
-      const wasTotal = offerTotal(offer, selectedDgoId, selectedAutolawyerId);
-      const nowTotal = offerTotal(fresh, extras.dgoId, extras.lawId);
+      const wasTotal = offerTotal(offer, selectedDgoId, selectedAutolawyerId, selectedRoadMedId);
+      const nowTotal = offerTotal(fresh, extras.dgoId, extras.lawId, extras.rmId);
       if (nowTotal !== wasTotal) {
         setOffer(fresh);
         setSelectedDgoId(extras.dgoId);
         setSelectedAutolawyerId(extras.lawId);
+        setSelectedRoadMedId(extras.rmId);
         setPriceNotice(
           t({
             uk:
@@ -397,17 +412,18 @@ export function CheckoutClient() {
         );
         return;
       }
-      if (fresh.offerId !== offer.offerId || extras.dgoId !== selectedDgoId || extras.lawId !== selectedAutolawyerId) {
+      if (fresh.offerId !== offer.offerId || extras.dgoId !== selectedDgoId || extras.lawId !== selectedAutolawyerId || extras.rmId !== selectedRoadMedId) {
         setOffer(fresh);
         setSelectedDgoId(extras.dgoId);
         setSelectedAutolawyerId(extras.lawId);
+        setSelectedRoadMedId(extras.rmId);
       }
 
       // Заявлення v2: один виклик = заявка + декларація в СК (номер МТСБУ) + OTP на
       // email. Кожна спроба — свій ключ ідемпотентності, щоб авто-повтор не впирався
       // в дедуплікацію, а подвійний клік — не створював другу декларацію.
-      const createOrder = async (ord: InsuranceOffer, dgoId: string | null, lawId: string | null): Promise<OsagoV2OrderResult> => {
-        const payload = buildOrderPayloadV2(mergedVehicle, ord, dgoId, lawId, customer, details, buyer);
+      const createOrder = async (ord: InsuranceOffer, dgoId: string | null, lawId: string | null, rmId: string | null): Promise<OsagoV2OrderResult> => {
+        const payload = { ...buildOrderPayloadV2(mergedVehicle, ord, dgoId, lawId, customer, details, buyer), ...(rmId ? { roadMedicineId: rmId } : {}) };
         const res = await fetch("/api/insurance/order", {
           method: "POST",
           headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
@@ -428,17 +444,18 @@ export function CheckoutClient() {
 
       let created: OsagoV2OrderResult;
       try {
-        created = await createOrder(fresh, extras.dgoId, extras.lawId);
+        created = await createOrder(fresh, extras.dgoId, extras.lawId, extras.rmId);
       } catch (firstErr) {
         if (!isRetryable(firstErr)) throw firstErr;
         const fresh2 = await revalidateOffer();
         if (!fresh2) throw firstErr;
         const extras2 = remapExtras(fresh2);
-        const total2 = offerTotal(fresh2, extras2.dgoId, extras2.lawId);
+        const total2 = offerTotal(fresh2, extras2.dgoId, extras2.lawId, extras2.rmId);
         if (total2 !== wasTotal) {
           setOffer(fresh2);
           setSelectedDgoId(extras2.dgoId);
           setSelectedAutolawyerId(extras2.lawId);
+          setSelectedRoadMedId(extras2.rmId);
           setPriceNotice(
             t({
               uk: `Страхова компанія перерахувала вартість поліса. Актуальна сума: ${formatPrice(total2)} (у пропозиції — ${formatPrice(wasTotal)}). Перевірте суму й натисніть «Перейти до оплати».`,
@@ -448,10 +465,11 @@ export function CheckoutClient() {
           setLoading(false);
           return;
         }
-        created = await createOrder(fresh2, extras2.dgoId, extras2.lawId);
+        created = await createOrder(fresh2, extras2.dgoId, extras2.lawId, extras2.rmId);
       }
 
-      const total = created.price + (created.dgo?.price ?? 0) + (created.autolawyer?.price ?? 0);
+      const extrasPay = (created.dgo?.price ?? 0) + (created.autolawyer?.price ?? 0) + (created.roadMedicine?.price ?? 0);
+      const total = created.price + extrasPay;
 
       // СК при декларуванні нарахувала іншу премію (персональний тариф за ІПН, інший
       // вік, оновлений тариф) — заявка вже несе ціну СК, саме вона піде в рахунок.
@@ -464,10 +482,16 @@ export function CheckoutClient() {
         );
       }
       if (created.warningCancelMessage) setWarning(created.warningCancelMessage);
+      // ГАРДІАН відхилив «Медицину в дорозі» — поліс заявлено без неї, кажемо клієнту.
+      if (!created.roadMedicine && created.roadMedicineError) {
+        setSelectedRoadMedId(null);
+        setBonusNotice(null);
+        setWarning((w) => [w, t({ uk: `«Медицину в дорозі» не оформлено: ${created.roadMedicineError}. Поліс ОСЦПВ — без неї.`, en: `“Road Medicine” was not issued: ${created.roadMedicineError}. The MTPL policy goes without it.` })].filter(Boolean).join(" "));
+      }
 
       // Знижка (промокод + бонуси): фактичні суми — з відповіді (стеля СК могла урізати).
       const osagoPay = created.discountPrice && created.discountPrice > 0 ? created.discountPrice : created.price;
-      const totalPay = osagoPay + (created.dgo?.price ?? 0) + (created.autolawyer?.price ?? 0);
+      const totalPay = osagoPay + extrasPay;
       const parts: string[] = [];
       if (created.promo?.applied) parts.push(t({ uk: `промокод ${created.promo.code} −${formatPrice(created.promo.applied)}`, en: `promo code ${created.promo.code} −${formatPrice(created.promo.applied)}` }));
       if (created.bonus?.applied) parts.push(t({ uk: `бонуси −${formatPrice(created.bonus.applied)}`, en: `bonuses −${formatPrice(created.bonus.applied)}` }));
@@ -515,7 +539,7 @@ export function CheckoutClient() {
     }
   };
 
-  const handleOtpConfirm = async (otp: string, otpDgo?: string) => {
+  const handleOtpConfirm = async (otp: string, otpDgo?: string, otpRoadMedicine?: string) => {
     if (!orderId) return;
     setLoading(true);
     setError(null);
@@ -523,7 +547,7 @@ export function CheckoutClient() {
       const res = await fetch("/api/insurance/otp", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "check", orderId, otp, otpDgo: otpDgo || undefined, v2: true }),
+        body: JSON.stringify({ action: "check", orderId, otp, otpDgo: otpDgo || undefined, otpRoadMedicine: otpRoadMedicine || undefined, v2: true }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
@@ -710,6 +734,7 @@ export function CheckoutClient() {
         {step === "pay" && (() => {
           const dgo = selectedDgoId ? offer.listDgo?.find((d) => d.id === selectedDgoId) : null;
           const law = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
+          const rm = rmAvailable && selectedRoadMedId ? rmInfo?.options.find((r) => r.id === selectedRoadMedId) ?? null : null;
           const insurerName = offer.companyNamePublic || offer.companyName;
           const logo = companyLogo(insurerName);
           const promoDiscount = promoApplied?.discount ?? 0;
@@ -749,8 +774,61 @@ export function CheckoutClient() {
                     {customer && <Row label={t({ uk: "Страхувальник", en: "Policyholder" })}>{[customer.surname, customer.name, customer.patronymic].filter(Boolean).join(" ")}</Row>}
                     {dgo && <Row label={t({ uk: `ДЦВ · ліміт ${formatPrice(Number(dgo.coverage))}`, en: `Extra liability · limit ${formatPrice(Number(dgo.coverage))}` })}>{formatPrice(Number(dgo.cost))}</Row>}
                     {law && <Row label={t({ uk: "Автоюрист", en: "Legal assistance" })}>{formatPrice(law.price)}</Row>}
+                    {order?.roadMedicine
+                      ? <Row label={t({ uk: `Медицина в дорозі · ${formatPrice(order.roadMedicine.insuranceSum)}`, en: `Road Medicine · ${formatPrice(order.roadMedicine.insuranceSum)}` })}>{formatPrice(order.roadMedicine.price)}</Row>
+                      : !order && rm && <Row label={t({ uk: `Медицина в дорозі · ${formatPrice(rm.insuranceSum)}`, en: `Road Medicine · ${formatPrice(rm.insuranceSum)}` })}>{formatPrice(roadMedPrice(rm))}</Row>}
                   </dl>
                 </section>
+
+                {/* Крос-продукт «Медицина в дорозі» (ГАРДІАН): захист самого водія — ОСЦПВ
+                    відшкодовує шкоду ІНШИМ, а це — водієві. Необовʼязково, за замовчуванням вимкнено. */}
+                {!order && rmAvailable && rmInfo && (
+                  <section className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-emerald-200 dark:bg-zinc-900 dark:ring-emerald-900">
+                        <HeartPulse className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Медицина в дорозі — захист для вас як водія", en: "Road Medicine — cover for you as the driver" })}</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                          {t({ uk: "Автоцивілка платить іншим учасникам ДТП, а цей поліс — вам: швидка, екстрена й стаціонарна допомога (зокрема стоматологія та хірургія) після ДТП, а також виплата при інвалідності I–III групи чи смерті.", en: "MTPL pays the other parties of an accident; this policy pays you: ambulance, emergency and inpatient care (incl. dental and surgery) after an accident, plus a payout for disability (groups I–III) or death." })}
+                          {rmInfo.companyName && <> {t({ uk: `Страховик — ${rmInfo.companyName}.`, en: `Insurer — ${rmInfo.companyName}.` })}</>}
+                          {(rmInfo.docProduct || rmInfo.descriptionLink) && <> <a href={(rmInfo.docProduct || rmInfo.descriptionLink)!} target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-400">{t({ uk: "Умови", en: "Terms" })}</a></>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label={t({ uk: "Медицина в дорозі", en: "Road Medicine" })}>
+                      {[null, ...rmInfo.options].map((r) => {
+                        const active = (r?.id ?? null) === selectedRoadMedId;
+                        return (
+                          <button
+                            key={r?.id ?? "none"}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setSelectedRoadMedId(r?.id ?? null)}
+                            className={`rounded-xl border px-3 py-2 text-left transition-colors ${active ? "border-emerald-500 bg-white ring-2 ring-emerald-500/30 dark:bg-zinc-900" : "border-zinc-200 bg-white/70 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900/60"}`}
+                          >
+                            {r ? (
+                              <>
+                                <span className="block text-sm font-bold text-zinc-900 dark:text-zinc-100">+{formatPrice(roadMedPrice(r))}</span>
+                                <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{t({ uk: `покриття ${formatPrice(r.insuranceSum)}`, en: `cover ${formatPrice(r.insuranceSum)}` })}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="block text-sm font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Без захисту", en: "No cover" })}</span>
+                                <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{t({ uk: "лише ОСЦПВ", en: "MTPL only" })}</span>
+                              </>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {t({ uk: `Для водіїв ${rmInfo.minAge}–${rmInfo.maxAge} років; з 61 року вартість подвоюється. Діє стільки ж, скільки поліс ОСЦПВ.`, en: `For drivers aged ${rmInfo.minAge}–${rmInfo.maxAge}; from 61 the price doubles. Valid for the same term as the MTPL policy.` })}
+                    </p>
+                  </section>
+                )}
 
                 {/* При оплаті частинами бонуси й промокод недоступні — лише повна вартість. */}
                 {!order && installment && (
@@ -900,8 +978,12 @@ export function CheckoutClient() {
             const json = await res.json();
             if (!json.success) throw new Error(json.error);
             // Новий основний код може мати іншу довжину; код ДЦВ лишається той самий.
-            const d = json.data as { otpLength?: number | null; otpDgoRequired?: boolean; otpDgoLength?: number | null } | undefined;
-            if (d) setOrder((o) => o ? { ...o, otpSent: true, otpLength: d.otpLength ?? o.otpLength, dgo: o.dgo ? { ...o.dgo, otpRequired: d.otpDgoRequired ?? o.dgo.otpRequired, otpLength: d.otpDgoLength ?? o.dgo.otpLength } : o.dgo } : o);
+            const d = json.data as { otpLength?: number | null; otpDgoRequired?: boolean; otpDgoLength?: number | null; otpRoadMedicineRequired?: boolean; otpRoadMedicineLength?: number | null } | undefined;
+            if (d) setOrder((o) => o ? {
+              ...o, otpSent: true, otpLength: d.otpLength ?? o.otpLength,
+              dgo: o.dgo ? { ...o.dgo, otpRequired: d.otpDgoRequired ?? o.dgo.otpRequired, otpLength: d.otpDgoLength ?? o.dgo.otpLength } : o.dgo,
+              roadMedicine: o.roadMedicine ? { ...o.roadMedicine, otpRequired: d.otpRoadMedicineRequired ?? o.roadMedicine.otpRequired, otpLength: d.otpRoadMedicineLength ?? o.roadMedicine.otpLength } : o.roadMedicine,
+            } : o);
           } catch (e) {
             setError(e instanceof Error ? e.message : t({ uk: "Не вдалося надіслати код", en: "Failed to resend the code" }));
           }
@@ -914,6 +996,7 @@ export function CheckoutClient() {
         minLength={order?.otpLength ?? 4}
         maxLength={order?.otpLength ?? 10}
         dgoCode={order?.dgo?.otpRequired ? { length: order.dgo.otpLength ?? null } : null}
+        roadMedicineCode={order?.roadMedicine?.otpRequired ? { length: order.roadMedicine.otpLength ?? null } : null}
       />
 
       {orderId && (
@@ -1695,6 +1778,17 @@ function Input({ label, error, ...props }: React.InputHTMLAttributes<HTMLInputEl
       {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
+}
+
+// Повних років на дату (d.m.Y) за датою народження в unix-секундах; null — невідомо.
+function ageOn(birthSec: number | null | undefined, onDate: string | null | undefined): number | null {
+  if (!birthSec) return null;
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(onDate ?? "");
+  const on = m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : new Date();
+  const b = new Date(birthSec * 1000);
+  let age = on.getFullYear() - b.getFullYear();
+  if (on.getMonth() < b.getMonth() || (on.getMonth() === b.getMonth() && on.getDate() < b.getDate())) age--;
+  return age >= 0 && age < 130 ? age : null;
 }
 
 // Unix-секунди → "DD.MM.YYYY" для полів v2 (dateBirth, dateOfIssue).

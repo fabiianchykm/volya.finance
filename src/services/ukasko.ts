@@ -1114,11 +1114,11 @@ export class UkaskoService {
 
   // OTP v2: перевірка коду з листа (+ код ДЦВ, якщо СК видала окремий). 422 = невірний /
   // прострочений код або не передано otpDgo — повертаємо valid:false з текстом Ukasko.
-  async verifyOsagoOtpV2(orderId: string, otp: string, otpDgo?: string | null, product: V2OtpProduct = "oscpv"): Promise<{ valid: boolean; error?: string }> {
+  async verifyOsagoOtpV2(orderId: string, otp: string, otpDgo?: string | null, product: V2OtpProduct = "oscpv", otpRoadMedicine?: string | null): Promise<{ valid: boolean; error?: string }> {
     try {
       const raw = await this.withAuth((token) => postJson(
         `${V2_BASE}/insurance/${product}/order/verify-otp`,
-        { orderId, otp, ...(otpDgo ? { otpDgo } : {}) },
+        { orderId, otp, ...(otpDgo ? { otpDgo } : {}), ...(otpRoadMedicine ? { otpRoadMedicine } : {}) },
         token,
       )) as { status?: string; data?: { verified?: boolean } };
       return { valid: raw?.data?.verified === true || raw?.status === "success" };
@@ -1129,12 +1129,12 @@ export class UkaskoService {
   }
 
   // Повторна відправка OTP v2: генерує НОВИЙ основний код (код ДЦВ лишається той самий).
-  async resendOsagoOtpV2(orderId: string, product: V2OtpProduct = "oscpv"): Promise<{ otpSent: boolean; otpLength: number | null; otpDgoRequired: boolean; otpDgoLength: number | null }> {
+  async resendOsagoOtpV2(orderId: string, product: V2OtpProduct = "oscpv"): Promise<{ otpSent: boolean; otpLength: number | null; otpDgoRequired: boolean; otpDgoLength: number | null; otpRoadMedicineRequired: boolean; otpRoadMedicineLength: number | null }> {
     const raw = await this.withAuth((token) => postJson(`${V2_BASE}/insurance/${product}/order/resend-otp`, { orderId }, token)) as {
-      data?: { otpSent?: boolean; otpLength?: number | null; otpDgoRequired?: boolean; otpDgoLength?: number | null };
+      data?: { otpSent?: boolean; otpLength?: number | null; otpDgoRequired?: boolean; otpDgoLength?: number | null; otpRoadMedicineRequired?: boolean; otpRoadMedicineLength?: number | null };
     };
     const d = raw?.data ?? {};
-    return { otpSent: d.otpSent === true, otpLength: d.otpLength ?? null, otpDgoRequired: d.otpDgoRequired === true, otpDgoLength: d.otpDgoLength ?? null };
+    return { otpSent: d.otpSent === true, otpLength: d.otpLength ?? null, otpDgoRequired: d.otpDgoRequired === true, otpDgoLength: d.otpDgoLength ?? null, otpRoadMedicineRequired: d.otpRoadMedicineRequired === true, otpRoadMedicineLength: d.otpRoadMedicineLength ?? null };
   }
 
   async sendOtp(orderId: string, type: 1 | 2 = 1): Promise<void> {
