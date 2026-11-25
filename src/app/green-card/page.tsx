@@ -5,6 +5,13 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata, serviceLd, faqLd, breadcrumbLd } from "@/lib/seo";
 import { FAQ_BY_PRODUCT } from "@/lib/faq";
 
+// Динамічний рендер — обхід бага роутера Next 16.2: якщо статичну сторінку відкрили
+// повним завантаженням з параметрами флоу (?step=offers…, після перезавантаження,
+// повернення з оплати чи відновлення вкладки), будь-який наступний перехід на цей
+// шлях (меню, новий номер авто) роутер підміняв першою адресою — і замість першого
+// екрана знову показувались старі пропозиції (25.11.2026).
+export const dynamic = "force-dynamic";
+
 export const metadata = buildMetadata({
   title: "Зелена карта онлайн — автострахування за кордон",
   description:
