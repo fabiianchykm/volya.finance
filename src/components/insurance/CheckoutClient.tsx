@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { normalizeVin, isValidVin } from "@/lib/vin";
 import { uaNameProblem, normalizeUaName } from "@/lib/ua-name";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Gift, HeartPulse, TicketPercent } from "lucide-react";
+import { ArrowLeft, Gift, TicketPercent } from "lucide-react";
 import { companyLogo } from "@/lib/logos";
 import { OtpModal } from "./OtpModal";
 import { PaymentModal } from "./PaymentModal";
@@ -62,7 +62,7 @@ export function CheckoutClient() {
   const [buyer, setBuyer] = useState<BuyerData>(DEFAULT_BUYER);
   const [selectedDgoId, setSelectedDgoId] = useState<string | null>(null);
   const [selectedAutolawyerId, setSelectedAutolawyerId] = useState<string | null>(null);
-  // «Медицина в дорозі» (ГАРДІАН) — обирається на кроці «Оплата», за замовчуванням без неї.
+  // «Медицина в дорозі» (ГАРДІАН) — обирається на картці пропозиції, за замовчуванням без неї.
   const [selectedRoadMedId, setSelectedRoadMedId] = useState<string | null>(null);
   
   // UI state
@@ -247,6 +247,9 @@ export function CheckoutClient() {
   const rmInfo = offer.roadMedicine ?? null;
   const rmAvailable = !!rmInfo && rmInfo.options.length > 0 && offer.customerType !== 2 &&
     (insurerAge == null || (insurerAge >= rmInfo.minAge && insurerAge <= rmInfo.maxAge));
+  // Вибір із картки діє лише коли продукт доступний цьому страхувальнику (вік/фізособа);
+  // інакше не додаємо ні в суму, ні в заявку (на кроці «Оплата» вибору вже немає).
+  const effRoadMedId = rmAvailable ? selectedRoadMedId : null;
   const roadMedPrice = (r: { price: number; ageAssumed?: boolean } | null | undefined) =>
     r ? (r.ageAssumed && insurerAge != null && insurerAge >= 61 ? r.price * 2 : r.price) : 0;
 
@@ -261,7 +264,7 @@ export function CheckoutClient() {
   const orderOsagoPrice = order ? (order.discountPrice && order.discountPrice > 0 ? order.discountPrice : order.price) : 0;
   const orderTotal = order
     ? orderOsagoPrice + (order.dgo?.price ?? 0) + (order.autolawyer?.price ?? 0) + (order.roadMedicine?.price ?? 0)
-    : offerTotal(offer, selectedDgoId, selectedAutolawyerId, selectedRoadMedId);
+    : offerTotal(offer, selectedDgoId, selectedAutolawyerId, effRoadMedId);
   // Скільки бонусів можна списати по ЦІЙ пропозиції: залишок, стеля СК, сама ціна.
   const bonusMax = Math.max(0, Math.floor(Math.min(bonusAvailable, offer.maxDiscount ?? Infinity, offer.price)));
   const bonusToApply = Math.min(Math.max(0, Math.floor(bonusAmount)), bonusMax);
@@ -348,7 +351,7 @@ export function CheckoutClient() {
     if (!dgo && fresh.dgoRequired) dgo = fresh.listDgo?.[0] ?? null;
     const curLaw = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
     const law = curLaw ? fresh.listAutolawyer?.find((a) => a.program === curLaw.program) ?? null : null;
-    const curRm = selectedRoadMedId ? offer.roadMedicine?.options.find((r) => r.id === selectedRoadMedId) : null;
+    const curRm = effRoadMedId ? offer.roadMedicine?.options.find((r) => r.id === selectedRoadMedId) : null;
     const rm = curRm ? fresh.roadMedicine?.options.find((r) => r.insuranceSum === curRm.insuranceSum) ?? null : null;
     return { dgoId: dgo?.id ?? null, lawId: law?.id ?? null, rmId: rm?.id ?? null };
   };
@@ -392,7 +395,7 @@ export function CheckoutClient() {
         return;
       }
       const extras = remapExtras(fresh);
-      const wasTotal = offerTotal(offer, selectedDgoId, selectedAutolawyerId, selectedRoadMedId);
+      const wasTotal = offerTotal(offer, selectedDgoId, selectedAutolawyerId, effRoadMedId);
       const nowTotal = offerTotal(fresh, extras.dgoId, extras.lawId, extras.rmId);
       if (nowTotal !== wasTotal) {
         setOffer(fresh);
@@ -413,7 +416,7 @@ export function CheckoutClient() {
         );
         return;
       }
-      if (fresh.offerId !== offer.offerId || extras.dgoId !== selectedDgoId || extras.lawId !== selectedAutolawyerId || extras.rmId !== selectedRoadMedId) {
+      if (fresh.offerId !== offer.offerId || extras.dgoId !== selectedDgoId || extras.lawId !== selectedAutolawyerId || extras.rmId !== effRoadMedId) {
         setOffer(fresh);
         setSelectedDgoId(extras.dgoId);
         setSelectedAutolawyerId(extras.lawId);
@@ -735,7 +738,7 @@ export function CheckoutClient() {
         {step === "pay" && (() => {
           const dgo = selectedDgoId ? offer.listDgo?.find((d) => d.id === selectedDgoId) : null;
           const law = selectedAutolawyerId ? offer.listAutolawyer?.find((a) => a.id === selectedAutolawyerId) : null;
-          const rm = rmAvailable && selectedRoadMedId ? rmInfo?.options.find((r) => r.id === selectedRoadMedId) ?? null : null;
+          const rm = effRoadMedId ? rmInfo?.options.find((r) => r.id === selectedRoadMedId) ?? null : null;
           const insurerName = offer.companyNamePublic || offer.companyName;
           const logo = companyLogo(insurerName);
           const promoDiscount = promoApplied?.discount ?? 0;
@@ -780,56 +783,6 @@ export function CheckoutClient() {
                       : !order && rm && <Row label={t({ uk: `Медицина в дорозі · ${formatPrice(rm.insuranceSum)}`, en: `Road Medicine · ${formatPrice(rm.insuranceSum)}` })}>{formatPrice(roadMedPrice(rm))}</Row>}
                   </dl>
                 </section>
-
-                {/* Крос-продукт «Медицина в дорозі» (ГАРДІАН): захист самого водія — ОСЦПВ
-                    відшкодовує шкоду ІНШИМ, а це — водієві. Необовʼязково, за замовчуванням вимкнено. */}
-                {!order && rmAvailable && rmInfo && (
-                  <section className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-emerald-200 dark:bg-zinc-900 dark:ring-emerald-900">
-                        <HeartPulse className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t({ uk: "Медицина в дорозі — захист для вас як водія", en: "Road Medicine — cover for you as the driver" })}</p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                          {t({ uk: "Автоцивілка платить іншим учасникам ДТП, а цей поліс — вам: швидка, екстрена й стаціонарна допомога (зокрема стоматологія та хірургія) після ДТП, а також виплата при інвалідності I–III групи чи смерті.", en: "MTPL pays the other parties of an accident; this policy pays you: ambulance, emergency and inpatient care (incl. dental and surgery) after an accident, plus a payout for disability (groups I–III) or death." })}
-                          {rmInfo.companyName && <> {t({ uk: `Страховик — ${rmInfo.companyName}.`, en: `Insurer — ${rmInfo.companyName}.` })}</>}
-                          {(rmInfo.docProduct || rmInfo.descriptionLink) && <> <a href={(rmInfo.docProduct || rmInfo.descriptionLink)!} target="_blank" rel="noopener noreferrer" className="font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-400">{t({ uk: "Умови", en: "Terms" })}</a></>}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label={t({ uk: "Медицина в дорозі", en: "Road Medicine" })}>
-                      {[null, ...rmInfo.options].map((r) => {
-                        const active = (r?.id ?? null) === selectedRoadMedId;
-                        return (
-                          <button
-                            key={r?.id ?? "none"}
-                            type="button"
-                            role="radio"
-                            aria-checked={active}
-                            onClick={() => setSelectedRoadMedId(r?.id ?? null)}
-                            className={`rounded-xl border px-3 py-2 text-left transition-colors ${active ? "border-emerald-500 bg-white ring-2 ring-emerald-500/30 dark:bg-zinc-900" : "border-zinc-200 bg-white/70 hover:border-emerald-300 dark:border-zinc-700 dark:bg-zinc-900/60"}`}
-                          >
-                            {r ? (
-                              <>
-                                <span className="block text-sm font-bold text-zinc-900 dark:text-zinc-100">+{formatPrice(roadMedPrice(r))}</span>
-                                <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{t({ uk: `покриття ${formatPrice(r.insuranceSum)}`, en: `cover ${formatPrice(r.insuranceSum)}` })}</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="block text-sm font-semibold text-zinc-700 dark:text-zinc-200">{t({ uk: "Без захисту", en: "No cover" })}</span>
-                                <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{t({ uk: "лише ОСЦПВ", en: "MTPL only" })}</span>
-                              </>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                      {t({ uk: `Для водіїв ${rmInfo.minAge}–${rmInfo.maxAge} років; з 61 року вартість подвоюється. Діє стільки ж, скільки поліс ОСЦПВ.`, en: `For drivers aged ${rmInfo.minAge}–${rmInfo.maxAge}; from 61 the price doubles. Valid for the same term as the MTPL policy.` })}
-                    </p>
-                  </section>
-                )}
 
                 {/* При оплаті частинами бонуси й промокод недоступні — лише повна вартість. */}
                 {!order && installment && (
