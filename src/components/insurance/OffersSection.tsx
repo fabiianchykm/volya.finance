@@ -258,7 +258,7 @@ export function OffersSection({
                 {insurerOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setInsurerOpen(false)} />
-                    <div className="absolute right-0 top-full z-20 mt-2 max-h-[60vh] w-[240px] overflow-y-auto rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="absolute left-0 top-full z-20 mt-2 max-h-[60vh] w-[240px] overflow-y-auto rounded-xl border border-zinc-100 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
                       {insurerOptions.map(([n, c]) => {
                         const on = insurerFilter.includes(n);
                         return (
