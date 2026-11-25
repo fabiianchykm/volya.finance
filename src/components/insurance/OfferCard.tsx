@@ -16,7 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSession } from "next-auth/react";
 import { isAdminClient } from "@/lib/admin";
 import { useReviewSummaries } from "@/lib/use-review-summaries";
-import type { InsuranceCompany, InsuranceOffer, AutolawyerOffer, DgoOffer } from "@/types/api";
+import type { InsuranceCompany, InsuranceOffer, AutolawyerOffer, DgoOffer, RoadMedicineOption } from "@/types/api";
 
 interface OfferCardProps {
   offer: InsuranceOffer;
@@ -27,6 +27,9 @@ interface OfferCardProps {
   selectedAutolawyerId: string | null;
   onSelectDgo: (id: string | null) => void;
   onSelectAutolawyer: (id: string | null) => void;
+  /** «Медицина в дорозі» (ОСЦПВ) — обраний варіант і зміна вибору; без них блок не показується. */
+  selectedRoadMedId?: string | null;
+  onSelectRoadMed?: (id: string | null) => void;
   index: number;
   /** Приховати «скоро»-опції (евакуатор/страхування) — напр. для Зеленої карти. */
   hideExtras?: boolean;
@@ -205,6 +208,78 @@ function AutolawyerSelect({ lawyers, selectedId, onSelect }: {
   );
 }
 
+// «Медицина в дорозі» (СК ГАРДІАН) — той самий дропдаун, що й Автоюрист: захист
+// самого водія після ДТП. Варіанти за страховою сумою (offer.roadMedicine.options).
+function RoadMedicineSelect({ options, selectedId, onSelect }: {
+  options: RoadMedicineOption[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onEsc); };
+  }, [open]);
+
+  const selected = options.find((r) => r.id === selectedId) ?? null;
+  const label = t({ uk: "Медицина в дорозі", en: "Road Medicine" });
+
+  return (
+    <div className="relative w-full" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-3.5 pr-3 text-left text-sm font-medium transition-all",
+          selected
+            ? "border-indigo-300 bg-indigo-50/60 text-zinc-800 ring-1 ring-indigo-200 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-zinc-200 dark:ring-indigo-800"
+            : "border-zinc-200 bg-white text-zinc-700 hover:border-indigo-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+        )}
+      >
+        <span className="truncate" title={selected ? `${label}: ${formatPrice(selected.insuranceSum)}, +${formatPrice(selected.price)}` : undefined}>
+          {selected ? t({ uk: `Медицина · +${formatPrice(selected.price)}`, en: `Medicine · +${formatPrice(selected.price)}` }) : label}
+        </span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform dark:text-zinc-500", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+          <p className="px-3 pb-1.5 pt-2 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+            {t({ uk: "Захист для вас як водія: медична допомога після ДТП, виплата при інвалідності чи смерті. 18–70 років.", en: "Cover for you as the driver: medical care after an accident, payout for disability or death. Ages 18–70." })}
+          </p>
+          <button type="button" onClick={() => { onSelect(null); setOpen(false); }} className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-zinc-500 transition-colors hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800/60">
+            {t({ uk: "Не потрібна", en: "Not needed" })}
+          </button>
+          {options.map((r) => {
+            const active = r.id === selectedId;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => { onSelect(r.id); setOpen(false); }}
+                className={cn("flex w-full flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors", active ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60")}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span className={cn("text-sm font-semibold", active ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-800 dark:text-zinc-100")}>{t({ uk: `Покриття ${formatPrice(r.insuranceSum)}`, en: `Cover ${formatPrice(r.insuranceSum)}` })}</span>
+                  <span className="shrink-0 text-sm font-semibold text-indigo-600 dark:text-indigo-400">+{formatPrice(r.price)}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Кастомний дропдаун «Додаткове покриття» (ДЦВ) — той самий дизайн, що й Автоюрист:
 // у списку під сумою покриття є короткий опис. Суми/ціни — з API (offer.listDgo).
 function CoverageSelect({ dgoList, selectedId, onSelect, required }: {
@@ -361,6 +436,8 @@ export function OfferCard({
   selectedAutolawyerId,
   onSelectDgo,
   onSelectAutolawyer,
+  selectedRoadMedId = null,
+  onSelectRoadMed,
   index,
   subtitle,
   cornerBadge,
@@ -393,11 +470,13 @@ export function OfferCard({
   // щоб .find/.map/.length були безпечні скрізь.
   const dgoList = Array.isArray(offer.listDgo) ? offer.listDgo : [];
   const lawyerList = Array.isArray(offer.listAutolawyer) ? offer.listAutolawyer : [];
+  const roadMedList = onSelectRoadMed && Array.isArray(offer.roadMedicine?.options) ? offer.roadMedicine!.options : [];
 
   const totalPrice =
     offer.price +
     (selectedDgoId ? Number(dgoList.find((d) => d.id === selectedDgoId)?.cost ?? 0) : 0) +
-    (selectedAutolawyerId ? lawyerList.find((a) => a.id === selectedAutolawyerId)?.price ?? 0 : 0);
+    (selectedAutolawyerId ? lawyerList.find((a) => a.id === selectedAutolawyerId)?.price ?? 0 : 0) +
+    (selectedRoadMedId ? roadMedList.find((r) => r.id === selectedRoadMedId)?.price ?? 0 : 0);
 
   // Бонус 1% від вартості полісу — нараховується на бонусний рахунок клієнта.
   const bonus = Math.round(totalPrice * BONUS_RATE);
@@ -424,7 +503,7 @@ export function OfferCard({
   // Спецпропозиція VOLYA.FINANCE — коли знижка перевищує 25%.
   const specialOffer = discountPct != null && discountPct > 25;
 
-  const hasOptions = dgoList.length > 0 || lawyerList.length > 0;
+  const hasOptions = dgoList.length > 0 || lawyerList.length > 0 || roadMedList.length > 0;
   // Блок опцій (у картці) показуємо лише за наявності реальних опцій.
   const showOptionsBlock = hasOptions;
 
@@ -478,6 +557,11 @@ export function OfferCard({
       {/* Автоюрист — вибір пакета з описом під кожним пунктом. */}
       {lawyers.length > 0 && (
         <AutolawyerSelect lawyers={lawyers} selectedId={selectedAutolawyerId} onSelect={onSelectAutolawyer} />
+      )}
+
+      {/* «Медицина в дорозі» — захист водія (ГАРДІАН), до пропозиції будь-якої СК. */}
+      {roadMedList.length > 0 && onSelectRoadMed && (
+        <RoadMedicineSelect options={roadMedList} selectedId={selectedRoadMedId} onSelect={onSelectRoadMed} />
       )}
 
       {/* «Додаткове покриття» — кастомний дропдаун (як Автоюрист), з описом під пунктами. */}

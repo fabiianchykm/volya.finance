@@ -30,7 +30,7 @@ interface OffersSectionProps {
   onBack: () => void;
   onEdit: () => void;
   onEditBuyer: () => void;
-  onSelectOffer: (offer: InsuranceOffer, dgoId: string | null, autolawyerId: string | null) => void;
+  onSelectOffer: (offer: InsuranceOffer, dgoId: string | null, autolawyerId: string | null, roadMedId?: string | null) => void;
   /** Період поліса (12 = рік, 6 = пів року) — показуємо в рядку авто. */
   periodId: number;
 }
@@ -100,6 +100,7 @@ export function OffersSection({
   const unavailableNames = failures.filter((f) => f.reason === "unavailable").map((f) => f.name);
   const [dgoMap, setDgoMap] = useState<Record<string, string | null>>({});
   const [autolawyerMap, setAutolawyerMap] = useState<Record<string, string | null>>({});
+  const [roadMedMap, setRoadMedMap] = useState<Record<string, string | null>>({});
   const [sortBy, setSortBy] = useState<SortKey>("price_asc");
   const [compareOpen, setCompareOpen] = useState(false);
   // Вибір пропозицій для порівняння (тап «Порівняти» на картці). Порожньо — порівнюємо всі.
@@ -339,7 +340,7 @@ export function OffersSection({
           onPick={(o) => {
             setCompareOpen(false);
             const dgoId = dgoMap[o.offerId] !== undefined ? dgoMap[o.offerId] : o.dgoRequired ? (o.listDgo?.[0]?.id ?? null) : null;
-            onSelectOffer({ ...o, installmentEligible: installmentIds.has(o.offerId) }, dgoId, autolawyerMap[o.offerId] ?? null);
+            onSelectOffer({ ...o, installmentEligible: installmentIds.has(o.offerId) }, dgoId, autolawyerMap[o.offerId] ?? null, roadMedMap[o.offerId] ?? null);
           }}
         />
 
@@ -411,11 +412,14 @@ export function OffersSection({
                 onSelect={() => setSelectedOfferId(offer.offerId)}
                 onSelectDgo={(id) => setDgoMap((m) => ({ ...m, [offer.offerId]: id }))}
                 onSelectAutolawyer={(id) => setAutolawyerMap((m) => ({ ...m, [offer.offerId]: id }))}
+                selectedRoadMedId={roadMedMap[offer.offerId] ?? null}
+                onSelectRoadMed={(id) => setRoadMedMap((m) => ({ ...m, [offer.offerId]: id }))}
                 onBuy={() =>
                   onSelectOffer(
                     { ...offer, installmentEligible: canInstallment },
                     dgoId,
-                    autolawyerMap[offer.offerId] ?? null
+                    autolawyerMap[offer.offerId] ?? null,
+                    roadMedMap[offer.offerId] ?? null
                   )
                 }
               />

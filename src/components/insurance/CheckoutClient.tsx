@@ -145,6 +145,7 @@ export function CheckoutClient() {
         setBuyer(parsed.buyer ?? DEFAULT_BUYER);
         setSelectedDgoId(parsed.selectedDgoId || null);
         setSelectedAutolawyerId(parsed.selectedAutolawyerId || null);
+        setSelectedRoadMedId(parsed.selectedRoadMedId || null);
         // Повернення після перезавантаження (пошта/SMS за кодом): відновлюємо крок,
         // дані клієнта й orderId — щоб не проходити все спочатку.
         const r = readResume<{ step: "vehicle" | "pay" | "otp" | "payment"; customer: Customer | null; buyer?: BuyerData; vehicle?: VehicleData; vehicleDetails?: VehicleDetails | null; orderId: string | null; order?: OsagoV2OrderResult | null }>("checkout_resume_osago");

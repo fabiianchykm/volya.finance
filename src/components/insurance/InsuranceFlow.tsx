@@ -369,7 +369,8 @@ export function InsuranceFlow() {
   const handleSelectOffer = (
     offer: InsuranceOffer,
     dgoId: string | null,
-    autolawyerId: string | null
+    autolawyerId: string | null,
+    roadMedId: string | null = null
   ) => {
     sessionStorage.setItem("checkout_data", JSON.stringify({
       vehicle: state.vehicle,
@@ -378,6 +379,7 @@ export function InsuranceFlow() {
       periodId: state.periodId,
       selectedDgoId: dgoId,
       selectedAutolawyerId: autolawyerId,
+      selectedRoadMedId: roadMedId,
     }));
     
     router.push("/checkout");
